@@ -33,7 +33,6 @@ export default async function OnboardingPage() {
           </p>
         </div>
         <OnboardingForm
-          userId={user.id}
           defaultUsername={profile?.username ?? ''}
           defaultFullName={profile?.full_name ?? ''}
         />

@@ -11,9 +11,16 @@ function SignInForm() {
   const searchParams = useSearchParams()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState(
-    searchParams.get('error') === 'oauth' ? 'Error al iniciar sesión con Google. Intenta nuevamente.' : ''
-  )
+  const initialError = searchParams.get('error')
+  const [error, setError] = useState(() => {
+    if (initialError === 'oauth') {
+      return 'Error al iniciar sesión con Google. Intenta nuevamente.'
+    }
+    if (initialError === 'auth_confirm') {
+      return 'No se pudo confirmar el correo o el enlace expiró. Vuelve a intentarlo.'
+    }
+    return ''
+  })
   const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {

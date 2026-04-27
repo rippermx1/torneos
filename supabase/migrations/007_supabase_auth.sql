@@ -1,12 +1,56 @@
 -- ============================================================
--- Migración 007: Migrar de Clerk → Supabase Auth
--- - Revertir profiles.id de text → uuid (Supabase Auth usa UUID)
--- - Actualizar todas las FK a uuid
--- - Actualizar políticas RLS (remover ::text cast)
--- - Actualizar función wallet_insert_transaction (p_user_id uuid)
--- - Agregar trigger para crear perfil automáticamente al registrarse
+-- Migración 007: Alinear schema de usuarios con Supabase Auth
+-- - Convertir referencias de usuario text -> uuid sin borrar datos
+-- - Restaurar políticas RLS usando auth.uid() como uuid
+-- - Crear/backfillear profiles desde auth.users
+-- - Instalar trigger on_auth_user_created
 -- ============================================================
 BEGIN;
+
+-- ── 0. Validar que los IDs actuales se pueden convertir a uuid ─
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM public.profiles WHERE id IS NOT NULL AND id !~ '^[0-9a-fA-F-]{36}$') THEN
+    RAISE EXCEPTION 'profiles.id contiene valores no convertibles a uuid';
+  END IF;
+
+  IF EXISTS (SELECT 1 FROM public.wallet_transactions WHERE user_id IS NOT NULL AND user_id !~ '^[0-9a-fA-F-]{36}$') THEN
+    RAISE EXCEPTION 'wallet_transactions.user_id contiene valores no convertibles a uuid';
+  END IF;
+
+  IF EXISTS (SELECT 1 FROM public.tournaments WHERE created_by IS NOT NULL AND created_by !~ '^[0-9a-fA-F-]{36}$') THEN
+    RAISE EXCEPTION 'tournaments.created_by contiene valores no convertibles a uuid';
+  END IF;
+
+  IF EXISTS (SELECT 1 FROM public.registrations WHERE user_id IS NOT NULL AND user_id !~ '^[0-9a-fA-F-]{36}$') THEN
+    RAISE EXCEPTION 'registrations.user_id contiene valores no convertibles a uuid';
+  END IF;
+
+  IF EXISTS (SELECT 1 FROM public.games WHERE user_id IS NOT NULL AND user_id !~ '^[0-9a-fA-F-]{36}$') THEN
+    RAISE EXCEPTION 'games.user_id contiene valores no convertibles a uuid';
+  END IF;
+
+  IF EXISTS (SELECT 1 FROM public.tournament_results WHERE user_id IS NOT NULL AND user_id !~ '^[0-9a-fA-F-]{36}$') THEN
+    RAISE EXCEPTION 'tournament_results.user_id contiene valores no convertibles a uuid';
+  END IF;
+
+  IF EXISTS (SELECT 1 FROM public.withdrawal_requests WHERE user_id IS NOT NULL AND user_id !~ '^[0-9a-fA-F-]{36}$') THEN
+    RAISE EXCEPTION 'withdrawal_requests.user_id contiene valores no convertibles a uuid';
+  END IF;
+
+  IF EXISTS (SELECT 1 FROM public.withdrawal_requests WHERE reviewed_by IS NOT NULL AND reviewed_by !~ '^[0-9a-fA-F-]{36}$') THEN
+    RAISE EXCEPTION 'withdrawal_requests.reviewed_by contiene valores no convertibles a uuid';
+  END IF;
+
+  IF EXISTS (SELECT 1 FROM public.disputes WHERE user_id IS NOT NULL AND user_id !~ '^[0-9a-fA-F-]{36}$') THEN
+    RAISE EXCEPTION 'disputes.user_id contiene valores no convertibles a uuid';
+  END IF;
+
+  IF EXISTS (SELECT 1 FROM public.disputes WHERE resolved_by IS NOT NULL AND resolved_by !~ '^[0-9a-fA-F-]{36}$') THEN
+    RAISE EXCEPTION 'disputes.resolved_by contiene valores no convertibles a uuid';
+  END IF;
+END;
+$$;
 
 -- ── 1. Drop políticas RLS ─────────────────────────────────────
 DROP POLICY IF EXISTS "Usuario ve su propio perfil"       ON profiles;
@@ -40,19 +84,7 @@ ALTER TABLE withdrawal_requests  DROP CONSTRAINT IF EXISTS withdrawal_requests_r
 ALTER TABLE disputes             DROP CONSTRAINT IF EXISTS disputes_user_id_fkey;
 ALTER TABLE disputes             DROP CONSTRAINT IF EXISTS disputes_resolved_by_fkey;
 
--- ── 3. Limpiar datos de demo (IDs de Clerk no son UUIDs válidos) ──
-DELETE FROM game_moves;
-DELETE FROM games;
-DELETE FROM tournament_results;
-DELETE FROM wallet_transactions;
-DELETE FROM registrations;
-DELETE FROM withdrawal_requests;
-DELETE FROM disputes;
--- Nullificar created_by antes de cambiar el tipo (Clerk IDs no son UUID válidos)
-UPDATE tournaments SET created_by = NULL;
-DELETE FROM profiles;
-
--- ── 4. Cambiar tipos → uuid ───────────────────────────────────
+-- ── 3. Cambiar tipos → uuid ───────────────────────────────────
 ALTER TABLE profiles             ALTER COLUMN id           TYPE uuid USING id::uuid;
 ALTER TABLE wallet_transactions  ALTER COLUMN user_id      TYPE uuid USING user_id::uuid;
 ALTER TABLE tournaments          ALTER COLUMN created_by   TYPE uuid USING created_by::uuid;
@@ -64,7 +96,7 @@ ALTER TABLE withdrawal_requests  ALTER COLUMN reviewed_by  TYPE uuid USING revie
 ALTER TABLE disputes             ALTER COLUMN user_id      TYPE uuid USING user_id::uuid;
 ALTER TABLE disputes             ALTER COLUMN resolved_by  TYPE uuid USING resolved_by::uuid;
 
--- ── 5. Restaurar FKs ─────────────────────────────────────────
+-- ── 4. Restaurar FKs ─────────────────────────────────────────
 ALTER TABLE wallet_transactions  ADD CONSTRAINT wallet_transactions_user_id_fkey        FOREIGN KEY (user_id)      REFERENCES profiles(id);
 ALTER TABLE tournaments          ADD CONSTRAINT tournaments_created_by_fkey              FOREIGN KEY (created_by)   REFERENCES profiles(id);
 ALTER TABLE registrations        ADD CONSTRAINT registrations_user_id_fkey              FOREIGN KEY (user_id)      REFERENCES profiles(id);
@@ -75,7 +107,7 @@ ALTER TABLE withdrawal_requests  ADD CONSTRAINT withdrawal_requests_reviewed_by_
 ALTER TABLE disputes             ADD CONSTRAINT disputes_user_id_fkey                   FOREIGN KEY (user_id)      REFERENCES profiles(id);
 ALTER TABLE disputes             ADD CONSTRAINT disputes_resolved_by_fkey               FOREIGN KEY (resolved_by)  REFERENCES profiles(id);
 
--- ── 6. Restaurar políticas RLS (sin ::text cast) ──────────────
+-- ── 5. Restaurar políticas RLS (sin ::text cast) ──────────────
 CREATE POLICY "Usuario ve su propio perfil"
   ON profiles FOR SELECT USING (auth.uid() = id);
 
@@ -151,7 +183,7 @@ CREATE POLICY "Admin ve todas las disputas"
     EXISTS (SELECT 1 FROM profiles p WHERE p.id = auth.uid() AND p.is_admin = true)
   );
 
--- ── 7. Actualizar función wallet con p_user_id uuid ──────────
+-- ── 6. Actualizar función wallet con p_user_id uuid ──────────
 CREATE OR REPLACE FUNCTION wallet_insert_transaction(
   p_user_id uuid,
   p_type text,
@@ -187,7 +219,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- ── 8. Actualizar register_for_tournament con uuid ────────────
+-- ── 7. Actualizar register_for_tournament con uuid ────────────
 CREATE OR REPLACE FUNCTION register_for_tournament(
   p_user_id uuid,
   p_tournament_id uuid,
@@ -210,33 +242,49 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- ── 9. Trigger: crear perfil al registrarse en Supabase Auth ──
--- Solo se aplica si existe auth.users (Supabase Cloud / CLI completo).
--- En el stack Docker minimalista local, auth.users no existe → se omite.
-CREATE OR REPLACE FUNCTION handle_new_user()
+-- ── 8. Trigger: crear perfil al registrarse en Supabase Auth ──
+CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
 BEGIN
   INSERT INTO public.profiles (id, username, full_name)
   VALUES (
     NEW.id,
     'user_' || substr(replace(NEW.id::text, '-', ''), 1, 8),
-    NEW.raw_user_meta_data->>'full_name'
+    COALESCE(
+      NULLIF(NEW.raw_user_meta_data->>'full_name', ''),
+      NULLIF(NEW.raw_user_meta_data->>'name', '')
+    )
   )
   ON CONFLICT (id) DO NOTHING;
+
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 DO $$
 BEGIN
   IF EXISTS (
-    SELECT 1 FROM information_schema.tables
+    SELECT 1
+    FROM information_schema.tables
     WHERE table_schema = 'auth' AND table_name = 'users'
   ) THEN
+    INSERT INTO public.profiles (id, username, full_name)
+    SELECT
+      u.id,
+      'user_' || substr(replace(u.id::text, '-', ''), 1, 8),
+      COALESCE(
+        NULLIF(u.raw_user_meta_data->>'full_name', ''),
+        NULLIF(u.raw_user_meta_data->>'name', '')
+      )
+    FROM auth.users u
+    LEFT JOIN public.profiles p ON p.id = u.id
+    WHERE p.id IS NULL
+    ON CONFLICT (id) DO NOTHING;
+
     DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
     CREATE TRIGGER on_auth_user_created
       AFTER INSERT ON auth.users
-      FOR EACH ROW EXECUTE FUNCTION handle_new_user();
+      FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
   END IF;
 END;
 $$;

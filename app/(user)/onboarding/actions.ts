@@ -19,11 +19,16 @@ export async function completeOnboarding(formData: FormData) {
   const adminSupabase = createAdminClient()
   const { error } = await adminSupabase
     .from('profiles')
-    .update({
-      username,
-      full_name: fullName || null,
-    })
-    .eq('id', user.id)
+    .upsert(
+      {
+        id: user.id,
+        username,
+        full_name: fullName || null,
+      },
+      {
+        onConflict: 'id',
+      }
+    )
 
   if (error) {
     if (error.code === '23505') {

@@ -1,4 +1,5 @@
-import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
+import { requireAdmin } from '@/lib/supabase/auth'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import type { TournamentType } from '@/types/database'
@@ -67,10 +68,7 @@ const MODALIDAD_DEFAULTS = {
 async function createTournament(formData: FormData) {
   'use server'
 
-  const supabaseAuth = await createClient()
-  const { data: { user } } = await supabaseAuth.auth.getUser()
-  if (!user) throw new Error('No autenticado')
-  const userId = user.id
+  const userId = await requireAdmin()
 
   const name             = formData.get('name') as string
   const description      = (formData.get('description') as string) || null

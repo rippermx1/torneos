@@ -30,11 +30,14 @@ export default function SignUpPage() {
 
     setLoading(true)
     const supabase = createClient()
+    const confirmUrl = new URL('/auth/confirm', window.location.origin)
+    confirmUrl.searchParams.set('next', '/onboarding')
+
     const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/onboarding`,
+        emailRedirectTo: confirmUrl.toString(),
       },
     })
 

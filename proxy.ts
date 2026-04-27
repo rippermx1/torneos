@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { getAllowedOrigins } from '@/lib/env'
+import { getAllowedOrigins, getSupabaseBrowserKey, getSupabaseUrl } from '@/lib/env'
 
 // ── CORS ────────────────────────────────────────────────────
 const ALLOWED_ORIGINS = getAllowedOrigins()
@@ -36,6 +36,7 @@ const PUBLIC_PREFIXES = [
   '/sign-in',
   '/sign-up',
   '/auth/callback', // OAuth callback de Supabase (Google, etc.)
+  '/auth/confirm', // Confirmación por email / magic link
   '/api/webhooks',
   '/api/cron',
 ]
@@ -66,10 +67,22 @@ export async function proxy(req: NextRequest) {
   // El cliente de Supabase en el middleware refresca la cookie de sesión
   // y propaga los headers correctamente a la respuesta.
   let res = NextResponse.next({ request: req })
+  res.headers.set('Cache-Control', 'private, no-store')
+  res.headers.set('Pragma', 'no-cache')
+  res.headers.set('Expires', '0')
+
+  const supabaseUrl = getSupabaseUrl()
+  const supabaseBrowserKey = getSupabaseBrowserKey()
+
+  if (!supabaseUrl || !supabaseBrowserKey) {
+    throw new Error(
+      'Faltan NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY/NEXT_PUBLIC_SUPABASE_ANON_KEY.'
+    )
+  }
 
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    supabaseUrl,
+    supabaseBrowserKey,
     {
       cookies: {
         getAll() {
@@ -78,6 +91,9 @@ export async function proxy(req: NextRequest) {
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) => req.cookies.set(name, value))
           res = NextResponse.next({ request: req })
+          res.headers.set('Cache-Control', 'private, no-store')
+          res.headers.set('Pragma', 'no-cache')
+          res.headers.set('Expires', '0')
           cookiesToSet.forEach(({ name, value, options }) =>
             res.cookies.set(name, value, options)
           )

@@ -41,14 +41,17 @@ function isLocalUrl(value) {
 }
 
 const appUrl = requireOne('APP_URL', 'APP_URL', 'NEXT_PUBLIC_APP_URL')
-const clerkPublishableKey = requireOne(
-  'Clerk publishable key',
-  'NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY'
-)
-const clerkSecretKey = requireOne('Clerk secret key', 'CLERK_SECRET_KEY')
 const supabaseUrl = requireOne('Supabase URL', 'NEXT_PUBLIC_SUPABASE_URL')
-requireOne('Supabase anon key', 'NEXT_PUBLIC_SUPABASE_ANON_KEY')
-requireOne('Supabase service role key', 'SUPABASE_SERVICE_ROLE_KEY')
+const supabaseBrowserKey = requireOne(
+  'Supabase browser key',
+  'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
+  'NEXT_PUBLIC_SUPABASE_ANON_KEY'
+)
+const supabaseServerKey = requireOne(
+  'Supabase server key',
+  'SUPABASE_SECRET_KEY',
+  'SUPABASE_SERVICE_ROLE_KEY'
+)
 const mercadoPagoAccessToken = requireOne(
   'Mercado Pago access token',
   'MERCADOPAGO_ACCESS_TOKEN',
@@ -75,16 +78,20 @@ if (appUrl) {
   }
 }
 
-if (clerkPublishableKey?.startsWith('pk_test_')) {
-  issues.push('NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY sigue usando una key de desarrollo')
-}
-
-if (clerkSecretKey?.startsWith('sk_test_')) {
-  issues.push('CLERK_SECRET_KEY sigue usando una key de desarrollo')
-}
-
 if (supabaseUrl && isLocalUrl(supabaseUrl)) {
   issues.push('NEXT_PUBLIC_SUPABASE_URL sigue apuntando a localhost')
+}
+
+if (appUrl?.includes('vercel.app')) {
+  warnings.push('APP_URL sigue apuntando a un alias vercel.app; usa el dominio canónico')
+}
+
+if (supabaseBrowserKey?.startsWith('eyJ')) {
+  warnings.push('NEXT_PUBLIC_SUPABASE_ANON_KEY es legacy; prefiere NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY')
+}
+
+if (supabaseServerKey?.startsWith('eyJ')) {
+  warnings.push('SUPABASE_SERVICE_ROLE_KEY es legacy; prefiere SUPABASE_SECRET_KEY')
 }
 
 if (mercadoPagoAccessToken?.startsWith('TEST-')) {

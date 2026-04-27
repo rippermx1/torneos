@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "node scripts/start-standalone.mjs",
     "check:production-env": "node scripts/check-production-env.mjs",
+    "setup:test-users": "node scripts/setup-test-users.mjs",
+    "smoke:local": "node scripts/smoke-local-e2e.mjs",
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",

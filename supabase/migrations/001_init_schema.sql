@@ -1,12 +1,13 @@
 -- ============================================================
 -- Torneos 2048 — Schema base
 -- Baseline para proyectos Supabase remotos vacíos.
--- NOTA: profiles.id es text (no uuid) para compatibilidad con Clerk
+-- Baseline historico. La migracion 007 migra profiles.id a uuid
+-- para el runtime actual con Supabase Auth.
 -- ============================================================
 
 -- ── PROFILES ────────────────────────────────────────────────
 create table profiles (
-  id text primary key,          -- Clerk user ID, ej: "user_abc123"
+  id text primary key,          -- Se migra a uuid en 007_supabase_auth.sql
   username text unique not null,
   full_name text,
   rut text unique,

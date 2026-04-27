@@ -1,10 +1,14 @@
 ## ============================================================
 ## Torneos 2048 — Stack local de base de datos
 ##
-## Emula Supabase Cloud con:
+## Ofrece solo DB + PostgREST local:
 ##   postgres  → base de datos
 ##   rest      → PostgREST (API REST sobre postgres)
 ##   proxy     → nginx que enruta /rest/v1/* → PostgREST
+##
+## No incluye Supabase Auth, GoTrue ni providers OAuth.
+## Para probar registro/login en localhost, usa el proyecto cloud de Supabase
+## configurado en `.env.local`.
 ##
 ## Uso:
 ##   docker compose up -d        # levantar servicios de DB

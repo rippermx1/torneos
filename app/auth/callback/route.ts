@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { ensureProfileExists } from '@/lib/supabase/profile'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
@@ -13,6 +14,10 @@ export async function GET(req: NextRequest) {
     const supabase = await createClient()
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        await ensureProfileExists(user)
+      }
       // Redirigir a la página destino (onboarding para nuevos usuarios)
       return NextResponse.redirect(`${origin}${next}`)
     }

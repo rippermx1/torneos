@@ -5,12 +5,11 @@ import Link from 'next/link'
 import { completeOnboarding } from './actions'
 
 interface Props {
-  userId: string  // kept for compatibility but not sent to form (server action gets user from session)
   defaultUsername: string
   defaultFullName: string
 }
 
-export function OnboardingForm({ userId, defaultUsername, defaultFullName }: Props) {
+export function OnboardingForm({ defaultUsername, defaultFullName }: Props) {
   const [username, setUsername] = useState(defaultUsername.startsWith('user_') ? '' : defaultUsername)
   const [fullName, setFullName] = useState(defaultFullName)
   const [acceptedTerms, setAcceptedTerms] = useState(false)

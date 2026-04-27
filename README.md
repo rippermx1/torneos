@@ -1,36 +1,100 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Torneos 2048
 
-## Getting Started
+Plataforma de torneos competitivos de 2048 con Supabase Auth, billetera interna
+y despliegue en Vercel.
 
-First, run the development server:
+## Stack
+
+- Next.js 16 App Router
+- Supabase Auth + Postgres
+- Mercado Pago
+- Vercel
+
+## Desarrollo local
+
+### 1. Instala dependencias
+
+```bash
+npm ci
+```
+
+### 2. Configura el entorno
+
+La app necesita un proyecto Supabase real para probar:
+
+- registro con email/password
+- inicio de sesión
+- OAuth con Google
+- rutas protegidas por sesión
+
+El `docker-compose.yml` del repo solo ofrece Postgres + PostgREST para desarrollo
+de base de datos. No incluye Supabase Auth ni providers OAuth.
+
+Usa `.env.local` con:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` o `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SECRET_KEY` o `SUPABASE_SERVICE_ROLE_KEY`
+- `APP_URL=http://localhost:3001`
+
+### 3. Prepara usuarios de prueba
+
+```bash
+npm run setup:test-users
+```
+
+El script deja listos:
+
+- `admin.local.e2e@example.com`
+- `jugador1.local.e2e@example.com`
+- `jugador2.local.e2e@example.com`
+
+Todos usan la misma contraseña. Por defecto:
+
+```txt
+Torneos2048!Local
+```
+
+Puedes cambiarla con `SUPABASE_E2E_PASSWORD`.
+
+### 4. Levanta la app
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abre [http://localhost:3001](http://localhost:3001).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Para una validación rápida completa:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run smoke:local
+```
 
-## Learn More
+## Pruebas manuales recomendadas
 
-To learn more about Next.js, take a look at the following resources:
+### Auth
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- crear cuenta en `/sign-up`
+- confirmar email con `/auth/confirm`
+- iniciar sesión en `/sign-in`
+- restablecer contraseña en `/sign-in/forgot`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Admin
 
-## Deploy on Vercel
+- iniciar sesión con el usuario admin
+- crear torneo en `/admin/tournaments/new`
+- revisar listado en `/admin/tournaments`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Simulación de torneo
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- iniciar sesión con 2 o más jugadores
+- recargar saldo con el script de fixtures
+- inscribir usuarios al mismo torneo
+- iniciar partidas desde `/tournaments/[id]/play`
+
+## Producción
+
+- dominio canónico: [https://www.torneosplay.cl](https://www.torneosplay.cl)
+- deploys: Vercel
+- checklist: [docs/production.md](/C:/torneos/docs/production.md:1)

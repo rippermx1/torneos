@@ -60,7 +60,7 @@ export default function PrivacidadPage() {
           Podemos compartir datos con:
         </p>
         <ul>
-          <li>Proveedores de servicios de infraestructura (Vercel, Supabase, Clerk) bajo acuerdos de confidencialidad.</li>
+          <li>Proveedores de servicios de infraestructura y autenticación (Vercel y Supabase) bajo acuerdos de confidencialidad.</li>
           <li>Entidades bancarias para procesar retiros.</li>
           <li>Autoridades competentes cuando así lo exija la ley.</li>
         </ul>

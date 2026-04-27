@@ -15,10 +15,29 @@ export function getAppUrl(fallback?: string) {
   const value = firstNonEmpty(
     process.env.APP_URL,
     process.env.NEXT_PUBLIC_APP_URL,
+    process.env.NEXT_PUBLIC_SITE_URL,
     fallback
   )
 
   return value ? normalizeUrl(value) : undefined
+}
+
+export function getSupabaseUrl() {
+  return firstNonEmpty(process.env.NEXT_PUBLIC_SUPABASE_URL)
+}
+
+export function getSupabaseBrowserKey() {
+  return firstNonEmpty(
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  )
+}
+
+export function getSupabaseServiceKey() {
+  return firstNonEmpty(
+    process.env.SUPABASE_SECRET_KEY,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  )
 }
 
 export function getAllowedOrigins() {
@@ -26,6 +45,7 @@ export function getAllowedOrigins() {
     new Set(
       [
         'http://localhost:3000',
+        'http://127.0.0.1:3000',
         'http://localhost:3001',
         'http://localhost:3002',
         getAppUrl(),

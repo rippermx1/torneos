@@ -13,10 +13,13 @@ export function GoogleButton({ redirectTo = '/onboarding' }: Props) {
   async function handleClick() {
     setLoading(true)
     const supabase = createClient()
+    const callbackUrl = new URL('/auth/callback', window.location.origin)
+    callbackUrl.searchParams.set('next', redirectTo)
+
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=${redirectTo}`,
+        redirectTo: callbackUrl.toString(),
       },
     })
     // El navegador redirige a Google — si falla, restablecer

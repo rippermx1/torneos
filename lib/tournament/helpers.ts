@@ -4,9 +4,12 @@ export type TournamentPlayability =
   | { ok: true }
   | { ok: false; reason: 'not_found' | 'cancelled' | 'window_not_open' | 'window_closed' | 'completed' }
 
+type PlayWindowTournament = Pick<Tournament, 'status' | 'play_window_start' | 'play_window_end'>
+type RegistrationWindowTournament = Pick<Tournament, 'status' | 'registration_opens_at' | 'play_window_start'>
+
 // Determina si un torneo está dentro de su ventana de juego.
 // Usamos timestamps directamente porque el cron (paso 6) aún no existe.
-export function checkPlayWindow(tournament: Tournament): TournamentPlayability {
+export function checkPlayWindow(tournament: PlayWindowTournament | null | undefined): TournamentPlayability {
   if (!tournament) return { ok: false, reason: 'not_found' }
   if (tournament.status === 'cancelled') return { ok: false, reason: 'cancelled' }
   if (tournament.status === 'completed') return { ok: false, reason: 'completed' }
@@ -21,7 +24,7 @@ export function checkPlayWindow(tournament: Tournament): TournamentPlayability {
   return { ok: true }
 }
 
-export function checkRegistrationWindow(tournament: Tournament): TournamentPlayability {
+export function checkRegistrationWindow(tournament: RegistrationWindowTournament | null | undefined): TournamentPlayability {
   if (!tournament) return { ok: false, reason: 'not_found' }
   if (tournament.status === 'cancelled') return { ok: false, reason: 'cancelled' }
   if (tournament.status === 'completed') return { ok: false, reason: 'completed' }

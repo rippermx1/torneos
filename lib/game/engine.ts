@@ -1,4 +1,4 @@
-import type { DeterministicRNG } from './rng'
+import type { GameRandomSource } from './random-source'
 
 export type Board = number[][]
 export type Direction = 'up' | 'down' | 'left' | 'right'
@@ -27,7 +27,7 @@ export class Game2048 {
 
   // Ejecuta un movimiento y spawnea un tile si hubo cambio.
   // Retorna el resultado completo para persistir en game_moves.
-  applyMove(direction: Direction, rng: DeterministicRNG): MoveResult {
+  applyMove(direction: Direction, rng: GameRandomSource): MoveResult {
     const { moved, scoreGained } = this.slide(direction)
 
     let spawnedTile: SpawnedTile | null = null
@@ -46,7 +46,7 @@ export class Game2048 {
 
   // Spawnea un tile en una celda vacía aleatoria usando el RNG determinístico.
   // Retorna null si no hay celdas vacías (no debería ocurrir justo después de un move válido).
-  spawnTile(rng: DeterministicRNG): SpawnedTile | null {
+  spawnTile(rng: GameRandomSource): SpawnedTile | null {
     const empty = this.emptyCells()
     if (empty.length === 0) return null
 
@@ -195,7 +195,7 @@ function arraysEqual(a: number[], b: number[]): boolean {
 }
 
 // Inicializa un tablero nuevo con 2 tiles spawneados (estado inicial del 2048).
-export function initializeBoard(rng: DeterministicRNG): Board {
+export function initializeBoard(rng: GameRandomSource): Board {
   const game = new Game2048()
   // El primer spawn usa el RNG con moveNumber=0 (pre-game), el segundo con moveNumber=1
   // Pero como spawnTile consume 2 llamadas a rng.next() (posición + valor),

@@ -3,7 +3,7 @@ import { Game2048 } from '@/lib/game/engine'
 import { DeterministicRNG } from '@/lib/game/rng'
 import { checkPlayWindow } from '@/lib/tournament/helpers'
 import { analyzeMove } from '@/lib/anticheat/detector'
-import type { Tournament, Game, Direction } from '@/types/database'
+import type { Game, Direction } from '@/types/database'
 
 interface MoveRequest {
   gameId: string
@@ -46,29 +46,37 @@ export async function POST(
 
   const supabase = createAdminClient()
 
-  // Verificar ban síncrono — si el anticheat lo baneó en un movimiento previo,
-  // los siguientes movimientos son rechazados inmediatamente.
-  const { data: profileCheck } = await supabase
-    .from('profiles')
-    .select('is_banned')
-    .eq('id', userId)
-    .single()
+  const [
+    { data: profileCheck },
+    { data: gameData },
+    { data: tournament },
+  ] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('is_banned')
+      .eq('id', userId)
+      .single(),
+    supabase
+      .from('games')
+      .select('id, status, move_count, current_board, final_score, seed')
+      .eq('id', gameId)
+      .eq('tournament_id', tournamentId)
+      .eq('user_id', userId)
+      .single(),
+    supabase
+      .from('tournaments')
+      .select('id, status, play_window_start, play_window_end')
+      .eq('id', tournamentId)
+      .single(),
+  ])
+
   if (profileCheck?.is_banned) {
     return Response.json({ error: 'Tu cuenta ha sido suspendida.' }, { status: 403 })
   }
 
-  // Cargar juego verificando ownership
-  const { data: gameData } = await supabase
-    .from('games')
-    .select('*')
-    .eq('id', gameId)
-    .eq('tournament_id', tournamentId)
-    .eq('user_id', userId)
-    .single()
-
   if (!gameData) return Response.json({ error: 'Partida no encontrada' }, { status: 404 })
 
-  const game = gameData as Game
+  const game = gameData as Pick<Game, 'status' | 'move_count' | 'current_board' | 'final_score' | 'seed'>
   if (game.status !== 'active') {
     return Response.json({ error: 'La partida no está activa' }, { status: 400 })
   }
@@ -81,16 +89,9 @@ export async function POST(
     }, { status: 409 })
   }
 
-  // Verificar ventana de juego del torneo
-  const { data: tournament } = await supabase
-    .from('tournaments')
-    .select('*')
-    .eq('id', tournamentId)
-    .single()
-
   if (!tournament) return Response.json({ error: 'Torneo no encontrado' }, { status: 404 })
 
-  const playability = checkPlayWindow(tournament as Tournament)
+  const playability = checkPlayWindow(tournament)
   if (!playability.ok) {
     // Ventana cerrada: marcar partida como timeout
     await supabase

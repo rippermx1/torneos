@@ -2,7 +2,7 @@ import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { Game2048 } from '@/lib/game/engine'
 import { DeterministicRNG, generateGameSeed } from '@/lib/game/rng'
 import { checkPlayWindow } from '@/lib/tournament/helpers'
-import type { Tournament, Game } from '@/types/database'
+import type { Game } from '@/types/database'
 
 export async function POST(
   _req: Request,
@@ -16,53 +16,53 @@ export async function POST(
   const { id: tournamentId } = await params
   const supabase = createAdminClient()
 
-  // Verificar que el usuario no esté baneado
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('is_banned')
-    .eq('id', userId)
-    .single()
+  const [
+    { data: profile },
+    { data: tournament },
+    { data: registration },
+    { data: existingGameData },
+  ] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('is_banned')
+      .eq('id', userId)
+      .single(),
+    supabase
+      .from('tournaments')
+      .select('id, status, play_window_start, play_window_end')
+      .eq('id', tournamentId)
+      .single(),
+    supabase
+      .from('registrations')
+      .select('id')
+      .eq('tournament_id', tournamentId)
+      .eq('user_id', userId)
+      .single(),
+    supabase
+      .from('games')
+      .select('id, status, current_board, final_score, move_count, seed')
+      .eq('tournament_id', tournamentId)
+      .eq('user_id', userId)
+      .single(),
+  ])
 
   if (profile?.is_banned) {
     return Response.json({ error: 'Tu cuenta ha sido suspendida.' }, { status: 403 })
   }
 
-  // Obtener torneo
-  const { data: tournament } = await supabase
-    .from('tournaments')
-    .select('*')
-    .eq('id', tournamentId)
-    .single()
-
   if (!tournament) return Response.json({ error: 'Torneo no encontrado' }, { status: 404 })
 
-  const playability = checkPlayWindow(tournament as Tournament)
+  const playability = checkPlayWindow(tournament)
   if (!playability.ok) {
     return Response.json({ error: playability.reason }, { status: 400 })
   }
-
-  // Verificar inscripción
-  const { data: registration } = await supabase
-    .from('registrations')
-    .select('id')
-    .eq('tournament_id', tournamentId)
-    .eq('user_id', userId)
-    .single()
 
   if (!registration) {
     return Response.json({ error: 'No estás inscrito en este torneo' }, { status: 403 })
   }
 
-  // Verificar si ya existe una partida
-  const { data: existingGame } = await supabase
-    .from('games')
-    .select('*')
-    .eq('tournament_id', tournamentId)
-    .eq('user_id', userId)
-    .single()
-
-  if (existingGame) {
-    const game = existingGame as Game
+  if (existingGameData) {
+    const game = existingGameData as Pick<Game, 'id' | 'status' | 'current_board' | 'final_score' | 'move_count' | 'seed'>
     if (game.status === 'completed' || game.status === 'abandoned') {
       return Response.json({ error: 'Tu partida en este torneo ya finalizó' }, { status: 400 })
     }

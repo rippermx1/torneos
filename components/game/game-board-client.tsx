@@ -1,10 +1,13 @@
 'use client'
 
-import { useEffect, useCallback, useRef, useState } from 'react'
+import { memo, useEffect, useCallback, useRef, useState } from 'react'
 import { getTileVisual } from './tile-colors'
+import { applyLocalPracticeMove, createLocalPracticeGame } from '@/lib/game/local-practice'
+import { predictRemoteMove } from '@/lib/game/optimistic-remote'
 import type { Direction } from '@/types/game'
 
 export interface GameConfig {
+  mode?: 'local' | 'remote'
   startUrl: string
   moveUrl: string
   extraMovePayload?: Record<string, unknown>
@@ -45,6 +48,14 @@ interface TrackedMove {
 const CELL = 100 // 90px tile + 10px gap ≈ 100px
 
 const SWIPE_MIN = 30
+
+function boardsEqual(left: number[][], right: number[][]) {
+  return left.length === right.length &&
+    left.every((row, rowIndex) =>
+      row.length === right[rowIndex]?.length &&
+      row.every((value, colIndex) => value === right[rowIndex]?.[colIndex])
+    )
+}
 
 // ── Algoritmo de tracking ────────────────────────────────────
 // Simula el deslizamiento de una fila hacia la izquierda y devuelve,
@@ -142,6 +153,7 @@ function computeTileMovements(
 // ── Componente principal ─────────────────────────────────────
 
 export function GameBoardClient({ config }: { config: GameConfig }) {
+  const isLocalMode = config.mode === 'local'
   const [state, setState] = useState<GameState | null>(null)
   const [loading, setLoading] = useState(true)
   const [moving, setMoving] = useState(false)
@@ -155,6 +167,10 @@ export function GameBoardClient({ config }: { config: GameConfig }) {
   const prevBoardRef = useRef<number[][] | null>(null)
   const touchStart = useRef<{ x: number; y: number } | null>(null)
   const animVersionRef = useRef(0)
+  const animResetTimeoutRef = useRef<number | null>(null)
+  const scoreFloatTimeoutRef = useRef<number | null>(null)
+  const shakeTimeoutRef = useRef<number | null>(null)
+  const moveRequestIdRef = useRef(0)
 
   // Temporizador
   useEffect(() => {
@@ -193,31 +209,82 @@ export function GameBoardClient({ config }: { config: GameConfig }) {
       }
 
       setCellAnims(map)
-      setTimeout(() => setCellAnims(new Map()), 350)
+
+      if (animResetTimeoutRef.current !== null) {
+        window.clearTimeout(animResetTimeoutRef.current)
+      }
+
+      animResetTimeoutRef.current = window.setTimeout(() => {
+        setCellAnims(new Map())
+      }, 350)
     },
     [],
   )
 
   const applyNewBoard = useCallback(
-    (newBoard: number[][], newScore: number, prevScore: number, dir: Direction, extra: Partial<GameState>) => {
+    (
+      newBoard: number[][],
+      newScore: number,
+      prevScore: number,
+      dir: Direction,
+      extra: Partial<GameState>,
+      options?: { animate?: boolean; notifyGameOver?: boolean }
+    ) => {
+      const animate = options?.animate ?? true
+      const notifyGameOver = options?.notifyGameOver ?? true
       const delta = newScore - prevScore
       if (delta > 0) {
         setScoreFloat({ delta, key: Date.now() })
-        setTimeout(() => setScoreFloat(null), 900)
+        if (scoreFloatTimeoutRef.current !== null) {
+          window.clearTimeout(scoreFloatTimeoutRef.current)
+        }
+        scoreFloatTimeoutRef.current = window.setTimeout(() => setScoreFloat(null), 900)
       }
-      triggerAnims(prevBoardRef.current, newBoard, dir)
+      if (animate) {
+        triggerAnims(prevBoardRef.current, newBoard, dir)
+      } else {
+        setCellAnims(new Map())
+      }
       prevBoardRef.current = newBoard
       setState((prev) => {
         if (!prev) return prev
-        if (extra.gameOver) config.onGameOver?.(newScore)
+        if (extra.gameOver && notifyGameOver) config.onGameOver?.(newScore)
         return { ...prev, board: newBoard, score: newScore, bestScore: Math.max(prev.bestScore, newScore), ...extra }
       })
     },
     [triggerAnims, config],
   )
 
+  const rollbackState = useCallback((snapshot: GameState, override?: Partial<GameState>) => {
+    prevBoardRef.current = snapshot.board
+    setCellAnims(new Map())
+    setScoreFloat(null)
+    setState({
+      ...snapshot,
+      ...override,
+      bestScore: Math.max(snapshot.bestScore, override?.score ?? snapshot.score),
+    })
+  }, [])
+
   const loadGame = useCallback(async () => {
     try {
+      if (isLocalMode) {
+        const localGame = createLocalPracticeGame()
+
+        triggerAnims(null, localGame.board, null)
+        prevBoardRef.current = localGame.board
+        setState((prev) => ({
+          board: localGame.board,
+          score: localGame.score,
+          seed: localGame.seed,
+          moveNumber: localGame.moveNumber,
+          gameOver: false,
+          timedOut: false,
+          bestScore: prev?.bestScore ?? 0,
+        }))
+        return
+      }
+
       const res = await fetch(config.startUrl, { method: 'POST' })
       const data = await res.json()
       if (!res.ok) { setError(data.error ?? 'Error al iniciar partida'); return }
@@ -240,7 +307,7 @@ export function GameBoardClient({ config }: { config: GameConfig }) {
     } finally {
       setLoading(false)
     }
-  }, [config.startUrl, triggerAnims])
+  }, [config.startUrl, isLocalMode, triggerAnims])
 
   const startGame = useCallback(() => {
     setLoading(true)
@@ -252,44 +319,168 @@ export function GameBoardClient({ config }: { config: GameConfig }) {
 
   const sendMove = useCallback(async (direction: Direction) => {
     if (!state || state.gameOver || state.timedOut || moving || loading) return
+    const requestId = moveRequestIdRef.current + 1
+    moveRequestIdRef.current = requestId
+    const baselineState = state
     setMoving(true)
     try {
+      if (isLocalMode) {
+        const data = applyLocalPracticeMove(state, direction)
+
+        if (!data.moved) {
+          setShaking(true)
+          if (shakeTimeoutRef.current !== null) {
+            window.clearTimeout(shakeTimeoutRef.current)
+          }
+          shakeTimeoutRef.current = window.setTimeout(() => setShaking(false), 400)
+          return
+        }
+
+        applyNewBoard(data.board, Number(data.score), state.score, direction, {
+          moveNumber: data.moveNumber,
+          gameOver: data.gameOver ?? false,
+        })
+        return
+      }
+
       const payload: Record<string, unknown> = {
-        board: state.board,
-        score: state.score,
+        board: baselineState.board,
+        score: baselineState.score,
         direction,
-        moveNumber: state.moveNumber,
-        seed: state.seed,
+        moveNumber: baselineState.moveNumber,
+        seed: baselineState.seed,
         clientTimestamp: Date.now(),
         ...config.extraMovePayload,
-        ...(state.gameId ? { gameId: state.gameId } : {}),
+        ...(baselineState.gameId ? { gameId: baselineState.gameId } : {}),
       }
-      const res = await fetch(config.moveUrl, {
+      const responsePromise = fetch(config.moveUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       })
+
+      let predictedMove: Awaited<ReturnType<typeof predictRemoteMove>> | null = null
+      try {
+        predictedMove = await predictRemoteMove(baselineState, direction)
+      } catch {
+        predictedMove = null
+      }
+
+      if (moveRequestIdRef.current !== requestId) {
+        return
+      }
+
+      let optimisticApplied = false
+
+      if (predictedMove) {
+        if (!predictedMove.moved) {
+          setShaking(true)
+          if (shakeTimeoutRef.current !== null) {
+            window.clearTimeout(shakeTimeoutRef.current)
+          }
+          shakeTimeoutRef.current = window.setTimeout(() => setShaking(false), 400)
+        } else {
+          optimisticApplied = true
+          applyNewBoard(
+            predictedMove.board,
+            Number(predictedMove.score),
+            baselineState.score,
+            direction,
+            {
+              moveNumber: predictedMove.moveNumber,
+              gameOver: predictedMove.gameOver,
+            },
+            {
+              notifyGameOver: false,
+            }
+          )
+        }
+      }
+
+      const res = await responsePromise
       const data = await res.json()
 
+      if (moveRequestIdRef.current !== requestId) {
+        return
+      }
+
       if (!res.ok) {
+        if (optimisticApplied) {
+          rollbackState(baselineState)
+        }
         if (data.timeout) setState((p) => p ? { ...p, timedOut: true, gameOver: true } : p)
         return
       }
       if (!data.moved) {
+        if (optimisticApplied) {
+          rollbackState(baselineState)
+        }
         setShaking(true)
-        setTimeout(() => setShaking(false), 400)
+        if (shakeTimeoutRef.current !== null) {
+          window.clearTimeout(shakeTimeoutRef.current)
+        }
+        shakeTimeoutRef.current = window.setTimeout(() => setShaking(false), 400)
         return
       }
-      applyNewBoard(data.board, Number(data.score), state.score, direction, {
+
+      const serverScore = Number(data.score)
+      const serverBoard = data.board as number[][]
+      const serverGameOver = data.gameOver ?? false
+
+      if (
+        optimisticApplied &&
+        predictedMove &&
+        predictedMove.moveNumber === data.moveNumber &&
+        predictedMove.gameOver === serverGameOver &&
+        predictedMove.score === serverScore &&
+        boardsEqual(predictedMove.board, serverBoard)
+      ) {
+        setState((prev) => {
+          if (!prev) return prev
+          if (serverGameOver) config.onGameOver?.(serverScore)
+          return {
+            ...prev,
+            board: serverBoard,
+            score: serverScore,
+            moveNumber: data.moveNumber,
+            gameOver: serverGameOver,
+            bestScore: Math.max(prev.bestScore, serverScore),
+          }
+        })
+        prevBoardRef.current = serverBoard
+        return
+      }
+
+      if (optimisticApplied) {
+        applyNewBoard(
+          serverBoard,
+          serverScore,
+          baselineState.score,
+          direction,
+          {
+            moveNumber: data.moveNumber,
+            gameOver: serverGameOver,
+          },
+          {
+            animate: false,
+          }
+        )
+        return
+      }
+
+      applyNewBoard(serverBoard, serverScore, baselineState.score, direction, {
         moveNumber: data.moveNumber,
-        gameOver: data.gameOver ?? false,
+        gameOver: serverGameOver,
       })
     } catch {
+      rollbackState(baselineState)
       // fallo de red — no bloqueamos
     } finally {
-      setMoving(false)
+      if (moveRequestIdRef.current === requestId) {
+        setMoving(false)
+      }
     }
-  }, [state, moving, loading, config, applyNewBoard])
+  }, [state, moving, loading, isLocalMode, config, applyNewBoard, rollbackState])
 
   // Teclado
   useEffect(() => {
@@ -308,11 +499,11 @@ export function GameBoardClient({ config }: { config: GameConfig }) {
   }, [sendMove])
 
   // Táctil
-  const handleTouchStart = (e: React.TouchEvent) => {
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
     const t = e.touches[0]
     if (t) touchStart.current = { x: t.clientX, y: t.clientY }
-  }
-  const handleTouchEnd = (e: React.TouchEvent) => {
+  }, [])
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
     if (!touchStart.current) return
     const t = e.changedTouches[0]
     if (!t) return
@@ -324,7 +515,7 @@ export function GameBoardClient({ config }: { config: GameConfig }) {
       ? dx > 0 ? 'right' : 'left'
       : dy > 0 ? 'down' : 'up'
     sendMove(dir)
-  }
+  }, [sendMove])
 
   useEffect(() => {
     prevBoardRef.current = null
@@ -333,6 +524,20 @@ export function GameBoardClient({ config }: { config: GameConfig }) {
     }, 0)
     return () => window.clearTimeout(timeoutId)
   }, [loadGame])
+
+  useEffect(() => {
+    return () => {
+      if (animResetTimeoutRef.current !== null) {
+        window.clearTimeout(animResetTimeoutRef.current)
+      }
+      if (scoreFloatTimeoutRef.current !== null) {
+        window.clearTimeout(scoreFloatTimeoutRef.current)
+      }
+      if (shakeTimeoutRef.current !== null) {
+        window.clearTimeout(shakeTimeoutRef.current)
+      }
+    }
+  }, [])
 
   if (error) {
     return (
@@ -373,66 +578,18 @@ export function GameBoardClient({ config }: { config: GameConfig }) {
       </div>
 
       {/* Tablero */}
-      <div
-        className={`relative rounded-2xl p-2.5 touch-none ${shaking ? 'animate-board-shake' : ''}`}
-        style={{
-          background: 'linear-gradient(135deg,#c5b5a4,#bbada0)',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.1)',
-        }}
+      <GameBoardSurface
+        board={board}
+        cellAnims={cellAnims}
+        shaking={shaking}
+        gameOver={state?.gameOver ?? false}
+        timedOut={state?.timedOut ?? false}
+        score={state?.score ?? 0}
+        allowRestart={!config.playWindowEnd}
+        onRestart={startGame}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
-      >
-        {/* Celdas vacías de fondo */}
-        <div className="grid grid-cols-4 gap-2.5">
-          {Array.from({ length: 16 }).map((_, i) => (
-            <div
-              key={i}
-              className="w-[78px] h-[78px] sm:w-[90px] sm:h-[90px] rounded-xl"
-              style={{ background: 'rgba(205,193,180,0.35)' }}
-            />
-          ))}
-        </div>
-
-        {/* Tiles encima */}
-        <div className="absolute inset-2.5 grid grid-cols-4 gap-2.5">
-          {board.map((row, r) =>
-            row.map((value, c) => {
-              const anim = cellAnims.get(`${r}-${c}`)
-              return (
-                <TileCell
-                  key={`${r}-${c}`}
-                  value={value}
-                  anim={anim ?? null}
-                />
-              )
-            })
-          )}
-        </div>
-
-        {/* Overlay fin de partida */}
-        {state?.gameOver && (
-          <div
-            className="absolute inset-0 rounded-2xl flex flex-col items-center justify-center gap-3 animate-gameover-in"
-            style={{ background: 'rgba(187,173,160,0.88)', backdropFilter: 'blur(2px)' }}
-          >
-            <p className="text-3xl font-bold" style={{ color: '#776e65', textShadow: '0 1px 0 rgba(255,255,255,0.5)' }}>
-              {state.timedOut ? '⏱ ¡Tiempo!' : '🚫 Sin movimientos'}
-            </p>
-            <p className="text-xl font-semibold" style={{ color: '#776e65' }}>
-              {state.score.toLocaleString('es-CL')} pts
-            </p>
-            {!config.playWindowEnd && (
-              <button
-                onClick={startGame}
-                className="mt-1 px-7 py-2.5 rounded-xl font-semibold text-white transition-opacity hover:opacity-90"
-                style={{ background: 'linear-gradient(135deg,#a07860,#8f7a66)' }}
-              >
-                Jugar de nuevo
-              </button>
-            )}
-          </div>
-        )}
-      </div>
+      />
 
       <p className="text-xs text-muted-foreground text-center">
         Flechas · WASD · desliza en táctil
@@ -443,7 +600,108 @@ export function GameBoardClient({ config }: { config: GameConfig }) {
 
 // ── Tile individual ─────────────────────────────────────────
 
-function TileCell({ value, anim }: { value: number; anim: CellAnim | null }) {
+const GameBoardSurface = memo(function GameBoardSurface({
+  board,
+  cellAnims,
+  shaking,
+  gameOver,
+  timedOut,
+  score,
+  allowRestart,
+  onRestart,
+  onTouchStart,
+  onTouchEnd,
+}: {
+  board: number[][]
+  cellAnims: Map<string, CellAnim>
+  shaking: boolean
+  gameOver: boolean
+  timedOut: boolean
+  score: number
+  allowRestart: boolean
+  onRestart: () => void
+  onTouchStart: (e: React.TouchEvent) => void
+  onTouchEnd: (e: React.TouchEvent) => void
+}) {
+  return (
+    <div
+      className={`relative rounded-2xl p-2.5 touch-none ${shaking ? 'animate-board-shake' : ''}`}
+      style={{
+        background: 'linear-gradient(135deg,#c5b5a4,#bbada0)',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.1)',
+      }}
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+    >
+      <BoardBackground />
+      <TilesLayer board={board} cellAnims={cellAnims} />
+
+      {gameOver && (
+        <div
+          className="absolute inset-0 rounded-2xl flex flex-col items-center justify-center gap-3 animate-gameover-in"
+          style={{ background: 'rgba(187,173,160,0.88)', backdropFilter: 'blur(2px)' }}
+        >
+          <p className="text-3xl font-bold" style={{ color: '#776e65', textShadow: '0 1px 0 rgba(255,255,255,0.5)' }}>
+            {timedOut ? '⏱ ¡Tiempo!' : '🚫 Sin movimientos'}
+          </p>
+          <p className="text-xl font-semibold" style={{ color: '#776e65' }}>
+            {score.toLocaleString('es-CL')} pts
+          </p>
+          {allowRestart && (
+            <button
+              onClick={onRestart}
+              className="mt-1 px-7 py-2.5 rounded-xl font-semibold text-white transition-opacity hover:opacity-90"
+              style={{ background: 'linear-gradient(135deg,#a07860,#8f7a66)' }}
+            >
+              Jugar de nuevo
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  )
+})
+
+const BoardBackground = memo(function BoardBackground() {
+  return (
+    <div className="grid grid-cols-4 gap-2.5">
+      {Array.from({ length: 16 }).map((_, i) => (
+        <div
+          key={i}
+          className="w-[78px] h-[78px] sm:w-[90px] sm:h-[90px] rounded-xl"
+          style={{ background: 'rgba(205,193,180,0.35)' }}
+        />
+      ))}
+    </div>
+  )
+})
+
+const TilesLayer = memo(function TilesLayer({
+  board,
+  cellAnims,
+}: {
+  board: number[][]
+  cellAnims: Map<string, CellAnim>
+}) {
+  return (
+    <div className="absolute inset-2.5 grid grid-cols-4 gap-2.5">
+      {board.map((row, r) =>
+        row.map((value, c) => {
+          const anim = cellAnims.get(`${r}-${c}`)
+          return (
+            <TileCell
+              key={`${r}-${c}`}
+              value={value}
+              anim={anim ?? null}
+            />
+          )
+        })
+      )}
+    </div>
+  )
+})
+
+const TileCell = memo(function TileCell({ value, anim }: { value: number; anim: CellAnim | null }) {
   const v = getTileVisual(value)
   if (value === 0) return <div className="w-[78px] h-[78px] sm:w-[90px] sm:h-[90px] rounded-xl" />
 
@@ -488,7 +746,7 @@ function TileCell({ value, anim }: { value: number; anim: CellAnim | null }) {
       {value}
     </div>
   )
-}
+})
 
 // ── Score box ───────────────────────────────────────────────
 

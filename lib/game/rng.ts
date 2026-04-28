@@ -1,4 +1,5 @@
 import { createHash } from 'crypto'
+import type { GameRandomSource } from './random-source'
 
 // Genera un seed único por (torneo, usuario). Determinístico: mismo input → mismo seed.
 export function generateGameSeed(tournamentId: string, userId: string): string {
@@ -9,7 +10,7 @@ export function generateGameSeed(tournamentId: string, userId: string): string {
 
 // RNG determinístico basado en seed + número de movimiento.
 // Garantiza reproducibilidad total: dado (seed, moveNumber) siempre produce el mismo valor.
-export class DeterministicRNG {
+export class DeterministicRNG implements GameRandomSource {
   private state: number
 
   constructor(seed: string, moveNumber: number) {

@@ -6,6 +6,7 @@ export function GameBoard() {
   return (
     <GameBoardClient
       config={{
+        mode: 'local',
         startUrl: '/api/game/practice/start',
         moveUrl: '/api/game/practice/move',
       }}

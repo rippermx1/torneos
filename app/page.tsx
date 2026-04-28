@@ -39,14 +39,14 @@ export default async function HomePage() {
         <section className="bg-foreground text-background py-20 px-4">
           <div className="max-w-3xl mx-auto text-center space-y-6">
             <p className="text-sm font-medium tracking-widest uppercase opacity-60">
-              Torneos competitivos · Chile
+              Competencia de habilidad · Chile
             </p>
             <h1 className="text-5xl sm:text-6xl font-bold tracking-tight leading-tight">
-              Juega 2048.<br />Gana premios reales.
+              Demuestra tu habilidad.<br />Ve por el primer lugar.
             </h1>
             <p className="text-lg opacity-70 max-w-lg mx-auto">
-              Compite contra otros jugadores en torneos con inscripción y premios
-              en pesos chilenos. Velocidad, estrategia, concentración.
+              Cada movimiento cuenta. Entra a torneos de 2048, supera a otros
+              jugadores y sube al puesto que importa: el primero.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
               <Link

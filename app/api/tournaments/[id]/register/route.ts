@@ -1,7 +1,6 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { checkRegistrationWindow } from '@/lib/tournament/helpers'
 import { getBalance } from '@/lib/wallet/transactions'
-import type { Tournament } from '@/types/database'
 
 export async function POST(
   _req: Request,
@@ -15,12 +14,18 @@ export async function POST(
   const { id: tournamentId } = await params
   const supabase = createAdminClient()
 
-  // Verificar ban, términos, KYC y edad en una sola consulta
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('is_banned, kyc_status, birth_date, terms_accepted_at')
-    .eq('id', userId)
-    .single()
+  const [{ data: profile }, { data: tournament }] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('is_banned, kyc_status, birth_date, terms_accepted_at')
+      .eq('id', userId)
+      .single(),
+    supabase
+      .from('tournaments')
+      .select('id, entry_fee_cents, max_players, registration_opens_at, play_window_start, play_window_end, status')
+      .eq('id', tournamentId)
+      .single(),
+  ])
 
   if (profile?.is_banned) {
     return Response.json({ error: 'Tu cuenta ha sido suspendida.' }, { status: 403 })
@@ -47,30 +52,11 @@ export async function POST(
     }
   }
 
-  // Obtener torneo
-  const { data: tData } = await supabase
-    .from('tournaments')
-    .select('*')
-    .eq('id', tournamentId)
-    .single()
-
-  if (!tData) return Response.json({ error: 'Torneo no encontrado' }, { status: 404 })
-
-  const tournament = tData as Tournament
+  if (!tournament) return Response.json({ error: 'Torneo no encontrado' }, { status: 404 })
 
   const playability = checkRegistrationWindow(tournament)
   if (!playability.ok) {
     return Response.json({ error: playability.reason }, { status: 400 })
-  }
-
-  // Verificar cupo
-  const { count } = await supabase
-    .from('registrations')
-    .select('*', { count: 'exact', head: true })
-    .eq('tournament_id', tournamentId)
-
-  if (count !== null && count >= tournament.max_players) {
-    return Response.json({ error: 'El torneo está lleno' }, { status: 400 })
   }
 
   // Para torneos de pago, exigir KYC aprobado y birth_date declarada
@@ -101,8 +87,7 @@ export async function POST(
 
   // Inscripción atómica: débito de cuota + inserción de registro en una sola transacción Postgres.
   // La función register_for_tournament revierte el débito si la inserción falla.
-  const adminSupabase = createAdminClient()
-  const { error: rpcError } = await adminSupabase.rpc('register_for_tournament', {
+  const { error: rpcError } = await supabase.rpc('register_for_tournament', {
     p_user_id: userId,
     p_tournament_id: tournamentId,
     p_entry_fee_cents: tournament.entry_fee_cents,

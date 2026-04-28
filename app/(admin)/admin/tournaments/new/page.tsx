@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/server'
 import { requireAdmin } from '@/lib/supabase/auth'
+import { formatDateTimeLocalInput, parseDateTimeLocalToIso } from '@/lib/utils'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import type { TournamentType } from '@/types/database'
@@ -91,9 +92,9 @@ async function createTournament(formData: FormData) {
   const prize3           = Math.round(parseFloat((formData.get('prize_3rd') as string) || '0') * 100)
   const minPlayers       = parseInt(formData.get('min_players') as string)
   const maxPlayers       = parseInt(formData.get('max_players') as string)
-  const registrationOpens = new Date(formData.get('registration_opens_at') as string).toISOString()
-  const playStart        = new Date(formData.get('play_window_start') as string).toISOString()
-  const playEnd          = new Date(formData.get('play_window_end') as string).toISOString()
+  const registrationOpens = parseDateTimeLocalToIso(formData.get('registration_opens_at') as string)
+  const playStart        = parseDateTimeLocalToIso(formData.get('play_window_start') as string)
+  const playEnd          = parseDateTimeLocalToIso(formData.get('play_window_end') as string)
   const maxDuration      = parseInt(formData.get('max_game_duration_minutes') as string) * 60
 
   if (!name || prize1 <= 0 || minPlayers < 2 || maxPlayers < minPlayers) {
@@ -169,7 +170,6 @@ export default function NewTournamentPage() {
   const end = new Date(start)
   end.setHours(end.getHours() + 24)
 
-  const toLocalInput = (d: Date) => d.toISOString().slice(0, 16)
   const defaults = MODALIDAD_DEFAULTS.standard
 
   return (
@@ -225,12 +225,15 @@ export default function NewTournamentPage() {
 
         <fieldset className="border rounded-xl p-4 space-y-4">
           <legend className="text-sm font-medium px-1">Fechas y tiempos</legend>
-          <Field label="Inscripciones abren" name="registration_opens_at" type="datetime-local" required defaultValue={toLocalInput(start)} />
+          <Field label="Inscripciones abren" name="registration_opens_at" type="datetime-local" required defaultValue={formatDateTimeLocalInput(start)} />
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Inicio de partidas" name="play_window_start" type="datetime-local" required defaultValue={toLocalInput(start)} />
-            <Field label="Cierre de partidas" name="play_window_end" type="datetime-local" required defaultValue={toLocalInput(end)} />
+            <Field label="Inicio de partidas" name="play_window_start" type="datetime-local" required defaultValue={formatDateTimeLocalInput(start)} />
+            <Field label="Cierre de partidas" name="play_window_end" type="datetime-local" required defaultValue={formatDateTimeLocalInput(end)} />
           </div>
           <Field label="Duración máxima de partida (min)" name="max_game_duration_minutes" type="number" required defaultValue={String(defaults.duration_minutes)} />
+          <p className="text-xs text-muted-foreground">
+            Los horarios se interpretan en hora de Chile (`America/Santiago`) también en producción.
+          </p>
         </fieldset>
 
         <div className="border rounded-xl p-4 bg-amber-50 text-sm space-y-1">

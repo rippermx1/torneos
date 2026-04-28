@@ -16,6 +16,17 @@ export async function POST(
   const { id: tournamentId } = await params
   const supabase = createAdminClient()
 
+  // Verificar que el usuario no esté baneado
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('is_banned')
+    .eq('id', userId)
+    .single()
+
+  if (profile?.is_banned) {
+    return Response.json({ error: 'Tu cuenta ha sido suspendida.' }, { status: 403 })
+  }
+
   // Obtener torneo
   const { data: tournament } = await supabase
     .from('tournaments')

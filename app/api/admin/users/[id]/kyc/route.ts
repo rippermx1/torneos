@@ -26,14 +26,42 @@ export async function POST(
     return Response.json({ error: 'Acción inválida' }, { status: 400 })
   }
 
-  // Verificar que el usuario objetivo existe
+  // Verificar que el usuario objetivo existe y tiene los datos requeridos para KYC
   const { data: profile } = await supabase
     .from('profiles')
-    .select('id, kyc_status')
+    .select('id, kyc_status, birth_date, rut, full_name')
     .eq('id', targetUserId)
     .single()
 
   if (!profile) return Response.json({ error: 'Usuario no encontrado' }, { status: 404 })
+
+  // Para aprobar KYC es obligatorio tener birth_date, RUT y nombre completo.
+  // Sin estos datos no se puede verificar mayoría de edad ni identidad.
+  if (body.action === 'approve') {
+    const missingFields: string[] = []
+    if (!profile.birth_date) missingFields.push('fecha de nacimiento')
+    if (!profile.rut)        missingFields.push('RUT')
+    if (!profile.full_name)  missingFields.push('nombre completo')
+    if (missingFields.length > 0) {
+      return Response.json(
+        { error: `No se puede aprobar KYC: faltan campos obligatorios: ${missingFields.join(', ')}.` },
+        { status: 422 }
+      )
+    }
+
+    // Verificar mayoría de edad (18+) en el momento de la aprobación
+    const birthDate = new Date(profile.birth_date!)
+    const now = new Date()
+    let age = now.getFullYear() - birthDate.getFullYear()
+    const m = now.getMonth() - birthDate.getMonth()
+    if (m < 0 || (m === 0 && now.getDate() < birthDate.getDate())) age--
+    if (age < 18) {
+      return Response.json(
+        { error: `No se puede aprobar KYC: el usuario tiene ${age} años (mínimo 18).` },
+        { status: 422 }
+      )
+    }
+  }
 
   const newStatus: Profile['kyc_status'] = body.action === 'approve' ? 'approved' : 'rejected'
 

@@ -1,0 +1,97 @@
+{
+  "generatedAt": "2026-04-28T14:07:10.228Z",
+  "baseUrl": "http://localhost:3001",
+  "scenarios": [
+    {
+      "scenario": "Standard pago al maximo",
+      "slug": "standard-max-paid",
+      "requestedPlayers": 8,
+      "registration": {
+        "successful": 8,
+        "failed": 0,
+        "failures": [],
+        "overflowAttempt": {
+          "email": "sim.overflow.001@mailinator.com",
+          "userId": "c22bf817-4cd3-4053-ae7d-134a54104a54",
+          "status": 400,
+          "ok": false,
+          "error": "El torneo está lleno"
+        }
+      },
+      "gameplay": {
+        "startsOk": 8,
+        "startsFailed": 0,
+        "startFailures": [],
+        "played": 8,
+        "errors": 0,
+        "sampleErrors": [],
+        "averageSuccessfulMoves": 32
+      },
+      "summary": {
+        "tournamentId": "bfeef983-af04-4817-9d16-c644c7b2df82",
+        "tournamentName": "Standard pago al maximo 1777384971213",
+        "finalStatus": "completed",
+        "registrations": 8,
+        "games": 8,
+        "leaderboardRows": 8,
+        "timeoutGames": 8,
+        "ticketDebits": 8,
+        "prizeCredits": 3,
+        "refundCount": 0,
+        "averageScore": 237,
+        "topScore": 500,
+        "gameStatuses": {
+          "completed": 8
+        },
+        "anomalies": []
+      },
+      "errors": []
+    },
+    {
+      "scenario": "Freeroll al maximo",
+      "slug": "freeroll-max",
+      "requestedPlayers": 12,
+      "registration": {
+        "successful": 12,
+        "failed": 0,
+        "failures": [],
+        "overflowAttempt": {
+          "email": "sim.overflow.001@mailinator.com",
+          "userId": "c22bf817-4cd3-4053-ae7d-134a54104a54",
+          "status": 400,
+          "ok": false,
+          "error": "El torneo está lleno"
+        }
+      },
+      "gameplay": {
+        "startsOk": 12,
+        "startsFailed": 0,
+        "startFailures": [],
+        "played": 12,
+        "errors": 0,
+        "sampleErrors": [],
+        "averageSuccessfulMoves": 23
+      },
+      "summary": {
+        "tournamentId": "3f329ae1-2664-4fad-b47b-283a880e4086",
+        "tournamentName": "Freeroll al maximo 1777385111259",
+        "finalStatus": "completed",
+        "registrations": 12,
+        "games": 12,
+        "leaderboardRows": 12,
+        "timeoutGames": 12,
+        "ticketDebits": 0,
+        "prizeCredits": 3,
+        "refundCount": 0,
+        "averageScore": 138,
+        "topScore": 336,
+        "gameStatuses": {
+          "completed": 12
+        },
+        "anomalies": []
+      },
+      "errors": []
+    }
+  ],
+  "anomalies": []
+}

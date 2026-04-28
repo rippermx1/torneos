@@ -15,6 +15,38 @@ export async function POST(
   const { id: tournamentId } = await params
   const supabase = createAdminClient()
 
+  // Verificar ban, términos, KYC y edad en una sola consulta
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('is_banned, kyc_status, birth_date, terms_accepted_at')
+    .eq('id', userId)
+    .single()
+
+  if (profile?.is_banned) {
+    return Response.json({ error: 'Tu cuenta ha sido suspendida.' }, { status: 403 })
+  }
+
+  // Términos y condiciones deben estar aceptados para cualquier torneo
+  if (!profile?.terms_accepted_at) {
+    return Response.json(
+      { error: 'Debes aceptar los Términos y Condiciones antes de participar en torneos.', termsRequired: true },
+      { status: 403 }
+    )
+  }
+
+  // Obtener torneo primero para saber si es de pago (KYC solo requerido en torneos de pago)
+  // — se obtiene más abajo; aquí pre-chequeamos edad si hay birth_date
+  if (profile?.birth_date) {
+    const birthDate = new Date(profile.birth_date)
+    const now = new Date()
+    let age = now.getFullYear() - birthDate.getFullYear()
+    const monthDiff = now.getMonth() - birthDate.getMonth()
+    if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < birthDate.getDate())) age--
+    if (age < 18) {
+      return Response.json({ error: 'Debes ser mayor de 18 años para participar.' }, { status: 403 })
+    }
+  }
+
   // Obtener torneo
   const { data: tData } = await supabase
     .from('tournaments')
@@ -39,6 +71,16 @@ export async function POST(
 
   if (count !== null && count >= tournament.max_players) {
     return Response.json({ error: 'El torneo está lleno' }, { status: 400 })
+  }
+
+  // Para torneos de pago, exigir KYC aprobado y birth_date declarada
+  if (tournament.entry_fee_cents > 0) {
+    if (!profile?.birth_date) {
+      return Response.json({ error: 'Debes completar tu perfil (fecha de nacimiento) para participar en torneos de pago.' }, { status: 403 })
+    }
+    if (profile?.kyc_status !== 'approved') {
+      return Response.json({ error: 'Debes completar la verificación de identidad (KYC) para participar en torneos de pago.', kycRequired: true }, { status: 403 })
+    }
   }
 
   // Si hay cuota de inscripción, verificar saldo suficiente antes de intentar el débito
@@ -69,6 +111,9 @@ export async function POST(
   if (rpcError) {
     if (rpcError.message.includes('unique') || rpcError.code === '23505') {
       return Response.json({ error: 'Ya estás inscrito en este torneo' }, { status: 409 })
+    }
+    if (rpcError.message.includes('Torneo lleno')) {
+      return Response.json({ error: 'El torneo está lleno' }, { status: 400 })
     }
     if (rpcError.message.includes('Saldo insuficiente')) {
       return Response.json({ error: 'Saldo insuficiente', insufficientFunds: true }, { status: 402 })

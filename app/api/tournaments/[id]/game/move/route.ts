@@ -2,6 +2,7 @@ import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { Game2048 } from '@/lib/game/engine'
 import { DeterministicRNG } from '@/lib/game/rng'
 import { checkPlayWindow } from '@/lib/tournament/helpers'
+import { analyzeMove } from '@/lib/anticheat/detector'
 import type { Tournament, Game, Direction } from '@/types/database'
 
 interface MoveRequest {
@@ -44,6 +45,17 @@ export async function POST(
   }
 
   const supabase = createAdminClient()
+
+  // Verificar ban síncrono — si el anticheat lo baneó en un movimiento previo,
+  // los siguientes movimientos son rechazados inmediatamente.
+  const { data: profileCheck } = await supabase
+    .from('profiles')
+    .select('is_banned')
+    .eq('id', userId)
+    .single()
+  if (profileCheck?.is_banned) {
+    return Response.json({ error: 'Tu cuenta ha sido suspendida.' }, { status: 403 })
+  }
 
   // Cargar juego verificando ownership
   const { data: gameData } = await supabase
@@ -145,6 +157,23 @@ export async function POST(
   if (updateErr) {
     return Response.json({ error: `Error actualizando partida: ${updateErr.message}` }, { status: 500 })
   }
+
+  // Análisis anticheat (asíncrono, no bloquea la respuesta al cliente).
+  // El ban se aplica en la DB — el siguiente movimiento del usuario recibirá 403.
+  analyzeMove({
+    gameId,
+    userId,
+    moveNumber,
+    clientTimestamp,
+    moveCount: newMoveCount,
+    currentScore: engine.score,
+  }).then((ac) => {
+    if (ac.autoBanned) {
+      console.warn(`[anticheat] Usuario ${userId} baneado automáticamente. Razón: ${ac.reason}`)
+    }
+  }).catch((err) => {
+    console.error('[anticheat] Error en análisis:', err)
+  })
 
   return Response.json({
     moved: true,

@@ -1,6 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/server'
 import { formatDateTimeCL } from '@/lib/utils'
 import { KycActions } from './kyc-actions'
+import { BanActions } from './ban-actions'
 import type { Profile } from '@/types/database'
 
 export const revalidate = 0
@@ -31,6 +32,7 @@ export default async function AdminUsersPage() {
   const pending  = profiles.filter((p) => p.kyc_status === 'pending')
   const approved = profiles.filter((p) => p.kyc_status === 'approved')
   const rejected = profiles.filter((p) => p.kyc_status === 'rejected')
+  const banned   = profiles.filter((p) => p.is_banned)
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -43,10 +45,25 @@ export default async function AdminUsersPage() {
           <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
             {approved.length} aprobados
           </span>
+          {banned.length > 0 && (
+            <span className="bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-medium">
+              {banned.length} baneados
+            </span>
+          )}
         </div>
       </div>
 
-      {/* Pendientes primero */}
+      {/* Baneados primero si hay */}
+      {banned.length > 0 && (
+        <section className="space-y-2">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-red-600">
+            Cuentas baneadas ({banned.length})
+          </h2>
+          <UserTable profiles={banned} showActions />
+        </section>
+      )}
+
+      {/* Pendientes */}
       {pending.length > 0 && (
         <section className="space-y-2">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
@@ -82,27 +99,35 @@ export default async function AdminUsersPage() {
 function UserTable({ profiles, showActions = false }: { profiles: Profile[]; showActions?: boolean }) {
   return (
     <div className="border rounded-xl divide-y overflow-hidden">
-      <div className="grid grid-cols-[1fr_1fr_auto_auto_auto] gap-3 px-4 py-2 text-xs text-muted-foreground uppercase tracking-wide bg-muted/40">
+      <div className="grid grid-cols-[1fr_1fr_auto_auto_auto_auto] gap-3 px-4 py-2 text-xs text-muted-foreground uppercase tracking-wide bg-muted/40">
         <span>Usuario</span>
         <span>Datos KYC</span>
-        <span className="text-center">Estado</span>
+        <span className="text-center">KYC</span>
         <span className="text-right">Registro</span>
-        {showActions && <span />}
+        {showActions && <span className="text-center">KYC</span>}
+        <span className="text-center">Acceso</span>
       </div>
       {profiles.map((p) => (
         <div
           key={p.id}
-          className="grid grid-cols-[1fr_1fr_auto_auto_auto] gap-3 px-4 py-3 items-start text-sm"
+          className={`grid grid-cols-[1fr_1fr_auto_auto_auto_auto] gap-3 px-4 py-3 items-start text-sm ${p.is_banned ? 'bg-red-50/40' : ''}`}
         >
           {/* Usuario */}
           <div className="space-y-0.5 min-w-0">
             <p className="font-medium truncate">{p.username}</p>
             <p className="text-xs text-muted-foreground truncate">{p.full_name ?? '—'}</p>
-            {p.is_admin && (
-              <span className="inline-block text-xs bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded">
-                Admin
-              </span>
-            )}
+            <div className="flex gap-1 flex-wrap">
+              {p.is_admin && (
+                <span className="inline-block text-xs bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded">
+                  Admin
+                </span>
+              )}
+              {p.is_banned && (
+                <span className="inline-block text-xs bg-red-100 text-red-700 px-1.5 py-0.5 rounded font-semibold">
+                  BANEADO
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Datos KYC */}
@@ -113,7 +138,7 @@ function UserTable({ profiles, showActions = false }: { profiles: Profile[]; sho
             {p.birth_date && <p>Nac: <span className="text-foreground">{p.birth_date}</span></p>}
           </div>
 
-          {/* Badge estado */}
+          {/* Badge estado KYC */}
           <span className={`text-xs px-2 py-0.5 rounded-full font-medium whitespace-nowrap self-start ${KYC_BADGE[p.kyc_status]}`}>
             {KYC_LABEL[p.kyc_status]}
           </span>
@@ -123,12 +148,15 @@ function UserTable({ profiles, showActions = false }: { profiles: Profile[]; sho
             {formatDateTimeCL(p.created_at)}
           </span>
 
-          {/* Acciones */}
+          {/* Acciones KYC */}
           {showActions ? (
             <KycActions userId={p.id} currentStatus={p.kyc_status} />
           ) : (
             <div />
           )}
+
+          {/* Ban/Unban */}
+          <BanActions userId={p.id} isBanned={p.is_banned} isAdmin={p.is_admin} />
         </div>
       ))}
     </div>

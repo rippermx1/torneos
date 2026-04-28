@@ -6,6 +6,12 @@ import type { TournamentType } from '@/types/database'
 
 // ── Plantillas por modalidad ──────────────────────────────────
 // Estas se aplican como defaults en el cliente via data-attributes
+// Regla: min_players × entry_fee DEBE superar el total de premios por al menos un 20%
+// para cubrir costos operativos y garantizar rentabilidad.
+// Breakeven + margen mínimo 20%:
+//   Standard: $27.000 × 1.20 / $3.000 = 10,8 → min 11 jugadores
+//   Express:  $11.000 × 1.20 / $1.000 = 13,2 → min 14 jugadores
+//   Elite:    $95.000 × 1.20 / $10.000 = 11,4 → min 12 jugadores
 const MODALIDAD_DEFAULTS = {
   standard: {
     label: 'Estándar',
@@ -14,7 +20,7 @@ const MODALIDAD_DEFAULTS = {
     prize_1st: 15000,
     prize_2nd: 8000,
     prize_3rd: 4000,
-    min_players: 8,
+    min_players: 11,
     max_players: 100,
     duration_minutes: 10,
     window_hours: 24,
@@ -28,7 +34,7 @@ const MODALIDAD_DEFAULTS = {
     prize_1st: 8000,
     prize_2nd: 3000,
     prize_3rd: 0,
-    min_players: 4,
+    min_players: 14,
     max_players: 50,
     duration_minutes: 8,
     window_hours: 2,
@@ -42,7 +48,7 @@ const MODALIDAD_DEFAULTS = {
     prize_1st: 60000,
     prize_2nd: 25000,
     prize_3rd: 10000,
-    min_players: 4,
+    min_players: 12,
     max_players: 20,
     duration_minutes: 15,
     window_hours: 48,
@@ -92,6 +98,39 @@ async function createTournament(formData: FormData) {
 
   if (!name || prize1 <= 0 || minPlayers < 2 || maxPlayers < minPlayers) {
     throw new Error('Datos del torneo inválidos')
+  }
+
+  // Orden de premios: 1° >= 2° >= 3°
+  if (prize2 > prize1 || prize3 > prize2) {
+    throw new Error('Los premios deben estar en orden descendente: 1° ≥ 2° ≥ 3°')
+  }
+
+  // Guardia de rentabilidad: los ingresos mínimos deben cubrir los premios + 20% de margen
+  const totalPrizes = prize1 + prize2 + prize3
+  const minRevenue = entryFee * minPlayers
+  if (entryFee > 0 && minRevenue < totalPrizes * 1.2) {
+    const requiredMin = Math.ceil((totalPrizes * 1.2) / entryFee)
+    throw new Error(
+      `Configuración no rentable: con ${minPlayers} jugadores mínimos la recaudación ` +
+      `($${(minRevenue / 100).toLocaleString('es-CL')} CLP) no cubre premios ` +
+      `($${(totalPrizes / 100).toLocaleString('es-CL')} CLP) + 20% de margen operativo. ` +
+      `Ajusta el mínimo a ${requiredMin} jugadores o reduce los premios.`
+    )
+  }
+
+  // Freerolls: máximo 1 por semana activo (scheduled/open/live)
+  if (tournamentType === 'freeroll') {
+    const supabaseCheck = createAdminClient()
+    const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+    const { count } = await supabaseCheck
+      .from('tournaments')
+      .select('*', { count: 'exact', head: true })
+      .eq('tournament_type', 'freeroll')
+      .in('status', ['scheduled', 'open', 'live'])
+      .gte('created_at', oneWeekAgo)
+    if ((count ?? 0) >= 1) {
+      throw new Error('Ya existe un freeroll activo en los últimos 7 días. Solo se permite uno por semana.')
+    }
   }
 
   const supabase = createAdminClient()

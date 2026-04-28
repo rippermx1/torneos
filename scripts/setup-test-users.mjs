@@ -112,10 +112,12 @@ async function ensureProfile(user, fixture) {
     id: user.id,
     username: fixture.username,
     full_name: fixture.fullName,
+    birth_date: '1994-01-01',
     is_admin: fixture.isAdmin,
     is_banned: false,
     kyc_status: 'approved',
     kyc_verified_at: new Date().toISOString(),
+    terms_accepted_at: new Date().toISOString(),
   })
 
   if (error) throw error
@@ -136,21 +138,22 @@ async function ensureBalance(userId, balanceTarget) {
     return currentBalance
   }
 
-  const { data: transaction, error: rpcError } = await supabase.rpc(
-    'wallet_insert_transaction',
-    {
-      p_user_id: userId,
-      p_type: 'adjustment',
-      p_amount_cents: balanceTarget - currentBalance,
-      p_reference_type: 'fixture_topup',
-      p_reference_id: null,
-      p_metadata: { source: 'setup-test-users' },
-    }
-  )
+  const nextBalance = balanceTarget
+  const { error: insertError } = await supabase
+    .from('wallet_transactions')
+    .insert({
+      user_id: userId,
+      type: 'adjustment',
+      amount_cents: nextBalance - currentBalance,
+      balance_after_cents: nextBalance,
+      reference_type: 'fixture_topup',
+      reference_id: null,
+      metadata: { source: 'setup-test-users' },
+    })
 
-  if (rpcError) throw rpcError
+  if (insertError) throw insertError
 
-  return transaction.balance_after_cents
+  return nextBalance
 }
 
 async function main() {

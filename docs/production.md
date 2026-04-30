@@ -17,6 +17,9 @@ Variables solo de runtime del servidor:
 - `SUPABASE_SECRET_KEY`
 - `MERCADOPAGO_ACCESS_TOKEN`
 - `MERCADOPAGO_WEBHOOK_SECRET`
+- `FLOW_API_KEY`
+- `FLOW_API_SECRET`
+- `FLOW_API_BASE`
 - `CRON_SECRET`
 
 Compatibilidad heredada:
@@ -41,6 +44,53 @@ Ese chequeo falla si detecta:
 - token `TEST-` de Mercado Pago
 - `CRON_SECRET` faltante o demasiado corto
 
+## Flow
+
+En sandbox:
+
+```bash
+FLOW_API_BASE=https://sandbox.flow.cl/api
+```
+
+El endpoint de confirmacion que debe recibir Flow es:
+
+```text
+https://www.torneosplay.cl/api/webhooks/flow
+```
+
+`createFlowPayment` envia por pago:
+
+- `urlConfirmation`: `${APP_URL}/api/webhooks/flow`
+- `urlReturn`: `${APP_URL}/wallet?deposit=flow_return`
+
+Antes de promover a produccion real, cambia:
+
+```bash
+FLOW_API_BASE=https://www.flow.cl/api
+```
+
+y rota `FLOW_API_KEY`/`FLOW_API_SECRET` a credenciales productivas.
+
+## Cron Flow
+
+El repo define en [`vercel.json`](/C:/torneos/vercel.json:1) la reconciliacion
+de pagos Flow cada 10 minutos:
+
+```json
+{
+  "crons": [
+    {
+      "path": "/api/cron/flow-reconcile",
+      "schedule": "*/10 * * * *"
+    }
+  ]
+}
+```
+
+Ese intervalo requiere Vercel Pro o superior. En Hobby, cambia la expresion a
+una frecuencia permitida por el plan, por ejemplo `0 * * * *` o diario segun el
+limite vigente.
+
 ## Docker
 
 Con `output: "standalone"`, la imagen debe construirse con las variables publicas correctas:
@@ -60,13 +110,17 @@ docker run --rm -p 3000:3000 ^
   -e SUPABASE_SECRET_KEY=sb_secret_REEMPLAZAR ^
   -e MERCADOPAGO_ACCESS_TOKEN=APP_USR_REEMPLAZAR ^
   -e MERCADOPAGO_WEBHOOK_SECRET=REEMPLAZAR ^
+  -e FLOW_API_KEY=REEMPLAZAR ^
+  -e FLOW_API_SECRET=REEMPLAZAR ^
+  -e FLOW_API_BASE=https://sandbox.flow.cl/api ^
   -e CRON_SECRET=REEMPLAZAR_CON_64_HEX ^
   torneos:prod
 ```
 
 ## Base de datos
 
-La base remota `baeylvoipmazcthnwxmz` ya tiene aplicadas las migraciones `001` a `006`.
+La base remota `baeylvoipmazcthnwxmz` ya tiene aplicadas las migraciones `001` a `009`
+y `20260428134528`.
 
 Para futuros cambios de schema, evita empujar desde la maquina manualmente. Usa CI/CD con:
 
@@ -102,7 +156,4 @@ Configura en GitHub:
 
 - repository secret `CRON_SECRET`
 
-El workflow apunta por defecto a `https://torneos-theta.vercel.app`. Si el dominio
-canónico pasa a ser `https://www.torneosplay.cl`, actualiza
-[`.github/workflows/process-tournaments.yml`](/C:/torneos/.github/workflows/process-tournaments.yml:1)
-para usar esa URL.
+El workflow apunta a `https://www.torneosplay.cl`.

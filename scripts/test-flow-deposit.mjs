@@ -18,6 +18,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import nextEnv from '@next/env'
 import { createHmac, randomUUID } from 'node:crypto'
+import { createClient } from '@supabase/supabase-js'
 
 const { loadEnvConfig } = nextEnv
 const __filename = fileURLToPath(import.meta.url)
@@ -27,18 +28,50 @@ loadEnvConfig(rootDir)
 const apiKey = process.env.FLOW_API_KEY ?? process.env['FLOW_APÏ_KEY']
 const secret = process.env.FLOW_API_SECRET
 const base = process.env.FLOW_API_BASE ?? 'https://sandbox.flow.cl/api'
+const appUrl = (process.env.APP_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.torneosplay.cl').replace(/\/+$/, '')
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseServiceKey = process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY
 
 if (!apiKey || !secret) {
   console.error('Faltan FLOW_API_KEY y FLOW_API_SECRET en .env.local')
   process.exit(1)
 }
 
+if (!supabaseUrl || !supabaseServiceKey) {
+  console.error('Faltan NEXT_PUBLIC_SUPABASE_URL y SUPABASE_SECRET_KEY/SUPABASE_SERVICE_ROLE_KEY en .env.local')
+  process.exit(1)
+}
+
 const userId = process.argv[2] ?? 'test-user'
 const amountClp = parseInt(process.argv[3] ?? '1000', 10)
+const createOnly = process.argv.includes('--create-only')
 
-if (!Number.isInteger(amountClp) || amountClp < 100) {
-  console.error('Monto inválido (en pesos enteros, >= 100)')
+if (!Number.isInteger(amountClp) || amountClp < 1000) {
+  console.error('Monto inválido (neto en pesos enteros, >= 1000)')
   process.exit(1)
+}
+
+const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+  auth: { persistSession: false },
+})
+
+const USER_FEE_RATE = 0.015
+const USER_FEE_MIN_CENTS = 15000
+const USER_FEE_MAX_CENTS = 500000
+
+function computeDepositBreakdown(netCents) {
+  const rawFee = Math.round(netCents * USER_FEE_RATE)
+  const userFeeCents = Math.min(
+    USER_FEE_MAX_CENTS,
+    Math.max(USER_FEE_MIN_CENTS, rawFee)
+  )
+  const chargedCents = Math.ceil((netCents + userFeeCents) / 100) * 100
+  return {
+    netCents,
+    chargedCents,
+    userFeeCents: chargedCents - netCents,
+    chargedPesos: chargedCents / 100,
+  }
 }
 
 function buildSignString(params) {
@@ -85,24 +118,92 @@ async function flowGet(endpoint, params) {
 
 const STATUS = { 1: 'PENDIENTE', 2: 'PAGADO', 3: 'RECHAZADO', 4: 'ANULADO' }
 
+async function postWebhook(token) {
+  const res = await fetch(`${appUrl}/api/webhooks/flow`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ token }).toString(),
+  })
+  const text = await res.text()
+  if (!res.ok) throw new Error(`Webhook ${res.status}: ${text}`)
+  return text
+}
+
+async function countDepositTransactions(token) {
+  const { count, error } = await supabase
+    .from('wallet_transactions')
+    .select('id', { count: 'exact', head: true })
+    .eq('type', 'deposit')
+    .eq('metadata->>flow_token', token)
+
+  if (error) throw new Error(`Error consultando wallet_transactions: ${error.message}`)
+  return count ?? 0
+}
+
 async function main() {
   const commerceOrder = `smoke-${randomUUID()}`
-  console.log(`🚀 Creando pago Flow sandbox`)
-  console.log(`   commerceOrder: ${commerceOrder}`)
-  console.log(`   monto: $${amountClp.toLocaleString('es-CL')} CLP`)
+  const breakdown = computeDepositBreakdown(amountClp * 100)
 
-  const created = await flowPost('/payment/create', {
-    commerceOrder,
-    subject: 'Test sandbox — recarga billetera',
-    currency: 'CLP',
-    amount: amountClp,
-    email: 'test@torneosplay.cl',
-    paymentMethod: 9,
-    urlConfirmation: 'https://www.torneosplay.cl/api/webhooks/flow',
-    urlReturn: 'https://www.torneosplay.cl/wallet?deposit=flow_return',
-    optional: JSON.stringify({ user_id: userId }),
-    timeout: 600,
-  })
+  console.log(`🚀 Creando attempt y pago Flow sandbox`)
+  console.log(`   commerceOrder: ${commerceOrder}`)
+  console.log(`   neto wallet: $${amountClp.toLocaleString('es-CL')} CLP`)
+  console.log(`   cobro Flow: $${breakdown.chargedPesos.toLocaleString('es-CL')} CLP`)
+
+  const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(userId)
+  if (authError || !authUser?.user) {
+    throw new Error(`Usuario no encontrado en Supabase Auth: ${authError?.message ?? userId}`)
+  }
+
+  const { data: attempt, error: attemptError } = await supabase
+    .from('flow_payment_attempts')
+    .insert({
+      user_id: userId,
+      commerce_order: commerceOrder,
+      net_amount_cents: breakdown.netCents,
+      charged_amount_cents: breakdown.chargedCents,
+      user_fee_cents: breakdown.userFeeCents,
+      status: 'pending',
+    })
+    .select('id')
+    .single()
+
+  if (attemptError || !attempt) {
+    throw new Error(`No se pudo crear flow_payment_attempt: ${attemptError?.message ?? 'sin data'}`)
+  }
+
+  let created
+  try {
+    created = await flowPost('/payment/create', {
+      commerceOrder,
+      subject: 'Test sandbox — recarga billetera',
+      currency: 'CLP',
+      amount: breakdown.chargedPesos,
+      email: authUser.user.email ?? 'test@torneosplay.cl',
+      paymentMethod: 9,
+      urlConfirmation: `${appUrl}/api/webhooks/flow`,
+      urlReturn: `${appUrl}/wallet?deposit=flow_return`,
+      optional: JSON.stringify({ user_id: userId, net_cents: String(breakdown.netCents) }),
+      timeout: 600,
+    })
+  } catch (err) {
+    await supabase
+      .from('flow_payment_attempts')
+      .update({ status: 'rejected', settled_at: new Date().toISOString() })
+      .eq('id', attempt.id)
+    throw err
+  }
+
+  const { error: updateError } = await supabase
+    .from('flow_payment_attempts')
+    .update({
+      flow_token: created.token,
+      flow_order: created.flowOrder,
+    })
+    .eq('id', attempt.id)
+
+  if (updateError) {
+    throw new Error(`No se pudo guardar flow_token: ${updateError.message}`)
+  }
 
   console.log()
   console.log(`✓ Pago creado. flowOrder=${created.flowOrder}`)
@@ -113,6 +214,12 @@ async function main() {
   console.log(`   Tarjeta: 4051885600446623   CVV: 123   Vencimiento: cualquiera`)
   console.log(`   Banco rut: 11.111.111-1     Clave: 123`)
   console.log()
+
+  if (createOnly) {
+    console.log('Modo create-only: paga la URL y luego verifica el webhook/wallet en Supabase.')
+    process.exit(0)
+  }
+
   console.log(`⏳ Polling de estado cada 5s (Ctrl+C para abortar)...`)
   console.log()
 
@@ -134,7 +241,32 @@ async function main() {
         console.log()
         console.log('Respuesta final de Flow:')
         console.log(JSON.stringify(status, null, 2))
-        process.exit(code === 2 ? 0 : 1)
+
+        if (code !== 2) process.exit(1)
+
+        console.log()
+        console.log('🔁 Invocando webhook para validar acreditación e idempotencia...')
+        await postWebhook(created.token)
+        await postWebhook(created.token)
+
+        const { data: settledAttempt, error: settledError } = await supabase
+          .from('flow_payment_attempts')
+          .select('status, settled_at')
+          .eq('id', attempt.id)
+          .single()
+
+        if (settledError) throw new Error(`Error consultando attempt final: ${settledError.message}`)
+        if (settledAttempt.status !== 'paid') {
+          throw new Error(`Attempt no quedó paid; status=${settledAttempt.status}`)
+        }
+
+        const depositCount = await countDepositTransactions(created.token)
+        if (depositCount !== 1) {
+          throw new Error(`Idempotencia falló: se esperaban 1 deposit, hay ${depositCount}`)
+        }
+
+        console.log('✓ attempt paid, wallet deposit único, idempotencia OK')
+        process.exit(0)
       }
     } catch (err) {
       console.error(`Error consultando estado:`, err.message)

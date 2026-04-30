@@ -7,12 +7,11 @@ import type { TournamentType } from '@/types/database'
 
 // ── Plantillas por modalidad ──────────────────────────────────
 // Estas se aplican como defaults en el cliente via data-attributes
-// Regla: min_players × entry_fee DEBE superar el total de premios por al menos un 20%
-// para cubrir costos operativos y garantizar rentabilidad.
-// Breakeven + margen mínimo 20%:
-//   Standard: $27.000 × 1.20 / $3.000 = 10,8 → min 11 jugadores
-//   Express:  $11.000 × 1.20 / $1.000 = 13,2 → min 14 jugadores
-//   Elite:    $95.000 × 1.20 / $10.000 = 11,4 → min 12 jugadores
+// Regla: min_players × entry_fee debe cubrir premios, IVA y costo Flow:
+//   min_players × entry_fee >= sum_premios × 1.19 / 0.97
+//   Standard: ceil($27.000 × 119 / 97 / $3.000) = 12 jugadores
+//   Express:  ceil($11.000 × 119 / 97 / $1.000) = 14 jugadores
+//   Elite:    ceil($95.000 × 119 / 97 / $10.000) = 12 jugadores
 const MODALIDAD_DEFAULTS = {
   standard: {
     label: 'Estándar',
@@ -21,7 +20,7 @@ const MODALIDAD_DEFAULTS = {
     prize_1st: 15000,
     prize_2nd: 8000,
     prize_3rd: 4000,
-    min_players: 11,
+    min_players: 12,
     max_players: 100,
     duration_minutes: 10,
     window_hours: 24,
@@ -106,15 +105,16 @@ async function createTournament(formData: FormData) {
     throw new Error('Los premios deben estar en orden descendente: 1° ≥ 2° ≥ 3°')
   }
 
-  // Guardia de rentabilidad: los ingresos mínimos deben cubrir los premios + 20% de margen
+  // Guardia contable: cubrir premios, IVA y costo Flow absorbido por la plataforma.
   const totalPrizes = prize1 + prize2 + prize3
   const minRevenue = entryFee * minPlayers
-  if (entryFee > 0 && minRevenue < totalPrizes * 1.2) {
-    const requiredMin = Math.ceil((totalPrizes * 1.2) / entryFee)
+  const requiredRevenue = Math.ceil((totalPrizes * 119) / 97)
+  if (entryFee > 0 && minRevenue < requiredRevenue) {
+    const requiredMin = Math.ceil(requiredRevenue / entryFee)
     throw new Error(
       `Configuración no rentable: con ${minPlayers} jugadores mínimos la recaudación ` +
-      `($${(minRevenue / 100).toLocaleString('es-CL')} CLP) no cubre premios ` +
-      `($${(totalPrizes / 100).toLocaleString('es-CL')} CLP) + 20% de margen operativo. ` +
+      `($${(minRevenue / 100).toLocaleString('es-CL')} CLP) no cubre premios, IVA y costo Flow ` +
+      `($${(requiredRevenue / 100).toLocaleString('es-CL')} CLP requeridos). ` +
       `Ajusta el mínimo a ${requiredMin} jugadores o reduce los premios.`
     )
   }
@@ -210,7 +210,7 @@ export default function NewTournamentPage() {
             <Field label="🥉 3° lugar" name="prize_3rd" type="number" defaultValue={String(defaults.prize_3rd)} />
           </div>
           <p className="text-xs text-muted-foreground">
-            💡 Comisión sugerida: recauda al menos un 20% más que el total de premios para cubrir costos.
+            Recaudación mínima: premios × 1,19 / 0,97 para cubrir IVA y costo Flow.
           </p>
         </fieldset>
 
@@ -240,7 +240,7 @@ export default function NewTournamentPage() {
           <p className="font-semibold text-amber-800">⚖️ Checklist legal antes de publicar</p>
           <ul className="list-disc list-inside text-amber-700 space-y-0.5 text-xs">
             <li>Los premios comprometidos están disponibles en la cuenta de la empresa</li>
-            <li>El total de inscripciones mínimas cubre los premios + comisión</li>
+            <li>El total de inscripciones mínimas cubre premios, IVA y costo Flow</li>
             <li>Si no se alcanza el mínimo, el sistema reembolsa automáticamente</li>
             <li>Este torneo es una competencia de habilidad, no un juego de azar</li>
           </ul>

@@ -1,0 +1,34 @@
+name: Flow Reconcile
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: flow-reconcile
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PRODUCTION_APP_URL: https://www.torneosplay.cl
+    steps:
+      - name: Validate scheduler configuration
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then
+            echo "Missing repository secret CRON_SECRET" >&2
+            exit 1
+          fi
+
+      - name: Trigger Flow reconciliation
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl --fail --show-error --silent \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            "$PRODUCTION_APP_URL/api/cron/flow-reconcile"

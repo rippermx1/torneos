@@ -138,6 +138,26 @@ export interface WithdrawalRequest {
   created_at: string
 }
 
+export type FlowAttemptStatus = 'pending' | 'paid' | 'rejected' | 'cancelled' | 'expired'
+
+export interface FlowPaymentAttempt {
+  id: string
+  user_id: string
+  commerce_order: string
+  flow_token: string | null
+  flow_order: number | null
+  net_amount_cents: number
+  charged_amount_cents: number
+  user_fee_cents: number
+  status: FlowAttemptStatus
+  flow_status_code: number | null
+  payment_method: string | null
+  payer_email: string | null
+  raw_response: Record<string, unknown> | null
+  created_at: string
+  settled_at: string | null
+}
+
 export interface Dispute {
   id: string
   user_id: string
@@ -209,6 +229,12 @@ export type Database = {
         Update: Partial<Omit<Dispute, 'id' | 'created_at'>> & DbRecord
         Relationships: []
       }
+      flow_payment_attempts: {
+        Row: FlowPaymentAttempt & DbRecord
+        Insert: InsertWithOptional<FlowPaymentAttempt, 'id' | 'created_at' | 'flow_token' | 'flow_order' | 'status' | 'flow_status_code' | 'payment_method' | 'payer_email' | 'raw_response' | 'settled_at'>
+        Update: Partial<Omit<FlowPaymentAttempt, 'id' | 'created_at' | 'commerce_order' | 'user_id'>> & DbRecord
+        Relationships: []
+      }
     }
     Views: Record<string, never>
     Functions: {
@@ -222,6 +248,35 @@ export type Database = {
           p_metadata?: Record<string, unknown>
         } & DbRecord
         Returns: WalletTransaction
+      }
+      wallet_withdrawable_balance: {
+        Args: { p_user_id: string } & DbRecord
+        Returns: number
+      }
+      wallet_withdrawn_in_window: {
+        Args: { p_user_id: string; p_window: string } & DbRecord
+        Returns: number
+      }
+      wallet_credit_flow_payment: {
+        Args: {
+          p_commerce_order: string
+          p_flow_token: string
+          p_flow_order: number
+          p_amount_cents: number
+          p_payment_method: string | null
+          p_payer_email: string | null
+          p_raw: Record<string, unknown>
+        } & DbRecord
+        Returns: WalletTransaction
+      }
+      wallet_mark_flow_attempt_failed: {
+        Args: {
+          p_commerce_order: string
+          p_flow_token: string
+          p_flow_status_code: number
+          p_raw: Record<string, unknown>
+        } & DbRecord
+        Returns: undefined
       }
       register_for_tournament: {
         Args: {

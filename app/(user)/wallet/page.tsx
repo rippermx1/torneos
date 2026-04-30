@@ -26,25 +26,33 @@ export default async function WalletPage({
   const { deposit } = await searchParams
 
   const adminSupabase = createAdminClient()
-  const { data } = await adminSupabase
-    .from('wallet_transactions')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-    .limit(50)
+  const [{ data }, { data: withdrawableData }] = await Promise.all([
+    adminSupabase
+      .from('wallet_transactions')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(50),
+    adminSupabase.rpc('wallet_withdrawable_balance', { p_user_id: user.id }),
+  ])
 
   const transactions = (data ?? []) as WalletTransaction[]
   const balance = transactions[0]?.balance_after_cents ?? 0
+  const withdrawable = Number(withdrawableData ?? 0)
 
   return (
     <div className="space-y-6 max-w-lg">
-      {deposit && <DepositBanner status={deposit as 'success' | 'failure' | 'pending'} />}
+      {deposit && <DepositBanner status={deposit as 'success' | 'failure' | 'pending' | 'flow_return'} />}
 
       <div className="flex items-end justify-between">
         <div>
           <h1 className="text-2xl font-bold">Mi billetera</h1>
           <p className="text-3xl font-bold mt-1">{formatCLP(balance)}</p>
           <p className="text-sm text-muted-foreground">Saldo disponible</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Retirable: <span className="font-medium">{formatCLP(withdrawable)}</span>
+            <span className="ml-1">(solo premios)</span>
+          </p>
         </div>
         <div className="flex gap-2">
           <Link

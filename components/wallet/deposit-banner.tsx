@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation'
 
 interface Props {
-  status: 'success' | 'failure' | 'pending'
+  status: 'success' | 'failure' | 'pending' | 'flow_return'
 }
 
 const CONFIG = {
@@ -24,6 +24,12 @@ const CONFIG = {
     text: 'text-red-800',
     title: 'Pago rechazado',
     desc: 'No se pudo procesar tu pago. Intenta de nuevo.',
+  },
+  flow_return: {
+    bg: 'bg-amber-50 border-amber-200',
+    text: 'text-amber-800',
+    title: 'Procesando con Flow',
+    desc: 'Estamos esperando la confirmación. Tu saldo aparece automáticamente al acreditarse.',
   },
 }
 

@@ -1,7 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { formatCLP } from '@/lib/utils'
+import {
+  computeDepositBreakdown,
+  MIN_DEPOSIT_NET_CENTS,
+} from '@/lib/flow/fees'
 import Link from 'next/link'
 
 const PRESETS = [
@@ -12,17 +16,30 @@ const PRESETS = [
   { label: '$50.000', cents: 5000000 },
 ]
 
+type Provider = 'flow' | 'mercadopago'
+
 export default function DepositPage() {
   const [selected, setSelected] = useState<number | null>(null)
   const [custom, setCustom] = useState('')
+  const [provider, setProvider] = useState<Provider>('flow')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const customCents = custom ? Math.round(parseFloat(custom) * 100) : null
   const amountCents = selected ?? customCents
 
+  const breakdown = useMemo(() => {
+    if (!amountCents || amountCents < MIN_DEPOSIT_NET_CENTS) return null
+    if (provider !== 'flow') return null
+    try {
+      return computeDepositBreakdown(amountCents)
+    } catch {
+      return null
+    }
+  }, [amountCents, provider])
+
   async function handleDeposit() {
-    if (!amountCents || amountCents < 100000) {
+    if (!amountCents || amountCents < MIN_DEPOSIT_NET_CENTS) {
       setError('El monto mínimo es $1.000')
       return
     }
@@ -30,16 +47,27 @@ export default function DepositPage() {
     setError(null)
 
     try {
-      const res = await fetch('/api/wallet/deposit/create', {
+      const endpoint =
+        provider === 'flow'
+          ? '/api/wallet/deposit/flow/create'
+          : '/api/wallet/deposit/create'
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amountCents }),
       })
       const data = await res.json()
-      if (!res.ok) { setError(data.error ?? 'Error al iniciar pago'); return }
+      if (!res.ok) {
+        setError(data.error ?? 'Error al iniciar pago')
+        return
+      }
 
-      // Redirigir a Mercado Pago
-      window.location.href = data.initPoint
+      const url = provider === 'flow' ? data.redirectUrl : data.initPoint
+      if (!url) {
+        setError('Respuesta inválida del servidor')
+        return
+      }
+      window.location.href = url
     } catch {
       setError('Error de conexión. Intenta de nuevo.')
     } finally {
@@ -87,14 +115,59 @@ export default function DepositPage() {
         </div>
       </div>
 
-      {amountCents && amountCents >= 100000 && (
-        <div className="bg-muted/50 rounded-xl p-4 text-sm space-y-1">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Monto a recargar</span>
-            <span className="font-semibold">{formatCLP(amountCents)}</span>
-          </div>
+      <div className="space-y-2">
+        <p className="text-sm font-medium">Medio de pago</p>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            onClick={() => setProvider('flow')}
+            className={`border rounded-xl py-3 text-sm font-medium transition-colors ${
+              provider === 'flow'
+                ? 'bg-foreground text-background border-foreground'
+                : 'hover:bg-muted'
+            }`}
+          >
+            Flow
+          </button>
+          <button
+            onClick={() => setProvider('mercadopago')}
+            className={`border rounded-xl py-3 text-sm font-medium transition-colors ${
+              provider === 'mercadopago'
+                ? 'bg-foreground text-background border-foreground'
+                : 'hover:bg-muted'
+            }`}
+          >
+            Mercado Pago
+          </button>
+        </div>
+      </div>
+
+      {amountCents && amountCents >= MIN_DEPOSIT_NET_CENTS && (
+        <div className="bg-muted/50 rounded-xl p-4 text-sm space-y-2">
+          {provider === 'flow' && breakdown ? (
+            <>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Recargas en tu billetera</span>
+                <span className="font-semibold">{formatCLP(breakdown.netCents)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Comisión de procesamiento</span>
+                <span>{formatCLP(breakdown.userFeeCents)}</span>
+              </div>
+              <div className="flex justify-between border-t pt-2">
+                <span className="font-medium">Total a pagar</span>
+                <span className="font-bold">{formatCLP(breakdown.chargedCents)}</span>
+              </div>
+            </>
+          ) : (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Monto a recargar</span>
+              <span className="font-semibold">{formatCLP(amountCents)}</span>
+            </div>
+          )}
           <p className="text-xs text-muted-foreground">
-            Serás redirigido a Mercado Pago para completar el pago.
+            {provider === 'flow'
+              ? 'Serás redirigido a Flow para completar el pago.'
+              : 'Serás redirigido a Mercado Pago para completar el pago.'}
           </p>
         </div>
       )}
@@ -103,14 +176,16 @@ export default function DepositPage() {
 
       <button
         onClick={handleDeposit}
-        disabled={loading || !amountCents || amountCents < 100000}
+        disabled={loading || !amountCents || amountCents < MIN_DEPOSIT_NET_CENTS}
         className="w-full bg-foreground text-background py-3 rounded-xl font-medium hover:opacity-90 transition-opacity disabled:opacity-40"
       >
-        {loading ? 'Redirigiendo...' : `Pagar con Mercado Pago`}
+        {loading
+          ? 'Redirigiendo...'
+          : `Pagar con ${provider === 'flow' ? 'Flow' : 'Mercado Pago'}`}
       </button>
 
       <p className="text-xs text-muted-foreground text-center">
-        Procesado con Mercado Pago. Tu saldo se acredita automáticamente tras confirmar el pago.
+        Tu saldo se acredita automáticamente tras confirmar el pago.
       </p>
     </div>
   )

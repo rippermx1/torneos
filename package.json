@@ -10,6 +10,7 @@
     "setup:test-users": "node scripts/setup-test-users.mjs",
     "cleanup:simulation": "node scripts/cleanup-simulation-data.mjs",
     "smoke:local": "node scripts/smoke-local-e2e.mjs",
+    "smoke:flow": "node scripts/test-flow-deposit.mjs",
     "simulate:tournaments": "node scripts/simulate-tournaments.mjs",
     "simulate:behavioral": "node scripts/simulate-behavioral-tournaments.mjs",
     "lint": "eslint",

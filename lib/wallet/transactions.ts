@@ -57,3 +57,29 @@ export async function isMpPaymentAlreadyProcessed(mpPaymentId: string): Promise<
 
   return (count ?? 0) > 0
 }
+
+// Saldo retirable: solo lo ganado en torneos menos lo retirado.
+// Los depósitos no son retirables hasta haber pasado por un torneo
+// (esto evita lavado y absorción de comisiones de pasarela).
+export async function getWithdrawableBalance(userId: string): Promise<number> {
+  const supabase = createAdminClient()
+  const { data, error } = await supabase.rpc('wallet_withdrawable_balance', {
+    p_user_id: userId,
+  })
+  if (error) throw new Error(`wallet_withdrawable_balance falló: ${error.message}`)
+  return Number(data ?? 0)
+}
+
+// Suma retirada en una ventana móvil expresada como interval Postgres ('1 day', '30 days', etc).
+export async function getWithdrawnInWindow(
+  userId: string,
+  pgInterval: string
+): Promise<number> {
+  const supabase = createAdminClient()
+  const { data, error } = await supabase.rpc('wallet_withdrawn_in_window', {
+    p_user_id: userId,
+    p_window: pgInterval,
+  })
+  if (error) throw new Error(`wallet_withdrawn_in_window falló: ${error.message}`)
+  return Number(data ?? 0)
+}

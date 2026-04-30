@@ -1,8 +1,16 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server'
-import { getBalance, insertTransaction } from '@/lib/wallet/transactions'
-
-const MIN_WITHDRAWAL_CENTS = 500000  // $5.000 CLP — debe coincidir con /legal/reembolso y withdraw/page.tsx
-const MAX_WITHDRAWAL_CENTS = 50000000 // $500.000 CLP
+import {
+  getBalance,
+  getWithdrawableBalance,
+  getWithdrawnInWindow,
+  insertTransaction,
+} from '@/lib/wallet/transactions'
+import {
+  MIN_WITHDRAWAL_CENTS,
+  MAX_WITHDRAWAL_CENTS,
+  DAILY_WITHDRAWAL_CAP_CENTS,
+  MONTHLY_WITHDRAWAL_CAP_CENTS,
+} from '@/lib/wallet/limits'
 
 interface WithdrawRequest {
   amountCents: number
@@ -43,24 +51,74 @@ export async function POST(req: Request): Promise<Response> {
     return Response.json({ error: 'Todos los datos bancarios son obligatorios' }, { status: 400 })
   }
 
-  // Verificar saldo antes de debitar
-  const balance = await getBalance(userId)
-  if (balance < amountCents) {
+  // 1. Saldo retirable: solo lo ganado en torneos puede retirarse.
+  // El saldo total puede ser mayor (hay depósitos pendientes de jugar),
+  // pero solo lo "verde" (premios + reembolsos de torneo) es retirable.
+  const [withdrawable, totalBalance] = await Promise.all([
+    getWithdrawableBalance(userId),
+    getBalance(userId),
+  ])
+
+  if (totalBalance < amountCents) {
     return Response.json(
       {
         error: 'Saldo insuficiente',
         insufficientFunds: true,
-        balanceCents: balance,
+        balanceCents: totalBalance,
         requiredCents: amountCents,
       },
       { status: 402 }
     )
   }
 
+  if (withdrawable < amountCents) {
+    return Response.json(
+      {
+        error:
+          'Solo el saldo ganado en torneos es retirable. Las recargas deben usarse en inscripciones.',
+        notWithdrawable: true,
+        withdrawableCents: withdrawable,
+        balanceCents: totalBalance,
+        requiredCents: amountCents,
+      },
+      { status: 403 }
+    )
+  }
+
+  // 2. Anti-fraude: caps en ventana móvil
+  const [withdrawn24h, withdrawn30d] = await Promise.all([
+    getWithdrawnInWindow(userId, '1 day'),
+    getWithdrawnInWindow(userId, '30 days'),
+  ])
+
+  if (withdrawn24h + amountCents > DAILY_WITHDRAWAL_CAP_CENTS) {
+    return Response.json(
+      {
+        error: 'Excede el límite diario de retiros ($500.000 CLP).',
+        capExceeded: 'daily',
+        usedCents: withdrawn24h,
+        capCents: DAILY_WITHDRAWAL_CAP_CENTS,
+      },
+      { status: 429 }
+    )
+  }
+
+  if (withdrawn30d + amountCents > MONTHLY_WITHDRAWAL_CAP_CENTS) {
+    return Response.json(
+      {
+        error: 'Excede el límite mensual de retiros ($2.000.000 CLP).',
+        capExceeded: 'monthly',
+        usedCents: withdrawn30d,
+        capCents: MONTHLY_WITHDRAWAL_CAP_CENTS,
+      },
+      { status: 429 }
+    )
+  }
+
   const supabase = createAdminClient()
 
-  // Debitar inmediatamente para evitar doble gasto
-  // Si la inserción de la solicitud falla, el catch revierte con un crédito compensatorio
+  // 3. Debitar inmediatamente para evitar doble gasto.
+  // Si la inserción de la solicitud falla, devolvemos crédito compensatorio.
   let transactionId: string | null = null
   try {
     const tx = await insertTransaction({
@@ -76,7 +134,6 @@ export async function POST(req: Request): Promise<Response> {
     return Response.json({ error: `Error al debitar saldo: ${message}` }, { status: 500 })
   }
 
-  // Crear solicitud de retiro
   const { data, error } = await supabase
     .from('withdrawal_requests')
     .insert({
@@ -96,7 +153,7 @@ export async function POST(req: Request): Promise<Response> {
       userId,
       type: 'refund',
       amountCents,
-      referenceType: 'withdrawal_request',
+      referenceType: 'withdrawal',
       metadata: { reason: 'withdrawal_request_creation_failed', original_tx: transactionId },
     }).catch(console.error)
 

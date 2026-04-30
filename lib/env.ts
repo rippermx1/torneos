@@ -67,3 +67,21 @@ export function getMercadoPagoWebhookSecret() {
     process.env.MP_SECRET_WEBHOOK
   )
 }
+
+export function getFlowApiKey() {
+  // Hubo un período con la variable mal escrita ("FLOW_APÏ_KEY"); aceptamos ambos
+  // hasta que todos los entornos estén normalizados, luego se elimina el fallback.
+  return firstNonEmpty(
+    process.env.FLOW_API_KEY,
+    process.env['FLOW_APÏ_KEY']
+  )
+}
+
+export function getFlowApiSecret() {
+  return firstNonEmpty(process.env.FLOW_API_SECRET)
+}
+
+export function getFlowApiBase() {
+  const value = firstNonEmpty(process.env.FLOW_API_BASE)
+  return value ? normalizeUrl(value) : 'https://sandbox.flow.cl/api'
+}

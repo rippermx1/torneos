@@ -1,0 +1,53 @@
+{
+  "generatedAt": "2026-04-30T23:29:24.769Z",
+  "assumptions": {
+    "ivaRate": "19%",
+    "flowNextDayFee": "3.19% + IVA",
+    "flowNetBps": 9620
+  },
+  "wallet": {
+    "usersWithBalance": 16,
+    "liabilityCents": 11684000,
+    "liability": "$116.840",
+    "transactionsByType": {
+      "adjustment": {
+        "count": 25,
+        "amountCents": 7750000
+      },
+      "prize_credit": {
+        "count": 22,
+        "amountCents": 7134000
+      },
+      "ticket_debit": {
+        "count": 32,
+        "amountCents": -3200000
+      }
+    }
+  },
+  "flow": {
+    "attemptsByStatus": {
+      "pending": 1,
+      "rejected": 8
+    },
+    "paidNetCents": 0,
+    "paidChargedCents": 0,
+    "userFeeCents": 0
+  },
+  "withdrawals": {
+    "pendingCount": 0,
+    "pendingAmountCents": 0,
+    "pendingAmount": "$0"
+  },
+  "tournaments": {
+    "activeCount": 0,
+    "activePaidCount": 0,
+    "activeLossRiskCount": 0,
+    "activeMinProfitCents": 0,
+    "activeMinProfit": "$0",
+    "risks": []
+  },
+  "warnings": [
+    "Hay pagos Flow pendientes; deben resolverse por webhook, reconciliacion o expiracion."
+  ],
+  "criticalIssues": []
+}

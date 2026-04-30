@@ -3,6 +3,7 @@ import { formatCLP, formatDateTimeCL } from '@/lib/utils'
 import Link from 'next/link'
 import type { Tournament } from '@/types/database'
 import { TournamentActions } from '@/components/tournament/tournament-actions'
+import { calculateTournamentFinancials } from '@/lib/tournament/finance'
 
 const STATUS_LABEL: Record<Tournament['status'], string> = {
   scheduled: 'Programado',
@@ -55,6 +56,24 @@ export default async function AdminTournamentsPage() {
     ? liability.collected_cents / liability.committed_cents
     : 1
   const coverageOk = coverage >= 1
+  const activeOrPending = tournaments.filter((t) =>
+    !['completed', 'cancelled'].includes(t.status)
+  )
+  const paidFinancials = activeOrPending
+    .filter((t) => t.entry_fee_cents > 0)
+    .map((t) => calculateTournamentFinancials({
+      entryFeeCents: t.entry_fee_cents,
+      prize1Cents: t.prize_1st_cents,
+      prize2Cents: t.prize_2nd_cents,
+      prize3Cents: t.prize_3rd_cents,
+      minPlayers: t.min_players,
+      targetPlayers: t.max_players,
+    }))
+  const lossRiskCount = paidFinancials.filter((financials) => !financials.isBreakEven).length
+  const expectedMinProfit = paidFinancials.reduce((sum, financials) => sum + financials.minProfitCents, 0)
+  const averageMinMargin = paidFinancials.length > 0
+    ? Math.round(paidFinancials.reduce((sum, financials) => sum + financials.minMarginBps, 0) / paidFinancials.length)
+    : 0
 
   // Conteo de inscriptos por torneo
   const counts: Record<string, number> = {}
@@ -77,7 +96,7 @@ export default async function AdminTournamentsPage() {
         <div>
           <h1 className="text-2xl font-bold">Torneos</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            El cron actualiza estados automáticamente cada minuto.
+            GitHub Actions procesa torneos cada 5 minutos; Flow se reconcilia cada 10 minutos.
           </p>
         </div>
         <Link
@@ -122,6 +141,26 @@ export default async function AdminTournamentsPage() {
             <p className="text-xs text-muted-foreground">Recaudado − Comprometido</p>
           </div>
         </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 border-t pt-3 text-sm">
+          <div>
+            <p className="text-xs text-muted-foreground">Utilidad mínima esperada</p>
+            <p className={`font-semibold ${expectedMinProfit >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+              {formatCLP(expectedMinProfit)}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Margen mínimo promedio</p>
+            <p className={`font-semibold ${averageMinMargin >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+              {paidFinancials.length > 0 ? `${(averageMinMargin / 100).toFixed(1)}%` : 'Sin torneos pagados'}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Alertas de rentabilidad</p>
+            <p className={`font-semibold ${lossRiskCount === 0 ? 'text-green-700' : 'text-red-700'}`}>
+              {lossRiskCount === 0 ? 'Sin alertas' : `${lossRiskCount} torneos bajo costo`}
+            </p>
+          </div>
+        </div>
         {!coverageOk && (
           <p className="text-xs text-red-700 border-t border-red-200 pt-2">
             Los ingresos recaudados no cubren los premios comprometidos en torneos activos.
@@ -138,6 +177,15 @@ export default async function AdminTournamentsPage() {
         {tournaments.map((t) => {
           const playerCount = counts[t.id] ?? 0
           const canFinalize = t.status === 'live' || t.status === 'finalizing'
+          const financials = calculateTournamentFinancials({
+            entryFeeCents: t.entry_fee_cents,
+            prize1Cents: t.prize_1st_cents,
+            prize2Cents: t.prize_2nd_cents,
+            prize3Cents: t.prize_3rd_cents,
+            minPlayers: t.min_players,
+            targetPlayers: t.max_players,
+          })
+          const paidTournament = t.entry_fee_cents > 0
 
           return (
             <div key={t.id} className="border rounded-xl p-4 space-y-3">
@@ -160,6 +208,11 @@ export default async function AdminTournamentsPage() {
                     {playerCount < t.min_players && t.status !== 'completed' && t.status !== 'cancelled'
                       ? ` (mín ${t.min_players})`
                       : ''}
+                  </p>
+                  <p className={`text-xs ${!paidTournament ? 'text-amber-700' : financials.isBreakEven ? 'text-green-700' : 'text-red-700'}`}>
+                    {!paidTournament
+                      ? `Costo promo ${formatCLP(financials.totalPrizesCents)}`
+                      : `Margen mín. ${(financials.minMarginBps / 100).toFixed(1)}%`}
                   </p>
                 </div>
               </div>

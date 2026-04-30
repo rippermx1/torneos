@@ -1,0 +1,122 @@
+{
+  "generatedAt": "2026-04-30T23:28:19.344Z",
+  "suite": "behavioral",
+  "baseUrl": "http://localhost:3001",
+  "scenarios": [
+    {
+      "scenario": "Behavioral pago",
+      "slug": "behavioral-paid-standard",
+      "requestedPlayers": 8,
+      "registration": {
+        "successful": 8,
+        "failed": 0,
+        "failures": [],
+        "overflowAttempt": {
+          "email": "sim.overflow.001@mailinator.com",
+          "userId": "a153d90b-4f99-4677-b1f7-aaccdf89a39e",
+          "status": 400,
+          "ok": false,
+          "error": "El torneo está lleno"
+        }
+      },
+      "gameplay": {
+        "started": 7,
+        "noShows": 1,
+        "naturalClosures": 5,
+        "timeoutClosures": 2,
+        "resumeVerified": 2,
+        "averageSuccessfulMoves": 73,
+        "sampleErrors": []
+      },
+      "summary": {
+        "tournamentId": "70562ffb-bb32-4a07-97cd-173bb3972acf",
+        "tournamentName": "Behavioral pago 1777591043581",
+        "finalStatus": "completed",
+        "registrations": 8,
+        "games": 7,
+        "leaderboardRows": 7,
+        "plannedNoShows": 1,
+        "plannedNaturalClosures": 5,
+        "plannedTimeoutClosures": 2,
+        "actualNoMoves": 5,
+        "actualTimeouts": 2,
+        "resumeChecks": {
+          "planned": 2,
+          "verified": 2
+        },
+        "ticketDebits": 8,
+        "prizeCredits": 3,
+        "refundCount": 0,
+        "averageScore": 664,
+        "topScore": 1212,
+        "gameStatuses": {
+          "completed": 7
+        },
+        "endReasons": {
+          "no_moves": 5,
+          "timeout": 2
+        },
+        "anomalies": []
+      },
+      "errors": []
+    },
+    {
+      "scenario": "Behavioral freeroll",
+      "slug": "behavioral-freeroll",
+      "requestedPlayers": 8,
+      "registration": {
+        "successful": 8,
+        "failed": 0,
+        "failures": [],
+        "overflowAttempt": {
+          "email": "sim.overflow.001@mailinator.com",
+          "userId": "a153d90b-4f99-4677-b1f7-aaccdf89a39e",
+          "status": 400,
+          "ok": false,
+          "error": "El torneo está lleno"
+        }
+      },
+      "gameplay": {
+        "started": 7,
+        "noShows": 1,
+        "naturalClosures": 3,
+        "timeoutClosures": 4,
+        "resumeVerified": 2,
+        "averageSuccessfulMoves": 87,
+        "sampleErrors": []
+      },
+      "summary": {
+        "tournamentId": "de430dfb-5c9f-46bb-a83c-fb0e27b3e9ef",
+        "tournamentName": "Behavioral freeroll 1777591304776",
+        "finalStatus": "completed",
+        "registrations": 8,
+        "games": 7,
+        "leaderboardRows": 7,
+        "plannedNoShows": 1,
+        "plannedNaturalClosures": 3,
+        "plannedTimeoutClosures": 4,
+        "actualNoMoves": 3,
+        "actualTimeouts": 4,
+        "resumeChecks": {
+          "planned": 2,
+          "verified": 2
+        },
+        "ticketDebits": 0,
+        "prizeCredits": 3,
+        "refundCount": 0,
+        "averageScore": 973,
+        "topScore": 2836,
+        "gameStatuses": {
+          "completed": 7
+        },
+        "endReasons": {
+          "no_moves": 3,
+          "timeout": 4
+        },
+        "anomalies": []
+      },
+      "errors": []
+    }
+  ],
+  "anomalies": []
+}

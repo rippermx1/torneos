@@ -73,23 +73,23 @@ y rota `FLOW_API_KEY`/`FLOW_API_SECRET` a credenciales productivas.
 
 ## Cron Flow
 
-El repo define en [`vercel.json`](/C:/torneos/vercel.json:1) la reconciliacion
-de pagos Flow cada 10 minutos:
+En Hobby, Vercel solo acepta cron diario. Por eso [`vercel.json`](/C:/torneos/vercel.json:1)
+mantiene una reconciliacion diaria de respaldo:
 
 ```json
 {
   "crons": [
     {
       "path": "/api/cron/flow-reconcile",
-      "schedule": "*/10 * * * *"
+      "schedule": "0 0 * * *"
     }
   ]
 }
 ```
 
-Ese intervalo requiere Vercel Pro o superior. En Hobby, cambia la expresion a
-una frecuencia permitida por el plan, por ejemplo `0 * * * *` o diario segun el
-limite vigente.
+La reconciliacion frecuente vive en
+[.github/workflows/flow-reconcile.yml](/C:/torneos/.github/workflows/flow-reconcile.yml:1),
+que ejecuta `/api/cron/flow-reconcile` cada 10 minutos con `CRON_SECRET`.
 
 ## Docker
 
@@ -148,9 +148,11 @@ recarga saldo para pruebas de torneos.
 
 El plan Hobby de Vercel no permite un cron `* * * * *`.
 
-Para este repo, el procesamiento de torneos queda resuelto fuera de Vercel con
+Para este repo, el procesamiento frecuente queda resuelto fuera de Vercel con
 [.github/workflows/process-tournaments.yml](/C:/torneos/.github/workflows/process-tournaments.yml:1),
-que ejecuta el endpoint cada 5 minutos.
+que ejecuta torneos cada 5 minutos, y
+[.github/workflows/flow-reconcile.yml](/C:/torneos/.github/workflows/flow-reconcile.yml:1),
+que reconcilia Flow cada 10 minutos.
 
 Configura en GitHub:
 

@@ -2,7 +2,7 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { formatDateTimeCL } from '@/lib/utils'
 import { KycActions } from './kyc-actions'
 import { BanActions } from './ban-actions'
-import type { Profile } from '@/types/database'
+import type { KycSubmission, Profile } from '@/types/database'
 
 export const revalidate = 0
 
@@ -28,6 +28,35 @@ export default async function AdminUsersPage() {
     .limit(200)
 
   const profiles = (data ?? []) as Profile[]
+  const profileIds = profiles.map((p) => p.id)
+
+  const { data: submissionRows } = profileIds.length > 0
+    ? await supabase
+      .from('kyc_submissions')
+      .select('*')
+      .in('user_id', profileIds)
+      .order('created_at', { ascending: false })
+    : { data: [] }
+
+  const latestSubmissionByUser = new Map<string, KycSubmission>()
+  for (const submission of (submissionRows ?? []) as KycSubmission[]) {
+    if (!latestSubmissionByUser.has(submission.user_id)) {
+      latestSubmissionByUser.set(submission.user_id, submission)
+    }
+  }
+
+  const submissionsByUser = Object.fromEntries(
+    await Promise.all(
+      [...latestSubmissionByUser.entries()].map(async ([userId, submission]) => [
+        userId,
+        {
+          ...submission,
+          document_front_signed_url: await createKycDocumentUrl(supabase, submission.document_front_path),
+          document_back_signed_url: await createKycDocumentUrl(supabase, submission.document_back_path),
+        },
+      ])
+    )
+  ) as Record<string, KycSubmissionWithUrls>
 
   const pending  = profiles.filter((p) => p.kyc_status === 'pending')
   const approved = profiles.filter((p) => p.kyc_status === 'approved')
@@ -35,7 +64,7 @@ export default async function AdminUsersPage() {
   const banned   = profiles.filter((p) => p.is_banned)
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="space-y-6 max-w-6xl">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold">Usuarios y KYC</h1>
         <div className="flex gap-3 text-sm text-muted-foreground">
@@ -59,7 +88,7 @@ export default async function AdminUsersPage() {
           <h2 className="text-sm font-semibold uppercase tracking-wide text-red-600">
             Cuentas baneadas ({banned.length})
           </h2>
-          <UserTable profiles={banned} showActions />
+          <UserTable profiles={banned} submissionsByUser={submissionsByUser} showActions />
         </section>
       )}
 
@@ -69,7 +98,7 @@ export default async function AdminUsersPage() {
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
             Pendientes de revisión ({pending.length})
           </h2>
-          <UserTable profiles={pending} showActions />
+          <UserTable profiles={pending} submissionsByUser={submissionsByUser} showActions />
         </section>
       )}
 
@@ -79,7 +108,7 @@ export default async function AdminUsersPage() {
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
             Aprobados ({approved.length})
           </h2>
-          <UserTable profiles={approved} />
+          <UserTable profiles={approved} submissionsByUser={submissionsByUser} />
         </section>
       )}
 
@@ -89,29 +118,56 @@ export default async function AdminUsersPage() {
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
             Rechazados ({rejected.length})
           </h2>
-          <UserTable profiles={rejected} showActions />
+          <UserTable profiles={rejected} submissionsByUser={submissionsByUser} showActions />
         </section>
       )}
     </div>
   )
 }
 
-function UserTable({ profiles, showActions = false }: { profiles: Profile[]; showActions?: boolean }) {
+type KycSubmissionWithUrls = KycSubmission & {
+  document_front_signed_url: string | null
+  document_back_signed_url: string | null
+}
+
+async function createKycDocumentUrl(
+  supabase: ReturnType<typeof createAdminClient>,
+  path: string | null
+): Promise<string | null> {
+  if (!path) return null
+  const { data } = await supabase.storage
+    .from('kyc-documents')
+    .createSignedUrl(path, 10 * 60)
+
+  return data?.signedUrl ?? null
+}
+
+function UserTable({
+  profiles,
+  submissionsByUser,
+  showActions = false,
+}: {
+  profiles: Profile[]
+  submissionsByUser: Record<string, KycSubmissionWithUrls>
+  showActions?: boolean
+}) {
   return (
     <div className="border rounded-xl divide-y overflow-hidden">
-      <div className="grid grid-cols-[1fr_1fr_auto_auto_auto_auto] gap-3 px-4 py-2 text-xs text-muted-foreground uppercase tracking-wide bg-muted/40">
+      <div className="grid grid-cols-[1fr_1.35fr_auto_auto_auto_auto] gap-3 px-4 py-2 text-xs text-muted-foreground uppercase tracking-wide bg-muted/40">
         <span>Usuario</span>
         <span>Datos KYC</span>
         <span className="text-center">KYC</span>
         <span className="text-right">Registro</span>
-        {showActions && <span className="text-center">KYC</span>}
+        {showActions ? <span className="text-center">KYC</span> : <span />}
         <span className="text-center">Acceso</span>
       </div>
-      {profiles.map((p) => (
-        <div
-          key={p.id}
-          className={`grid grid-cols-[1fr_1fr_auto_auto_auto_auto] gap-3 px-4 py-3 items-start text-sm ${p.is_banned ? 'bg-red-50/40' : ''}`}
-        >
+      {profiles.map((p) => {
+        const submission = submissionsByUser[p.id]
+        return (
+          <div
+            key={p.id}
+            className={`grid grid-cols-[1fr_1.35fr_auto_auto_auto_auto] gap-3 px-4 py-3 items-start text-sm ${p.is_banned ? 'bg-red-50/40' : ''}`}
+          >
           {/* Usuario */}
           <div className="space-y-0.5 min-w-0">
             <p className="font-medium truncate">{p.username}</p>
@@ -136,6 +192,48 @@ function UserTable({ profiles, showActions = false }: { profiles: Profile[]; sho
             <p>Tel: <span className="text-foreground">{p.phone ?? '—'}</span></p>
             <p>Ciudad: <span className="text-foreground">{p.city ?? '—'}</span></p>
             {p.birth_date && <p>Nac: <span className="text-foreground">{p.birth_date}</span></p>}
+            {submission ? (
+              <div className="pt-1 space-y-0.5">
+                <p>
+                  Doc: <span className="text-foreground">{submission.document_type}</span>
+                  {' · '}
+                  <span className="text-foreground">{submission.document_number}</span>
+                </p>
+                <p>
+                  Banco KYC:{' '}
+                  <span className="text-foreground">{submission.bank_account_holder}</span>
+                  {' · '}
+                  <span className="text-foreground">{submission.bank_account_rut}</span>
+                </p>
+                <div className="flex gap-2 flex-wrap">
+                  {submission.document_front_signed_url ? (
+                    <a
+                      href={submission.document_front_signed_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="underline underline-offset-2 text-foreground"
+                    >
+                      Frente
+                    </a>
+                  ) : <span>Frente: —</span>}
+                  {submission.document_back_signed_url ? (
+                    <a
+                      href={submission.document_back_signed_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="underline underline-offset-2 text-foreground"
+                    >
+                      Reverso
+                    </a>
+                  ) : <span>Reverso: —</span>}
+                </div>
+                {submission.review_notes && (
+                  <p>Nota: <span className="text-foreground">{submission.review_notes}</span></p>
+                )}
+              </div>
+            ) : (
+              <p className="pt-1 text-red-600">Sin evidencia documental</p>
+            )}
           </div>
 
           {/* Badge estado KYC */}
@@ -157,8 +255,9 @@ function UserTable({ profiles, showActions = false }: { profiles: Profile[]; sho
 
           {/* Ban/Unban */}
           <BanActions userId={p.id} isBanned={p.is_banned} isAdmin={p.is_admin} />
-        </div>
-      ))}
+          </div>
+        )
+      })}
     </div>
   )
 }

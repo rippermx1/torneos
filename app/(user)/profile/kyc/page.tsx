@@ -1,7 +1,7 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { KycForm } from './kyc-form'
-import type { Profile } from '@/types/database'
+import type { KycSubmission, Profile } from '@/types/database'
 import Link from 'next/link'
 
 export default async function KycPage() {
@@ -19,6 +19,15 @@ export default async function KycPage() {
   const profile = data as Profile | null
   if (!profile) redirect('/onboarding')
 
+  const { data: latestSubmissionRows } = await adminSupabase
+    .from('kyc_submissions')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(1)
+
+  const latestSubmission = (latestSubmissionRows?.[0] ?? null) as KycSubmission | null
+
   if (profile.kyc_status === 'approved') {
     return (
       <div className="max-w-lg space-y-4">
@@ -30,7 +39,7 @@ export default async function KycPage() {
           <p className="text-3xl">✅</p>
           <p className="font-semibold">Identidad verificada</p>
           <p className="text-sm text-muted-foreground">
-            Tu cuenta está verificada. Puedes solicitar retiros sin restricciones.
+            Tu cuenta está verificada. Puedes solicitar retiros sujetos a los límites vigentes.
           </p>
         </div>
       </div>
@@ -38,7 +47,7 @@ export default async function KycPage() {
   }
 
   return (
-    <div className="max-w-lg space-y-6">
+    <div className="max-w-2xl space-y-6">
       <div>
         <Link href="/profile" className="text-sm text-muted-foreground hover:text-foreground">← Mi perfil</Link>
         <h1 className="text-2xl font-bold mt-3">Verificación de identidad</h1>
@@ -55,7 +64,7 @@ export default async function KycPage() {
 
       {profile.kyc_status === 'pending' && (profile.rut || profile.phone) && (
         <div className="border border-amber-200 bg-amber-50 rounded-xl p-4 text-sm text-amber-700">
-          Datos enviados. En revisión por el equipo — normalmente en 1–2 días hábiles.
+          Datos y documentos enviados. En revisión por el equipo — normalmente en 1–2 días hábiles.
         </div>
       )}
 
@@ -66,12 +75,18 @@ export default async function KycPage() {
           phone:      profile.phone ?? '',
           city:       profile.city ?? '',
           full_name:  profile.full_name ?? '',
+          document_type: latestSubmission?.document_type ?? 'cedula_chilena',
+          document_number: latestSubmission?.document_number ?? '',
+          document_front_path: latestSubmission?.document_front_path ?? '',
+          document_back_path: latestSubmission?.document_back_path ?? '',
+          bank_account_holder: latestSubmission?.bank_account_holder ?? profile.full_name ?? '',
+          bank_account_rut: latestSubmission?.bank_account_rut ?? profile.rut ?? '',
         }}
       />
 
       <p className="text-xs text-muted-foreground leading-relaxed">
-        Tus datos se usan exclusivamente para verificar tu identidad antes de procesar retiros.
-        No se comparten con terceros. Ver{' '}
+        Tus datos y documentos se usan exclusivamente para verificar tu identidad antes de procesar retiros.
+        No se publican y se tratan según la{' '}
         <Link href="/legal/privacidad" className="underline underline-offset-2">Política de Privacidad</Link>.
       </p>
     </div>

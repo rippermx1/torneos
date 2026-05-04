@@ -51,7 +51,7 @@ export default async function WalletPage({
           <p className="text-sm text-muted-foreground">Saldo disponible</p>
           <p className="text-xs text-muted-foreground mt-1">
             Retirable: <span className="font-medium">{formatCLP(withdrawable)}</span>
-            <span className="ml-1">(solo premios)</span>
+            <span className="ml-1">(premios ganados)</span>
           </p>
         </div>
         <div className="flex gap-2">

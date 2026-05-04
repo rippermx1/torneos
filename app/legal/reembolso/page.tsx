@@ -12,7 +12,7 @@ export default function ReembolsoPage() {
       <div>
         <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">← Inicio</Link>
         <h1 className="text-3xl font-bold mt-4">Política de Reembolso y Retiros</h1>
-        <p className="text-sm text-muted-foreground mt-1">Última actualización: 23 de abril de 2026</p>
+        <p className="text-sm text-muted-foreground mt-1">Última actualización: 4 de mayo de 2026</p>
       </div>
 
       <Section title="1. Cuotas de inscripción — Regla general">
@@ -61,13 +61,17 @@ export default function ReembolsoPage() {
 
       <Section title="5. Retiros de fondos">
         <p>
-          Los usuarios con KYC aprobado pueden solicitar el retiro de su saldo disponible
-          (depósitos + premios ganados) sujeto a las siguientes condiciones:
+          Los usuarios con KYC aprobado pueden solicitar el retiro de su saldo retirable,
+          compuesto por premios ganados en torneos y devoluciones asociadas a solicitudes de
+          retiro rechazadas. Los depósitos realizados para inscribirse en torneos no son
+          retirables directamente y deben usarse dentro de la plataforma. Los reembolsos de
+          cuotas por cancelación se acreditan a la billetera, pero no convierten depósitos en
+          saldo retirable.
         </p>
         <ul>
           <li>Monto mínimo de retiro: <strong>$5.000 CLP</strong>.</li>
-          <li>La cuenta bancaria debe estar a nombre del titular verificado.</li>
-          <li>Se acepta una solicitud de retiro pendiente a la vez.</li>
+          <li>La cuenta bancaria debe estar a nombre del titular verificado documentalmente.</li>
+          <li>Se acepta una solicitud de retiro pendiente a la vez por usuario.</li>
           <li>El plazo de procesamiento es de <strong>1 a 3 días hábiles</strong>.</li>
           <li>No se cobra comisión por retiros en cuentas bancarias chilenas.</li>
         </ul>
@@ -79,6 +83,7 @@ export default function ReembolsoPage() {
         </p>
         <ul>
           <li>Los datos bancarios no coinciden con la identidad verificada (KYC).</li>
+          <li>La cuenta bancaria no está a nombre del titular verificado.</li>
           <li>Existe una investigación de fraude o disputa activa sobre la cuenta.</li>
           <li>El saldo proviene de actividad sospechosa o no autorizada.</li>
         </ul>

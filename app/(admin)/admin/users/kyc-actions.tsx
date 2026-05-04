@@ -12,15 +12,20 @@ interface Props {
 export function KycActions({ userId, currentStatus }: Props) {
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
+  const [notes, setNotes] = useState('')
   const router = useRouter()
 
   async function updateKyc(action: 'approve' | 'reject') {
     setError(null)
+    if (action === 'reject' && !notes.trim()) {
+      setError('Nota obligatoria')
+      return
+    }
     startTransition(async () => {
       const res = await fetch(`/api/admin/users/${userId}/kyc`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action }),
+        body: JSON.stringify({ action, notes: notes.trim() || null }),
       })
       if (!res.ok) {
         const d = await res.json()
@@ -33,6 +38,12 @@ export function KycActions({ userId, currentStatus }: Props) {
 
   return (
     <div className="flex flex-col gap-1.5 items-end self-start">
+      <input
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        placeholder="Nota de revisión"
+        className="w-32 border rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-foreground/20"
+      />
       {currentStatus !== 'approved' && (
         <button
           onClick={() => updateKyc('approve')}

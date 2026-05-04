@@ -12,7 +12,7 @@ export default function PrivacidadPage() {
       <div>
         <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">← Inicio</Link>
         <h1 className="text-3xl font-bold mt-4">Política de Privacidad</h1>
-        <p className="text-sm text-muted-foreground mt-1">Última actualización: 23 de abril de 2026</p>
+        <p className="text-sm text-muted-foreground mt-1">Última actualización: 4 de mayo de 2026</p>
       </div>
 
       <Section title="1. Responsable del tratamiento">
@@ -27,9 +27,10 @@ export default function PrivacidadPage() {
         <p>Recopilamos la siguiente información:</p>
         <ul>
           <li><strong>Datos de registro:</strong> nombre, correo electrónico, nombre de usuario.</li>
-          <li><strong>Datos de verificación (KYC):</strong> RUT, fecha de nacimiento, teléfono, ciudad, documentos de identidad.</li>
-          <li><strong>Datos bancarios:</strong> banco, número de cuenta, RUT del titular (solo para procesar retiros).</li>
+          <li><strong>Datos de verificación (KYC):</strong> RUT, fecha de nacimiento, teléfono, ciudad, documentos de identidad, número de documento y estado de revisión.</li>
+          <li><strong>Datos bancarios:</strong> banco, número de cuenta, nombre y RUT del titular, usados para verificar titularidad y procesar retiros.</li>
           <li><strong>Datos de juego:</strong> movimientos, puntajes, historial de partidas (auditoría de competencia).</li>
+          <li><strong>Datos de auditoría:</strong> eventos de envío, aprobación o rechazo de KYC y notas de revisión administrativa.</li>
           <li><strong>Datos técnicos:</strong> dirección IP, tipo de dispositivo, navegador, cookies de sesión.</li>
         </ul>
       </Section>
@@ -37,7 +38,7 @@ export default function PrivacidadPage() {
       <Section title="3. Finalidad del tratamiento">
         <p>Usamos tus datos para:</p>
         <ul>
-          <li>Verificar tu identidad y cumplir con requisitos legales (KYC/AML).</li>
+          <li>Verificar tu identidad, documentos y titularidad bancaria, y cumplir con requisitos legales (KYC/AML).</li>
           <li>Gestionar tu cuenta, billetera y transacciones.</li>
           <li>Procesar inscripciones, premios y retiros.</li>
           <li>Auditar la integridad de las competencias y detectar conductas fraudulentas.</li>
@@ -61,7 +62,7 @@ export default function PrivacidadPage() {
         </p>
         <ul>
           <li>Proveedores de servicios de infraestructura y autenticación (Vercel y Supabase) bajo acuerdos de confidencialidad.</li>
-          <li>Entidades bancarias para procesar retiros.</li>
+          <li>Entidades bancarias para validar titularidad y procesar retiros.</li>
           <li>Autoridades competentes cuando así lo exija la ley.</li>
         </ul>
       </Section>

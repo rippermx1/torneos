@@ -123,7 +123,7 @@ export default function WithdrawPage() {
               placeholder="Otro monto (CLP)"
               value={custom}
               onChange={(e) => { setCustom(e.target.value); setAmountCents(null) }}
-              min="1000"
+              min="5000"
               step="1000"
               className="w-full border rounded-xl pl-7 pr-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-foreground/20"
             />
@@ -133,6 +133,9 @@ export default function WithdrawPage() {
         {/* Datos bancarios */}
         <fieldset className="border rounded-xl p-4 space-y-3">
           <legend className="text-sm font-medium px-1">Datos bancarios</legend>
+          <p className="text-xs text-muted-foreground">
+            Deben coincidir exactamente con el nombre y RUT aprobados en KYC.
+          </p>
 
           <div className="space-y-1.5">
             <label className="text-xs text-muted-foreground">Banco</label>

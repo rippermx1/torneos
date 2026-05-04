@@ -12,7 +12,7 @@ export default function TerminosPage() {
       <div>
         <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">← Inicio</Link>
         <h1 className="text-3xl font-bold mt-4">Términos y Condiciones</h1>
-        <p className="text-sm text-muted-foreground mt-1">Última actualización: 23 de abril de 2026</p>
+        <p className="text-sm text-muted-foreground mt-1">Última actualización: 4 de mayo de 2026</p>
       </div>
 
       <Section title="1. Naturaleza del servicio">
@@ -76,6 +76,11 @@ export default function TerminosPage() {
           se actualiza en tiempo real.
         </p>
         <p>
+          Los depósitos no son retirables directamente; se usan para pagar inscripciones y otros
+          servicios de la plataforma. Esta regla reduce riesgos de fraude, lavado y uso de la
+          billetera como mecanismo de giro de dinero.
+        </p>
+        <p>
           Los <strong>premios</strong> obtenidos se acreditan automáticamente en la billetera del
           ganador una vez finalizado y verificado el torneo. Pueden solicitarse retiros conforme
           a la política de retiros vigente.
@@ -84,9 +89,11 @@ export default function TerminosPage() {
 
       <Section title="6. Retiros">
         <p>
-          Los usuarios con KYC aprobado pueden solicitar el retiro de su saldo mediante
-          transferencia bancaria a una cuenta a su nombre en un banco chileno. El plazo de
-          procesamiento es de hasta 3 días hábiles. Ver{' '}
+          Los usuarios con KYC aprobado pueden solicitar el retiro de su saldo retirable, que
+          corresponde a premios ganados y devoluciones de retiros rechazados, mediante
+          transferencia bancaria a una cuenta a su nombre en un banco chileno. Solo se permite
+          una solicitud pendiente a la vez y el plazo de procesamiento es de hasta 3 días hábiles.
+          Ver{' '}
           <Link href="/legal/reembolso" className="underline underline-offset-2">
             Política de Reembolso
           </Link>{' '}

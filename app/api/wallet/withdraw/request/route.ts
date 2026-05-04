@@ -11,6 +11,7 @@ import {
   DAILY_WITHDRAWAL_CAP_CENTS,
   MONTHLY_WITHDRAWAL_CAP_CENTS,
 } from '@/lib/wallet/limits'
+import { isValidRut, samePersonName, sameRut } from '@/lib/identity/verification'
 
 interface WithdrawRequest {
   amountCents: number
@@ -49,6 +50,62 @@ export async function POST(req: Request): Promise<Response> {
 
   if (!bankName?.trim() || !bankAccount?.trim() || !accountRut?.trim() || !accountHolder?.trim()) {
     return Response.json({ error: 'Todos los datos bancarios son obligatorios' }, { status: 400 })
+  }
+
+  if (!isValidRut(accountRut)) {
+    return Response.json({ error: 'RUT del titular bancario inválido' }, { status: 400 })
+  }
+
+  const supabase = createAdminClient()
+
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('kyc_status, full_name, rut')
+    .eq('id', userId)
+    .single()
+
+  if (profileError || !profile) {
+    return Response.json({ error: 'No se pudo verificar el perfil del usuario' }, { status: 500 })
+  }
+
+  if (profile.kyc_status !== 'approved') {
+    return Response.json(
+      { error: 'Debes tener KYC aprobado antes de solicitar retiros.' },
+      { status: 403 }
+    )
+  }
+
+  if (!profile.rut || !isValidRut(profile.rut) || !sameRut(profile.rut, accountRut)) {
+    return Response.json(
+      { error: 'El RUT bancario debe coincidir con la identidad verificada.' },
+      { status: 422 }
+    )
+  }
+
+  if (!profile.full_name || !samePersonName(profile.full_name, accountHolder)) {
+    return Response.json(
+      { error: 'El titular bancario debe coincidir con el nombre verificado en KYC.' },
+      { status: 422 }
+    )
+  }
+
+  const { data: pendingWithdrawal, error: pendingError } = await supabase
+    .from('withdrawal_requests')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('status', 'pending')
+    .limit(1)
+    .maybeSingle()
+
+  if (pendingError) {
+    return Response.json({ error: 'No se pudo validar retiros pendientes' }, { status: 500 })
+  }
+
+  if (pendingWithdrawal) {
+    return Response.json(
+      { error: 'Ya tienes una solicitud de retiro pendiente. Espera su revisión antes de crear otra.' },
+      { status: 409 }
+    )
   }
 
   // 1. Saldo retirable: solo lo ganado en torneos puede retirarse.
@@ -115,8 +172,6 @@ export async function POST(req: Request): Promise<Response> {
     )
   }
 
-  const supabase = createAdminClient()
-
   // 3. Debitar inmediatamente para evitar doble gasto.
   // Si la inserción de la solicitud falla, devolvemos crédito compensatorio.
   let transactionId: string | null = null
@@ -156,6 +211,13 @@ export async function POST(req: Request): Promise<Response> {
       referenceType: 'withdrawal',
       metadata: { reason: 'withdrawal_request_creation_failed', original_tx: transactionId },
     }).catch(console.error)
+
+    if (error?.code === '23505') {
+      return Response.json(
+        { error: 'Ya tienes una solicitud de retiro pendiente. Espera su revisión antes de crear otra.' },
+        { status: 409 }
+      )
+    }
 
     return Response.json({ error: 'Error al crear la solicitud' }, { status: 500 })
   }

@@ -1,4 +1,5 @@
 export type KycStatus = 'pending' | 'approved' | 'rejected'
+export type KycDocumentType = 'cedula_chilena' | 'passport' | 'other'
 export type WithdrawalStatus = 'pending' | 'approved' | 'rejected'
 export type DisputeType = 'payment' | 'tournament_result' | 'technical' | 'other'
 export type DisputeStatus = 'open' | 'resolved' | 'rejected'
@@ -138,6 +139,37 @@ export interface WithdrawalRequest {
   created_at: string
 }
 
+export interface KycSubmission {
+  id: string
+  user_id: string
+  full_name: string
+  rut: string
+  birth_date: string
+  phone: string
+  city: string
+  document_type: KycDocumentType
+  document_number: string
+  document_front_path: string
+  document_back_path: string | null
+  bank_account_holder: string
+  bank_account_rut: string
+  status: KycStatus
+  review_notes: string | null
+  reviewed_by: string | null
+  reviewed_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface KycAuditEvent {
+  id: string
+  user_id: string
+  actor_id: string | null
+  event_type: string
+  metadata: Record<string, unknown>
+  created_at: string
+}
+
 export type FlowAttemptStatus = 'pending' | 'paid' | 'rejected' | 'cancelled' | 'expired'
 
 export interface FlowPaymentAttempt {
@@ -221,6 +253,18 @@ export type Database = {
         Row: WithdrawalRequest & DbRecord
         Insert: InsertWithOptional<WithdrawalRequest, 'id' | 'created_at' | 'status' | 'admin_notes' | 'reviewed_by' | 'reviewed_at'>
         Update: Partial<Omit<WithdrawalRequest, 'id' | 'created_at'>> & DbRecord
+        Relationships: []
+      }
+      kyc_submissions: {
+        Row: KycSubmission & DbRecord
+        Insert: InsertWithOptional<KycSubmission, 'id' | 'status' | 'document_back_path' | 'review_notes' | 'reviewed_by' | 'reviewed_at' | 'created_at' | 'updated_at'>
+        Update: Partial<Omit<KycSubmission, 'id' | 'created_at'>> & DbRecord
+        Relationships: []
+      }
+      kyc_audit_events: {
+        Row: KycAuditEvent & DbRecord
+        Insert: InsertWithOptional<KycAuditEvent, 'id' | 'actor_id' | 'metadata' | 'created_at'>
+        Update: Partial<Omit<KycAuditEvent, 'id' | 'created_at'>> & DbRecord
         Relationships: []
       }
       disputes: {

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { RegisterButton } from '@/components/tournament/register-button'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
+import { checkPlayWindow, checkRegistrationWindow } from '@/lib/tournament/helpers'
 
 export async function generateMetadata({
   params,
@@ -75,8 +76,10 @@ export default async function TournamentDetailPage({
     isRegistered = !!reg
   }
 
-  const canRegister = t.status === 'scheduled' || t.status === 'open'
-  const inPlayWindow = t.status === 'live'
+  const registrationWindow = checkRegistrationWindow(t)
+  const playWindow = checkPlayWindow(t)
+  const canRegister = registrationWindow.ok
+  const inPlayWindow = playWindow.ok
 
   const totalPrize = t.prize_1st_cents + t.prize_2nd_cents + t.prize_3rd_cents
 
@@ -127,25 +130,42 @@ export default async function TournamentDetailPage({
 
       {/* Acciones */}
       <div className="flex flex-col sm:flex-row gap-3">
-        {!userId ? (
+        {!userId && canRegister ? (
           <Link
             href="/sign-up"
             className="flex-1 text-center bg-foreground text-background py-3 rounded-xl font-medium hover:opacity-90 transition-opacity"
           >
             Crear cuenta para inscribirme
           </Link>
+        ) : !userId && inPlayWindow ? (
+          <Link
+            href="/sign-in"
+            className="flex-1 text-center bg-foreground text-background py-3 rounded-xl font-medium hover:opacity-90 transition-opacity"
+          >
+            Iniciar sesión para jugar
+          </Link>
+        ) : !userId ? (
+          <div className="flex-1 text-center border rounded-xl py-3 text-sm text-muted-foreground">
+            Inscripciones cerradas
+          </div>
         ) : isRegistered ? (
           <>
             <div className="flex-1 text-center border rounded-xl py-3 text-sm text-muted-foreground">
               ✓ Inscrito
             </div>
-            {inPlayWindow && (
+            {inPlayWindow ? (
               <Link
                 href={`/tournaments/${id}/play`}
                 className="flex-1 text-center bg-amber-500 text-white py-3 rounded-xl font-medium hover:opacity-90 transition-opacity"
               >
                 Jugar ahora
               </Link>
+            ) : (
+              <div className="flex-1 text-center border rounded-xl py-3 text-sm text-muted-foreground">
+                {playWindow.reason === 'window_not_open'
+                  ? 'Partidas aún no abiertas'
+                  : 'Partidas cerradas'}
+              </div>
             )}
           </>
         ) : canRegister ? (

@@ -14,7 +14,7 @@ export interface TransitionResult {
 export async function processTournamentTransitions(): Promise<TransitionResult[]> {
   const supabase = createAdminClient()
   const results: TransitionResult[] = []
-  const now = new Date().toISOString()
+  const nowMs = Date.now()
 
   // Obtener torneos que pueden necesitar transición
   const { data: tournaments, error } = await supabase
@@ -28,7 +28,7 @@ export async function processTournamentTransitions(): Promise<TransitionResult[]
   }
 
   for (const t of (tournaments ?? []) as Tournament[]) {
-    const result = await processSingleTournament(t, now)
+    const result = await processSingleTournament(t, nowMs)
     results.push(result)
   }
 
@@ -37,16 +37,18 @@ export async function processTournamentTransitions(): Promise<TransitionResult[]
 
 async function processSingleTournament(
   tournament: Tournament,
-  now: string
+  nowMs: number
 ): Promise<TransitionResult> {
   const supabase = createAdminClient()
   const base = { tournamentId: tournament.id, name: tournament.name }
+  let currentStatus = tournament.status
+  const previousActions: TransitionResult['action'][] = []
 
   try {
     // ── scheduled → open ────────────────────────────────────
     if (
-      tournament.status === 'scheduled' &&
-      now >= tournament.registration_opens_at
+      currentStatus === 'scheduled' &&
+      nowMs >= new Date(tournament.registration_opens_at).getTime()
     ) {
       const { error } = await supabase
         .from('tournaments')
@@ -55,11 +57,16 @@ async function processSingleTournament(
         .eq('status', 'scheduled') // guard contra race condition
 
       if (error) throw new Error(error.message)
-      return { ...base, action: 'opened' }
+      currentStatus = 'open'
+      previousActions.push('opened')
+
+      if (nowMs < new Date(tournament.play_window_start).getTime()) {
+        return { ...base, action: 'opened' }
+      }
     }
 
     // ── open → live o cancelled ──────────────────────────────
-    if (tournament.status === 'open' && now >= tournament.play_window_start) {
+    if (currentStatus === 'open' && nowMs >= new Date(tournament.play_window_start).getTime()) {
       const { count } = await supabase
         .from('registrations')
         .select('*', { count: 'exact', head: true })
@@ -73,7 +80,16 @@ async function processSingleTournament(
           p_tournament_id: tournament.id,
         })
         if (error) throw new Error(error.message)
-        return { ...base, action: 'cancelled', detail: { playerCount, reason: 'min_players_not_reached', ...data } }
+        return {
+          ...base,
+          action: 'cancelled',
+          detail: {
+            playerCount,
+            reason: 'min_players_not_reached',
+            previousActions,
+            ...data,
+          },
+        }
       }
 
       // Suficientes jugadores → activar
@@ -84,11 +100,16 @@ async function processSingleTournament(
         .eq('status', 'open')
 
       if (error) throw new Error(error.message)
-      return { ...base, action: 'started', detail: { playerCount } }
+      currentStatus = 'live'
+      previousActions.push('started')
+
+      if (nowMs < new Date(tournament.play_window_end).getTime()) {
+        return { ...base, action: 'started', detail: { playerCount, previousActions } }
+      }
     }
 
     // ── live → finalizing ────────────────────────────────────
-    if (tournament.status === 'live' && now >= tournament.play_window_end) {
+    if (currentStatus === 'live' && nowMs >= new Date(tournament.play_window_end).getTime()) {
       const { error } = await supabase
         .from('tournaments')
         .update({ status: 'finalizing' })
@@ -96,13 +117,16 @@ async function processSingleTournament(
         .eq('status', 'live')
 
       if (error) throw new Error(error.message)
-      return { ...base, action: 'set_finalizing' }
+      currentStatus = 'finalizing'
+      previousActions.push('set_finalizing')
+
+      return { ...base, action: 'set_finalizing', detail: { previousActions } }
     }
 
     // ── finalizing → completed ───────────────────────────────
     // La transición de live→finalizing ocurre en una pasada y
     // completed en la siguiente para que sean dos operaciones cortas.
-    if (tournament.status === 'finalizing') {
+    if (currentStatus === 'finalizing') {
       const { data, error } = await supabase.rpc('finalize_tournament', {
         p_tournament_id: tournament.id,
       })

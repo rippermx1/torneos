@@ -56,9 +56,15 @@ export function samePersonName(
   left: string | null | undefined,
   right: string | null | undefined
 ): boolean {
-  const normalizedLeft = normalizePersonName(left)
-  const normalizedRight = normalizePersonName(right)
-  return normalizedLeft.length > 0 && normalizedLeft === normalizedRight
+  const tokensLeft = normalizePersonName(left).split(' ').filter(Boolean)
+  const tokensRight = normalizePersonName(right).split(' ').filter(Boolean)
+  if (tokensLeft.length === 0 || tokensRight.length === 0) return false
+  // All tokens of the shorter name must appear in the longer name.
+  // This handles common Chilean cases where banks store a subset of the full name
+  // (e.g. dropping a second first name). RUT validation is the primary fraud control.
+  const shorter = tokensLeft.length <= tokensRight.length ? tokensLeft : tokensRight
+  const longer  = tokensLeft.length <= tokensRight.length ? tokensRight : tokensLeft
+  return shorter.every(token => longer.includes(token))
 }
 
 export function isOwnKycDocumentPath(

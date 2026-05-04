@@ -16,11 +16,20 @@ describe('identity verification helpers', () => {
     expect(sameRut('12.345.678-5', '12345678-5')).toBe(true)
   })
 
-  it('normalizes names for strict bank ownership comparison', () => {
+  it('normalizes names for bank ownership comparison', () => {
     expect(normalizePersonName('Jose  Nunez')).toBe('JOSE NUNEZ')
     expect(normalizePersonName('Jose   Nunez')).toBe('JOSE NUNEZ')
+    // exact match (different casing/spacing)
     expect(samePersonName('Jose Nunez', 'JOSE  NUNEZ')).toBe(true)
-    expect(samePersonName('Jose Nunez', 'Jose Andres Nunez')).toBe(false)
+    // bank may omit second first name — subset must match
+    expect(samePersonName('Jose Andres Nunez', 'Jose Nunez')).toBe(true)
+    expect(samePersonName('Jose Nunez', 'Jose Andres Nunez')).toBe(true)
+    // completely different names must not match
+    expect(samePersonName('Jose Nunez', 'Maria Nunez')).toBe(false)
+    expect(samePersonName('Pedro Garcia', 'Juan Garcia')).toBe(false)
+    // empty / null must not match
+    expect(samePersonName(null, 'Jose Nunez')).toBe(false)
+    expect(samePersonName('', 'Jose Nunez')).toBe(false)
   })
 
   it('accepts only storage paths scoped to the authenticated user', () => {

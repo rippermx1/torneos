@@ -2,30 +2,26 @@ import { describe, it, expect } from 'vitest'
 import {
   computeDepositBreakdown,
   USER_FEE_MIN_CENTS,
-  USER_FEE_MAX_CENTS,
   USER_FEE_RATE,
 } from '@/lib/flow/fees'
 
 describe('computeDepositBreakdown', () => {
-  it('aplica la tasa USER_FEE_RATE en el rango medio', () => {
-    // $50.000 CLP = 5_000_000 cents → 1.5% = 75.000 cents = $750
+  it('aplica una tasa que cubre Flow más IVA en el rango medio', () => {
+    // $50.000 CLP -> fee bruto ~3,95% para cubrir Flow 3,19% + IVA del servicio.
     const b = computeDepositBreakdown(5_000_000)
     expect(b.netCents).toBe(5_000_000)
-    expect(b.userFeeCents).toBeGreaterThanOrEqual(75_000)
+    expect(b.userFeeCents).toBeGreaterThanOrEqual(197_000)
     expect(b.chargedCents).toBe(b.netCents + b.userFeeCents)
   })
 
   it('aplica fee mínimo en montos chicos', () => {
-    // $1.000 CLP = 100.000 cents → 1.5% = 1.500 cents, pero MIN es 15.000
     const b = computeDepositBreakdown(100_000)
     expect(b.userFeeCents).toBeGreaterThanOrEqual(USER_FEE_MIN_CENTS)
   })
 
-  it('aplica fee máximo en montos grandes', () => {
-    // $500.000 CLP = 50.000.000 cents → 1.5% = 750.000 cents, pero MAX es 500.000
+  it('no aplica tope de fee que haga perder dinero en montos grandes', () => {
     const b = computeDepositBreakdown(50_000_000)
-    // Tras redondeo a peso entero el fee puede subir un máximo de 99 cents
-    expect(b.userFeeCents).toBeLessThanOrEqual(USER_FEE_MAX_CENTS + 99)
+    expect(b.userFeeCents).toBeGreaterThan(1_970_000)
   })
 
   it('chargedCents siempre es múltiplo de 100 (peso entero)', () => {
@@ -52,7 +48,8 @@ describe('computeDepositBreakdown', () => {
     expect(() => computeDepositBreakdown(100.5)).toThrow()
   })
 
-  it('USER_FEE_RATE es 1.5%', () => {
-    expect(USER_FEE_RATE).toBe(0.015)
+  it('USER_FEE_RATE queda alrededor de 3,95%', () => {
+    expect(USER_FEE_RATE).toBeGreaterThan(0.039)
+    expect(USER_FEE_RATE).toBeLessThan(0.04)
   })
 })

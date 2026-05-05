@@ -52,16 +52,9 @@ const supabaseServerKey = requireOne(
   'SUPABASE_SECRET_KEY',
   'SUPABASE_SERVICE_ROLE_KEY'
 )
-const mercadoPagoAccessToken = requireOne(
-  'Mercado Pago access token',
-  'MERCADOPAGO_ACCESS_TOKEN',
-  'MP_API_TOKEN'
-)
-requireOne(
-  'Mercado Pago webhook secret',
-  'MERCADOPAGO_WEBHOOK_SECRET',
-  'MP_SECRET_WEBHOOK'
-)
+requireOne('Flow API key', 'FLOW_API_KEY', 'FLOW_APÏ_KEY')
+requireOne('Flow API secret', 'FLOW_API_SECRET')
+const flowApiBase = firstNonEmpty('FLOW_API_BASE')
 const cronSecret = requireOne('CRON_SECRET', 'CRON_SECRET')
 
 if (appUrl) {
@@ -94,8 +87,8 @@ if (supabaseServerKey?.startsWith('eyJ')) {
   warnings.push('SUPABASE_SERVICE_ROLE_KEY es legacy; prefiere SUPABASE_SECRET_KEY')
 }
 
-if (mercadoPagoAccessToken?.startsWith('TEST-')) {
-  issues.push('Mercado Pago sigue usando access token de prueba')
+if (flowApiBase?.includes('sandbox.flow.cl')) {
+  issues.push('FLOW_API_BASE sigue apuntando a sandbox.flow.cl')
 }
 
 if (cronSecret && cronSecret.length < 32) {

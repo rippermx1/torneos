@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import {
+  calculateEntryPoolFinancials,
+  calculateIvaIncludedBreakdown,
+  calculatePresetFinancials,
+  calculatePrizePoolPayouts,
   calculateRequiredRevenueCents,
+  calculateTournamentDisplayPayouts,
   calculateTournamentFinancials,
+  splitEntryFee,
   TOURNAMENT_PRESETS,
   pesosToCents,
 } from '@/lib/tournament/finance'
@@ -14,19 +20,60 @@ describe('tournament finance', () => {
     expect(required).toBeGreaterThanOrEqual(pesosToCents(33300))
   })
 
-  it('marks all paid presets as break-even at minimum players', () => {
-    for (const preset of TOURNAMENT_PRESETS) {
-      const financials = calculateTournamentFinancials({
-        entryFeeCents: pesosToCents(preset.entryFeePesos),
-        prize1Cents: pesosToCents(preset.prize1Pesos),
-        prize2Cents: pesosToCents(preset.prize2Pesos),
-        prize3Cents: pesosToCents(preset.prize3Pesos),
-        minPlayers: preset.minPlayers,
-        targetPlayers: preset.targetPlayers,
-      })
+  it('separa cada inscripción en pozo de premios y fee con IVA incluido', () => {
+    const split = splitEntryFee(pesosToCents(1000))
 
-      expect(financials.isBreakEven, preset.label).toBe(true)
+    expect(split.prizePoolContributionCents).toBe(pesosToCents(850))
+    expect(split.platformFeeGrossCents).toBe(pesosToCents(150))
+    expect(split.platformFeeIvaCents).toBe(calculateIvaIncludedBreakdown(pesosToCents(150)).ivaCents)
+    expect(split.platformFeeNetCents).toBe(split.platformFeeGrossCents - split.platformFeeIvaCents)
+  })
+
+  it('calcula premios dinámicos con distribución 70/20/10', () => {
+    const payouts = calculatePrizePoolPayouts({
+      entryFeeCents: pesosToCents(1000),
+      playerCount: 10,
+    })
+
+    expect(payouts.prizePoolCents).toBe(pesosToCents(8500))
+    expect(payouts.prize1Cents).toBe(pesosToCents(5950))
+    expect(payouts.prize2Cents).toBe(pesosToCents(1700))
+    expect(payouts.prize3Cents).toBe(pesosToCents(850))
+  })
+
+  it('muestra al menos el premio mínimo en torneos entry_pool', () => {
+    const payouts = calculateTournamentDisplayPayouts({
+      entry_fee_cents: pesosToCents(3000),
+      prize_1st_cents: 0,
+      prize_2nd_cents: 0,
+      prize_3rd_cents: 0,
+      min_players: 6,
+      prize_model: 'entry_pool',
+    }, 2)
+
+    expect(payouts.playerCount).toBe(6)
+    expect(payouts.prizePoolCents).toBe(pesosToCents(15300))
+  })
+
+  it('marks all paid presets as healthy under entry-pool model', () => {
+    for (const preset of TOURNAMENT_PRESETS) {
+      const financials = calculatePresetFinancials(preset)
+
+      expect(financials.isTargetHealthy, preset.label).toBe(true)
     }
+  })
+
+  it('calcula ingreso neto de plataforma para el objetivo', () => {
+    const financials = calculateEntryPoolFinancials({
+      entryFeeCents: pesosToCents(3000),
+      minPlayers: 6,
+      targetPlayers: 30,
+      maxPlayers: 100,
+    })
+
+    expect(financials.targetPlatformFeeGrossCents).toBe(pesosToCents(13500))
+    expect(financials.targetPlatformFeeNetCents).toBeGreaterThan(pesosToCents(11000))
+    expect(financials.platformNetMarginBps).toBeGreaterThanOrEqual(1200)
   })
 
   it('computes the required minimum players for an unsafe tournament', () => {

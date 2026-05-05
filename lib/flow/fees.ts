@@ -1,36 +1,43 @@
 // ───────────────────────────────────────────────────────────────
-// Modelo financiero de recarga vía Flow.
+// Modelo financiero de recarga via Flow.
 //
-// Política acordada (Modelo A "split"):
+// Politica operativa:
 // - El usuario elige cuánto quiere acreditarse en su billetera (net).
-// - Cobramos al usuario un fee chico que cubre ~mitad del costo Flow
-//   y el IVA sobre ese fee. El resto del costo Flow + IVA sobre el
-//   margen de plataforma se absorbe en el entry_fee de los torneos.
+// - Cobramos al usuario un fee de procesamiento que cubre el costo
+//   esperado de Flow para tarjeta con abono al dia habil siguiente.
 // - Lo que se acredita en la wallet es exactamente el net que el
 //   usuario pidió. No hay sorpresas en el saldo.
 // - El fee es VISIBLE en el checkout antes del cobro.
 //
 // Tasas:
-// - USER_FEE_RATE: porcentaje cobrado al usuario sobre el net.
-// - IVA: 19% sobre el fee de plataforma (servicio informático).
-// - El monto que se cobra a Flow es net + fee, redondeado a peso entero.
+// - Flow tarjeta next-day: 3.19% + IVA sobre su comision.
+// - Fee usuario: gross-up para que, luego del IVA incluido en nuestro
+//   fee de procesamiento, el neto cubra la comision neta Flow.
+// - El monto que se cobra en Flow es net + fee, redondeado a peso entero.
 // ───────────────────────────────────────────────────────────────
 
-/** Fee al usuario sobre el monto a recargar (1.5% — mitad del costo Flow ~3%). */
-export const USER_FEE_RATE = 0.015
+const BPS = 10000
+const IVA_RATE = 0.19
+const PLATFORM_FEE_NET_SHARE = 1 / (1 + IVA_RATE)
+
+/** Costo neto Flow tarjeta con abono al día hábil siguiente: 3.19%. */
+export const FLOW_CARD_NEXT_DAY_FEE_RATE = 0.0319
+
+/** Fee bruto al usuario requerido para cubrir Flow sin pérdida operacional. */
+export const USER_FEE_RATE =
+  FLOW_CARD_NEXT_DAY_FEE_RATE / (PLATFORM_FEE_NET_SHARE - FLOW_CARD_NEXT_DAY_FEE_RATE)
+
+export const USER_FEE_RATE_BPS = Math.ceil(USER_FEE_RATE * BPS)
 
 /** Fee mínimo en centavos para no perder dinero en montos pequeños ($150 CLP). */
 export const USER_FEE_MIN_CENTS = 15000
-
-/** Fee máximo en centavos para no castigar recargas grandes ($5.000 CLP). */
-export const USER_FEE_MAX_CENTS = 500000
 
 export interface DepositBreakdown {
   /** Lo que el usuario pidió y verá en su billetera. */
   netCents: number
   /** Lo que se cobra a Flow (net + user_fee, redondeado a peso entero). */
   chargedCents: number
-  /** Diferencia: fee al usuario que cubre parcialmente el costo Flow. */
+  /** Diferencia: fee al usuario que cubre pasarela y el IVA incluido del servicio. */
   userFeeCents: number
   /** Monto en pesos enteros para enviar a Flow API. */
   chargedPesos: number
@@ -47,11 +54,8 @@ export function computeDepositBreakdown(netCents: number): DepositBreakdown {
     throw new Error(`netCents inválido: ${netCents}`)
   }
 
-  const rawFee = Math.round(netCents * USER_FEE_RATE)
-  const userFeeCents = Math.min(
-    USER_FEE_MAX_CENTS,
-    Math.max(USER_FEE_MIN_CENTS, rawFee)
-  )
+  const rawFee = Math.ceil(netCents * USER_FEE_RATE)
+  const userFeeCents = Math.max(USER_FEE_MIN_CENTS, rawFee)
 
   // Flow cobra en pesos enteros: redondeamos el total al peso siguiente
   // y ajustamos el fee para mantener net intacto.

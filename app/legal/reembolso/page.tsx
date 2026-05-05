@@ -12,7 +12,7 @@ export default function ReembolsoPage() {
       <div>
         <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">← Inicio</Link>
         <h1 className="text-3xl font-bold mt-4">Política de Reembolso y Retiros</h1>
-        <p className="text-sm text-muted-foreground mt-1">Última actualización: 4 de mayo de 2026</p>
+        <p className="text-sm text-muted-foreground mt-1">Última actualización: 5 de mayo de 2026</p>
       </div>
 
       <Section title="1. Cuotas de inscripción — Regla general">
@@ -32,8 +32,9 @@ export default function ReembolsoPage() {
         <p>
           Si Torneos 2048 cancela un torneo por cualquier motivo (problemas técnicos graves,
           fuerza mayor u otras causas), <strong>todas las cuotas de inscripción serán
-          reembolsadas en su totalidad</strong> a las billeteras de los participantes en un plazo
-          de 24 horas hábiles.
+          reembolsadas en su totalidad</strong>, incluyendo el aporte al pozo de premios y el
+          fee de plataforma asociado, a las billeteras de los participantes en un plazo de
+          24 horas hábiles.
         </p>
       </Section>
 
@@ -41,7 +42,8 @@ export default function ReembolsoPage() {
         <p>
           Si al cierre del período de inscripción el torneo no ha alcanzado el número mínimo de
           participantes requerido, el torneo será <strong>cancelado automáticamente</strong> y las
-          cuotas serán reembolsadas íntegramente sin necesidad de solicitud por parte del usuario.
+          cuotas serán reembolsadas íntegramente, incluyendo el fee de plataforma, sin necesidad
+          de solicitud por parte del usuario.
         </p>
       </Section>
 

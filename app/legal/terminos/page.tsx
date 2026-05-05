@@ -12,7 +12,7 @@ export default function TerminosPage() {
       <div>
         <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">← Inicio</Link>
         <h1 className="text-3xl font-bold mt-4">Términos y Condiciones</h1>
-        <p className="text-sm text-muted-foreground mt-1">Última actualización: 4 de mayo de 2026</p>
+        <p className="text-sm text-muted-foreground mt-1">Última actualización: 5 de mayo de 2026</p>
       </div>
 
       <Section title="1. Naturaleza del servicio">
@@ -56,6 +56,12 @@ export default function TerminosPage() {
         <p>
           Cada torneo establece sus propias reglas (duración, cuota de inscripción, premios,
           ventana de juego). El jugador acepta dichas reglas al momento de inscribirse.
+        </p>
+        <p>
+          En torneos pagados con pozo dinámico, la cuota de inscripción se divide entre un
+          aporte al pozo de premios y un fee de plataforma con IVA incluido. La distribución
+          vigente se muestra antes de la inscripción. Los premios finales pueden aumentar según
+          la cantidad real de participantes inscritos.
         </p>
         <p>
           El <strong>puntaje final</strong> es la única métrica de clasificación. En caso de
@@ -117,9 +123,10 @@ export default function TerminosPage() {
       <Section title="8. Impuestos">
         <p>
           Los premios obtenidos en competencias de habilidad pueden estar sujetos a tributación
-          según las normas del Servicio de Impuestos Internos (SII) de Chile. La plataforma emite
-          boletas de honorarios o comprobantes correspondientes cuando así lo exija la normativa.
-          El usuario es responsable de declarar sus ingresos conforme a la ley.
+          según las normas del Servicio de Impuestos Internos (SII) de Chile. La plataforma
+          registrará y documentará los cobros por servicios, fees de plataforma y cargos de
+          procesamiento conforme a la normativa aplicable. El usuario es responsable de declarar
+          sus ingresos y premios cuando corresponda conforme a la ley.
         </p>
       </Section>
 

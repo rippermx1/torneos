@@ -2,7 +2,8 @@ import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { Game2048 } from '@/lib/game/engine'
 import { DeterministicRNG, generateGameSeed } from '@/lib/game/rng'
 import { checkPlayWindow } from '@/lib/tournament/helpers'
-import type { Game } from '@/types/database'
+import { calculateGameDeadline, isPastGameDeadline } from '@/lib/tournament/game-deadline'
+import type { Game, Tournament } from '@/types/database'
 
 export async function POST(
   _req: Request,
@@ -29,7 +30,7 @@ export async function POST(
       .single(),
     supabase
       .from('tournaments')
-      .select('id, status, play_window_start, play_window_end')
+      .select('id, status, min_players, play_window_start, play_window_end, max_game_duration_seconds')
       .eq('id', tournamentId)
       .single(),
     supabase
@@ -40,7 +41,7 @@ export async function POST(
       .single(),
     supabase
       .from('games')
-      .select('id, status, current_board, final_score, move_count, seed')
+      .select('id, status, current_board, final_score, move_count, seed, started_at')
       .eq('tournament_id', tournamentId)
       .eq('user_id', userId)
       .single(),
@@ -51,10 +52,44 @@ export async function POST(
   }
 
   if (!tournament) return Response.json({ error: 'Torneo no encontrado' }, { status: 404 })
+  const tournamentState = tournament as Pick<
+    Tournament,
+    'id' | 'status' | 'min_players' | 'play_window_start' | 'play_window_end' | 'max_game_duration_seconds'
+  >
 
-  const playability = checkPlayWindow(tournament)
+  const playability = checkPlayWindow(tournamentState)
   if (!playability.ok) {
     return Response.json({ error: playability.reason }, { status: 400 })
+  }
+
+  if (tournamentState.status !== 'live') {
+    if (tournamentState.status !== 'open' && tournamentState.status !== 'scheduled') {
+      return Response.json({ error: 'El torneo no está disponible para iniciar partidas' }, { status: 400 })
+    }
+
+    const { count } = await supabase
+      .from('registrations')
+      .select('*', { count: 'exact', head: true })
+      .eq('tournament_id', tournamentId)
+
+    const playerCount = count ?? 0
+    if (playerCount < tournamentState.min_players) {
+      await supabase.rpc('cancel_tournament', { p_tournament_id: tournamentId })
+      return Response.json(
+        { error: 'El torneo fue cancelado porque no alcanzó el mínimo de participantes.' },
+        { status: 409 }
+      )
+    }
+
+    const { error: liveError } = await supabase
+      .from('tournaments')
+      .update({ status: 'live' })
+      .eq('id', tournamentId)
+      .in('status', ['scheduled', 'open'])
+
+    if (liveError) {
+      return Response.json({ error: `Error activando torneo: ${liveError.message}` }, { status: 500 })
+    }
   }
 
   if (!registration) {
@@ -62,10 +97,34 @@ export async function POST(
   }
 
   if (existingGameData) {
-    const game = existingGameData as Pick<Game, 'id' | 'status' | 'current_board' | 'final_score' | 'move_count' | 'seed'>
+    const game = existingGameData as Pick<
+      Game,
+      'id' | 'status' | 'current_board' | 'final_score' | 'move_count' | 'seed' | 'started_at'
+    >
     if (game.status === 'completed' || game.status === 'abandoned') {
       return Response.json({ error: 'Tu partida en este torneo ya finalizó' }, { status: 400 })
     }
+    if (
+      game.started_at &&
+      isPastGameDeadline(
+        game.started_at,
+        tournamentState.play_window_end,
+        tournamentState.max_game_duration_seconds
+      )
+    ) {
+      await supabase
+        .from('games')
+        .update({
+          status: 'completed',
+          end_reason: 'timeout',
+          ended_at: new Date().toISOString(),
+        })
+        .eq('id', game.id)
+        .eq('status', 'active')
+
+      return Response.json({ error: 'Tu partida alcanzó su duración máxima', timeout: true }, { status: 400 })
+    }
+
     // Retornar estado actual para reanudar
     return Response.json({
       gameId: game.id,
@@ -74,6 +133,13 @@ export async function POST(
       moveCount: game.move_count,
       seed: game.seed,
       moveNumber: game.move_count + 2, // +2 por los dos spawns iniciales
+      deadlineAt: game.started_at
+        ? calculateGameDeadline(
+            game.started_at,
+            tournamentState.play_window_end,
+            tournamentState.max_game_duration_seconds
+          )
+        : tournamentState.play_window_end,
       resuming: true,
     })
   }
@@ -83,6 +149,7 @@ export async function POST(
   const gameBoard = new Game2048()
   gameBoard.spawnTile(new DeterministicRNG(seed, 0))
   gameBoard.spawnTile(new DeterministicRNG(seed, 1))
+  const startedAt = new Date().toISOString()
 
   const { data: newGame, error: insertErr } = await supabase
     .from('games')
@@ -95,7 +162,7 @@ export async function POST(
       highest_tile: 0,
       move_count: 0,
       current_board: gameBoard.board,
-      started_at: new Date().toISOString(),
+      started_at: startedAt,
     })
     .select('id')
     .single()
@@ -111,6 +178,11 @@ export async function POST(
     moveCount: 0,
     seed,
     moveNumber: 2,
+    deadlineAt: calculateGameDeadline(
+      startedAt,
+      tournamentState.play_window_end,
+      tournamentState.max_game_duration_seconds
+    ),
     resuming: false,
   })
 }

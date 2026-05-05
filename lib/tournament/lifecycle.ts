@@ -163,6 +163,24 @@ export async function forceFinalizeTournament(tournamentId: string): Promise<Tra
     throw new Error(`No se puede finalizar torneo en estado: ${tournament.status}`)
   }
 
+  if (tournament.status === 'live' && Date.now() < new Date(tournament.play_window_end).getTime()) {
+    const [{ count: registeredCount }, { count: completedGamesCount }] = await Promise.all([
+      supabase
+        .from('registrations')
+        .select('*', { count: 'exact', head: true })
+        .eq('tournament_id', tournamentId),
+      supabase
+        .from('games')
+        .select('*', { count: 'exact', head: true })
+        .eq('tournament_id', tournamentId)
+        .eq('status', 'completed'),
+    ])
+
+    if ((completedGamesCount ?? 0) < (registeredCount ?? 0)) {
+      throw new Error('No se puede finalizar antes del cierre mientras haya inscritos sin partida completada.')
+    }
+  }
+
   // Pasar a finalizing si está en live
   if (tournament.status === 'live') {
     await supabase

@@ -2,6 +2,7 @@ import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { Game2048 } from '@/lib/game/engine'
 import { DeterministicRNG } from '@/lib/game/rng'
 import { checkPlayWindow } from '@/lib/tournament/helpers'
+import { isPastGameDeadline } from '@/lib/tournament/game-deadline'
 import { analyzeMove } from '@/lib/anticheat/detector'
 import type { Game, Direction } from '@/types/database'
 
@@ -58,14 +59,14 @@ export async function POST(
       .single(),
     supabase
       .from('games')
-      .select('id, status, move_count, current_board, final_score, seed')
+      .select('id, status, move_count, current_board, final_score, seed, started_at')
       .eq('id', gameId)
       .eq('tournament_id', tournamentId)
       .eq('user_id', userId)
       .single(),
     supabase
       .from('tournaments')
-      .select('id, status, play_window_start, play_window_end')
+      .select('id, status, play_window_start, play_window_end, max_game_duration_seconds')
       .eq('id', tournamentId)
       .single(),
   ])
@@ -76,17 +77,12 @@ export async function POST(
 
   if (!gameData) return Response.json({ error: 'Partida no encontrada' }, { status: 404 })
 
-  const game = gameData as Pick<Game, 'status' | 'move_count' | 'current_board' | 'final_score' | 'seed'>
+  const game = gameData as Pick<
+    Game,
+    'status' | 'move_count' | 'current_board' | 'final_score' | 'seed' | 'started_at'
+  >
   if (game.status !== 'active') {
     return Response.json({ error: 'La partida no está activa' }, { status: 400 })
-  }
-
-  // Verificar que el moveNumber es el siguiente esperado
-  const expectedMoveNumber = game.move_count + 2
-  if (moveNumber !== expectedMoveNumber) {
-    return Response.json({
-      error: `moveNumber fuera de orden: esperado ${expectedMoveNumber}, recibido ${moveNumber}`,
-    }, { status: 409 })
   }
 
   if (!tournament) return Response.json({ error: 'Torneo no encontrado' }, { status: 404 })
@@ -102,8 +98,38 @@ export async function POST(
         ended_at: new Date().toISOString(),
       })
       .eq('id', gameId)
+      .eq('status', 'active')
 
     return Response.json({ error: 'La ventana de juego cerró', timeout: true }, { status: 400 })
+  }
+
+  if (
+    game.started_at &&
+    isPastGameDeadline(
+      game.started_at,
+      tournament.play_window_end,
+      tournament.max_game_duration_seconds
+    )
+  ) {
+    await supabase
+      .from('games')
+      .update({
+        status: 'completed',
+        end_reason: 'timeout',
+        ended_at: new Date().toISOString(),
+      })
+      .eq('id', gameId)
+      .eq('status', 'active')
+
+    return Response.json({ error: 'La partida alcanzó su duración máxima', timeout: true }, { status: 400 })
+  }
+
+  // Verificar que el moveNumber es el siguiente esperado
+  const expectedMoveNumber = game.move_count + 2
+  if (moveNumber !== expectedMoveNumber) {
+    return Response.json({
+      error: `moveNumber fuera de orden: esperado ${expectedMoveNumber}, recibido ${moveNumber}`,
+    }, { status: 409 })
   }
 
   // Aplicar movimiento

@@ -84,6 +84,7 @@ export default async function TournamentPlayPage({
         config={{
           startUrl: `/api/tournaments/${id}/game/start`,
           moveUrl: `/api/tournaments/${id}/game/move`,
+          timeoutUrl: `/api/tournaments/${id}/game/timeout`,
           playWindowEnd: tournament.play_window_end,
         }}
       />

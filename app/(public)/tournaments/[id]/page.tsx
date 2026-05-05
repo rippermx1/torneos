@@ -6,6 +6,7 @@ import { RegisterButton } from '@/components/tournament/register-button'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { checkPlayWindow, checkRegistrationWindow } from '@/lib/tournament/helpers'
+import { calculateTournamentDisplayPayouts, splitEntryFee } from '@/lib/tournament/finance'
 
 export async function generateMetadata({
   params,
@@ -29,7 +30,7 @@ export async function generateMetadata({
   const totalPrize = t.prize_1st_cents + t.prize_2nd_cents + t.prize_3rd_cents
   const description =
     t.description ||
-    `Premio total ${formatCLP(totalPrize)} · Inscripción ${formatCLP(t.entry_fee_cents)}. Compite en el torneo de 2048 con premios reales en CLP.`
+    `Premio ${formatCLP(totalPrize)} · Inscripción ${formatCLP(t.entry_fee_cents)}. Compite en el torneo de 2048 con premios reales en CLP.`
 
   return {
     title: `${t.name} — Torneos 2048`,
@@ -80,8 +81,11 @@ export default async function TournamentDetailPage({
   const playWindow = checkPlayWindow(t)
   const canRegister = registrationWindow.ok
   const inPlayWindow = playWindow.ok
+  const currentPlayerCount = playerCount ?? 0
+  const hasMinimumPlayers = currentPlayerCount >= t.min_players
 
-  const totalPrize = t.prize_1st_cents + t.prize_2nd_cents + t.prize_3rd_cents
+  const payouts = calculateTournamentDisplayPayouts(t, currentPlayerCount)
+  const split = splitEntryFee(t.entry_fee_cents, t.prize_pool_bps)
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-10 space-y-8">
@@ -93,19 +97,36 @@ export default async function TournamentDetailPage({
       {/* Info principal */}
       <div className="grid grid-cols-2 gap-4">
         <InfoCard label="Inscripción" value={formatCLP(t.entry_fee_cents)} highlight />
-        <InfoCard label="Premio total" value={formatCLP(totalPrize)} />
-        <InfoCard label="Jugadores" value={`${playerCount ?? 0} / ${t.max_players}`} />
+        <InfoCard
+          label={t.prize_model === 'entry_pool' ? 'Premio mínimo' : 'Premio total'}
+          value={formatCLP(payouts.prizePoolCents)}
+        />
+        <InfoCard label="Jugadores" value={`${currentPlayerCount} / ${t.max_players}`} />
         <InfoCard label="Mínimo para jugar" value={`${t.min_players} jugadores`} />
       </div>
+
+      {t.prize_model === 'entry_pool' && t.entry_fee_cents > 0 && (
+        <div className="border rounded-xl p-5 space-y-2 text-sm">
+          <h2 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground">Distribución</h2>
+          <div className="flex justify-between gap-4">
+            <span className="text-muted-foreground">Aporte a premios por inscripción</span>
+            <span className="font-medium">{formatCLP(split.prizePoolContributionCents)}</span>
+          </div>
+          <div className="flex justify-between gap-4">
+            <span className="text-muted-foreground">Fee plataforma IVA incluido</span>
+            <span className="font-medium">{formatCLP(split.platformFeeGrossCents)}</span>
+          </div>
+        </div>
+      )}
 
       {/* Premios */}
       <div className="border rounded-xl p-5 space-y-3">
         <h2 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground">Premios</h2>
         <div className="space-y-2">
           {[
-            { place: '🥇 1° lugar', amount: t.prize_1st_cents },
-            { place: '🥈 2° lugar', amount: t.prize_2nd_cents },
-            { place: '🥉 3° lugar', amount: t.prize_3rd_cents },
+            { place: '🥇 1° lugar', amount: payouts.prize1Cents },
+            { place: '🥈 2° lugar', amount: payouts.prize2Cents },
+            { place: '🥉 3° lugar', amount: payouts.prize3Cents },
           ]
             .filter((p) => p.amount > 0)
             .map(({ place, amount }) => (
@@ -153,13 +174,17 @@ export default async function TournamentDetailPage({
             <div className="flex-1 text-center border rounded-xl py-3 text-sm text-muted-foreground">
               ✓ Inscrito
             </div>
-            {inPlayWindow ? (
+            {inPlayWindow && hasMinimumPlayers ? (
               <Link
                 href={`/tournaments/${id}/play`}
                 className="flex-1 text-center bg-amber-500 text-white py-3 rounded-xl font-medium hover:opacity-90 transition-opacity"
               >
                 Jugar ahora
               </Link>
+            ) : inPlayWindow ? (
+              <div className="flex-1 text-center border rounded-xl py-3 text-sm text-muted-foreground">
+                Mínimo no alcanzado; el torneo será cancelado y reembolsado.
+              </div>
             ) : (
               <div className="flex-1 text-center border rounded-xl py-3 text-sm text-muted-foreground">
                 {playWindow.reason === 'window_not_open'

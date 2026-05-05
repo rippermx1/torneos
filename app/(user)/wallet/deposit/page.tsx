@@ -16,12 +16,9 @@ const PRESETS = [
   { label: '$50.000', cents: 5000000 },
 ]
 
-type Provider = 'flow' | 'mercadopago'
-
 export default function DepositPage() {
   const [selected, setSelected] = useState<number | null>(null)
   const [custom, setCustom] = useState('')
-  const [provider, setProvider] = useState<Provider>('flow')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -30,13 +27,12 @@ export default function DepositPage() {
 
   const breakdown = useMemo(() => {
     if (!amountCents || amountCents < MIN_DEPOSIT_NET_CENTS) return null
-    if (provider !== 'flow') return null
     try {
       return computeDepositBreakdown(amountCents)
     } catch {
       return null
     }
-  }, [amountCents, provider])
+  }, [amountCents])
 
   async function handleDeposit() {
     if (!amountCents || amountCents < MIN_DEPOSIT_NET_CENTS) {
@@ -47,11 +43,7 @@ export default function DepositPage() {
     setError(null)
 
     try {
-      const endpoint =
-        provider === 'flow'
-          ? '/api/wallet/deposit/flow/create'
-          : '/api/wallet/deposit/create'
-      const res = await fetch(endpoint, {
+      const res = await fetch('/api/wallet/deposit/flow/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amountCents }),
@@ -62,7 +54,7 @@ export default function DepositPage() {
         return
       }
 
-      const url = provider === 'flow' ? data.redirectUrl : data.initPoint
+      const url = data.redirectUrl
       if (!url) {
         setError('Respuesta inválida del servidor')
         return
@@ -115,42 +107,16 @@ export default function DepositPage() {
         </div>
       </div>
 
-      <div className="space-y-2">
-        <p className="text-sm font-medium">Medio de pago</p>
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            onClick={() => setProvider('flow')}
-            className={`border rounded-xl py-3 text-sm font-medium transition-colors ${
-              provider === 'flow'
-                ? 'bg-foreground text-background border-foreground'
-                : 'hover:bg-muted'
-            }`}
-          >
-            Flow
-          </button>
-          <button
-            onClick={() => setProvider('mercadopago')}
-            className={`border rounded-xl py-3 text-sm font-medium transition-colors ${
-              provider === 'mercadopago'
-                ? 'bg-foreground text-background border-foreground'
-                : 'hover:bg-muted'
-            }`}
-          >
-            Mercado Pago
-          </button>
-        </div>
-      </div>
-
       {amountCents && amountCents >= MIN_DEPOSIT_NET_CENTS && (
         <div className="bg-muted/50 rounded-xl p-4 text-sm space-y-2">
-          {provider === 'flow' && breakdown ? (
+          {breakdown ? (
             <>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Recargas en tu billetera</span>
                 <span className="font-semibold">{formatCLP(breakdown.netCents)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Comisión de procesamiento</span>
+                <span className="text-muted-foreground">Cargo de procesamiento</span>
                 <span>{formatCLP(breakdown.userFeeCents)}</span>
               </div>
               <div className="flex justify-between border-t pt-2">
@@ -165,9 +131,8 @@ export default function DepositPage() {
             </div>
           )}
           <p className="text-xs text-muted-foreground">
-            {provider === 'flow'
-              ? 'Serás redirigido a Flow para completar el pago.'
-              : 'Serás redirigido a Mercado Pago para completar el pago.'}
+            Serás redirigido a Flow para completar el pago. El cargo de procesamiento incluye
+            los costos de pasarela y el IVA del servicio.
           </p>
         </div>
       )}
@@ -179,9 +144,7 @@ export default function DepositPage() {
         disabled={loading || !amountCents || amountCents < MIN_DEPOSIT_NET_CENTS}
         className="w-full bg-foreground text-background py-3 rounded-xl font-medium hover:opacity-90 transition-opacity disabled:opacity-40"
       >
-        {loading
-          ? 'Redirigiendo...'
-          : `Pagar con ${provider === 'flow' ? 'Flow' : 'Mercado Pago'}`}
+        {loading ? 'Redirigiendo...' : 'Pagar con Flow'}
       </button>
 
       <p className="text-xs text-muted-foreground text-center">

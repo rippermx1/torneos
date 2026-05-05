@@ -37,6 +37,7 @@ const PUBLIC_PREFIXES = [
   '/sign-up',
   '/auth/callback', // OAuth callback de Supabase (Google, etc.)
   '/auth/confirm', // Confirmación por email / magic link
+  '/api/wallet/deposit/flow/return', // Flow vuelve con POST del browser sin cookies SameSite=Lax
   '/api/webhooks',
   '/api/cron',
 ]

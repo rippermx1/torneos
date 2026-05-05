@@ -3,7 +3,10 @@ import { formatCLP, formatDateTimeCL } from '@/lib/utils'
 import Link from 'next/link'
 import type { Tournament } from '@/types/database'
 import { TournamentActions } from '@/components/tournament/tournament-actions'
-import { calculateTournamentFinancials } from '@/lib/tournament/finance'
+import {
+  calculateEntryPoolFinancials,
+  calculateTournamentFinancials,
+} from '@/lib/tournament/finance'
 
 const STATUS_LABEL: Record<Tournament['status'], string> = {
   scheduled: 'Programado',
@@ -27,8 +30,43 @@ interface PrizeLiability {
   committed_cents: number
   contingent_cents: number
   collected_cents: number
+  prize_pool_collected_cents: number
+  platform_fee_gross_cents: number
+  platform_fee_net_cents: number
+  platform_fee_iva_cents: number
   active_count: number
   pending_count: number
+}
+
+function getTournamentFinancialHealth(t: Tournament, projectedPlayers: number) {
+  if (t.prize_model === 'entry_pool') {
+    const financials = calculateEntryPoolFinancials({
+      entryFeeCents: t.entry_fee_cents,
+      minPlayers: t.min_players,
+      targetPlayers: projectedPlayers,
+      maxPlayers: t.max_players,
+      prizePoolBps: t.prize_pool_bps,
+    })
+
+    return {
+      ok: financials.isTargetHealthy,
+      label: `Fee neto ${(financials.platformNetMarginBps / 100).toFixed(1)}%`,
+    }
+  }
+
+  const financials = calculateTournamentFinancials({
+    entryFeeCents: t.entry_fee_cents,
+    prize1Cents: t.prize_1st_cents,
+    prize2Cents: t.prize_2nd_cents,
+    prize3Cents: t.prize_3rd_cents,
+    minPlayers: t.min_players,
+    targetPlayers: projectedPlayers,
+  })
+
+  return {
+    ok: financials.isBreakEven,
+    label: `Margen mín. ${(financials.minMarginBps / 100).toFixed(1)}%`,
+  }
 }
 
 export default async function AdminTournamentsPage() {
@@ -43,13 +81,18 @@ export default async function AdminTournamentsPage() {
   ])
 
   const tournaments = (data ?? []) as Tournament[]
-  const liability = (liabilityRow ?? {
+  const emptyLiability: PrizeLiability = {
     committed_cents: 0,
     contingent_cents: 0,
     collected_cents: 0,
+    prize_pool_collected_cents: 0,
+    platform_fee_gross_cents: 0,
+    platform_fee_net_cents: 0,
+    platform_fee_iva_cents: 0,
     active_count: 0,
     pending_count: 0,
-  }) as PrizeLiability
+  }
+  const liability = { ...emptyLiability, ...(liabilityRow as Partial<PrizeLiability> | null ?? {}) }
 
   // Cobertura: ingresos recaudados vs premios comprometidos (torneos live/finalizing)
   const coverage = liability.committed_cents > 0
@@ -61,14 +104,31 @@ export default async function AdminTournamentsPage() {
   )
   const paidFinancials = activeOrPending
     .filter((t) => t.entry_fee_cents > 0)
-    .map((t) => calculateTournamentFinancials({
-      entryFeeCents: t.entry_fee_cents,
-      prize1Cents: t.prize_1st_cents,
-      prize2Cents: t.prize_2nd_cents,
-      prize3Cents: t.prize_3rd_cents,
-      minPlayers: t.min_players,
-      targetPlayers: t.max_players,
-    }))
+    .map((t) => {
+      if (t.prize_model === 'entry_pool') {
+        const financials = calculateEntryPoolFinancials({
+          entryFeeCents: t.entry_fee_cents,
+          minPlayers: t.min_players,
+          targetPlayers: t.max_players,
+          maxPlayers: t.max_players,
+          prizePoolBps: t.prize_pool_bps,
+        })
+        return {
+          isBreakEven: true,
+          minProfitCents: financials.minPlatformFeeNetCents,
+          minMarginBps: financials.platformNetMarginBps,
+        }
+      }
+
+      return calculateTournamentFinancials({
+        entryFeeCents: t.entry_fee_cents,
+        prize1Cents: t.prize_1st_cents,
+        prize2Cents: t.prize_2nd_cents,
+        prize3Cents: t.prize_3rd_cents,
+        minPlayers: t.min_players,
+        targetPlayers: t.max_players,
+      })
+    })
   const lossRiskCount = paidFinancials.filter((financials) => !financials.isBreakEven).length
   const expectedMinProfit = paidFinancials.reduce((sum, financials) => sum + financials.minProfitCents, 0)
   const averageMinMargin = paidFinancials.length > 0
@@ -136,14 +196,14 @@ export default async function AdminTournamentsPage() {
           <div className="space-y-0.5">
             <p className="text-xs text-muted-foreground">Resultado estimado</p>
             <p className={`font-semibold ${liability.collected_cents >= liability.committed_cents ? 'text-green-700' : 'text-red-700'}`}>
-              {formatCLP(liability.collected_cents - liability.committed_cents)}
+              {formatCLP(liability.platform_fee_net_cents)}
             </p>
-            <p className="text-xs text-muted-foreground">Recaudado − Comprometido</p>
+            <p className="text-xs text-muted-foreground">Fee neto acumulado</p>
           </div>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 border-t pt-3 text-sm">
           <div>
-            <p className="text-xs text-muted-foreground">Utilidad mínima esperada</p>
+            <p className="text-xs text-muted-foreground">Ingreso neto mínimo</p>
             <p className={`font-semibold ${expectedMinProfit >= 0 ? 'text-green-700' : 'text-red-700'}`}>
               {formatCLP(expectedMinProfit)}
             </p>
@@ -177,15 +237,8 @@ export default async function AdminTournamentsPage() {
         {tournaments.map((t) => {
           const playerCount = counts[t.id] ?? 0
           const canFinalize = t.status === 'live' || t.status === 'finalizing'
-          const financials = calculateTournamentFinancials({
-            entryFeeCents: t.entry_fee_cents,
-            prize1Cents: t.prize_1st_cents,
-            prize2Cents: t.prize_2nd_cents,
-            prize3Cents: t.prize_3rd_cents,
-            minPlayers: t.min_players,
-            targetPlayers: t.max_players,
-          })
           const paidTournament = t.entry_fee_cents > 0
+          const financialHealth = getTournamentFinancialHealth(t, Math.max(playerCount, t.min_players))
 
           return (
             <div key={t.id} className="border rounded-xl p-4 space-y-3">
@@ -209,10 +262,10 @@ export default async function AdminTournamentsPage() {
                       ? ` (mín ${t.min_players})`
                       : ''}
                   </p>
-                  <p className={`text-xs ${!paidTournament ? 'text-amber-700' : financials.isBreakEven ? 'text-green-700' : 'text-red-700'}`}>
+                  <p className={`text-xs ${!paidTournament ? 'text-amber-700' : financialHealth.ok ? 'text-green-700' : 'text-red-700'}`}>
                     {!paidTournament
-                      ? `Costo promo ${formatCLP(financials.totalPrizesCents)}`
-                      : `Margen mín. ${(financials.minMarginBps / 100).toFixed(1)}%`}
+                      ? `Costo promo ${formatCLP(t.prize_1st_cents + t.prize_2nd_cents + t.prize_3rd_cents)}`
+                      : financialHealth.label}
                   </p>
                 </div>
               </div>

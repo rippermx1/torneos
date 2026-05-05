@@ -10,14 +10,14 @@ export default async function HomePage() {
   const supabase = await createClient()
   const { data } = await supabase
     .from('tournaments')
-    .select('id, name, entry_fee_cents, prize_1st_cents, prize_2nd_cents, prize_3rd_cents, status, play_window_start')
+    .select('*')
     .in('status', ['live', 'open', 'scheduled'])
     .order('play_window_start', { ascending: true })
     .limit(3)
 
   const tournaments = (data ?? []) as Pick<
     Tournament,
-    'id' | 'name' | 'entry_fee_cents' | 'prize_1st_cents' | 'prize_2nd_cents' | 'prize_3rd_cents' | 'status' | 'play_window_start'
+    'id' | 'name' | 'entry_fee_cents' | 'prize_1st_cents' | 'prize_2nd_cents' | 'prize_3rd_cents' | 'prize_model' | 'status' | 'play_window_start'
   >[]
 
   const STATUS_BADGE: Record<string, string> = {
@@ -71,7 +71,7 @@ export default async function HomePage() {
             <h2 className="text-2xl font-bold text-center mb-10">¿Cómo funciona?</h2>
             <div className="grid sm:grid-cols-3 gap-6">
               {[
-                { n: '1', title: 'Recarga tu billetera', desc: 'Deposita con Mercado Pago. El saldo queda disponible al instante.' },
+                { n: '1', title: 'Recarga tu billetera', desc: 'Deposita con Flow. El saldo queda disponible al confirmar el pago.' },
                 { n: '2', title: 'Inscríbete a un torneo', desc: 'Elige el torneo, paga la inscripción y espera la ventana de juego.' },
                 { n: '3', title: 'Juega y gana', desc: 'Tienes una sola partida. El puntaje más alto al cierre lleva el premio.' },
               ].map(({ n, title, desc }) => (
@@ -132,7 +132,9 @@ export default async function HomePage() {
                       </div>
                       <div className="text-right shrink-0">
                         <p className="font-bold text-lg">{formatCLP(totalPrize)}</p>
-                        <p className="text-xs text-muted-foreground">en premios</p>
+                        <p className="text-xs text-muted-foreground">
+                          {t.prize_model === 'entry_pool' ? 'premio mínimo' : 'en premios'}
+                        </p>
                       </div>
                     </Link>
                   )

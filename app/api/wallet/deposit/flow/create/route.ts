@@ -71,7 +71,7 @@ export async function POST(req: Request): Promise<Response> {
       amount: breakdown.chargedPesos,
       email: user.email ?? '',
       urlConfirmation: `${appUrl}/api/webhooks/flow`,
-      urlReturn: `${appUrl}/wallet?deposit=flow_return`,
+      urlReturn: `${appUrl}/api/wallet/deposit/flow/return`,
       optional: { user_id: userId, net_cents: String(breakdown.netCents) },
       timeout: 1800, // 30 min: si no paga en ese plazo, expira
     })

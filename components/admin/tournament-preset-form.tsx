@@ -5,7 +5,7 @@ import { useMemo, useState } from 'react'
 import type { ComponentType } from 'react'
 import type { TournamentType } from '@/types/database'
 import {
-  calculateTournamentFinancials,
+  calculateEntryPoolFinancials,
   TOURNAMENT_PRESETS,
   pesosToCents,
   type TournamentPreset,
@@ -22,9 +22,6 @@ interface TournamentPresetFormProps {
 
 type NumericField =
   | 'entryFeePesos'
-  | 'prize1Pesos'
-  | 'prize2Pesos'
-  | 'prize3Pesos'
   | 'minPlayers'
   | 'targetPlayers'
   | 'maxPlayers'
@@ -45,7 +42,7 @@ export function TournamentPresetForm({
 }: TournamentPresetFormProps) {
   const [presetKey, setPresetKey] = useState<TournamentType>('standard')
   const [name, setName] = useState('Torneo Estándar')
-  const [description, setDescription] = useState('Pool competitivo con premios al top 3.')
+  const [description, setDescription] = useState('Pozo dinámico: 85% de cada inscripción va a premios.')
   const [values, setValues] = useState(() => valuesFromPreset(TOURNAMENT_PRESETS[1]))
   const [dates, setDates] = useState({
     registrationOpensAt,
@@ -53,13 +50,11 @@ export function TournamentPresetForm({
     playWindowEnd,
   })
 
-  const financials = useMemo(() => calculateTournamentFinancials({
+  const financials = useMemo(() => calculateEntryPoolFinancials({
     entryFeeCents: pesosToCents(values.entryFeePesos),
-    prize1Cents: pesosToCents(values.prize1Pesos),
-    prize2Cents: pesosToCents(values.prize2Pesos),
-    prize3Cents: pesosToCents(values.prize3Pesos),
     minPlayers: values.minPlayers,
     targetPlayers: values.targetPlayers,
+    maxPlayers: values.maxPlayers,
   }), [values])
 
   function applyPreset(preset: TournamentPreset) {
@@ -78,7 +73,25 @@ export function TournamentPresetForm({
   }
 
   const paidTournament = values.entryFeePesos > 0
-  const canLaunch = !paidTournament || financials.isBreakEven
+  const registrationOpensMs = Date.parse(dates.registrationOpensAt)
+  const playStartMs = Date.parse(dates.playWindowStart)
+  const playEndMs = Date.parse(dates.playWindowEnd)
+  const playWindowSeconds = (playEndMs - playStartMs) / 1000
+  const datesValid =
+    Number.isFinite(registrationOpensMs) &&
+    Number.isFinite(playStartMs) &&
+    Number.isFinite(playEndMs) &&
+    registrationOpensMs < playStartMs &&
+    playStartMs < playEndMs &&
+    values.durationMinutes * 60 <= playWindowSeconds
+  const capacityValid =
+    values.minPlayers >= 2 &&
+    values.targetPlayers >= values.minPlayers &&
+    values.maxPlayers >= values.minPlayers &&
+    values.targetPlayers <= values.maxPlayers
+  const economicsValid = values.entryFeePesos >= 0 && values.durationMinutes > 0
+  const paidPlayersValid = !paidTournament || values.minPlayers >= 3
+  const canLaunch = datesValid && capacityValid && economicsValid && paidPlayersValid
 
   return (
     <div className="space-y-6">
@@ -86,19 +99,17 @@ export function TournamentPresetForm({
         <div>
           <p className="text-sm font-medium">Presets listos</p>
           <p className="text-xs text-muted-foreground">
-            Selecciona una base rentable y ajusta premios o cupos antes de publicar.
+            Selecciona una base rentable y ajusta cupos u horarios antes de publicar.
           </p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
           {TOURNAMENT_PRESETS.map((preset) => {
             const Icon = PRESET_ICONS[preset.strategy]
-            const presetFinancials = calculateTournamentFinancials({
+            const presetFinancials = calculateEntryPoolFinancials({
               entryFeeCents: pesosToCents(preset.entryFeePesos),
-              prize1Cents: pesosToCents(preset.prize1Pesos),
-              prize2Cents: pesosToCents(preset.prize2Pesos),
-              prize3Cents: pesosToCents(preset.prize3Pesos),
               minPlayers: preset.minPlayers,
               targetPlayers: preset.targetPlayers,
+              maxPlayers: preset.maxPlayers,
             })
             const selected = preset.key === presetKey
 
@@ -120,9 +131,9 @@ export function TournamentPresetForm({
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <Metric label="Entrada" value={formatPesos(preset.entryFeePesos)} />
-                  <Metric label="Premios" value={formatCents(presetFinancials.totalPrizesCents)} />
+                  <Metric label="Premio mín." value={formatCents(presetFinancials.minPrizePoolCents)} />
                   <Metric label="Mínimo" value={`${preset.minPlayers} jugadores`} />
-                  <Metric label="Margen mín." value={preset.entryFeePesos > 0 ? formatBps(presetFinancials.minMarginBps) : 'Costo promo'} />
+                  <Metric label="Fee neto" value={preset.entryFeePesos > 0 ? formatBps(presetFinancials.platformNetMarginBps) : 'Costo promo'} />
                 </div>
               </button>
             )
@@ -140,15 +151,6 @@ export function TournamentPresetForm({
               <legend className="text-sm font-medium px-1">Datos principales</legend>
               <Field label="Nombre del torneo" name="name" required value={name} onChange={setName} />
               <Field label="Descripción" name="description" value={description} onChange={setDescription} />
-            </fieldset>
-
-            <fieldset className="border rounded-lg p-4 space-y-4">
-              <legend className="text-sm font-medium px-1">Premios en CLP</legend>
-              <div className="grid grid-cols-3 gap-3">
-                <NumberField label="1er lugar" name="prize_1st" value={values.prize1Pesos} onChange={(value) => setNumeric('prize1Pesos', value)} required />
-                <NumberField label="2do lugar" name="prize_2nd" value={values.prize2Pesos} onChange={(value) => setNumeric('prize2Pesos', value)} />
-                <NumberField label="3er lugar" name="prize_3rd" value={values.prize3Pesos} onChange={(value) => setNumeric('prize3Pesos', value)} />
-              </div>
             </fieldset>
 
             <fieldset className="border rounded-lg p-4 space-y-4">
@@ -182,21 +184,27 @@ export function TournamentPresetForm({
               )}
             </div>
             <div className="space-y-2 text-sm">
-              <MetricRow label="Premios" value={formatCents(financials.totalPrizesCents)} />
-              <MetricRow label="Recaudación mínima" value={formatCents(financials.minRevenueCents)} />
-              <MetricRow label="Costo contable mínimo" value={formatCents(financials.requiredRevenueCents)} />
-              <MetricRow label="Utilidad mínima" value={formatCents(financials.minProfitCents)} tone={financials.minProfitCents >= 0 ? 'green' : 'red'} />
-              <MetricRow label="Margen mínimo" value={paidTournament ? formatBps(financials.minMarginBps) : 'Freeroll'} tone={financials.minMarginBps >= 0 ? 'green' : 'red'} />
-              <MetricRow label="Utilidad objetivo" value={formatCents(financials.targetProfitCents)} tone={financials.targetProfitCents >= 0 ? 'green' : 'red'} />
+              <MetricRow label="Premio mínimo" value={formatCents(financials.minPrizePoolCents)} />
+              <MetricRow label="Premio objetivo" value={formatCents(financials.targetPrizePoolCents)} />
+              <MetricRow label="Premio máximo" value={formatCents(financials.maxPrizePoolCents)} />
+              <MetricRow label="Fee plataforma bruto" value={formatCents(financials.targetPlatformFeeGrossCents)} />
+              <MetricRow label="IVA fee objetivo" value={formatCents(financials.targetPlatformFeeIvaCents)} />
+              <MetricRow label="Ingreso neto objetivo" value={formatCents(financials.targetPlatformFeeNetCents)} tone="green" />
+              <MetricRow label="Margen neto por entrada" value={paidTournament ? formatBps(financials.platformNetMarginBps) : 'Freeroll'} tone={financials.isTargetHealthy ? 'green' : 'red'} />
             </div>
             {!canLaunch && (
               <p className="text-xs text-red-700">
-                Sube el mínimo a {financials.requiredMinPlayers} jugadores o baja premios.
+                Revisa cupos, horarios, duración y mínimo de jugadores antes de publicar.
               </p>
             )}
-            {paidTournament && financials.isBreakEven && !financials.isTargetHealthy && (
+            {paidTournament && !paidPlayersValid && (
+              <p className="text-xs text-red-700">
+                Los torneos pagados requieren al menos 3 jugadores.
+              </p>
+            )}
+            {paidTournament && !financials.isTargetHealthy && (
               <p className="text-xs text-amber-700">
-                Rentable, pero con margen estrecho. Úsalo sólo como adquisición.
+                El fee neto queda estrecho. Úsalo sólo como adquisición.
               </p>
             )}
             {!paidTournament && (
@@ -222,9 +230,6 @@ export function TournamentPresetForm({
 function valuesFromPreset(preset: TournamentPreset) {
   return {
     entryFeePesos: preset.entryFeePesos,
-    prize1Pesos: preset.prize1Pesos,
-    prize2Pesos: preset.prize2Pesos,
-    prize3Pesos: preset.prize3Pesos,
     minPlayers: preset.minPlayers,
     targetPlayers: preset.targetPlayers,
     maxPlayers: preset.maxPlayers,

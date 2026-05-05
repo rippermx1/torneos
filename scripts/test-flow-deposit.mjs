@@ -55,16 +55,15 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey, {
   auth: { persistSession: false },
 })
 
-const USER_FEE_RATE = 0.015
+const FLOW_CARD_NEXT_DAY_FEE_RATE = 0.0319
+const PLATFORM_FEE_NET_SHARE = 1 / 1.19
+const USER_FEE_RATE =
+  FLOW_CARD_NEXT_DAY_FEE_RATE / (PLATFORM_FEE_NET_SHARE - FLOW_CARD_NEXT_DAY_FEE_RATE)
 const USER_FEE_MIN_CENTS = 15000
-const USER_FEE_MAX_CENTS = 500000
 
 function computeDepositBreakdown(netCents) {
-  const rawFee = Math.round(netCents * USER_FEE_RATE)
-  const userFeeCents = Math.min(
-    USER_FEE_MAX_CENTS,
-    Math.max(USER_FEE_MIN_CENTS, rawFee)
-  )
+  const rawFee = Math.ceil(netCents * USER_FEE_RATE)
+  const userFeeCents = Math.max(USER_FEE_MIN_CENTS, rawFee)
   const chargedCents = Math.ceil((netCents + userFeeCents) / 100) * 100
   return {
     netCents,
@@ -181,7 +180,7 @@ async function main() {
       email: authUser.user.email ?? 'test@torneosplay.cl',
       paymentMethod: 9,
       urlConfirmation: `${appUrl}/api/webhooks/flow`,
-      urlReturn: `${appUrl}/wallet?deposit=flow_return`,
+      urlReturn: `${appUrl}/api/wallet/deposit/flow/return`,
       optional: JSON.stringify({ user_id: userId, net_cents: String(breakdown.netCents) }),
       timeout: 600,
     })

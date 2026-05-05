@@ -100,6 +100,12 @@ export async function POST(
     if (rpcError.message.includes('Torneo lleno')) {
       return Response.json({ error: 'El torneo está lleno' }, { status: 400 })
     }
+    if (rpcError.message.includes('Inscripciones cerradas')) {
+      return Response.json({ error: 'Inscripciones cerradas' }, { status: 400 })
+    }
+    if (rpcError.message.includes('Cuota inconsistente')) {
+      return Response.json({ error: 'La cuota del torneo cambió. Actualiza la página e intenta nuevamente.' }, { status: 409 })
+    }
     if (rpcError.message.includes('Saldo insuficiente')) {
       return Response.json({ error: 'Saldo insuficiente', insufficientFunds: true }, { status: 402 })
     }

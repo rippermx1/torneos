@@ -11,6 +11,7 @@ export type WalletTransactionType =
   | 'refund'
   | 'adjustment'
 export type TournamentType = 'standard' | 'express' | 'elite' | 'freeroll'
+export type PrizeModel = 'fixed' | 'entry_pool'
 export type TournamentStatus =
   | 'scheduled'
   | 'open'
@@ -64,10 +65,16 @@ export interface Tournament {
   description: string | null
   game_type: string
   tournament_type: TournamentType
+  prize_model: PrizeModel
   entry_fee_cents: number
   prize_1st_cents: number
   prize_2nd_cents: number
   prize_3rd_cents: number
+  prize_pool_bps: number
+  platform_fee_bps: number
+  prize_1st_bps: number
+  prize_2nd_bps: number
+  prize_3rd_bps: number
   min_players: number
   max_players: number
   registration_opens_at: string
@@ -83,6 +90,13 @@ export interface Registration {
   id: string
   tournament_id: string
   user_id: string
+  entry_fee_cents: number | null
+  prize_pool_contribution_cents: number | null
+  platform_fee_gross_cents: number | null
+  platform_fee_net_cents: number | null
+  platform_fee_iva_cents: number | null
+  prize_model: PrizeModel | null
+  accounting_metadata: Record<string, unknown>
   registered_at: string
 }
 
@@ -221,13 +235,13 @@ export type Database = {
       }
       tournaments: {
         Row: Tournament & DbRecord
-        Insert: InsertWithOptional<Tournament, 'id' | 'created_at' | 'description' | 'game_type' | 'tournament_type' | 'prize_2nd_cents' | 'prize_3rd_cents' | 'min_players' | 'max_players' | 'status' | 'max_game_duration_seconds' | 'created_by'>
+        Insert: InsertWithOptional<Tournament, 'id' | 'created_at' | 'description' | 'game_type' | 'tournament_type' | 'prize_model' | 'prize_2nd_cents' | 'prize_3rd_cents' | 'prize_pool_bps' | 'platform_fee_bps' | 'prize_1st_bps' | 'prize_2nd_bps' | 'prize_3rd_bps' | 'min_players' | 'max_players' | 'status' | 'max_game_duration_seconds' | 'created_by'>
         Update: Partial<Omit<Tournament, 'id'>> & DbRecord
         Relationships: []
       }
       registrations: {
         Row: Registration & DbRecord
-        Insert: InsertWithOptional<Registration, 'id' | 'registered_at'>
+        Insert: InsertWithOptional<Registration, 'id' | 'registered_at' | 'entry_fee_cents' | 'prize_pool_contribution_cents' | 'platform_fee_gross_cents' | 'platform_fee_net_cents' | 'platform_fee_iva_cents' | 'prize_model' | 'accounting_metadata'>
         Update: Partial<Omit<Registration, 'id' | 'registered_at'>> & DbRecord
         Relationships: []
       }
@@ -280,7 +294,22 @@ export type Database = {
         Relationships: []
       }
     }
-    Views: Record<string, never>
+    Views: {
+      prize_liability: {
+        Row: {
+          committed_cents: number
+          contingent_cents: number
+          collected_cents: number
+          prize_pool_collected_cents: number
+          platform_fee_gross_cents: number
+          platform_fee_net_cents: number
+          platform_fee_iva_cents: number
+          active_count: number
+          pending_count: number
+        } & DbRecord
+        Relationships: []
+      }
+    }
     Functions: {
       wallet_insert_transaction: {
         Args: {

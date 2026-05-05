@@ -10,6 +10,7 @@ export interface GameConfig {
   mode?: 'local' | 'remote'
   startUrl: string
   moveUrl: string
+  timeoutUrl?: string
   extraMovePayload?: Record<string, unknown>
   timeLimitSeconds?: number
   playWindowEnd?: string
@@ -25,6 +26,7 @@ interface GameState {
   gameOver: boolean
   bestScore: number
   timedOut: boolean
+  deadlineAt?: string
 }
 
 // Cada celda sabe exactamente cuánto y en qué dirección se desplaza
@@ -171,20 +173,39 @@ export function GameBoardClient({ config }: { config: GameConfig }) {
   const scoreFloatTimeoutRef = useRef<number | null>(null)
   const shakeTimeoutRef = useRef<number | null>(null)
   const moveRequestIdRef = useRef(0)
+  const timeoutReportedRef = useRef(false)
 
   // Temporizador
   useEffect(() => {
-    if (!config.playWindowEnd) return
-    const end = new Date(config.playWindowEnd).getTime()
+    const deadlineAt = state?.deadlineAt ?? config.playWindowEnd
+    if (!deadlineAt) return
+    const end = new Date(deadlineAt).getTime()
+    if (!Number.isFinite(end)) return
+
+    const reportTimeout = () => {
+      if (isLocalMode || !config.timeoutUrl || !state?.gameId || timeoutReportedRef.current) return
+      timeoutReportedRef.current = true
+      void fetch(config.timeoutUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gameId: state.gameId }),
+      }).catch(() => {
+        timeoutReportedRef.current = false
+      })
+    }
+
     const tick = () => {
       const left = Math.max(0, Math.floor((end - Date.now()) / 1000))
       setTimeLeft(left)
-      if (left === 0) setState((p) => p ? { ...p, timedOut: true, gameOver: true } : p)
+      if (left === 0) {
+        setState((p) => p ? { ...p, timedOut: true, gameOver: true } : p)
+        reportTimeout()
+      }
     }
     tick()
     const id = setInterval(tick, 1000)
     return () => clearInterval(id)
-  }, [config.playWindowEnd])
+  }, [config.playWindowEnd, config.timeoutUrl, isLocalMode, state?.deadlineAt, state?.gameId])
 
   const triggerAnims = useCallback(
     (prev: number[][] | null, next: number[][], dir: Direction | null) => {
@@ -268,6 +289,7 @@ export function GameBoardClient({ config }: { config: GameConfig }) {
 
   const loadGame = useCallback(async () => {
     try {
+      timeoutReportedRef.current = false
       if (isLocalMode) {
         const localGame = createLocalPracticeGame()
 
@@ -280,6 +302,7 @@ export function GameBoardClient({ config }: { config: GameConfig }) {
           moveNumber: localGame.moveNumber,
           gameOver: false,
           timedOut: false,
+          deadlineAt: undefined,
           bestScore: prev?.bestScore ?? 0,
         }))
         return
@@ -300,6 +323,7 @@ export function GameBoardClient({ config }: { config: GameConfig }) {
         gameId: data.gameId,
         gameOver: false,
         timedOut: false,
+        deadlineAt: typeof data.deadlineAt === 'string' ? data.deadlineAt : config.playWindowEnd,
         bestScore: prev?.bestScore ?? 0,
       }))
     } catch {
@@ -307,11 +331,12 @@ export function GameBoardClient({ config }: { config: GameConfig }) {
     } finally {
       setLoading(false)
     }
-  }, [config.startUrl, isLocalMode, triggerAnims])
+  }, [config.playWindowEnd, config.startUrl, isLocalMode, triggerAnims])
 
   const startGame = useCallback(() => {
     setLoading(true)
     setError(null)
+    timeoutReportedRef.current = false
     prevBoardRef.current = null
     setCellAnims(new Map())
     void loadGame()

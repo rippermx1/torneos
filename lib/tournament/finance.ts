@@ -1,10 +1,18 @@
 import type { TournamentType } from '@/types/database'
 
-export const IVA_BPS = 1900
-export const FLOW_NEXT_DAY_FEE_BPS = 319
-export const MIN_TARGET_MARGIN_BPS = 1200
-
 const BPS = 10000
+
+export const IVA_BPS = 1900
+export const DEFAULT_PRIZE_MODEL = 'entry_pool' as const
+export const DEFAULT_PRIZE_POOL_BPS = 8500
+export const DEFAULT_PLATFORM_FEE_BPS = BPS - DEFAULT_PRIZE_POOL_BPS
+export const DEFAULT_PRIZE_1ST_BPS = 7000
+export const DEFAULT_PRIZE_2ND_BPS = 2000
+export const DEFAULT_PRIZE_3RD_BPS = BPS - DEFAULT_PRIZE_1ST_BPS - DEFAULT_PRIZE_2ND_BPS
+export const MIN_TARGET_PLATFORM_NET_MARGIN_BPS = 1000
+export const MIN_TARGET_MARGIN_BPS = MIN_TARGET_PLATFORM_NET_MARGIN_BPS
+
+export const FLOW_NEXT_DAY_FEE_BPS = 319
 const IVA_MULTIPLIER_BPS = BPS + IVA_BPS
 const FLOW_EFFECTIVE_COST_BPS = Math.ceil((FLOW_NEXT_DAY_FEE_BPS * IVA_MULTIPLIER_BPS) / BPS)
 const FLOW_NET_BPS = BPS - FLOW_EFFECTIVE_COST_BPS
@@ -15,9 +23,6 @@ export interface TournamentPreset {
   shortLabel: string
   description: string
   entryFeePesos: number
-  prize1Pesos: number
-  prize2Pesos: number
-  prize3Pesos: number
   minPlayers: number
   targetPlayers: number
   maxPlayers: number
@@ -40,19 +45,71 @@ export interface TournamentFinancials {
   isTargetHealthy: boolean
 }
 
+export interface EntryFeeSplit {
+  entryFeeCents: number
+  prizePoolContributionCents: number
+  platformFeeGrossCents: number
+  platformFeeNetCents: number
+  platformFeeIvaCents: number
+  prizePoolBps: number
+  platformFeeBps: number
+}
+
+export interface PrizePoolPayouts {
+  playerCount: number
+  prizePoolCents: number
+  prize1Cents: number
+  prize2Cents: number
+  prize3Cents: number
+}
+
+export interface TournamentPrizeDisplayInput {
+  entry_fee_cents: number
+  prize_1st_cents: number
+  prize_2nd_cents: number
+  prize_3rd_cents: number
+  min_players: number
+  prize_model?: 'fixed' | 'entry_pool'
+  prize_pool_bps?: number
+  prize_1st_bps?: number
+  prize_2nd_bps?: number
+  prize_3rd_bps?: number
+}
+
+export interface EntryPoolFinancials {
+  split: EntryFeeSplit
+  minRevenueCents: number
+  targetRevenueCents: number
+  maxRevenueCents: number
+  minPrizePoolCents: number
+  targetPrizePoolCents: number
+  maxPrizePoolCents: number
+  minPlatformFeeGrossCents: number
+  targetPlatformFeeGrossCents: number
+  maxPlatformFeeGrossCents: number
+  minPlatformFeeNetCents: number
+  targetPlatformFeeNetCents: number
+  maxPlatformFeeNetCents: number
+  minPlatformFeeIvaCents: number
+  targetPlatformFeeIvaCents: number
+  maxPlatformFeeIvaCents: number
+  minPayouts: PrizePoolPayouts
+  targetPayouts: PrizePoolPayouts
+  maxPayouts: PrizePoolPayouts
+  platformNetMarginBps: number
+  isTargetHealthy: boolean
+}
+
 export const TOURNAMENT_PRESETS = [
   {
     key: 'express',
-    label: 'Express rentable',
+    label: 'Express diario',
     shortLabel: 'Express',
-    description: 'Baja entrada, premio visible y cierre rápido para actividad diaria.',
+    description: 'Entrada baja y pozo dinámico para actividad diaria.',
     entryFeePesos: 1000,
-    prize1Pesos: 6000,
-    prize2Pesos: 2500,
-    prize3Pesos: 1000,
-    minPlayers: 14,
-    targetPlayers: 28,
-    maxPlayers: 60,
+    minPlayers: 8,
+    targetPlayers: 30,
+    maxPlayers: 120,
     durationMinutes: 8,
     windowHours: 2,
     strategy: 'daily',
@@ -61,13 +118,10 @@ export const TOURNAMENT_PRESETS = [
     key: 'standard',
     label: 'Estándar balanceado',
     shortLabel: 'Estándar',
-    description: 'Premios atractivos con margen sano desde el mínimo.',
+    description: 'Pozo creciente con buena relación premio/entrada.',
     entryFeePesos: 3000,
-    prize1Pesos: 15000,
-    prize2Pesos: 8000,
-    prize3Pesos: 4000,
-    minPlayers: 14,
-    targetPlayers: 35,
+    minPlayers: 6,
+    targetPlayers: 30,
     maxPlayers: 100,
     durationMinutes: 10,
     windowHours: 24,
@@ -79,12 +133,9 @@ export const TOURNAMENT_PRESETS = [
     shortLabel: 'Elite',
     description: 'Ticket alto, cupos limitados y premio principal fuerte.',
     entryFeePesos: 10000,
-    prize1Pesos: 60000,
-    prize2Pesos: 25000,
-    prize3Pesos: 10000,
-    minPlayers: 14,
+    minPlayers: 4,
     targetPlayers: 20,
-    maxPlayers: 24,
+    maxPlayers: 50,
     durationMinutes: 15,
     windowHours: 48,
     strategy: 'premium',
@@ -95,9 +146,6 @@ export const TOURNAMENT_PRESETS = [
     shortLabel: 'Freeroll',
     description: 'Costo de marketing controlado para captar y reactivar usuarios.',
     entryFeePesos: 0,
-    prize1Pesos: 5000,
-    prize2Pesos: 0,
-    prize3Pesos: 0,
     minPlayers: 2,
     targetPlayers: 80,
     maxPlayers: 200,
@@ -117,6 +165,166 @@ export function centsToPesos(cents: number) {
 
 export function getPresetByType(type: TournamentType) {
   return TOURNAMENT_PRESETS.find((preset) => preset.key === type) ?? TOURNAMENT_PRESETS[1]
+}
+
+export function calculateIvaIncludedBreakdown(grossCents: number) {
+  if (!Number.isInteger(grossCents) || grossCents < 0) {
+    throw new Error(`grossCents inválido: ${grossCents}`)
+  }
+
+  const ivaCents = Math.round((grossCents * IVA_BPS) / IVA_MULTIPLIER_BPS)
+  return {
+    grossCents,
+    netCents: grossCents - ivaCents,
+    ivaCents,
+  }
+}
+
+export function splitEntryFee(
+  entryFeeCents: number,
+  prizePoolBps = DEFAULT_PRIZE_POOL_BPS
+): EntryFeeSplit {
+  if (!Number.isInteger(entryFeeCents) || entryFeeCents < 0) {
+    throw new Error(`entryFeeCents inválido: ${entryFeeCents}`)
+  }
+  if (!Number.isInteger(prizePoolBps) || prizePoolBps < 0 || prizePoolBps > BPS) {
+    throw new Error(`prizePoolBps inválido: ${prizePoolBps}`)
+  }
+
+  const prizePoolContributionCents = Math.round((entryFeeCents * prizePoolBps) / BPS)
+  const platformFeeGrossCents = entryFeeCents - prizePoolContributionCents
+  const platformTax = calculateIvaIncludedBreakdown(platformFeeGrossCents)
+
+  return {
+    entryFeeCents,
+    prizePoolContributionCents,
+    platformFeeGrossCents,
+    platformFeeNetCents: platformTax.netCents,
+    platformFeeIvaCents: platformTax.ivaCents,
+    prizePoolBps,
+    platformFeeBps: BPS - prizePoolBps,
+  }
+}
+
+export function calculatePrizePoolPayouts(input: {
+  entryFeeCents: number
+  playerCount: number
+  prizePoolBps?: number
+  prize1Bps?: number
+  prize2Bps?: number
+  prize3Bps?: number
+}): PrizePoolPayouts {
+  const playerCount = Math.max(0, Math.floor(input.playerCount))
+  const prizePoolBps = input.prizePoolBps ?? DEFAULT_PRIZE_POOL_BPS
+  const prize1Bps = input.prize1Bps ?? DEFAULT_PRIZE_1ST_BPS
+  const prize2Bps = input.prize2Bps ?? DEFAULT_PRIZE_2ND_BPS
+  const prize3Bps = input.prize3Bps ?? DEFAULT_PRIZE_3RD_BPS
+
+  if (prize1Bps + prize2Bps + prize3Bps !== BPS) {
+    throw new Error('La distribución de premios debe sumar 100%')
+  }
+
+  const prizePoolCents = Math.round((input.entryFeeCents * playerCount * prizePoolBps) / BPS)
+  const prize1Cents = Math.round((prizePoolCents * prize1Bps) / BPS)
+  const prize2Cents = Math.round((prizePoolCents * prize2Bps) / BPS)
+  const prize3Cents = prizePoolCents - prize1Cents - prize2Cents
+
+  return {
+    playerCount,
+    prizePoolCents,
+    prize1Cents,
+    prize2Cents,
+    prize3Cents,
+  }
+}
+
+export function calculateTournamentDisplayPayouts(
+  tournament: TournamentPrizeDisplayInput,
+  playerCount: number
+): PrizePoolPayouts {
+  if (tournament.prize_model === 'entry_pool' && tournament.entry_fee_cents > 0) {
+    return calculatePrizePoolPayouts({
+      entryFeeCents: tournament.entry_fee_cents,
+      playerCount: Math.max(playerCount, tournament.min_players),
+      prizePoolBps: tournament.prize_pool_bps ?? DEFAULT_PRIZE_POOL_BPS,
+      prize1Bps: tournament.prize_1st_bps ?? DEFAULT_PRIZE_1ST_BPS,
+      prize2Bps: tournament.prize_2nd_bps ?? DEFAULT_PRIZE_2ND_BPS,
+      prize3Bps: tournament.prize_3rd_bps ?? DEFAULT_PRIZE_3RD_BPS,
+    })
+  }
+
+  return {
+    playerCount,
+    prizePoolCents:
+      tournament.prize_1st_cents + tournament.prize_2nd_cents + tournament.prize_3rd_cents,
+    prize1Cents: tournament.prize_1st_cents,
+    prize2Cents: tournament.prize_2nd_cents,
+    prize3Cents: tournament.prize_3rd_cents,
+  }
+}
+
+export function calculateEntryPoolFinancials(input: {
+  entryFeeCents: number
+  minPlayers: number
+  targetPlayers?: number
+  maxPlayers?: number
+  prizePoolBps?: number
+}): EntryPoolFinancials {
+  const targetPlayers = input.targetPlayers ?? input.minPlayers
+  const maxPlayers = input.maxPlayers ?? targetPlayers
+  const split = splitEntryFee(input.entryFeeCents, input.prizePoolBps)
+  const minPayouts = calculatePrizePoolPayouts({
+    entryFeeCents: input.entryFeeCents,
+    playerCount: input.minPlayers,
+    prizePoolBps: split.prizePoolBps,
+  })
+  const targetPayouts = calculatePrizePoolPayouts({
+    entryFeeCents: input.entryFeeCents,
+    playerCount: targetPlayers,
+    prizePoolBps: split.prizePoolBps,
+  })
+  const maxPayouts = calculatePrizePoolPayouts({
+    entryFeeCents: input.entryFeeCents,
+    playerCount: maxPlayers,
+    prizePoolBps: split.prizePoolBps,
+  })
+
+  const minRevenueCents = input.entryFeeCents * input.minPlayers
+  const targetRevenueCents = input.entryFeeCents * targetPlayers
+  const maxRevenueCents = input.entryFeeCents * maxPlayers
+  const minPlatformFeeGrossCents = split.platformFeeGrossCents * input.minPlayers
+  const targetPlatformFeeGrossCents = split.platformFeeGrossCents * targetPlayers
+  const maxPlatformFeeGrossCents = split.platformFeeGrossCents * maxPlayers
+  const minTax = calculateIvaIncludedBreakdown(minPlatformFeeGrossCents)
+  const targetTax = calculateIvaIncludedBreakdown(targetPlatformFeeGrossCents)
+  const maxTax = calculateIvaIncludedBreakdown(maxPlatformFeeGrossCents)
+  const platformNetMarginBps = input.entryFeeCents > 0
+    ? Math.round((split.platformFeeNetCents * BPS) / input.entryFeeCents)
+    : 0
+
+  return {
+    split,
+    minRevenueCents,
+    targetRevenueCents,
+    maxRevenueCents,
+    minPrizePoolCents: minPayouts.prizePoolCents,
+    targetPrizePoolCents: targetPayouts.prizePoolCents,
+    maxPrizePoolCents: maxPayouts.prizePoolCents,
+    minPlatformFeeGrossCents,
+    targetPlatformFeeGrossCents,
+    maxPlatformFeeGrossCents,
+    minPlatformFeeNetCents: minTax.netCents,
+    targetPlatformFeeNetCents: targetTax.netCents,
+    maxPlatformFeeNetCents: maxTax.netCents,
+    minPlatformFeeIvaCents: minTax.ivaCents,
+    targetPlatformFeeIvaCents: targetTax.ivaCents,
+    maxPlatformFeeIvaCents: maxTax.ivaCents,
+    minPayouts,
+    targetPayouts,
+    maxPayouts,
+    platformNetMarginBps,
+    isTargetHealthy: input.entryFeeCents === 0 || platformNetMarginBps >= MIN_TARGET_PLATFORM_NET_MARGIN_BPS,
+  }
 }
 
 export function calculateRequiredRevenueCents(totalPrizesCents: number) {
@@ -160,12 +368,10 @@ export function calculateTournamentFinancials(input: {
 }
 
 export function calculatePresetFinancials(preset: TournamentPreset) {
-  return calculateTournamentFinancials({
+  return calculateEntryPoolFinancials({
     entryFeeCents: pesosToCents(preset.entryFeePesos),
-    prize1Cents: pesosToCents(preset.prize1Pesos),
-    prize2Cents: pesosToCents(preset.prize2Pesos),
-    prize3Cents: pesosToCents(preset.prize3Pesos),
     minPlayers: preset.minPlayers,
     targetPlayers: preset.targetPlayers,
+    maxPlayers: preset.maxPlayers,
   })
 }

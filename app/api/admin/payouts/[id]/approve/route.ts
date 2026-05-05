@@ -1,5 +1,6 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { isValidRut, samePersonName, sameRut } from '@/lib/identity/verification'
+import { recordAdminAction } from '@/lib/admin/audit'
 import type { Profile } from '@/types/database'
 
 export async function POST(
@@ -74,6 +75,20 @@ export async function POST(
   if (error) {
     return Response.json({ error: error.message }, { status: 400 })
   }
+
+  await recordAdminAction(adminSupabase, {
+    adminId: userId,
+    action: 'payout.approve',
+    targetType: 'withdrawal_request',
+    targetId: requestId,
+    summary: `Aprobó retiro a ${request.account_holder} (${request.account_rut})`,
+    payload: {
+      target_user_id: request.user_id,
+      account_holder: request.account_holder,
+      account_rut: request.account_rut,
+      notes: body.notes ?? null,
+    },
+  })
 
   return Response.json({ ok: true })
 }

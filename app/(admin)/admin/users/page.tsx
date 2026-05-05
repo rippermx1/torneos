@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase/server'
 import { formatDateTimeCL } from '@/lib/utils'
 import { KycActions } from './kyc-actions'
@@ -170,7 +171,9 @@ function UserTable({
           >
           {/* Usuario */}
           <div className="space-y-0.5 min-w-0">
-            <p className="font-medium truncate">{p.username}</p>
+            <Link href={`/admin/users/${p.id}/wallet`} className="font-medium truncate hover:underline block">
+              {p.username}
+            </Link>
             <p className="text-xs text-muted-foreground truncate">{p.full_name ?? '—'}</p>
             <div className="flex gap-1 flex-wrap">
               {p.is_admin && (

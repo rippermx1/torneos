@@ -4,6 +4,7 @@ import {
   samePersonName,
   sameRut,
 } from '@/lib/identity/verification'
+import { recordAdminAction } from '@/lib/admin/audit'
 import type { KycSubmission, Profile } from '@/types/database'
 
 export async function POST(
@@ -169,6 +170,20 @@ export async function POST(
     .then(({ error: auditError }) => {
       if (auditError) console.error('KYC audit insert failed', auditError)
     })
+
+  await recordAdminAction(supabase, {
+    adminId: user.id,
+    action: body.action === 'approve' ? 'kyc.approve' : 'kyc.reject',
+    targetType: 'profile',
+    targetId: targetUserId,
+    summary: reviewNotes ?? (body.action === 'approve' ? 'KYC aprobado' : 'KYC rechazado'),
+    payload: {
+      submission_id: latestSubmission?.id ?? null,
+      previous_status: profile.kyc_status,
+      new_status: newStatus,
+      notes: reviewNotes,
+    },
+  })
 
   return Response.json({ ok: true, status: newStatus })
 }

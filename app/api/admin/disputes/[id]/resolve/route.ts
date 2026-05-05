@@ -1,4 +1,5 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { recordAdminAction } from '@/lib/admin/audit'
 import type { Profile } from '@/types/database'
 
 interface ResolveBody {
@@ -57,6 +58,15 @@ export async function POST(
   if (error) {
     return Response.json({ error: error.message }, { status: 400 })
   }
+
+  await recordAdminAction(adminSupabase, {
+    adminId: userId,
+    action: body.resolution === 'resolved' ? 'dispute.resolved' : 'dispute.rejected',
+    targetType: 'dispute',
+    targetId: disputeId,
+    summary: body.notes.trim(),
+    payload: { resolution: body.resolution },
+  })
 
   return Response.json({ ok: true })
 }

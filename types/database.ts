@@ -186,6 +186,17 @@ export interface KycAuditEvent {
 
 export type FlowAttemptStatus = 'pending' | 'paid' | 'rejected' | 'cancelled' | 'expired'
 
+export interface AdminAction {
+  id: string
+  admin_id: string
+  action: string
+  target_type: string
+  target_id: string | null
+  summary: string | null
+  payload: Record<string, unknown>
+  created_at: string
+}
+
 export interface FlowPaymentAttempt {
   id: string
   user_id: string
@@ -293,6 +304,12 @@ export type Database = {
         Update: Partial<Omit<FlowPaymentAttempt, 'id' | 'created_at' | 'commerce_order' | 'user_id'>> & DbRecord
         Relationships: []
       }
+      admin_actions: {
+        Row: AdminAction & DbRecord
+        Insert: InsertWithOptional<AdminAction, 'id' | 'created_at' | 'target_id' | 'summary' | 'payload'>
+        Update: Partial<Omit<AdminAction, 'id' | 'created_at'>> & DbRecord
+        Relationships: []
+      }
     }
     Views: {
       prize_liability: {
@@ -306,6 +323,20 @@ export type Database = {
           platform_fee_iva_cents: number
           active_count: number
           pending_count: number
+        } & DbRecord
+        Relationships: []
+      }
+      monthly_platform_finance: {
+        Row: {
+          period: string
+          registrations_count: number
+          unique_users: number
+          tournaments_with_revenue: number
+          gross_revenue_cents: number
+          prize_pool_cents: number
+          platform_fee_gross_cents: number
+          platform_fee_net_cents: number
+          platform_fee_iva_cents: number
         } & DbRecord
         Relationships: []
       }
@@ -386,6 +417,17 @@ export type Database = {
           p_notes?: string | null
         } & DbRecord
         Returns: undefined
+      }
+      record_admin_action: {
+        Args: {
+          p_admin_id: string
+          p_action: string
+          p_target_type: string
+          p_target_id: string | null
+          p_summary?: string | null
+          p_payload?: Record<string, unknown>
+        } & DbRecord
+        Returns: string
       }
     }
     Enums: Record<string, never>

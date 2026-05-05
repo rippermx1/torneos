@@ -1,4 +1,5 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { recordAdminAction } from '@/lib/admin/audit'
 import type { Profile } from '@/types/database'
 
 export async function POST(
@@ -35,6 +36,15 @@ export async function POST(
   if (error) {
     return Response.json({ error: error.message }, { status: 400 })
   }
+
+  await recordAdminAction(adminSupabase, {
+    adminId: userId,
+    action: 'payout.reject',
+    targetType: 'withdrawal_request',
+    targetId: requestId,
+    summary: body.notes ?? 'Retiro rechazado sin nota',
+    payload: { notes: body.notes ?? null },
+  })
 
   return Response.json({ ok: true })
 }

@@ -1,5 +1,6 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { forceFinalizeTournament } from '@/lib/tournament/lifecycle'
+import { recordAdminAction } from '@/lib/admin/audit'
 import type { Profile } from '@/types/database'
 
 // Trigger manual de finalización para el admin.
@@ -31,6 +32,14 @@ export async function POST(
 
   try {
     const result = await forceFinalizeTournament(tournamentId)
+    await recordAdminAction(supabase, {
+      adminId: userId,
+      action: 'tournament.finalize',
+      targetType: 'tournament',
+      targetId: tournamentId,
+      summary: 'Finalización manual de torneo',
+      payload: { result: result as unknown as Record<string, unknown> },
+    })
     return Response.json({ ok: true, result })
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)

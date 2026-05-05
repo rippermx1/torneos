@@ -1,11 +1,12 @@
 import { createAdminClient } from '@/lib/supabase/server'
 import { requireAdmin } from '@/lib/supabase/auth'
+import { recordAdminAction } from '@/lib/admin/audit'
 
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ): Promise<Response> {
-  await requireAdmin()
+  const adminId = await requireAdmin()
 
   const { id: targetUserId } = await params
   const supabase = createAdminClient()
@@ -64,6 +65,18 @@ export async function POST(
   } else {
     console.info(`[admin] Usuario ${target.username} (${targetUserId}) desbaneado manualmente.`)
   }
+
+  await recordAdminAction(supabase, {
+    adminId,
+    action: ban ? 'user.ban' : 'user.unban',
+    targetType: 'profile',
+    targetId: targetUserId,
+    summary: reason ?? (ban ? 'Usuario baneado' : 'Usuario desbaneado'),
+    payload: {
+      username: target.username,
+      reason: reason ?? null,
+    },
+  })
 
   return Response.json({ ok: true, banned: ban, userId: targetUserId })
 }

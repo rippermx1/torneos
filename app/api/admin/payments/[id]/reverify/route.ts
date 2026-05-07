@@ -1,5 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/server'
-import { requireAdmin } from '@/lib/supabase/auth'
+import { requireAnyRoleForApi } from '@/lib/supabase/auth'
 import { recordAdminAction } from '@/lib/admin/audit'
 import { settleFlowPayment } from '@/lib/flow/settlement'
 import type { FlowPaymentAttempt } from '@/types/database'
@@ -8,7 +8,10 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ): Promise<Response> {
-  const adminId = await requireAdmin()
+  const auth = await requireAnyRoleForApi(['admin', 'owner'])
+  if (!auth.ok) return auth.response
+
+  const adminId = auth.access.userId
   const { id: attemptId } = await params
 
   let body: { token?: string }

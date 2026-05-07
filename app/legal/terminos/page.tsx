@@ -12,7 +12,7 @@ export default function TerminosPage() {
       <div>
         <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">← Inicio</Link>
         <h1 className="text-3xl font-bold mt-4">Términos y Condiciones</h1>
-        <p className="text-sm text-muted-foreground mt-1">Última actualización: 5 de mayo de 2026</p>
+        <p className="text-sm text-muted-foreground mt-1">Última actualización: 6 de mayo de 2026</p>
       </div>
 
       <Section title="1. Naturaleza del servicio">
@@ -58,10 +58,16 @@ export default function TerminosPage() {
           ventana de juego). El jugador acepta dichas reglas al momento de inscribirse.
         </p>
         <p>
-          En torneos pagados con pozo dinámico, la cuota de inscripción se divide entre un
-          aporte al pozo de premios y un fee de plataforma con IVA incluido. La distribución
-          vigente se muestra antes de la inscripción. Los premios finales pueden aumentar según
-          la cantidad real de participantes inscritos.
+          En torneos pagados, la cuota de inscripción es el <strong>precio íntegro</strong> del
+          servicio prestado por la plataforma e incluye IVA. La plataforma se compromete a pagar
+          los premios anunciados a los ganadores una vez finalizado y verificado el torneo. Los
+          premios finales pueden aumentar según la cantidad real de participantes inscritos cuando
+          así lo establezcan las reglas del torneo.
+        </p>
+        <p>
+          El cobro de la inscripción se realiza directamente a través de Flow.cl al momento de
+          inscribirse. El comprobante de pago electrónico emitido por Flow constituye la boleta
+          electrónica del servicio para efectos del Servicio de Impuestos Internos (SII).
         </p>
         <p>
           El <strong>puntaje final</strong> es la única métrica de clasificación. En caso de
@@ -71,25 +77,25 @@ export default function TerminosPage() {
         <p>
           Si el torneo no alcanza el número mínimo de participantes inscritos al momento del
           cierre de inscripciones, será cancelado y <strong>todas las cuotas serán
-          reembolsadas</strong> automáticamente.
+          reembolsadas</strong> automáticamente al medio de pago original o a la billetera del
+          jugador, según corresponda.
         </p>
       </Section>
 
-      <Section title="5. Billetera y transacciones">
+      <Section title="5. Billetera y premios">
         <p>
-          Los fondos depositados en la billetera de la plataforma son administrados en pesos
-          chilenos (CLP). Las transacciones se registran de forma inmutable y el saldo disponible
-          se actualiza en tiempo real.
-        </p>
-        <p>
-          Los depósitos no son retirables directamente; se usan para pagar inscripciones y otros
-          servicios de la plataforma. Esta regla reduce riesgos de fraude, lavado y uso de la
-          billetera como mecanismo de giro de dinero.
+          La billetera de la plataforma se utiliza <strong>únicamente para administrar premios
+          ganados y reembolsos</strong>. La plataforma no acepta depósitos prepagados ni recargas:
+          cada inscripción a un torneo se cobra de forma individual al momento de inscribirse.
         </p>
         <p>
           Los <strong>premios</strong> obtenidos se acreditan automáticamente en la billetera del
-          ganador una vez finalizado y verificado el torneo. Pueden solicitarse retiros conforme
-          a la política de retiros vigente.
+          ganador una vez finalizado y verificado el torneo. El saldo en billetera está disponible
+          para retiro en cualquier momento conforme a la política de retiros vigente.
+        </p>
+        <p>
+          Las transacciones de la billetera se registran de forma inmutable y el saldo disponible
+          se actualiza en tiempo real.
         </p>
       </Section>
 
@@ -122,11 +128,15 @@ export default function TerminosPage() {
 
       <Section title="8. Impuestos">
         <p>
+          Cada cobro de inscripción incluye el IVA correspondiente al servicio prestado por la
+          plataforma. El comprobante electrónico emitido por Flow al momento del cobro tiene la
+          naturaleza de boleta electrónica para efectos del Servicio de Impuestos Internos (SII)
+          de Chile.
+        </p>
+        <p>
           Los premios obtenidos en competencias de habilidad pueden estar sujetos a tributación
-          según las normas del Servicio de Impuestos Internos (SII) de Chile. La plataforma
-          registrará y documentará los cobros por servicios, fees de plataforma y cargos de
-          procesamiento conforme a la normativa aplicable. El usuario es responsable de declarar
-          sus ingresos y premios cuando corresponda conforme a la ley.
+          según las normas del SII. El usuario es responsable de declarar sus premios como
+          ingresos cuando corresponda conforme a la ley vigente.
         </p>
       </Section>
 

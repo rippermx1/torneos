@@ -32,7 +32,7 @@ export default function ReembolsoPage() {
         <p>
           Si Torneos 2048 cancela un torneo por cualquier motivo (problemas técnicos graves,
           fuerza mayor u otras causas), <strong>todas las cuotas de inscripción serán
-          reembolsadas en su totalidad</strong>, incluyendo el aporte al pozo de premios y el
+          reembolsadas en su totalidad</strong>, incluyendo el aporte al fondo de premios y el
           fee de plataforma asociado, a las billeteras de los participantes en un plazo de
           24 horas hábiles.
         </p>

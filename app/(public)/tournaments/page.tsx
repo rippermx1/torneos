@@ -71,7 +71,7 @@ export default async function TournamentsPage() {
             <div className="text-sm text-muted-foreground space-y-1">
               <p>Inscripción: <span className="text-foreground font-medium">{formatCLP(t.entry_fee_cents)}</span></p>
               <p>
-                {t.prize_model === 'entry_pool' ? '1° Premio mín.' : '1° Premio'}:{' '}
+                1° Premio mín.:{' '}
                 <span className="text-foreground font-medium">{formatCLP(t.prize_1st_cents)}</span>
               </p>
               <p>Inicio: {formatDateTimeCL(t.play_window_start)}</p>

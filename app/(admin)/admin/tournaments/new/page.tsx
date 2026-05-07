@@ -9,7 +9,7 @@ import {
   DEFAULT_PRIZE_1ST_BPS,
   DEFAULT_PRIZE_2ND_BPS,
   DEFAULT_PRIZE_3RD_BPS,
-  DEFAULT_PRIZE_POOL_BPS,
+  DEFAULT_PRIZE_FUND_BPS,
   calculateEntryPoolFinancials,
 } from '@/lib/tournament/finance'
 import { TournamentPresetForm } from '@/components/admin/tournament-preset-form'
@@ -76,7 +76,6 @@ async function createTournament(formData: FormData) {
     targetPlayers,
     maxPlayers,
   })
-  const prizeModel = entryFee > 0 ? 'entry_pool' : 'fixed'
   const prize1 = entryFee > 0 ? entryPool.minPayouts.prize1Cents : FREEROLL_PRIZE_1_CENTS
   const prize2 = entryFee > 0 ? entryPool.minPayouts.prize2Cents : 0
   const prize3 = entryFee > 0 ? entryPool.minPayouts.prize3Cents : 0
@@ -104,12 +103,12 @@ async function createTournament(formData: FormData) {
       description,
       game_type: '2048_score',
       tournament_type: tournamentType,
-      prize_model: prizeModel,
+      prize_model: 'entry_pool',
       entry_fee_cents: entryFee,
       prize_1st_cents: prize1,
       prize_2nd_cents: prize2,
       prize_3rd_cents: prize3,
-      prize_pool_bps: DEFAULT_PRIZE_POOL_BPS,
+      prize_fund_bps: DEFAULT_PRIZE_FUND_BPS,
       platform_fee_bps: DEFAULT_PLATFORM_FEE_BPS,
       prize_1st_bps: DEFAULT_PRIZE_1ST_BPS,
       prize_2nd_bps: DEFAULT_PRIZE_2ND_BPS,

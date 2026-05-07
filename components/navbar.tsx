@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { User } from '@supabase/supabase-js'
+import type { AppRole } from '@/types/database'
 
 const navLinks = [
   { href: '/tournaments', label: 'Torneos' },
@@ -16,18 +17,58 @@ const userLinks = [
   { href: '/profile', label: 'Mi perfil' },
   { href: '/support/dispute', label: 'Soporte' },
 ]
+const adminLinks = [
+  { href: '/admin', label: 'Admin' },
+]
 
 export function Navbar() {
   const pathname = usePathname()
   const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
+  const [roles, setRoles] = useState<AppRole[]>([])
   const [open, setOpen] = useState(false)
 
   useEffect(() => {
     const supabase = createClient()
-    supabase.auth.getUser().then(({ data }) => setUser(data.user))
+    async function loadRoles(currentUser: User | null) {
+      if (!currentUser) {
+        setRoles([])
+        return
+      }
+
+      const { data, error } = await supabase
+        .from('profile_roles')
+        .select('role')
+        .eq('profile_id', currentUser.id)
+
+      if (!error) {
+        setRoles(
+          (data ?? [])
+            .map((row) => row.role)
+            .filter((role): role is AppRole =>
+              role === 'user' || role === 'admin' || role === 'owner'
+            )
+        )
+        return
+      }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', currentUser.id)
+        .single()
+
+      setRoles(profile?.is_admin ? ['user', 'admin'] : ['user'])
+    }
+
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user)
+      void loadRoles(data.user)
+    })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
-      setUser(session?.user ?? null)
+      const nextUser = session?.user ?? null
+      setUser(nextUser)
+      void loadRoles(nextUser)
     })
     return () => subscription.unsubscribe()
   }, [])
@@ -41,12 +82,19 @@ export function Navbar() {
   async function handleSignOut() {
     const supabase = createClient()
     await supabase.auth.signOut()
+    setRoles([])
     router.push('/')
     router.refresh()
   }
 
   const isSignedIn = !!user
-  const allMobileLinks = [...navLinks, ...(isSignedIn ? userLinks : [])]
+  const hasUserRole = roles.includes('user')
+  const hasAdminRole = roles.includes('admin') || roles.includes('owner')
+  const allMobileLinks = [
+    ...navLinks,
+    ...(isSignedIn && hasUserRole ? userLinks : []),
+    ...(isSignedIn && hasAdminRole ? adminLinks : []),
+  ]
   const closeMenu = () => setOpen(false)
 
   return (
@@ -87,7 +135,20 @@ export function Navbar() {
             {isSignedIn ? (
               <>
                 <div className="hidden sm:flex items-center gap-4">
-                  {userLinks.map(({ href, label }) => (
+                  {hasUserRole && userLinks.map(({ href, label }) => (
+                    <Link
+                      key={href}
+                      href={href}
+                      onClick={closeMenu}
+                      className={cn(
+                        'text-sm text-muted-foreground hover:text-foreground transition-colors',
+                        pathname.startsWith(href) && 'text-foreground font-medium'
+                      )}
+                    >
+                      {label}
+                    </Link>
+                  ))}
+                  {hasAdminRole && adminLinks.map(({ href, label }) => (
                     <Link
                       key={href}
                       href={href}

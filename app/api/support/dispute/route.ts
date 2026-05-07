@@ -1,4 +1,5 @@
-import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
+import { requireAnyRoleForApi } from '@/lib/supabase/auth'
 import type { DisputeType } from '@/types/database'
 
 const VALID_TYPES = new Set<string>(['payment', 'tournament_result', 'technical', 'other'])
@@ -10,10 +11,10 @@ interface DisputeBody {
 }
 
 export async function POST(req: Request): Promise<Response> {
-  const supabaseAuth = await createClient()
-  const { data: { user } } = await supabaseAuth.auth.getUser()
-  if (!user) return Response.json({ error: 'No autenticado' }, { status: 401 })
-  const userId = user.id
+  const auth = await requireAnyRoleForApi(['user'])
+  if (!auth.ok) return auth.response
+
+  const userId = auth.access.userId
 
   let body: DisputeBody
   try {

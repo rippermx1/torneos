@@ -3,10 +3,7 @@ import { formatCLP, formatDateTimeCL } from '@/lib/utils'
 import Link from 'next/link'
 import type { Tournament } from '@/types/database'
 import { TournamentActions } from '@/components/tournament/tournament-actions'
-import {
-  calculateEntryPoolFinancials,
-  calculateTournamentFinancials,
-} from '@/lib/tournament/finance'
+import { calculateEntryPoolFinancials } from '@/lib/tournament/finance'
 
 const STATUS_LABEL: Record<Tournament['status'], string> = {
   scheduled: 'Programado',
@@ -30,7 +27,7 @@ interface PrizeLiability {
   committed_cents: number
   contingent_cents: number
   collected_cents: number
-  prize_pool_collected_cents: number
+  prize_fund_collected_cents: number
   platform_fee_gross_cents: number
   platform_fee_net_cents: number
   platform_fee_iva_cents: number
@@ -39,33 +36,17 @@ interface PrizeLiability {
 }
 
 function getTournamentFinancialHealth(t: Tournament, projectedPlayers: number) {
-  if (t.prize_model === 'entry_pool') {
-    const financials = calculateEntryPoolFinancials({
-      entryFeeCents: t.entry_fee_cents,
-      minPlayers: t.min_players,
-      targetPlayers: projectedPlayers,
-      maxPlayers: t.max_players,
-      prizePoolBps: t.prize_pool_bps,
-    })
-
-    return {
-      ok: financials.isTargetHealthy,
-      label: `Fee neto ${(financials.platformNetMarginBps / 100).toFixed(1)}%`,
-    }
-  }
-
-  const financials = calculateTournamentFinancials({
+  const financials = calculateEntryPoolFinancials({
     entryFeeCents: t.entry_fee_cents,
-    prize1Cents: t.prize_1st_cents,
-    prize2Cents: t.prize_2nd_cents,
-    prize3Cents: t.prize_3rd_cents,
     minPlayers: t.min_players,
     targetPlayers: projectedPlayers,
+    maxPlayers: t.max_players,
+    prizeFundBps: t.prize_fund_bps,
   })
 
   return {
-    ok: financials.isBreakEven,
-    label: `Margen mín. ${(financials.minMarginBps / 100).toFixed(1)}%`,
+    ok: financials.isTargetHealthy,
+    label: `Fee neto ${(financials.platformNetMarginBps / 100).toFixed(1)}%`,
   }
 }
 
@@ -85,7 +66,7 @@ export default async function AdminTournamentsPage() {
     committed_cents: 0,
     contingent_cents: 0,
     collected_cents: 0,
-    prize_pool_collected_cents: 0,
+    prize_fund_collected_cents: 0,
     platform_fee_gross_cents: 0,
     platform_fee_net_cents: 0,
     platform_fee_iva_cents: 0,
@@ -105,29 +86,18 @@ export default async function AdminTournamentsPage() {
   const paidFinancials = activeOrPending
     .filter((t) => t.entry_fee_cents > 0)
     .map((t) => {
-      if (t.prize_model === 'entry_pool') {
-        const financials = calculateEntryPoolFinancials({
-          entryFeeCents: t.entry_fee_cents,
-          minPlayers: t.min_players,
-          targetPlayers: t.max_players,
-          maxPlayers: t.max_players,
-          prizePoolBps: t.prize_pool_bps,
-        })
-        return {
-          isBreakEven: true,
-          minProfitCents: financials.minPlatformFeeNetCents,
-          minMarginBps: financials.platformNetMarginBps,
-        }
-      }
-
-      return calculateTournamentFinancials({
+      const financials = calculateEntryPoolFinancials({
         entryFeeCents: t.entry_fee_cents,
-        prize1Cents: t.prize_1st_cents,
-        prize2Cents: t.prize_2nd_cents,
-        prize3Cents: t.prize_3rd_cents,
         minPlayers: t.min_players,
         targetPlayers: t.max_players,
+        maxPlayers: t.max_players,
+        prizeFundBps: t.prize_fund_bps,
       })
+      return {
+        isBreakEven: true,
+        minProfitCents: financials.minPlatformFeeNetCents,
+        minMarginBps: financials.platformNetMarginBps,
+      }
     })
   const lossRiskCount = paidFinancials.filter((financials) => !financials.isBreakEven).length
   const expectedMinProfit = paidFinancials.reduce((sum, financials) => sum + financials.minProfitCents, 0)

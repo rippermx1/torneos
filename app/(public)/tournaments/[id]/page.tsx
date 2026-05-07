@@ -56,7 +56,7 @@ export default async function TournamentDetailPage({
 
   const [{ data: tData }, { count: playerCount }] = await Promise.all([
     supabase.from('tournaments').select('*').eq('id', id).single(),
-    supabase
+    admin
       .from('registrations')
       .select('*', { count: 'exact', head: true })
       .eq('tournament_id', id),
@@ -85,7 +85,7 @@ export default async function TournamentDetailPage({
   const hasMinimumPlayers = currentPlayerCount >= t.min_players
 
   const payouts = calculateTournamentDisplayPayouts(t, currentPlayerCount)
-  const split = splitEntryFee(t.entry_fee_cents, t.prize_pool_bps)
+  const split = splitEntryFee(t.entry_fee_cents, t.prize_fund_bps)
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-10 space-y-8">
@@ -98,19 +98,19 @@ export default async function TournamentDetailPage({
       <div className="grid grid-cols-2 gap-4">
         <InfoCard label="Inscripción" value={formatCLP(t.entry_fee_cents)} highlight />
         <InfoCard
-          label={t.prize_model === 'entry_pool' ? 'Premio mínimo' : 'Premio total'}
-          value={formatCLP(payouts.prizePoolCents)}
+          label="Premio mínimo"
+          value={formatCLP(payouts.prizeFundCents)}
         />
         <InfoCard label="Jugadores" value={`${currentPlayerCount} / ${t.max_players}`} />
         <InfoCard label="Mínimo para jugar" value={`${t.min_players} jugadores`} />
       </div>
 
-      {t.prize_model === 'entry_pool' && t.entry_fee_cents > 0 && (
+      {t.entry_fee_cents > 0 && (
         <div className="border rounded-xl p-5 space-y-2 text-sm">
           <h2 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground">Distribución</h2>
           <div className="flex justify-between gap-4">
             <span className="text-muted-foreground">Aporte a premios por inscripción</span>
-            <span className="font-medium">{formatCLP(split.prizePoolContributionCents)}</span>
+            <span className="font-medium">{formatCLP(split.prizeFundContributionCents)}</span>
           </div>
           <div className="flex justify-between gap-4">
             <span className="text-muted-foreground">Fee plataforma IVA incluido</span>

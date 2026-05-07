@@ -3,7 +3,7 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { formatDateTimeCL } from '@/lib/utils'
 import { KycActions } from './kyc-actions'
 import { BanActions } from './ban-actions'
-import type { KycSubmission, Profile } from '@/types/database'
+import type { AppRole, KycSubmission, Profile, ProfileRole } from '@/types/database'
 
 export const revalidate = 0
 
@@ -19,6 +19,18 @@ const KYC_LABEL: Record<Profile['kyc_status'], string> = {
   rejected: 'Rechazado',
 }
 
+const ROLE_LABEL: Record<AppRole, string> = {
+  user: 'User',
+  admin: 'Admin',
+  owner: 'Owner',
+}
+
+const ROLE_BADGE: Record<AppRole, string> = {
+  user: 'bg-slate-100 text-slate-700',
+  admin: 'bg-purple-100 text-purple-700',
+  owner: 'bg-amber-100 text-amber-800',
+}
+
 export default async function AdminUsersPage() {
   const supabase = createAdminClient()
 
@@ -31,13 +43,19 @@ export default async function AdminUsersPage() {
   const profiles = (data ?? []) as Profile[]
   const profileIds = profiles.map((p) => p.id)
 
-  const { data: submissionRows } = profileIds.length > 0
-    ? await supabase
-      .from('kyc_submissions')
-      .select('*')
-      .in('user_id', profileIds)
-      .order('created_at', { ascending: false })
-    : { data: [] }
+  const [{ data: submissionRows }, { data: roleRows }] = profileIds.length > 0
+    ? await Promise.all([
+      supabase
+        .from('kyc_submissions')
+        .select('*')
+        .in('user_id', profileIds)
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('profile_roles')
+        .select('profile_id, role')
+        .in('profile_id', profileIds),
+    ])
+    : [{ data: [] }, { data: [] }]
 
   const latestSubmissionByUser = new Map<string, KycSubmission>()
   for (const submission of (submissionRows ?? []) as KycSubmission[]) {
@@ -58,6 +76,13 @@ export default async function AdminUsersPage() {
       ])
     )
   ) as Record<string, KycSubmissionWithUrls>
+
+  const rolesByUser = new Map<string, AppRole[]>()
+  for (const row of (roleRows ?? []) as Pick<ProfileRole, 'profile_id' | 'role'>[]) {
+    const current = rolesByUser.get(row.profile_id) ?? []
+    current.push(row.role)
+    rolesByUser.set(row.profile_id, current)
+  }
 
   const pending  = profiles.filter((p) => p.kyc_status === 'pending')
   const approved = profiles.filter((p) => p.kyc_status === 'approved')
@@ -89,7 +114,7 @@ export default async function AdminUsersPage() {
           <h2 className="text-sm font-semibold uppercase tracking-wide text-red-600">
             Cuentas baneadas ({banned.length})
           </h2>
-          <UserTable profiles={banned} submissionsByUser={submissionsByUser} showActions />
+          <UserTable profiles={banned} submissionsByUser={submissionsByUser} rolesByUser={rolesByUser} showActions />
         </section>
       )}
 
@@ -99,7 +124,7 @@ export default async function AdminUsersPage() {
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
             Pendientes de revisión ({pending.length})
           </h2>
-          <UserTable profiles={pending} submissionsByUser={submissionsByUser} showActions />
+          <UserTable profiles={pending} submissionsByUser={submissionsByUser} rolesByUser={rolesByUser} showActions />
         </section>
       )}
 
@@ -109,7 +134,7 @@ export default async function AdminUsersPage() {
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
             Aprobados ({approved.length})
           </h2>
-          <UserTable profiles={approved} submissionsByUser={submissionsByUser} />
+          <UserTable profiles={approved} submissionsByUser={submissionsByUser} rolesByUser={rolesByUser} />
         </section>
       )}
 
@@ -119,7 +144,7 @@ export default async function AdminUsersPage() {
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
             Rechazados ({rejected.length})
           </h2>
-          <UserTable profiles={rejected} submissionsByUser={submissionsByUser} showActions />
+          <UserTable profiles={rejected} submissionsByUser={submissionsByUser} rolesByUser={rolesByUser} showActions />
         </section>
       )}
     </div>
@@ -146,10 +171,12 @@ async function createKycDocumentUrl(
 function UserTable({
   profiles,
   submissionsByUser,
+  rolesByUser,
   showActions = false,
 }: {
   profiles: Profile[]
   submissionsByUser: Record<string, KycSubmissionWithUrls>
+  rolesByUser: Map<string, AppRole[]>
   showActions?: boolean
 }) {
   return (
@@ -164,6 +191,7 @@ function UserTable({
       </div>
       {profiles.map((p) => {
         const submission = submissionsByUser[p.id]
+        const roles = rolesByUser.get(p.id) ?? (p.is_admin ? (['user', 'admin'] as AppRole[]) : (['user'] as AppRole[]))
         return (
           <div
             key={p.id}
@@ -176,11 +204,11 @@ function UserTable({
             </Link>
             <p className="text-xs text-muted-foreground truncate">{p.full_name ?? '—'}</p>
             <div className="flex gap-1 flex-wrap">
-              {p.is_admin && (
-                <span className="inline-block text-xs bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded">
-                  Admin
+              {roles.map((role) => (
+                <span key={role} className={`inline-block text-xs px-1.5 py-0.5 rounded ${ROLE_BADGE[role]}`}>
+                  {ROLE_LABEL[role]}
                 </span>
-              )}
+              ))}
               {p.is_banned && (
                 <span className="inline-block text-xs bg-red-100 text-red-700 px-1.5 py-0.5 rounded font-semibold">
                   BANEADO

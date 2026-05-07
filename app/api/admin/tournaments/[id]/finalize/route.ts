@@ -1,7 +1,7 @@
-import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
+import { requireAnyRoleForApi } from '@/lib/supabase/auth'
 import { forceFinalizeTournament } from '@/lib/tournament/lifecycle'
 import { recordAdminAction } from '@/lib/admin/audit'
-import type { Profile } from '@/types/database'
 
 // Trigger manual de finalización para el admin.
 // Útil para cerrar torneos antes de que el cron los procese,
@@ -10,23 +10,11 @@ export async function POST(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }
 ): Promise<Response> {
-  const supabaseAuth = await createClient()
-  const { data: { user } } = await supabaseAuth.auth.getUser()
-  if (!user) return Response.json({ error: 'No autenticado' }, { status: 401 })
-  const userId = user.id
+  const auth = await requireAnyRoleForApi(['admin', 'owner'])
+  if (!auth.ok) return auth.response
 
-  // Verificar que el usuario es admin
+  const userId = auth.access.userId
   const supabase = createAdminClient()
-  const { data } = await supabase
-    .from('profiles')
-    .select('is_admin')
-    .eq('id', userId)
-    .single()
-
-  const profile = data as Profile | null
-  if (!profile?.is_admin) {
-    return Response.json({ error: 'Sin permisos de administrador' }, { status: 403 })
-  }
 
   const { id: tournamentId } = await params
 

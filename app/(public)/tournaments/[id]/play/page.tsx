@@ -1,5 +1,6 @@
-import { createClient, createAdminClient } from '@/lib/supabase/server'
-import { redirect, notFound } from 'next/navigation'
+import { createAdminClient } from '@/lib/supabase/server'
+import { requireUserRole } from '@/lib/supabase/auth'
+import { notFound } from 'next/navigation'
 import { checkPlayWindow, PLAY_WINDOW_ERROR } from '@/lib/tournament/helpers'
 import { formatDateTimeCL } from '@/lib/utils'
 import { GameBoardClient } from '@/components/game/game-board-client'
@@ -12,10 +13,8 @@ export default async function TournamentPlayPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  const supabaseAuth = await createClient()
-  const { data: { user } } = await supabaseAuth.auth.getUser()
-  if (!user) redirect('/sign-in')
-  const userId = user.id
+  const access = await requireUserRole()
+  const userId = access.userId
 
   const supabase = createAdminClient()
 

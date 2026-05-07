@@ -5,7 +5,7 @@ import type { DisputeType } from '@/types/database'
 import Link from 'next/link'
 
 const DISPUTE_TYPES: { value: DisputeType; label: string; desc: string }[] = [
-  { value: 'payment', label: 'Problema de pago', desc: 'Depósito no acreditado, cobro incorrecto' },
+  { value: 'payment', label: 'Problema de pago', desc: 'Inscripción no acreditada, cobro incorrecto, retiro no procesado' },
   { value: 'tournament_result', label: 'Resultado de torneo', desc: 'Puntaje o ranking incorrecto, premio no recibido' },
   { value: 'technical', label: 'Problema técnico', desc: 'Error durante la partida, desconexión' },
   { value: 'other', label: 'Otro', desc: 'Otro tipo de problema' },

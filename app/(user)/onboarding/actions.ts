@@ -1,13 +1,11 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/server'
+import { requireAnyRole } from '@/lib/supabase/auth'
 import { redirect } from 'next/navigation'
 
 export async function completeOnboarding(formData: FormData) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { error: 'No autenticado.' }
+  const access = await requireAnyRole(['user'])
 
   const username = (formData.get('username') as string).trim()
   const fullName = (formData.get('fullName') as string).trim()
@@ -21,7 +19,7 @@ export async function completeOnboarding(formData: FormData) {
     .from('profiles')
     .upsert(
       {
-        id: user.id,
+        id: access.userId,
         username,
         full_name: fullName || null,
       },

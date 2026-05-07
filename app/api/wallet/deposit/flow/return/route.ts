@@ -1,35 +1,18 @@
-import { readFlowToken, settleFlowPayment } from '@/lib/flow/settlement'
-
+// ───────────────────────────────────────────────────────────────
+// LEGACY: Endpoint de retorno de Flow para depósitos wallet.
+// Los depósitos fueron eliminados en Ruta 1. Si Flow rebota a esta
+// URL por un attempt antiguo, redirigimos a /wallet con flag.
+// ───────────────────────────────────────────────────────────────
 export async function POST(req: Request): Promise<Response> {
-  return handleFlowReturn(req)
+  return redirectDeprecated(req)
 }
 
 export async function GET(req: Request): Promise<Response> {
-  return handleFlowReturn(req)
+  return redirectDeprecated(req)
 }
 
-async function handleFlowReturn(req: Request): Promise<Response> {
+function redirectDeprecated(req: Request): Response {
   const redirectUrl = new URL('/wallet', req.url)
-  const token = await readFlowToken(req)
-
-  if (!token) {
-    redirectUrl.searchParams.set('deposit', 'failure')
-    return Response.redirect(redirectUrl, 303)
-  }
-
-  try {
-    const { status } = await settleFlowPayment(token)
-    redirectUrl.searchParams.set('deposit', mapFlowStatusToDepositStatus(status.status))
-  } catch (err) {
-    console.error('Error procesando retorno Flow:', err)
-    redirectUrl.searchParams.set('deposit', 'flow_return')
-  }
-
+  redirectUrl.searchParams.set('deposit', 'deprecated')
   return Response.redirect(redirectUrl, 303)
-}
-
-function mapFlowStatusToDepositStatus(status: number) {
-  if (status === 2) return 'success'
-  if (status === 3 || status === 4) return 'failure'
-  return 'pending'
 }

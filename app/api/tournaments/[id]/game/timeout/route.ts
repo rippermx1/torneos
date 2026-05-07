@@ -1,4 +1,5 @@
-import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
+import { requireAnyRoleForApi } from '@/lib/supabase/auth'
 import { checkPlayWindow } from '@/lib/tournament/helpers'
 import { calculateGameDeadline, isPastGameDeadline } from '@/lib/tournament/game-deadline'
 import type { Game, Tournament } from '@/types/database'
@@ -11,10 +12,10 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ): Promise<Response> {
-  const supabaseAuth = await createClient()
-  const { data: { user } } = await supabaseAuth.auth.getUser()
-  if (!user) return Response.json({ error: 'No autenticado' }, { status: 401 })
-  const userId = user.id
+  const auth = await requireAnyRoleForApi(['user'])
+  if (!auth.ok) return auth.response
+
+  const userId = auth.access.userId
 
   let body: TimeoutRequest
   try {

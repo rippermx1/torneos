@@ -71,8 +71,8 @@ export default async function HomePage() {
             <h2 className="text-2xl font-bold text-center mb-10">¿Cómo funciona?</h2>
             <div className="grid sm:grid-cols-3 gap-6">
               {[
-                { n: '1', title: 'Recarga tu billetera', desc: 'Deposita con Flow. El saldo queda disponible al confirmar el pago.' },
-                { n: '2', title: 'Inscríbete a un torneo', desc: 'Elige el torneo, paga la inscripción y espera la ventana de juego.' },
+                { n: '1', title: 'Elige un torneo', desc: 'Revisa entrada, premios, cupos y ventana de juego antes de participar.' },
+                { n: '2', title: 'Paga la inscripción', desc: 'Flow confirma el pago y tu inscripción queda registrada en el torneo.' },
                 { n: '3', title: 'Juega y gana', desc: 'Tienes una sola partida. El puntaje más alto al cierre lleva el premio.' },
               ].map(({ n, title, desc }) => (
                 <div key={n} className="bg-white rounded-2xl p-6 border space-y-3">
@@ -133,7 +133,7 @@ export default async function HomePage() {
                       <div className="text-right shrink-0">
                         <p className="font-bold text-lg">{formatCLP(totalPrize)}</p>
                         <p className="text-xs text-muted-foreground">
-                          {t.prize_model === 'entry_pool' ? 'premio mínimo' : 'en premios'}
+                          premio mínimo
                         </p>
                       </div>
                     </Link>
@@ -149,7 +149,7 @@ export default async function HomePage() {
           <div className="max-w-sm mx-auto space-y-4">
             <p className="text-2xl font-bold">¿Listo para competir?</p>
             <p className="text-muted-foreground text-sm">
-              Crea tu cuenta gratis, recarga tu billetera e inscríbete en el próximo torneo.
+              Crea tu cuenta gratis, elige un torneo y paga la inscripción con Flow.
             </p>
             <Link
               href="/sign-up"

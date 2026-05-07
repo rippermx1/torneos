@@ -1,4 +1,5 @@
-import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
+import { requireAnyRoleForApi } from '@/lib/supabase/auth'
 import {
   isValidRut,
   samePersonName,
@@ -11,14 +12,11 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ): Promise<Response> {
-  const supabaseAuth = await createClient()
-  const { data: { user } } = await supabaseAuth.auth.getUser()
-  if (!user) return Response.json({ error: 'No autenticado' }, { status: 401 })
+  const auth = await requireAnyRoleForApi(['admin', 'owner'])
+  if (!auth.ok) return auth.response
 
+  const userId = auth.access.userId
   const supabase = createAdminClient()
-  const { data: adminProfile } = await supabase.from('profiles').select('is_admin').eq('id', user.id).single()
-  if (!adminProfile?.is_admin) return Response.json({ error: 'Acceso denegado' }, { status: 403 })
-
   const { id: targetUserId } = await params
 
   let body: { action: 'approve' | 'reject'; notes?: string | null }
@@ -143,7 +141,7 @@ export async function POST(
       .update({
         status: newStatus,
         review_notes: reviewNotes,
-        reviewed_by: user.id,
+        reviewed_by: userId,
         reviewed_at: new Date().toISOString(),
       })
       .eq('id', latestSubmission.id)
@@ -160,7 +158,7 @@ export async function POST(
     .from('kyc_audit_events')
     .insert({
       user_id: targetUserId,
-      actor_id: user.id,
+      actor_id: userId,
       event_type: body.action === 'approve' ? 'approved' : 'rejected',
       metadata: {
         submission_id: latestSubmission?.id ?? null,
@@ -172,7 +170,7 @@ export async function POST(
     })
 
   await recordAdminAction(supabase, {
-    adminId: user.id,
+    adminId: userId,
     action: body.action === 'approve' ? 'kyc.approve' : 'kyc.reject',
     targetType: 'profile',
     targetId: targetUserId,

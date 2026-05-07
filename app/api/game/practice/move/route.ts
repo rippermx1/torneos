@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { requireAnyRoleForApi } from '@/lib/supabase/auth'
 import { Game2048 } from '@/lib/game/engine'
 import { DeterministicRNG } from '@/lib/game/rng'
 import type { PracticeMoveRequest, PracticeMoveResponse } from '@/types/game'
@@ -6,10 +6,10 @@ import type { PracticeMoveRequest, PracticeMoveResponse } from '@/types/game'
 const VALID_DIRECTIONS = new Set(['up', 'down', 'left', 'right'])
 
 export async function POST(req: Request): Promise<Response> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return Response.json({ error: 'No autenticado' }, { status: 401 })
-  const userId = user.id
+  const auth = await requireAnyRoleForApi(['user'])
+  if (!auth.ok) return auth.response
+
+  const userId = auth.access.userId
 
   let body: PracticeMoveRequest
   try {

@@ -1,4 +1,5 @@
-import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
+import { requireAnyRoleForApi } from '@/lib/supabase/auth'
 
 // ───────────────────────────────────────────────────────────────
 // GET /api/wallet/deposit/flow/status?commerceOrder=...
@@ -9,9 +10,8 @@ import { createClient, createAdminClient } from '@/lib/supabase/server'
 // ───────────────────────────────────────────────────────────────
 
 export async function GET(req: Request): Promise<Response> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return Response.json({ error: 'No autenticado' }, { status: 401 })
+  const auth = await requireAnyRoleForApi(['user'])
+  if (!auth.ok) return auth.response
 
   const url = new URL(req.url)
   const commerceOrder = url.searchParams.get('commerceOrder')
@@ -31,7 +31,7 @@ export async function GET(req: Request): Promise<Response> {
   }
 
   // No filtrar admin client por user_id, así que validamos manualmente
-  if (data.user_id !== user.id) {
+  if (data.user_id !== auth.access.userId) {
     return Response.json({ error: 'No autorizado' }, { status: 403 })
   }
 

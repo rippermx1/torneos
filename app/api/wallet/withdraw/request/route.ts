@@ -1,4 +1,5 @@
-import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
+import { requireAnyRoleForApi } from '@/lib/supabase/auth'
 import {
   getBalance,
   getWithdrawableBalance,
@@ -22,10 +23,10 @@ interface WithdrawRequest {
 }
 
 export async function POST(req: Request): Promise<Response> {
-  const supabaseAuth = await createClient()
-  const { data: { user } } = await supabaseAuth.auth.getUser()
-  if (!user) return Response.json({ error: 'No autenticado' }, { status: 401 })
-  const userId = user.id
+  const auth = await requireAnyRoleForApi(['user'])
+  if (!auth.ok) return auth.response
+
+  const userId = auth.access.userId
 
   let body: WithdrawRequest
   try {
@@ -109,8 +110,8 @@ export async function POST(req: Request): Promise<Response> {
   }
 
   // 1. Saldo retirable: solo lo ganado en torneos puede retirarse.
-  // El saldo total puede ser mayor (hay depósitos pendientes de jugar),
-  // pero solo lo "verde" (premios + reembolsos de torneo) es retirable.
+  // El saldo total puede ser mayor por saldos legados o ajustes, pero solo
+  // premios + reembolsos de torneo son retirables.
   const [withdrawable, totalBalance] = await Promise.all([
     getWithdrawableBalance(userId),
     getBalance(userId),
@@ -132,7 +133,7 @@ export async function POST(req: Request): Promise<Response> {
     return Response.json(
       {
         error:
-          'Solo el saldo ganado en torneos es retirable. Las recargas deben usarse en inscripciones.',
+          'Solo el saldo ganado en torneos o reembolsos de torneo es retirable.',
         notWithdrawable: true,
         withdrawableCents: withdrawable,
         balanceCents: totalBalance,

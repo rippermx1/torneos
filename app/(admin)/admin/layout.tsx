@@ -1,15 +1,8 @@
-import { createClient, createAdminClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+import { requireAnyRole } from '@/lib/supabase/auth'
 import Link from 'next/link'
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/sign-in')
-
-  const adminSupabase = createAdminClient()
-  const { data } = await adminSupabase.from('profiles').select('is_admin').eq('id', user.id).single()
-  if (!data?.is_admin) redirect('/')
+  await requireAnyRole(['admin', 'owner'])
 
   return (
     <div className="min-h-screen flex">

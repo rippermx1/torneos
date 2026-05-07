@@ -1,12 +1,15 @@
 import { createAdminClient } from '@/lib/supabase/server'
-import { requireAdmin } from '@/lib/supabase/auth'
+import { requireAnyRoleForApi } from '@/lib/supabase/auth'
 import { recordAdminAction } from '@/lib/admin/audit'
 
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ): Promise<Response> {
-  const adminId = await requireAdmin()
+  const auth = await requireAnyRoleForApi(['admin', 'owner'])
+  if (!auth.ok) return auth.response
+
+  const adminId = auth.access.userId
 
   const { id: targetUserId } = await params
   const supabase = createAdminClient()

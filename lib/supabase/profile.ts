@@ -43,4 +43,21 @@ export async function ensureProfileExists(user: AuthLikeUser) {
   if (error) {
     throw error
   }
+
+  const { error: roleError } = await supabase
+    .from('profile_roles')
+    .upsert(
+      {
+        profile_id: user.id,
+        role: 'user',
+      },
+      {
+        onConflict: 'profile_id,role',
+        ignoreDuplicates: true,
+      }
+    )
+
+  if (roleError) {
+    throw roleError
+  }
 }

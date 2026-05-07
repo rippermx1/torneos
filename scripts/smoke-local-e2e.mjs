@@ -441,13 +441,14 @@ async function main() {
   await registerPlayer(player1.cookieJar, tournamentId)
   await registerPlayer(player2.cookieJar, tournamentId)
 
-  await adminSupabase
+  const { error: startWindowError } = await adminSupabase
     .from('tournaments')
     .update({
       play_window_start: new Date(Date.now() - 60 * 1000).toISOString(),
       play_window_end: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
     })
     .eq('id', tournamentId)
+  assert(!startWindowError, `No se pudo adelantar ventana de juego: ${startWindowError?.message}`)
 
   const startedTournament = await runCron()
   assert(
@@ -470,12 +471,15 @@ async function main() {
 
   console.log(`Partidas iniciadas. Scores parciales: jugador1=${result1.score}, jugador2=${result2.score}`)
 
-  await adminSupabase
+  const { error: closeWindowError } = await adminSupabase
     .from('tournaments')
     .update({
-      play_window_end: new Date(Date.now() - 60 * 1000).toISOString(),
+      registration_opens_at: new Date(Date.now() - 21 * 60 * 1000).toISOString(),
+      play_window_start: new Date(Date.now() - 20 * 60 * 1000).toISOString(),
+      play_window_end: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
     })
     .eq('id', tournamentId)
+  assert(!closeWindowError, `No se pudo cerrar ventana de juego: ${closeWindowError?.message}`)
 
   const finalizingTournament = await runCron()
   assert(

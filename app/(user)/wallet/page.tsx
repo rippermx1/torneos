@@ -3,7 +3,6 @@ import { formatCLP, formatDateTimeCL } from '@/lib/utils'
 import type { WalletTransaction } from '@/types/database'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { DepositBanner } from '@/components/wallet/deposit-banner'
 
 const TYPE_LABEL: Record<WalletTransaction['type'], string> = {
   deposit: 'Depósito',
@@ -14,16 +13,10 @@ const TYPE_LABEL: Record<WalletTransaction['type'], string> = {
   adjustment: 'Ajuste',
 }
 
-export default async function WalletPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ deposit?: string }>
-}) {
+export default async function WalletPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/sign-in')
-
-  const { deposit } = await searchParams
 
   const adminSupabase = createAdminClient()
   const [{ data }, { data: withdrawableData }] = await Promise.all([
@@ -42,8 +35,6 @@ export default async function WalletPage({
 
   return (
     <div className="space-y-6 max-w-lg">
-      {deposit && <DepositBanner status={deposit as 'success' | 'failure' | 'pending' | 'flow_return'} />}
-
       <div className="flex items-end justify-between">
         <div>
           <h1 className="text-2xl font-bold">Mi billetera</h1>
@@ -57,15 +48,9 @@ export default async function WalletPage({
         <div className="flex gap-2">
           <Link
             href="/wallet/withdraw"
-            className="border px-4 py-2 rounded-xl text-sm font-medium hover:bg-muted transition-colors"
-          >
-            Retirar
-          </Link>
-          <Link
-            href="/wallet/deposit"
             className="bg-foreground text-background px-4 py-2 rounded-xl text-sm font-medium hover:opacity-90 transition-opacity"
           >
-            Recargar
+            Retirar
           </Link>
         </div>
       </div>

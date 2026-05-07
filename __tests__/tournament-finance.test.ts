@@ -3,7 +3,7 @@ import {
   calculateEntryPoolFinancials,
   calculateIvaIncludedBreakdown,
   calculatePresetFinancials,
-  calculatePrizePoolPayouts,
+  calculatePrizeFundPayouts,
   calculateRequiredRevenueCents,
   calculateTournamentDisplayPayouts,
   calculateTournamentFinancials,
@@ -13,29 +13,29 @@ import {
 } from '@/lib/tournament/finance'
 
 describe('tournament finance', () => {
-  it('requires revenue above prize pool adjusted for IVA and Flow cost', () => {
+  it('requires revenue above prize fund adjusted for IVA and Flow cost', () => {
     const required = calculateRequiredRevenueCents(pesosToCents(27000))
 
     expect(required).toBeGreaterThan(pesosToCents(27000))
     expect(required).toBeGreaterThanOrEqual(pesosToCents(33300))
   })
 
-  it('separa cada inscripción en pozo de premios y fee con IVA incluido', () => {
+  it('separa cada inscripción en fondo de premios y fee con IVA incluido', () => {
     const split = splitEntryFee(pesosToCents(1000))
 
-    expect(split.prizePoolContributionCents).toBe(pesosToCents(850))
+    expect(split.prizeFundContributionCents).toBe(pesosToCents(850))
     expect(split.platformFeeGrossCents).toBe(pesosToCents(150))
     expect(split.platformFeeIvaCents).toBe(calculateIvaIncludedBreakdown(pesosToCents(150)).ivaCents)
     expect(split.platformFeeNetCents).toBe(split.platformFeeGrossCents - split.platformFeeIvaCents)
   })
 
   it('calcula premios dinámicos con distribución 70/20/10', () => {
-    const payouts = calculatePrizePoolPayouts({
+    const payouts = calculatePrizeFundPayouts({
       entryFeeCents: pesosToCents(1000),
       playerCount: 10,
     })
 
-    expect(payouts.prizePoolCents).toBe(pesosToCents(8500))
+    expect(payouts.prizeFundCents).toBe(pesosToCents(8500))
     expect(payouts.prize1Cents).toBe(pesosToCents(5950))
     expect(payouts.prize2Cents).toBe(pesosToCents(1700))
     expect(payouts.prize3Cents).toBe(pesosToCents(850))
@@ -48,11 +48,10 @@ describe('tournament finance', () => {
       prize_2nd_cents: 0,
       prize_3rd_cents: 0,
       min_players: 6,
-      prize_model: 'entry_pool',
     }, 2)
 
     expect(payouts.playerCount).toBe(6)
-    expect(payouts.prizePoolCents).toBe(pesosToCents(15300))
+    expect(payouts.prizeFundCents).toBe(pesosToCents(15300))
   })
 
   it('marks all paid presets as healthy under entry-pool model', () => {

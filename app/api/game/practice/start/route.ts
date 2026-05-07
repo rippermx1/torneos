@@ -1,14 +1,14 @@
-import { createClient } from '@/lib/supabase/server'
+import { requireAnyRoleForApi } from '@/lib/supabase/auth'
 import { randomUUID } from 'crypto'
 import { Game2048 } from '@/lib/game/engine'
 import { DeterministicRNG } from '@/lib/game/rng'
 import type { PracticeStartResponse } from '@/types/game'
 
 export async function POST(): Promise<Response> {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return Response.json({ error: 'No autenticado' }, { status: 401 })
-  const userId = user.id
+  const auth = await requireAnyRoleForApi(['user'])
+  if (!auth.ok) return auth.response
+
+  const userId = auth.access.userId
 
   // Seed único por partida de práctica. No necesita ser reproducible entre sesiones.
   const seed = `practice:${userId}:${randomUUID()}`

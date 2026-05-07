@@ -35,7 +35,7 @@ export function checkRegistrationWindow(tournament: RegistrationWindowTournament
 
   if (now < registrationOpens) return { ok: false, reason: 'window_not_open' }
   // Cortar inscripciones al inicio de la ventana de juego
-  if (now > playStart) return { ok: false, reason: 'window_closed' }
+  if (now >= playStart) return { ok: false, reason: 'window_closed' }
 
   return { ok: true }
 }

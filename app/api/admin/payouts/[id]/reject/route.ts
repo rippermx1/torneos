@@ -1,26 +1,15 @@
-import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
+import { requireAnyRoleForApi } from '@/lib/supabase/auth'
 import { recordAdminAction } from '@/lib/admin/audit'
-import type { Profile } from '@/types/database'
 
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ): Promise<Response> {
-  const supabaseAuth = await createClient()
-  const { data: { user } } = await supabaseAuth.auth.getUser()
-  if (!user) return Response.json({ error: 'No autenticado' }, { status: 401 })
-  const userId = user.id
+  const auth = await requireAnyRoleForApi(['admin', 'owner'])
+  if (!auth.ok) return auth.response
 
-  const supabase = createAdminClient()
-  const { data: profileData } = await supabase
-    .from('profiles')
-    .select('is_admin')
-    .eq('id', userId)
-    .single()
-
-  if (!(profileData as Profile | null)?.is_admin) {
-    return Response.json({ error: 'Sin permisos de administrador' }, { status: 403 })
-  }
+  const userId = auth.access.userId
 
   const { id: requestId } = await params
   let body: { notes?: string } = {}

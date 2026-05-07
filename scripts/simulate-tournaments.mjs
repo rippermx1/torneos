@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
+import { randomUUID } from 'node:crypto'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import nextEnv from '@next/env'
 import { createClient } from '@supabase/supabase-js'
@@ -29,6 +30,14 @@ export const thinkMinMs = Number(process.env.SIM_TOURNAMENT_THINK_MIN_MS ?? '5')
 export const thinkMaxMs = Number(process.env.SIM_TOURNAMENT_THINK_MAX_MS ?? '25')
 export const authRetryBaseMs = Number(process.env.SIM_AUTH_RETRY_BASE_MS ?? '2000')
 export const authMaxRetries = Number(process.env.SIM_AUTH_MAX_RETRIES ?? '8')
+
+const BPS = 10000
+const DEFAULT_PRIZE_FUND_BPS = 8500
+const FLOW_CARD_NEXT_DAY_FEE_RATE = 0.0319
+const PLATFORM_FEE_NET_SHARE = 1 / 1.19
+const USER_FEE_RATE =
+  FLOW_CARD_NEXT_DAY_FEE_RATE / (PLATFORM_FEE_NET_SHARE - FLOW_CARD_NEXT_DAY_FEE_RATE)
+const USER_FEE_MIN_CENTS = 15000
 
 if (!supabaseUrl || !supabaseBrowserKey || !supabaseServiceKey || !cronSecret) {
   console.error(
@@ -86,10 +95,10 @@ export function resolveScenarioConfig(scenario) {
   }
 
   const projectedRevenue = scenario.entryFee * scenario.minPlayers
-  const targetPrizePool = Math.max(300000, Math.floor(projectedRevenue * 0.72))
-  const prize1 = Math.max(100000, Math.floor(targetPrizePool * 0.6))
-  const prize2 = Math.max(50000, Math.floor(targetPrizePool * 0.25))
-  const prize3 = Math.max(0, targetPrizePool - prize1 - prize2)
+  const targetPrizeFund = Math.max(300000, Math.floor(projectedRevenue * 0.72))
+  const prize1 = Math.max(100000, Math.floor(targetPrizeFund * 0.6))
+  const prize2 = Math.max(50000, Math.floor(targetPrizeFund * 0.25))
+  const prize3 = Math.max(0, targetPrizeFund - prize1 - prize2)
 
   return {
     ...scenario,
@@ -107,6 +116,27 @@ export function assert(condition, message) {
 
 export function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+export function computeSyntheticFlowBreakdown(netCents) {
+  const rawFee = Math.ceil(netCents * USER_FEE_RATE)
+  const userFeeCents = Math.max(USER_FEE_MIN_CENTS, rawFee)
+  const chargedCents = Math.ceil((netCents + userFeeCents) / 100) * 100
+
+  return {
+    netCents,
+    chargedCents,
+    userFeeCents: chargedCents - netCents,
+  }
+}
+
+export function expectedPrizeFundCents(tournament, playerCount) {
+  if (!tournament || tournament.entry_fee_cents <= 0) {
+    return null
+  }
+
+  const prizeFundBps = tournament.prize_fund_bps ?? DEFAULT_PRIZE_FUND_BPS
+  return Math.round((tournament.entry_fee_cents * playerCount * prizeFundBps) / BPS)
 }
 
 export function randomInt(min, max) {
@@ -434,15 +464,13 @@ export async function signIn(email) {
   throw new Error(`No se pudo iniciar sesión con ${email}`)
 }
 
-export async function ensureSimulationUsers(totalPlayers, entryFee) {
+export async function ensureSimulationUsers(totalPlayers) {
   const fixtures = buildSimFixtures(totalPlayers)
   const existing = await findUsersByEmails(fixtures.map((fixture) => fixture.email))
-  const minBalance = Math.max(25000, entryFee * 5)
 
   return runPool(fixtures, Math.min(8, concurrency), async (fixture) => {
     const user = await ensureUser(fixture, existing)
     await ensureProfile(user, fixture)
-    await ensureBalance(user.id, minBalance)
 
     return {
       ...fixture,
@@ -679,6 +707,26 @@ export function chooseMove(board, behavior) {
 }
 
 export async function registerPlayer(session, tournamentId) {
+  const { data: tournament, error: tournamentError } = await adminSupabase
+    .from('tournaments')
+    .select('id, entry_fee_cents')
+    .eq('id', tournamentId)
+    .single()
+
+  if (tournamentError || !tournament) {
+    return {
+      email: session.email,
+      userId: session.userId,
+      status: 500,
+      ok: false,
+      error: tournamentError?.message ?? 'Torneo no encontrado',
+    }
+  }
+
+  if (tournament.entry_fee_cents > 0) {
+    return settlePaidRegistrationForSimulation(session, tournament)
+  }
+
   const { response, payload } = await callJson(
     `${baseUrl}/api/tournaments/${tournamentId}/register`,
     { method: 'POST' },
@@ -691,6 +739,83 @@ export async function registerPlayer(session, tournamentId) {
     status: response.status,
     ok: response.status === 200 && payload?.ok === true,
     error: payload?.error ?? null,
+  }
+}
+
+export async function settlePaidRegistrationForSimulation(session, tournament) {
+  const commerceOrder = `sim-tour-${randomUUID()}`
+  const flowToken = `sim-token-${randomUUID()}`
+  const breakdown = computeSyntheticFlowBreakdown(tournament.entry_fee_cents)
+
+  const { data: attempt, error: insertError } = await adminSupabase
+    .from('flow_payment_attempts')
+    .insert({
+      user_id: session.userId,
+      tournament_id: tournament.id,
+      commerce_order: commerceOrder,
+      net_amount_cents: breakdown.netCents,
+      charged_amount_cents: breakdown.chargedCents,
+      user_fee_cents: breakdown.userFeeCents,
+      status: 'pending',
+      intent: 'tournament_registration',
+      flow_token: flowToken,
+      flow_order: Math.floor(Date.now() % 1_000_000_000),
+    })
+    .select('id')
+    .single()
+
+  if (insertError || !attempt) {
+    return {
+      email: session.email,
+      userId: session.userId,
+      status: insertError?.code === '23505' ? 409 : 500,
+      ok: false,
+      error: insertError?.message ?? 'No se pudo crear flow_payment_attempt',
+    }
+  }
+
+  const { error: settleError } = await adminSupabase.rpc('settle_tournament_registration', {
+    p_commerce_order: commerceOrder,
+    p_flow_token: flowToken,
+    p_flow_order: Math.floor(Date.now() % 1_000_000_000),
+    p_amount_cents: breakdown.chargedCents,
+    p_payment_method: 'simulation',
+    p_payer_email: session.email,
+    p_raw: {
+      source: 'simulate-tournaments',
+      synthetic: true,
+      status: 2,
+      amount: breakdown.chargedCents / 100,
+    },
+  })
+
+  if (settleError) {
+    await adminSupabase
+      .from('flow_payment_attempts')
+      .update({ status: 'rejected', settled_at: new Date().toISOString() })
+      .eq('id', attempt.id)
+
+    const isBusinessRejection =
+      settleError.message.includes('lleno') ||
+      settleError.message.includes('inscrito') ||
+      settleError.message.includes('no esta abierto') ||
+      settleError.message.includes('ventana')
+
+    return {
+      email: session.email,
+      userId: session.userId,
+      status: isBusinessRejection ? 400 : 500,
+      ok: false,
+      error: settleError.message,
+    }
+  }
+
+  return {
+    email: session.email,
+    userId: session.userId,
+    status: 200,
+    ok: true,
+    error: null,
   }
 }
 
@@ -775,18 +900,21 @@ export async function collectScenarioSummary(scenario, tournament, playerIds) {
     gamesResult,
     leaderboardResult,
     walletResult,
+    flowAttemptsResult,
   ] = await Promise.all([
     adminSupabase.from('tournaments').select('*').eq('id', tournament.id).single(),
     adminSupabase.from('registrations').select('id, user_id').eq('tournament_id', tournament.id),
     adminSupabase.from('games').select('id, user_id, status, final_score, highest_tile, move_count, end_reason').eq('tournament_id', tournament.id),
     adminSupabase.from('tournament_results').select('id, user_id, rank, final_score, prize_awarded_cents').eq('tournament_id', tournament.id).order('rank', { ascending: true }),
     adminSupabase.from('wallet_transactions').select('type, amount_cents, user_id, reference_type, reference_id').eq('reference_id', tournament.id),
+    adminSupabase.from('flow_payment_attempts').select('id, status').eq('tournament_id', tournament.id),
   ])
 
   const registrations = registrationsResult.data ?? []
   const games = gamesResult.data ?? []
   const leaderboard = leaderboardResult.data ?? []
   const walletTransactions = walletResult.data ?? []
+  const flowAttempts = flowAttemptsResult.data ?? []
   const tournamentRow = tournamentResult.data
 
   const statuses = Object.fromEntries(
@@ -802,6 +930,7 @@ export async function collectScenarioSummary(scenario, tournament, playerIds) {
   const ticketDebits = walletTransactions.filter((transaction) => transaction.type === 'ticket_debit')
   const prizeCredits = walletTransactions.filter((transaction) => transaction.type === 'prize_credit')
   const refunds = walletTransactions.filter((transaction) => transaction.type === 'refund')
+  const paidFlowAttempts = flowAttempts.filter((attempt) => attempt.status === 'paid')
   const ranks = leaderboard.map((row) => row.rank)
   const contiguousRanks = ranks.every((rank, index) => rank === index + 1)
   const uniqueRegistrants = new Set(registrations.map((registration) => registration.user_id))
@@ -837,15 +966,21 @@ export async function collectScenarioSummary(scenario, tournament, playerIds) {
     anomalies.push(`estado final del torneo=${tournamentRow?.status ?? 'null'}`)
   }
 
-  if (scenario.entryFee > 0 && ticketDebits.length !== scenario.playerCount) {
-    anomalies.push(`ticket_debits=${ticketDebits.length} expected=${scenario.playerCount}`)
+  if (scenario.entryFee > 0 && paidFlowAttempts.length !== scenario.playerCount) {
+    anomalies.push(`flow_paid_attempts=${paidFlowAttempts.length} expected=${scenario.playerCount}`)
+  }
+
+  if (scenario.entryFee > 0 && ticketDebits.length > 0) {
+    anomalies.push(`ticket_debits_legados=${ticketDebits.length}`)
   }
 
   if (refunds.length > 0) {
     anomalies.push(`refunds inesperados=${refunds.length}`)
   }
 
-  const expectedPrizeSum = scenario.prize1 + scenario.prize2 + scenario.prize3
+  const expectedPrizeSum =
+    expectedPrizeFundCents(tournamentRow, registrations.length) ??
+    scenario.prize1 + scenario.prize2 + scenario.prize3
   const actualPrizeSum = prizeCredits.reduce((sum, transaction) => sum + transaction.amount_cents, 0)
   if (actualPrizeSum !== expectedPrizeSum) {
     anomalies.push(`prize_sum=${actualPrizeSum} expected=${expectedPrizeSum}`)
@@ -864,6 +999,7 @@ export async function collectScenarioSummary(scenario, tournament, playerIds) {
     leaderboardRows: leaderboard.length,
     timeoutGames,
     ticketDebits: ticketDebits.length,
+    paidFlowAttempts: paidFlowAttempts.length,
     prizeCredits: prizeCredits.length,
     refundCount: refunds.length,
     averageScore:
@@ -922,13 +1058,14 @@ async function runScenario(adminSession, sessions, scenario, overflowSession) {
     report.errors.push('el usuario overflow no fue bloqueado correctamente')
   }
 
-  await adminSupabase
+  const { error: startWindowError } = await adminSupabase
     .from('tournaments')
     .update({
       play_window_start: new Date(Date.now() - 60 * 1000).toISOString(),
       play_window_end: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
     })
     .eq('id', tournament.id)
+  assert(!startWindowError, `No se pudo adelantar ventana de juego: ${startWindowError?.message}`)
 
   const startedTournament = await runCron()
   assert(
@@ -967,12 +1104,15 @@ async function runScenario(adminSession, sessions, scenario, overflowSession) {
     return playGame(session, resolvedScenario, tournament.id, startResult.payload, behavior)
   })
 
-  await adminSupabase
+  const { error: closeWindowError } = await adminSupabase
     .from('tournaments')
     .update({
-      play_window_end: new Date(Date.now() - 60 * 1000).toISOString(),
+      registration_opens_at: new Date(Date.now() - 26 * 60 * 1000).toISOString(),
+      play_window_start: new Date(Date.now() - 25 * 60 * 1000).toISOString(),
+      play_window_end: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
     })
     .eq('id', tournament.id)
+  assert(!closeWindowError, `No se pudo cerrar ventana de juego: ${closeWindowError?.message}`)
 
   const finalizingTournament = await runCron()
   assert(

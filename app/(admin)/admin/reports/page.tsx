@@ -10,7 +10,7 @@ interface MonthlyRow {
   unique_users: number
   tournaments_with_revenue: number
   gross_revenue_cents: number
-  prize_pool_cents: number
+  prize_fund_cents: number
   platform_fee_gross_cents: number
   platform_fee_net_cents: number
   platform_fee_iva_cents: number
@@ -82,7 +82,7 @@ export default async function AdminReportsPage({
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <Card label="Inscripciones" value={selected.registrations_count.toLocaleString('es-CL')} sub={`${selected.unique_users} usuarios únicos · ${selected.tournaments_with_revenue} torneos`} />
                 <Card label="Recaudado bruto" value={formatCLP(selected.gross_revenue_cents)} sub="Total cuotas cobradas" />
-                <Card label="Pozo de premios" value={formatCLP(selected.prize_pool_cents)} sub="Aporte a premios (no es ingreso)" />
+                <Card label="Fondo de premios" value={formatCLP(selected.prize_fund_cents)} sub="Destinado a premios (no es ingreso)" />
               </div>
 
               <div className="border rounded-xl p-4 space-y-3">
@@ -125,7 +125,7 @@ export default async function AdminReportsPage({
                 <span className="text-right">Bruto</span>
                 <span className="text-right">Neto</span>
                 <span className="text-right">IVA</span>
-                <span className="text-right">Pozo</span>
+                <span className="text-right">Premios</span>
               </div>
               {rows.map((r) => (
                 <div
@@ -137,7 +137,7 @@ export default async function AdminReportsPage({
                   <span className="text-right">{formatCLP(r.gross_revenue_cents)}</span>
                   <span className="text-right text-green-700 font-medium">{formatCLP(r.platform_fee_net_cents)}</span>
                   <span className="text-right text-amber-700">{formatCLP(r.platform_fee_iva_cents)}</span>
-                  <span className="text-right text-muted-foreground">{formatCLP(r.prize_pool_cents)}</span>
+                  <span className="text-right text-muted-foreground">{formatCLP(r.prize_fund_cents)}</span>
                 </div>
               ))}
             </div>

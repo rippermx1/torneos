@@ -29,7 +29,7 @@ const FLOW_NEXT_DAY_FEE_BPS = 319
 const IVA_MULTIPLIER_BPS = BPS + IVA_BPS
 const FLOW_EFFECTIVE_COST_BPS = Math.ceil((FLOW_NEXT_DAY_FEE_BPS * IVA_MULTIPLIER_BPS) / BPS)
 const FLOW_NET_BPS = BPS - FLOW_EFFECTIVE_COST_BPS
-const DEFAULT_PRIZE_POOL_BPS = 8500
+const DEFAULT_PRIZE_FUND_BPS = 8500
 
 function requiredRevenueCents(prizeCents) {
   if (prizeCents <= 0) return 0
@@ -103,9 +103,9 @@ async function main() {
     .filter((tournament) => tournament.entry_fee_cents > 0)
     .map((tournament) => {
       if (tournament.prize_model === 'entry_pool') {
-        const prizePoolBps = tournament.prize_pool_bps ?? DEFAULT_PRIZE_POOL_BPS
+        const prizeFundBps = tournament.prize_fund_bps ?? DEFAULT_PRIZE_FUND_BPS
         const minRevenueCents = tournament.entry_fee_cents * tournament.min_players
-        const prizeCents = Math.round((minRevenueCents * prizePoolBps) / BPS)
+        const prizeCents = Math.round((minRevenueCents * prizeFundBps) / BPS)
         const platformFeeGrossCents = minRevenueCents - prizeCents
         const platformTax = ivaIncludedBreakdown(platformFeeGrossCents)
         const minMarginBps = minRevenueCents > 0
@@ -172,7 +172,7 @@ async function main() {
       ivaRate: '19%',
       flowNextDayFee: '3.19% + IVA',
       flowNetBps: FLOW_NET_BPS,
-      entryPoolModel: '85% pozo de premios / 15% fee plataforma IVA incluido',
+      entryPoolModel: '85% fondo de premios / 15% fee plataforma IVA incluido',
     },
     wallet: {
       usersWithBalance: latestBalances.size,

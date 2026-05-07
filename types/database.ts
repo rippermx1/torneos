@@ -3,6 +3,7 @@ export type KycDocumentType = 'cedula_chilena' | 'passport' | 'other'
 export type WithdrawalStatus = 'pending' | 'approved' | 'rejected'
 export type DisputeType = 'payment' | 'tournament_result' | 'technical' | 'other'
 export type DisputeStatus = 'open' | 'resolved' | 'rejected'
+export type AppRole = 'user' | 'admin' | 'owner'
 export type WalletTransactionType =
   | 'deposit'
   | 'withdrawal'
@@ -11,7 +12,7 @@ export type WalletTransactionType =
   | 'refund'
   | 'adjustment'
 export type TournamentType = 'standard' | 'express' | 'elite' | 'freeroll'
-export type PrizeModel = 'fixed' | 'entry_pool'
+export type PrizeModel = 'entry_pool'
 export type TournamentStatus =
   | 'scheduled'
   | 'open'
@@ -47,6 +48,13 @@ export interface Profile {
   created_at: string
 }
 
+export interface ProfileRole {
+  profile_id: string
+  role: AppRole
+  granted_by: string | null
+  granted_at: string
+}
+
 export interface WalletTransaction {
   id: string
   user_id: string
@@ -70,7 +78,7 @@ export interface Tournament {
   prize_1st_cents: number
   prize_2nd_cents: number
   prize_3rd_cents: number
-  prize_pool_bps: number
+  prize_fund_bps: number
   platform_fee_bps: number
   prize_1st_bps: number
   prize_2nd_bps: number
@@ -91,7 +99,7 @@ export interface Registration {
   tournament_id: string
   user_id: string
   entry_fee_cents: number | null
-  prize_pool_contribution_cents: number | null
+  prize_fund_contribution_cents: number | null
   platform_fee_gross_cents: number | null
   platform_fee_net_cents: number | null
   platform_fee_iva_cents: number | null
@@ -211,8 +219,32 @@ export interface FlowPaymentAttempt {
   payment_method: string | null
   payer_email: string | null
   raw_response: Record<string, unknown> | null
+  intent: 'wallet_deposit' | 'tournament_registration'
+  tournament_id: string | null
   created_at: string
   settled_at: string | null
+}
+
+export type DteDocumentType = 'boleta_electronica' | 'nota_credito'
+export type DteDocumentStatus = 'pending' | 'emitting' | 'emitted' | 'failed' | 'cancelled'
+
+export interface DteDocument {
+  id: string
+  registration_id: string | null
+  flow_payment_attempt_id: string
+  document_type: DteDocumentType
+  total_cents: number
+  net_cents: number
+  iva_cents: number
+  status: DteDocumentStatus
+  libredte_track_id: string | null
+  folio: number | null
+  error_message: string | null
+  retry_count: number
+  last_attempted_at: string | null
+  references_dte_id: string | null
+  created_at: string
+  emitted_at: string | null
 }
 
 export interface Dispute {
@@ -238,6 +270,12 @@ export type Database = {
         Update: Partial<Omit<Profile, 'id'>> & DbRecord
         Relationships: []
       }
+      profile_roles: {
+        Row: ProfileRole & DbRecord
+        Insert: InsertWithOptional<ProfileRole, 'granted_by' | 'granted_at'>
+        Update: Partial<Omit<ProfileRole, 'profile_id' | 'role'>> & DbRecord
+        Relationships: []
+      }
       wallet_transactions: {
         Row: WalletTransaction & DbRecord
         Insert: InsertWithOptional<WalletTransaction, 'id' | 'created_at' | 'reference_type' | 'reference_id'>
@@ -246,13 +284,13 @@ export type Database = {
       }
       tournaments: {
         Row: Tournament & DbRecord
-        Insert: InsertWithOptional<Tournament, 'id' | 'created_at' | 'description' | 'game_type' | 'tournament_type' | 'prize_model' | 'prize_2nd_cents' | 'prize_3rd_cents' | 'prize_pool_bps' | 'platform_fee_bps' | 'prize_1st_bps' | 'prize_2nd_bps' | 'prize_3rd_bps' | 'min_players' | 'max_players' | 'status' | 'max_game_duration_seconds' | 'created_by'>
+        Insert: InsertWithOptional<Tournament, 'id' | 'created_at' | 'description' | 'game_type' | 'tournament_type' | 'prize_model' | 'prize_2nd_cents' | 'prize_3rd_cents' | 'prize_fund_bps' | 'platform_fee_bps' | 'prize_1st_bps' | 'prize_2nd_bps' | 'prize_3rd_bps' | 'min_players' | 'max_players' | 'status' | 'max_game_duration_seconds' | 'created_by'>
         Update: Partial<Omit<Tournament, 'id'>> & DbRecord
         Relationships: []
       }
       registrations: {
         Row: Registration & DbRecord
-        Insert: InsertWithOptional<Registration, 'id' | 'registered_at' | 'entry_fee_cents' | 'prize_pool_contribution_cents' | 'platform_fee_gross_cents' | 'platform_fee_net_cents' | 'platform_fee_iva_cents' | 'prize_model' | 'accounting_metadata'>
+        Insert: InsertWithOptional<Registration, 'id' | 'registered_at' | 'entry_fee_cents' | 'prize_fund_contribution_cents' | 'platform_fee_gross_cents' | 'platform_fee_net_cents' | 'platform_fee_iva_cents' | 'prize_model' | 'accounting_metadata'>
         Update: Partial<Omit<Registration, 'id' | 'registered_at'>> & DbRecord
         Relationships: []
       }
@@ -300,8 +338,14 @@ export type Database = {
       }
       flow_payment_attempts: {
         Row: FlowPaymentAttempt & DbRecord
-        Insert: InsertWithOptional<FlowPaymentAttempt, 'id' | 'created_at' | 'flow_token' | 'flow_order' | 'status' | 'flow_status_code' | 'payment_method' | 'payer_email' | 'raw_response' | 'settled_at'>
+        Insert: InsertWithOptional<FlowPaymentAttempt, 'id' | 'created_at' | 'flow_token' | 'flow_order' | 'status' | 'flow_status_code' | 'payment_method' | 'payer_email' | 'raw_response' | 'settled_at' | 'intent' | 'tournament_id'>
         Update: Partial<Omit<FlowPaymentAttempt, 'id' | 'created_at' | 'commerce_order' | 'user_id'>> & DbRecord
+        Relationships: []
+      }
+      dte_documents: {
+        Row: DteDocument & DbRecord
+        Insert: InsertWithOptional<DteDocument, 'id' | 'created_at' | 'registration_id' | 'status' | 'libredte_track_id' | 'folio' | 'error_message' | 'retry_count' | 'last_attempted_at' | 'references_dte_id' | 'emitted_at'>
+        Update: Partial<Omit<DteDocument, 'id' | 'created_at'>> & DbRecord
         Relationships: []
       }
       admin_actions: {
@@ -317,7 +361,7 @@ export type Database = {
           committed_cents: number
           contingent_cents: number
           collected_cents: number
-          prize_pool_collected_cents: number
+          prize_fund_collected_cents: number
           platform_fee_gross_cents: number
           platform_fee_net_cents: number
           platform_fee_iva_cents: number
@@ -333,7 +377,7 @@ export type Database = {
           unique_users: number
           tournaments_with_revenue: number
           gross_revenue_cents: number
-          prize_pool_cents: number
+          prize_fund_cents: number
           platform_fee_gross_cents: number
           platform_fee_net_cents: number
           platform_fee_iva_cents: number
@@ -361,18 +405,6 @@ export type Database = {
         Args: { p_user_id: string; p_window: string } & DbRecord
         Returns: number
       }
-      wallet_credit_flow_payment: {
-        Args: {
-          p_commerce_order: string
-          p_flow_token: string
-          p_flow_order: number
-          p_amount_cents: number
-          p_payment_method: string | null
-          p_payer_email: string | null
-          p_raw: Record<string, unknown>
-        } & DbRecord
-        Returns: WalletTransaction
-      }
       wallet_mark_flow_attempt_failed: {
         Args: {
           p_commerce_order: string
@@ -388,7 +420,19 @@ export type Database = {
           p_tournament_id: string
           p_entry_fee_cents: number
         } & DbRecord
-        Returns: undefined
+        Returns: string
+      }
+      settle_tournament_registration: {
+        Args: {
+          p_commerce_order: string
+          p_flow_token: string
+          p_flow_order: number
+          p_amount_cents: number
+          p_payment_method: string | null
+          p_payer_email: string | null
+          p_raw: Record<string, unknown>
+        } & DbRecord
+        Returns: { idempotent: boolean; registration_id: string; attempt_id: string }
       }
       finalize_tournament: {
         Args: {
@@ -430,7 +474,9 @@ export type Database = {
         Returns: string
       }
     }
-    Enums: Record<string, never>
+    Enums: {
+      app_role: AppRole
+    }
     CompositeTypes: Record<string, never>
   }
 }

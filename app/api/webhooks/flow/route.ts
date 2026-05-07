@@ -10,8 +10,8 @@ import { readFlowToken, settleFlowPayment } from '@/lib/flow/settlement'
 //   Esto evita falsificación: el atacante no puede simular un pago
 //   exitoso con solo un token, porque consultamos a Flow directamente.
 // - Status: 1=pendiente, 2=pagado, 3=rechazado, 4=anulado.
-// - Solo si status=2 acreditamos la billetera.
-// - Idempotencia por flow_token (índice único en wallet_transactions).
+// - Solo si status=2 liquidamos el intento segun su intent.
+// - tournament_registration crea la inscripcion de forma idempotente.
 // ───────────────────────────────────────────────────────────────
 
 export async function POST(req: Request): Promise<Response> {

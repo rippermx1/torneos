@@ -1,12 +1,11 @@
 // ───────────────────────────────────────────────────────────────
-// Modelo financiero de recarga via Flow.
+// Modelo financiero de cobro via Flow.
 //
 // Politica operativa:
-// - El usuario elige cuánto quiere acreditarse en su billetera (net).
+// - El net corresponde al valor económico a liquidar (inscripción).
 // - Cobramos al usuario un fee de procesamiento que cubre el costo
 //   esperado de Flow para tarjeta con abono al dia habil siguiente.
-// - Lo que se acredita en la wallet es exactamente el net que el
-//   usuario pidió. No hay sorpresas en el saldo.
+// - El checkout muestra net, fee de procesamiento y total cobrado.
 // - El fee es VISIBLE en el checkout antes del cobro.
 //
 // Tasas:
@@ -33,7 +32,7 @@ export const USER_FEE_RATE_BPS = Math.ceil(USER_FEE_RATE * BPS)
 export const USER_FEE_MIN_CENTS = 15000
 
 export interface DepositBreakdown {
-  /** Lo que el usuario pidió y verá en su billetera. */
+  /** Valor neto a liquidar para el negocio, por ejemplo la inscripción. */
   netCents: number
   /** Lo que se cobra a Flow (net + user_fee, redondeado a peso entero). */
   chargedCents: number
@@ -44,10 +43,10 @@ export interface DepositBreakdown {
 }
 
 /**
- * Calcula el desglose de un depósito a partir del monto neto solicitado.
+ * Calcula el desglose de un cobro a partir del monto neto solicitado.
  * Redondea el cobro total al peso entero superior para evitar fracciones.
  *
- * @param netCents monto que el usuario quiere acreditar en su billetera
+ * @param netCents monto neto que se debe liquidar
  */
 export function computeDepositBreakdown(netCents: number): DepositBreakdown {
   if (!Number.isInteger(netCents) || netCents <= 0) {
@@ -72,6 +71,6 @@ export function computeDepositBreakdown(netCents: number): DepositBreakdown {
   }
 }
 
-/** Min/max de recarga en centavos (mismos rangos que MP para consistencia). */
+/** Min/max legados del net de cobro en centavos. */
 export const MIN_DEPOSIT_NET_CENTS = 100000   // $1.000 CLP
 export const MAX_DEPOSIT_NET_CENTS = 50000000 // $500.000 CLP

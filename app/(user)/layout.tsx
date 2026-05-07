@@ -1,24 +1,21 @@
 import { Navbar } from '@/components/navbar'
 import { TermsBanner } from '@/components/terms-banner'
-import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
+import { requireUserRole } from '@/lib/supabase/auth'
 
 export default async function UserLayout({ children }: { children: React.ReactNode }) {
+  const access = await requireUserRole()
+
   // Verificar si el usuario autenticado ha aceptado los T&C
-  // Si no está autenticado, no se muestra el banner (las rutas protegidas
-  // ya redirigen a /sign-in desde su propio middleware o server component)
   let showTermsBanner = false
   try {
-    const supabaseAuth = await createClient()
-    const { data: { user } } = await supabaseAuth.auth.getUser()
-    if (user) {
-      const supabase = createAdminClient()
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('terms_accepted_at')
-        .eq('id', user.id)
-        .single()
-      showTermsBanner = !profile?.terms_accepted_at
-    }
+    const supabase = createAdminClient()
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('terms_accepted_at')
+      .eq('id', access.userId)
+      .single()
+    showTermsBanner = !profile?.terms_accepted_at
   } catch {
     // No interrumpir el render si falla la consulta de términos
   }

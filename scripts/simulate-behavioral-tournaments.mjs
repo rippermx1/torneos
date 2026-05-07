@@ -9,6 +9,7 @@ import {
   concurrency,
   createTournamentAsAdmin,
   ensureSimulationUsers,
+  expectedPrizeFundCents,
   fetchWithJar,
   outputDir,
   randomInt,
@@ -326,6 +327,7 @@ async function collectBehavioralSummary(scenario, tournament, plannedOutcomes) {
     gamesResult,
     leaderboardResult,
     walletResult,
+    flowAttemptsResult,
   ] = await Promise.all([
     adminSupabase.from('tournaments').select('*').eq('id', tournament.id).single(),
     adminSupabase.from('registrations').select('id, user_id').eq('tournament_id', tournament.id),
@@ -342,12 +344,17 @@ async function collectBehavioralSummary(scenario, tournament, plannedOutcomes) {
       .from('wallet_transactions')
       .select('type, amount_cents, user_id, reference_type, reference_id')
       .eq('reference_id', tournament.id),
+    adminSupabase
+      .from('flow_payment_attempts')
+      .select('id, status')
+      .eq('tournament_id', tournament.id),
   ])
 
   const registrations = registrationsResult.data ?? []
   const games = gamesResult.data ?? []
   const leaderboard = leaderboardResult.data ?? []
   const walletTransactions = walletResult.data ?? []
+  const flowAttempts = flowAttemptsResult.data ?? []
   const tournamentRow = tournamentResult.data
 
   const statuses = Object.fromEntries(
@@ -372,6 +379,7 @@ async function collectBehavioralSummary(scenario, tournament, plannedOutcomes) {
   const ticketDebits = walletTransactions.filter((transaction) => transaction.type === 'ticket_debit')
   const prizeCredits = walletTransactions.filter((transaction) => transaction.type === 'prize_credit')
   const refunds = walletTransactions.filter((transaction) => transaction.type === 'refund')
+  const paidFlowAttempts = flowAttempts.filter((attempt) => attempt.status === 'paid')
 
   const startedPlans = plannedOutcomes.filter((outcome) => outcome.started)
   const plannedNoShows = plannedOutcomes.filter((outcome) => outcome.plan === 'no_show').length
@@ -411,11 +419,21 @@ async function collectBehavioralSummary(scenario, tournament, plannedOutcomes) {
   if (verifiedResumes < plannedResumers) {
     anomalies.push(`resume_verificados=${verifiedResumes} expected=${plannedResumers}`)
   }
-  if (scenario.entryFee > 0 && ticketDebits.length !== registrations.length) {
-    anomalies.push(`ticket_debits=${ticketDebits.length} expected=${registrations.length}`)
+  if (scenario.entryFee > 0 && paidFlowAttempts.length !== registrations.length) {
+    anomalies.push(`flow_paid_attempts=${paidFlowAttempts.length} expected=${registrations.length}`)
+  }
+  if (scenario.entryFee > 0 && ticketDebits.length > 0) {
+    anomalies.push(`ticket_debits_legados=${ticketDebits.length}`)
   }
   if (refunds.length > 0) {
     anomalies.push(`refunds_inesperados=${refunds.length}`)
+  }
+  const expectedPrizeSum =
+    expectedPrizeFundCents(tournamentRow, registrations.length) ??
+    scenario.prize1 + scenario.prize2 + scenario.prize3
+  const actualPrizeSum = prizeCredits.reduce((sum, transaction) => sum + transaction.amount_cents, 0)
+  if (actualPrizeSum !== expectedPrizeSum) {
+    anomalies.push(`prize_sum=${actualPrizeSum} expected=${expectedPrizeSum}`)
   }
 
   return {
@@ -435,6 +453,7 @@ async function collectBehavioralSummary(scenario, tournament, plannedOutcomes) {
       verified: verifiedResumes,
     },
     ticketDebits: ticketDebits.length,
+    paidFlowAttempts: paidFlowAttempts.length,
     prizeCredits: prizeCredits.length,
     refundCount: refunds.length,
     averageScore:
@@ -471,13 +490,14 @@ async function runScenario(adminSession, sessions, overflowSession, scenario) {
 
   const overflowAttempt = await registerPlayer(overflowSession, tournament.id)
 
-  await adminSupabase
+  const { error: startWindowError } = await adminSupabase
     .from('tournaments')
     .update({
       play_window_start: new Date(Date.now() - 60 * 1000).toISOString(),
       play_window_end: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
     })
     .eq('id', tournament.id)
+  assert(!startWindowError, `No se pudo adelantar ventana de juego: ${startWindowError?.message}`)
 
   const startedTournament = await runCron()
   assert(
@@ -507,12 +527,15 @@ async function runScenario(adminSession, sessions, overflowSession, scenario) {
     executePlan(session, tournament.id, plans[index])
   )
 
-  await adminSupabase
+  const { error: closeWindowError } = await adminSupabase
     .from('tournaments')
     .update({
-      play_window_end: new Date(Date.now() - 60 * 1000).toISOString(),
+      registration_opens_at: new Date(Date.now() - 26 * 60 * 1000).toISOString(),
+      play_window_start: new Date(Date.now() - 25 * 60 * 1000).toISOString(),
+      play_window_end: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
     })
     .eq('id', tournament.id)
+  assert(!closeWindowError, `No se pudo cerrar ventana de juego: ${closeWindowError?.message}`)
 
   const finalizingTournament = await runCron()
   assert(

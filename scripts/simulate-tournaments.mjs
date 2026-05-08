@@ -31,8 +31,6 @@ export const thinkMaxMs = Number(process.env.SIM_TOURNAMENT_THINK_MAX_MS ?? '25'
 export const authRetryBaseMs = Number(process.env.SIM_AUTH_RETRY_BASE_MS ?? '2000')
 export const authMaxRetries = Number(process.env.SIM_AUTH_MAX_RETRIES ?? '8')
 
-const BPS = 10000
-const DEFAULT_PRIZE_FUND_BPS = 8500
 const FLOW_CARD_NEXT_DAY_FEE_RATE = 0.0319
 const PLATFORM_FEE_NET_SHARE = 1 / 1.19
 const USER_FEE_RATE =
@@ -95,9 +93,9 @@ export function resolveScenarioConfig(scenario) {
   }
 
   const projectedRevenue = scenario.entryFee * scenario.minPlayers
-  const targetPrizeFund = Math.max(300000, Math.floor(projectedRevenue * 0.72))
-  const prize1 = Math.max(100000, Math.floor(targetPrizeFund * 0.6))
-  const prize2 = Math.max(50000, Math.floor(targetPrizeFund * 0.25))
+  const targetPrizeFund = Math.max(300000, Math.floor(projectedRevenue * 0.75))
+  const prize1 = Math.max(100000, Math.floor(targetPrizeFund * 0.7))
+  const prize2 = Math.max(50000, Math.floor(targetPrizeFund * 0.2))
   const prize3 = Math.max(0, targetPrizeFund - prize1 - prize2)
 
   return {
@@ -130,13 +128,12 @@ export function computeSyntheticFlowBreakdown(netCents) {
   }
 }
 
-export function expectedPrizeFundCents(tournament, playerCount) {
+export function expectedPrizeFundCents(tournament) {
   if (!tournament || tournament.entry_fee_cents <= 0) {
     return null
   }
 
-  const prizeFundBps = tournament.prize_fund_bps ?? DEFAULT_PRIZE_FUND_BPS
-  return Math.round((tournament.entry_fee_cents * playerCount * prizeFundBps) / BPS)
+  return tournament.prize_1st_cents + tournament.prize_2nd_cents + tournament.prize_3rd_cents
 }
 
 export function randomInt(min, max) {
@@ -396,6 +393,28 @@ export async function ensureProfile(user, fixture) {
   })
 
   if (error) throw error
+
+  const roles = [
+    {
+      profile_id: user.id,
+      role: 'user',
+      granted_by: user.id,
+    },
+  ]
+
+  if (fixture.isAdmin) {
+    roles.push({
+      profile_id: user.id,
+      role: 'admin',
+      granted_by: user.id,
+    })
+  }
+
+  const { error: rolesError } = await adminSupabase
+    .from('profile_roles')
+    .upsert(roles, { onConflict: 'profile_id,role' })
+
+  if (rolesError) throw rolesError
 }
 
 export async function ensureBalance(userId, balanceTarget) {

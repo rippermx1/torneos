@@ -31,6 +31,7 @@ function withCors(res: NextResponse, req: NextRequest): NextResponse {
 // ── Rutas públicas (no requieren sesión) ─────────────────────
 const PUBLIC_PREFIXES = [
   '/',
+  '/play',
   '/tournaments',
   '/legal',
   '/sign-in',

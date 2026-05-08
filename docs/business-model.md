@@ -2,13 +2,14 @@
 
 ## Tesis
 
-Torneos 2048 puede ser rentable si evita dos errores:
+TorneosPlay puede ser rentable si evita dos errores:
 
 1. Pagar premios con minimos demasiado bajos.
-2. Confundir depositos de billetera con ingreso disponible.
+2. Confundir caja recibida con utilidad disponible.
 
-El modelo sano es: los depositos financian saldos, las inscripciones reconocen
-ingreso, y los premios son el costo directo de cada torneo.
+El modelo sano es: las inscripciones pagadas reconocen ingreso, los premios
+publicados son el costo directo de cada torneo y los retiros se pagan sólo desde
+saldo retirable verificado.
 
 ## Formula base
 
@@ -27,22 +28,22 @@ neto_flow ~= 1 - (3.19% * 1.19) = 96.20%
 ```
 
 La plataforma debe publicar solo torneos con `utilidad_minima >= 0`. Para
-operacion normal, el objetivo debe ser margen minimo >= 12%.
+operacion normal, el objetivo debe ser margen neto minimo >= 18%.
 
 ## Presets recomendados
 
 | Preset | Entrada | Premios | Minimo | Uso |
 | --- | ---: | ---: | ---: | --- |
-| Express rentable | $1.000 | $9.500 | 12 | Actividad diaria y bajo riesgo |
-| Estandar balanceado | $3.000 | $27.000 | 14 | Formato principal |
-| Elite alto premio | $10.000 | $95.000 | 14 | Alto valor y menor frecuencia |
+| Express rentable | $1.000 | $6.000 | 8 | Actividad diaria y bajo riesgo |
+| Estandar balanceado | $3.000 | $13.500 | 6 | Formato principal |
+| Elite alto premio | $10.000 | $30.000 | 4 | Alto valor y menor frecuencia |
 | Freeroll adquisicion | $0 | $5.000 | 2 | Marketing y reactivacion |
 
 ## Contabilidad simple
 
 Reporte semanal recomendado:
 
-- Depositos Flow cobrados.
+- Pagos Flow cobrados.
 - Comisiones Flow estimadas.
 - Saldo total de billeteras.
 - Inscripciones cobradas por torneos completados.
@@ -66,4 +67,4 @@ operativos.
 - Mantener express de bajo ticket para recurrencia.
 - Publicar torneos estandar con premio fuerte pero minimo rentable.
 - Limitar elite a ventanas donde ya hay demanda suficiente.
-- Medir conversion: deposito -> inscripcion -> segunda inscripcion.
+- Medir conversion: practica -> registro -> inscripcion -> segunda inscripcion.

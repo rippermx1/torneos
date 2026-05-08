@@ -1,13 +1,13 @@
-# Torneos 2048
+# TorneosPlay
 
-Plataforma de torneos competitivos de 2048 con Supabase Auth, billetera interna
-y despliegue en Vercel.
+Plataforma de torneos competitivos de 2048 con Supabase Auth, Flow, billetera
+interna de premios/reembolsos y despliegue en Vercel.
 
 ## Stack
 
 - Next.js 16 App Router
 - Supabase Auth + Postgres
-- Mercado Pago
+- Flow
 - Vercel
 
 ## Desarrollo local
@@ -89,7 +89,7 @@ npm run smoke:local
 ### Simulación de torneo
 
 - iniciar sesión con 2 o más jugadores
-- recargar saldo con el script de fixtures
+- inscribir usuarios al mismo torneo con checkout directo o fixtures
 - inscribir usuarios al mismo torneo
 - iniciar partidas desde `/tournaments/[id]/play`
 

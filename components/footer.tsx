@@ -10,10 +10,10 @@ export function Footer() {
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6">
           {/* Brand */}
           <div className="space-y-1.5">
-            <p className="font-bold text-base">Torneos 2048</p>
+            <p className="font-bold text-base">TorneosPlay</p>
             <p className="text-xs text-muted-foreground max-w-xs leading-relaxed">
               Plataforma de competencias de habilidad con premios reales en pesos chilenos.
-              No es un juego de azar.
+              Reglas, premios fijos y ranking auditables.
             </p>
           </div>
 
@@ -28,20 +28,19 @@ export function Footer() {
               <FooterLink href="/legal/terminos">Términos y Condiciones</FooterLink>
               <FooterLink href="/legal/privacidad">Política de Privacidad</FooterLink>
               <FooterLink href="/legal/reembolso">Política de Reembolso</FooterLink>
+              <FooterLink href="/legal/aml">Política AML</FooterLink>
             </FooterCol>
             <FooterCol title="Ayuda">
               <FooterLink href="/support/dispute">Disputas</FooterLink>
-              <FooterLink href="mailto:contacto@torneos2048.cl">Contacto</FooterLink>
+              <FooterLink href="mailto:contacto@torneosplay.cl">Contacto</FooterLink>
             </FooterCol>
           </div>
         </div>
 
         {/* Bottom row */}
         <div className="mt-8 pt-6 border-t flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-muted-foreground">
-          <p>© {year} Torneos 2048. Todos los derechos reservados.</p>
-          <p className="italic">
-            Competencia de habilidad — No constituye juego de azar según la Ley N.º 19.995.
-          </p>
+          <p>© {year} TorneosPlay. Todos los derechos reservados.</p>
+          <p className="italic">Competencias de habilidad con reglas publicadas antes de participar.</p>
         </div>
       </div>
     </footer>

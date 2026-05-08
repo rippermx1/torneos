@@ -46,7 +46,7 @@ function SignInForm() {
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center space-y-1">
           <h1 className="text-2xl font-bold">Iniciar sesión</h1>
-          <p className="text-sm text-muted-foreground">Ingresa a tu cuenta de Torneos 2048</p>
+          <p className="text-sm text-muted-foreground">Ingresa a tu cuenta de TorneosPlay</p>
         </div>
 
         <GoogleButton redirectTo="/" />

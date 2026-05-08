@@ -21,7 +21,7 @@ export async function generateMetadata({
     .eq('id', id)
     .single()
 
-  if (!data) return { title: 'Torneo no encontrado — Torneos 2048' }
+  if (!data) return { title: 'Torneo no encontrado — TorneosPlay' }
 
   const t = data as Pick<
     Tournament,
@@ -33,7 +33,7 @@ export async function generateMetadata({
     `Premio ${formatCLP(totalPrize)} · Inscripción ${formatCLP(t.entry_fee_cents)}. Compite en el torneo de 2048 con premios reales en CLP.`
 
   return {
-    title: `${t.name} — Torneos 2048`,
+    title: `${t.name} — TorneosPlay`,
     description,
     openGraph: {
       title: t.name,
@@ -98,7 +98,7 @@ export default async function TournamentDetailPage({
       <div className="grid grid-cols-2 gap-4">
         <InfoCard label="Inscripción" value={formatCLP(t.entry_fee_cents)} highlight />
         <InfoCard
-          label="Premio mínimo"
+          label="Premio fijo"
           value={formatCLP(payouts.prizeFundCents)}
         />
         <InfoCard label="Jugadores" value={`${currentPlayerCount} / ${t.max_players}`} />
@@ -107,9 +107,9 @@ export default async function TournamentDetailPage({
 
       {t.entry_fee_cents > 0 && (
         <div className="border rounded-xl p-5 space-y-2 text-sm">
-          <h2 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground">Distribución</h2>
+          <h2 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground">Distribución contable</h2>
           <div className="flex justify-between gap-4">
-            <span className="text-muted-foreground">Aporte a premios por inscripción</span>
+            <span className="text-muted-foreground">Reserva de premios por inscripción</span>
             <span className="font-medium">{formatCLP(split.prizeFundContributionCents)}</span>
           </div>
           <div className="flex justify-between gap-4">
@@ -122,6 +122,9 @@ export default async function TournamentDetailPage({
       {/* Premios */}
       <div className="border rounded-xl p-5 space-y-3">
         <h2 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground">Premios</h2>
+        <p className="text-xs text-muted-foreground">
+          Los montos de premio son fijos y están publicados antes de la inscripción.
+        </p>
         <div className="space-y-2">
           {[
             { place: '🥇 1° lugar', amount: payouts.prize1Cents },

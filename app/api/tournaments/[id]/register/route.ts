@@ -1,6 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/server'
 import { requireAnyRoleForApi } from '@/lib/supabase/auth'
 import { checkRegistrationWindow } from '@/lib/tournament/helpers'
+import { checkRateLimit, getRequestIp, rateLimitResponse } from '@/lib/security/rate-limit'
 
 // ───────────────────────────────────────────────────────────────
 // Inscripcion directa: SOLO para torneos gratuitos (entry_fee=0).
@@ -10,13 +11,19 @@ import { checkRegistrationWindow } from '@/lib/tournament/helpers'
 // ───────────────────────────────────────────────────────────────
 
 export async function POST(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ): Promise<Response> {
   const auth = await requireAnyRoleForApi(['user'])
   if (!auth.ok) return auth.response
 
   const userId = auth.access.userId
+  const rateLimit = checkRateLimit({
+    key: `tournament:register:${userId}:${getRequestIp(req)}`,
+    limit: 10,
+    windowMs: 10 * 60_000,
+  })
+  if (!rateLimit.ok) return rateLimitResponse(rateLimit)
 
   const { id: tournamentId } = await params
   const supabase = createAdminClient()

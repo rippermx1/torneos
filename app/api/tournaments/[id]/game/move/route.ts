@@ -5,6 +5,7 @@ import { DeterministicRNG } from '@/lib/game/rng'
 import { checkPlayWindow } from '@/lib/tournament/helpers'
 import { isPastGameDeadline } from '@/lib/tournament/game-deadline'
 import { analyzeMove } from '@/lib/anticheat/detector'
+import { checkRateLimit, getRequestIp, rateLimitResponse } from '@/lib/security/rate-limit'
 import type { Game, Direction } from '@/types/database'
 
 interface MoveRequest {
@@ -24,6 +25,12 @@ export async function POST(
   if (!auth.ok) return auth.response
 
   const userId = auth.access.userId
+  const rateLimit = checkRateLimit({
+    key: `game:move:${userId}:${getRequestIp(req)}`,
+    limit: 240,
+    windowMs: 60_000,
+  })
+  if (!rateLimit.ok) return rateLimitResponse(rateLimit)
 
   const { id: tournamentId } = await params
 
@@ -148,16 +155,20 @@ export async function POST(
   const now = new Date().toISOString()
 
   // Persistir movimiento en game_moves
-  const { error: moveErr } = await supabase.from('game_moves').insert({
-    game_id: gameId,
-    move_number: moveNumber,
-    direction,
-    board_before: board,
-    board_after: engine.board,
-    score_gained: result.scoreGained,
-    spawned_tile: result.spawnedTile,
-    client_timestamp: clientTimestamp,
-  })
+  const { data: insertedMove, error: moveErr } = await supabase
+    .from('game_moves')
+    .insert({
+      game_id: gameId,
+      move_number: moveNumber,
+      direction,
+      board_before: board,
+      board_after: engine.board,
+      score_gained: result.scoreGained,
+      spawned_tile: result.spawnedTile,
+      client_timestamp: clientTimestamp,
+    })
+    .select('server_timestamp')
+    .single()
 
   if (moveErr) {
     return Response.json({ error: `Error guardando movimiento: ${moveErr.message}` }, { status: 500 })
@@ -193,6 +204,7 @@ export async function POST(
     userId,
     moveNumber,
     clientTimestamp,
+    serverTimestamp: insertedMove?.server_timestamp,
     moveCount: newMoveCount,
     currentScore: engine.score,
   }).then((ac) => {

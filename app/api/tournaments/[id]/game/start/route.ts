@@ -4,16 +4,23 @@ import { Game2048 } from '@/lib/game/engine'
 import { DeterministicRNG, generateGameSeed } from '@/lib/game/rng'
 import { checkPlayWindow } from '@/lib/tournament/helpers'
 import { calculateGameDeadline, isPastGameDeadline } from '@/lib/tournament/game-deadline'
+import { checkRateLimit, getRequestIp, rateLimitResponse } from '@/lib/security/rate-limit'
 import type { Game, Tournament } from '@/types/database'
 
 export async function POST(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ): Promise<Response> {
   const auth = await requireAnyRoleForApi(['user'])
   if (!auth.ok) return auth.response
 
   const userId = auth.access.userId
+  const rateLimit = checkRateLimit({
+    key: `game:start:${userId}:${getRequestIp(req)}`,
+    limit: 15,
+    windowMs: 60_000,
+  })
+  if (!rateLimit.ok) return rateLimitResponse(rateLimit)
 
   const { id: tournamentId } = await params
   const supabase = createAdminClient()
@@ -132,7 +139,6 @@ export async function POST(
       board: game.current_board,
       score: game.final_score,
       moveCount: game.move_count,
-      seed: game.seed,
       moveNumber: game.move_count + 2, // +2 por los dos spawns iniciales
       deadlineAt: game.started_at
         ? calculateGameDeadline(
@@ -177,7 +183,6 @@ export async function POST(
     board: gameBoard.board,
     score: 0,
     moveCount: 0,
-    seed,
     moveNumber: 2,
     deadlineAt: calculateGameDeadline(
       startedAt,

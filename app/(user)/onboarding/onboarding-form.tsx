@@ -106,7 +106,7 @@ export function OnboardingForm({ defaultUsername, defaultFullName }: Props) {
             Política de Privacidad
           </Link>
           {'. '}
-          Entiendo que Torneos 2048 es una competencia de habilidad, no un juego de azar.
+          Entiendo que TorneosPlay opera como competencia de habilidad, no como apuesta contra la plataforma.
         </span>
       </label>
 

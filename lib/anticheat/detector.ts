@@ -41,10 +41,11 @@ export async function analyzeMove(params: {
   userId: string
   moveNumber: number
   clientTimestamp: number
+  serverTimestamp?: string | null
   moveCount: number
   currentScore: number
 }): Promise<AnticheatResult> {
-  const { gameId, userId, moveNumber, clientTimestamp, moveCount, currentScore } = params
+  const { gameId, userId, moveNumber, clientTimestamp, serverTimestamp, moveCount, currentScore } = params
   const supabase = createAdminClient()
 
   // ── 1. Timing: movimientos imposiblemente rápidos ──────────────────────────
@@ -52,21 +53,21 @@ export async function analyzeMove(params: {
   if (moveCount > 1) {
     const { data: prevMove } = await supabase
       .from('game_moves')
-      .select('client_timestamp')
+      .select('client_timestamp, server_timestamp')
       .eq('game_id', gameId)
       .eq('move_number', moveNumber - 1)
       .single()
 
-    if (prevMove) {
-      const elapsed = clientTimestamp - prevMove.client_timestamp
+    if (prevMove && serverTimestamp) {
+      const elapsed = Date.parse(serverTimestamp) - Date.parse(prevMove.server_timestamp)
+      const clientElapsed = clientTimestamp - prevMove.client_timestamp
 
-      // elapsed <= 0: timestamp del cliente manipulado o desorden de red
-      // elapsed < MIN_HUMAN_MOVE_MS: más rápido que cualquier humano
+      // El timing primario usa server_timestamp, no datos controlados por el cliente.
       if (elapsed > 0 && elapsed < MIN_HUMAN_MOVE_MS) {
         // Obtener los últimos N+1 movimientos para verificar burst consecutivo
         const { data: recentMoves } = await supabase
           .from('game_moves')
-          .select('client_timestamp')
+          .select('server_timestamp')
           .eq('game_id', gameId)
           .order('move_number', { ascending: false })
           .limit(BOT_BURST_THRESHOLD + 1)
@@ -74,8 +75,10 @@ export async function analyzeMove(params: {
         if (recentMoves && recentMoves.length >= BOT_BURST_THRESHOLD) {
           let allFast = true
           for (let i = 0; i < recentMoves.length - 1; i++) {
-            const interval = recentMoves[i]!.client_timestamp - recentMoves[i + 1]!.client_timestamp
-            // Un intervalo negativo (timestamps desordenados) o >= MIN_HUMAN_MOVE_MS rompe el burst
+            const interval =
+              Date.parse(recentMoves[i]!.server_timestamp) -
+              Date.parse(recentMoves[i + 1]!.server_timestamp)
+            // Un intervalo no positivo o >= MIN_HUMAN_MOVE_MS rompe el burst
             if (interval >= MIN_HUMAN_MOVE_MS || interval <= 0) {
               allFast = false
               break
@@ -95,9 +98,9 @@ export async function analyzeMove(params: {
         return { suspicious: true, reason: 'fast_move' }
       }
 
-      // Timestamp manipulado (negativo): patrón claro de trampa
-      if (elapsed <= 0 && moveCount > 2) {
-        await applyAutoBan(userId, `Timestamp de cliente manipulado: elapsed=${elapsed}ms en movimiento ${moveNumber}`)
+      // Timestamp de cliente manipulado: no se usa para calcular jugadas, pero sí para fraude.
+      if (clientElapsed <= 0 && moveCount > 2) {
+        await applyAutoBan(userId, `Timestamp de cliente manipulado: elapsed=${clientElapsed}ms en movimiento ${moveNumber}`)
         return { suspicious: true, reason: 'bot_timing', autoBanned: true }
       }
     }

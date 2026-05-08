@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 
 export const metadata: Metadata = {
-  title: 'Términos y Condiciones — Torneos 2048',
-  description: 'Términos y condiciones de uso de la plataforma Torneos 2048.',
+  title: 'Términos y Condiciones — TorneosPlay',
+  description: 'Términos y condiciones de uso de la plataforma TorneosPlay.',
 }
 
 export default function TerminosPage() {
@@ -12,21 +12,28 @@ export default function TerminosPage() {
       <div>
         <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">← Inicio</Link>
         <h1 className="text-3xl font-bold mt-4">Términos y Condiciones</h1>
-        <p className="text-sm text-muted-foreground mt-1">Última actualización: 6 de mayo de 2026</p>
+        <p className="text-sm text-muted-foreground mt-1">Última actualización: 8 de mayo de 2026</p>
       </div>
 
       <Section title="1. Naturaleza del servicio">
         <p>
-          Torneos 2048 es una <strong>plataforma de competencias de habilidad</strong> en la que los
-          participantes compiten en el videojuego 2048 por sus propias capacidades cognitivas y
-          estratégicas. Los resultados dependen exclusivamente del desempeño individual del jugador
-          y <strong>no de factores aleatorios</strong>.
+          TorneosPlay es una <strong>plataforma de competencias de habilidad</strong> en la que los
+          participantes compiten en el videojuego 2048 bajo reglas comunes, ventanas de juego
+          definidas, control de identidad y registro auditable de movimientos.
         </p>
         <p>
-          Esta plataforma <strong>no constituye un juego de azar</strong> en los términos de la Ley
-          N.º 19.995 ni de ninguna otra normativa vigente en la República de Chile. La cuota de
-          inscripción es el precio por participar en una competencia deportiva-electrónica, no una
-          apuesta.
+          La clasificación depende del puntaje obtenido por el jugador, sus decisiones durante la
+          partida y los criterios de desempate publicados. La generación de tableros y nuevas piezas
+          utiliza semillas determinísticas y reproducibles para fines de integridad técnica y
+          auditoría; no se usa para sortear ganadores ni para alterar premios.
+        </p>
+        <p>
+          La cuota de inscripción es el precio por participar en una competencia digital de
+          habilidad, no una apuesta contra la plataforma ni contra otros participantes. La
+          plataforma no ofrece juegos de casino, no recibe apuestas sobre eventos externos y no
+          garantiza ganancias a ningún usuario. Si una autoridad competente exigiera ajustes
+          operativos, la plataforma podrá suspender, modificar o cancelar torneos para mantener el
+          cumplimiento normativo.
         </p>
       </Section>
 
@@ -58,16 +65,26 @@ export default function TerminosPage() {
           ventana de juego). El jugador acepta dichas reglas al momento de inscribirse.
         </p>
         <p>
-          En torneos pagados, la cuota de inscripción es el <strong>precio íntegro</strong> del
-          servicio prestado por la plataforma e incluye IVA. La plataforma se compromete a pagar
-          los premios anunciados a los ganadores una vez finalizado y verificado el torneo. Los
-          premios finales pueden aumentar según la cantidad real de participantes inscritos cuando
-          así lo establezcan las reglas del torneo.
+          En torneos pagados, la cuota de inscripción es el precio del derecho a participar e
+          incluye IVA. La ficha del torneo informa antes del pago la cuota, cupos, mínimo de
+          participantes, reglas y <strong>premios fijos publicados</strong>. Los premios no aumentan
+          por la cantidad final de inscritos, salvo que la plataforma publique expresamente una
+          promoción separada antes de abrir inscripciones.
+        </p>
+        <p>
+          Para el MVP, la contabilidad interna separa cada inscripción en una reserva de premios de
+          referencia del <strong>75%</strong> y un <strong>25%</strong> de fee bruto de plataforma,
+          con IVA incluido. La utilidad tributable de la plataforma se determina sobre sus ingresos
+          por servicio, descontando los premios efectivamente acreditados, costos de pasarela y
+          demás costos aceptados, conforme al criterio contable y tributario aplicable.
         </p>
         <p>
           El cobro de la inscripción se realiza directamente a través de Flow.cl al momento de
-          inscribirse. El comprobante de pago electrónico emitido por Flow constituye la boleta
-          electrónica del servicio para efectos del Servicio de Impuestos Internos (SII).
+          inscribirse. El checkout puede incluir un cargo de procesamiento visible antes del pago,
+          destinado a cubrir costos de pasarela. Bajo el modelo tributario vigente de lanzamiento
+          (&quot;Modelo A&quot;), el comprobante de pago electrónico emitido por Flow opera como boleta
+          electrónica del servicio para efectos del Servicio de Impuestos Internos (SII), cuando
+          dicha modalidad se encuentre correctamente habilitada para el comercio.
         </p>
         <p>
           El <strong>puntaje final</strong> es la única métrica de clasificación. En caso de
@@ -76,22 +93,24 @@ export default function TerminosPage() {
         </p>
         <p>
           Si el torneo no alcanza el número mínimo de participantes inscritos al momento del
-          cierre de inscripciones, será cancelado y <strong>todas las cuotas serán
-          reembolsadas</strong> automáticamente al medio de pago original o a la billetera del
-          jugador, según corresponda.
+          cierre de inscripciones, será cancelado y <strong>todas las cuotas de inscripción serán
+          reembolsadas</strong>. Por defecto, el reembolso se acredita como saldo retirable en la
+          billetera del jugador; si Flow u otro proveedor permite una reversa operacional al medio
+          de pago original, la plataforma podrá usar esa vía en lugar del crédito interno.
         </p>
       </Section>
 
       <Section title="5. Billetera y premios">
         <p>
           La billetera de la plataforma se utiliza <strong>únicamente para administrar premios
-          ganados y reembolsos</strong>. La plataforma no acepta depósitos prepagados ni recargas:
+          ganados y reembolsos acreditados</strong>. La plataforma no acepta depósitos prepagados ni recargas:
           cada inscripción a un torneo se cobra de forma individual al momento de inscribirse.
         </p>
         <p>
           Los <strong>premios</strong> obtenidos se acreditan automáticamente en la billetera del
-          ganador una vez finalizado y verificado el torneo. El saldo en billetera está disponible
-          para retiro en cualquier momento conforme a la política de retiros vigente.
+          ganador una vez finalizado y verificado el torneo. El saldo retirable se compone de
+          premios ganados, reembolsos de torneos cancelados acreditados a billetera y devoluciones
+          asociadas a solicitudes de retiro rechazadas, conforme a la política de retiros vigente.
         </p>
         <p>
           Las transacciones de la billetera se registran de forma inmutable y el saldo disponible
@@ -101,8 +120,9 @@ export default function TerminosPage() {
 
       <Section title="6. Retiros">
         <p>
-          Los usuarios con KYC aprobado pueden solicitar el retiro de su saldo retirable, que
-          corresponde a premios ganados y devoluciones de retiros rechazados, mediante
+          Los usuarios con KYC aprobado pueden solicitar el retiro de su saldo retirable, compuesto
+          por premios ganados, reembolsos de torneos cancelados acreditados a billetera y
+          devoluciones de retiros rechazados, mediante
           transferencia bancaria a una cuenta a su nombre en un banco chileno. Solo se permite
           una solicitud pendiente a la vez y el plazo de procesamiento es de hasta 3 días hábiles.
           Ver{' '}
@@ -126,12 +146,30 @@ export default function TerminosPage() {
         </p>
       </Section>
 
-      <Section title="8. Impuestos">
+      <Section title="8. Prevención de fraude y AML">
+        <p>
+          La plataforma aplica controles de identidad, titularidad bancaria, límites de retiro,
+          revisión de patrones de juego, bloqueo de multicuentas y auditoría de movimientos. Las
+          solicitudes de retiro pueden ser retenidas mientras exista una alerta de fraude, disputa,
+          suplantación, uso de automatización, origen de fondos no justificado o inconsistencia de
+          identidad.
+        </p>
+        <p>
+          La política operacional completa está disponible en la{' '}
+          <Link href="/legal/aml" className="underline underline-offset-2">
+            Política AML y Antifraude
+          </Link>
+          .
+        </p>
+      </Section>
+
+      <Section title="9. Impuestos">
         <p>
           Cada cobro de inscripción incluye el IVA correspondiente al servicio prestado por la
-          plataforma. El comprobante electrónico emitido por Flow al momento del cobro tiene la
-          naturaleza de boleta electrónica para efectos del Servicio de Impuestos Internos (SII)
-          de Chile.
+          plataforma. En el Modelo A de lanzamiento, la plataforma utiliza el voucher o comprobante
+          electrónico de Flow como boleta electrónica cuando dicha emisión esté habilitada ante el
+          SII. La plataforma podrá migrar a un modelo de emisión propia de documentos tributarios si
+          el volumen, la operación o la normativa lo hacen conveniente.
         </p>
         <p>
           Los premios obtenidos en competencias de habilidad pueden estar sujetos a tributación
@@ -140,25 +178,26 @@ export default function TerminosPage() {
         </p>
       </Section>
 
-      <Section title="9. Privacidad">
+      <Section title="10. Privacidad">
         <p>
           El tratamiento de datos personales se rige por la{' '}
           <Link href="/legal/privacidad" className="underline underline-offset-2">
             Política de Privacidad
           </Link>
-          {' '}y la Ley N.º 19.628 sobre protección de la vida privada.
+          {' '}y por la normativa chilena aplicable, incluyendo la Ley N.º 19.628 y, desde su
+          entrada en vigencia, la Ley N.º 21.719.
         </p>
       </Section>
 
-      <Section title="10. Modificaciones">
+      <Section title="11. Modificaciones">
         <p>
-          Torneos 2048 puede modificar estos términos con un aviso previo de al menos 7 días
+          TorneosPlay puede modificar estos términos con un aviso previo de al menos 7 días
           hábiles publicado en la plataforma. El uso continuado del servicio tras la entrada en
           vigor de los cambios implica la aceptación de los nuevos términos.
         </p>
       </Section>
 
-      <Section title="11. Jurisdicción y ley aplicable">
+      <Section title="12. Jurisdicción y ley aplicable">
         <p>
           Estos términos se rigen por las leyes de la República de Chile. Cualquier disputa será
           sometida a la jurisdicción de los tribunales ordinarios de justicia de Santiago de Chile.
@@ -168,6 +207,7 @@ export default function TerminosPage() {
       <div className="border-t pt-6 flex gap-6 text-sm text-muted-foreground">
         <Link href="/legal/privacidad" className="hover:text-foreground underline underline-offset-2">Política de Privacidad</Link>
         <Link href="/legal/reembolso" className="hover:text-foreground underline underline-offset-2">Política de Reembolso</Link>
+        <Link href="/legal/aml" className="hover:text-foreground underline underline-offset-2">Política AML</Link>
       </div>
     </div>
   )

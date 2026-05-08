@@ -3,7 +3,6 @@
 import { memo, useEffect, useCallback, useRef, useState } from 'react'
 import { getTileVisual } from './tile-colors'
 import { applyLocalPracticeMove, createLocalPracticeGame } from '@/lib/game/local-practice'
-import { predictRemoteMove } from '@/lib/game/optimistic-remote'
 import type { Direction } from '@/types/game'
 
 export interface GameConfig {
@@ -50,14 +49,6 @@ interface TrackedMove {
 const CELL = 100 // 90px tile + 10px gap ≈ 100px
 
 const SWIPE_MIN = 30
-
-function boardsEqual(left: number[][], right: number[][]) {
-  return left.length === right.length &&
-    left.every((row, rowIndex) =>
-      row.length === right[rowIndex]?.length &&
-      row.every((value, colIndex) => value === right[rowIndex]?.[colIndex])
-    )
-}
 
 // ── Algoritmo de tracking ────────────────────────────────────
 // Simula el deslizamiento de una fila hacia la izquierda y devuelve,
@@ -318,7 +309,7 @@ export function GameBoardClient({ config }: { config: GameConfig }) {
       setState((prev) => ({
         board: newBoard,
         score: Number(data.score ?? 0),
-        seed: data.seed,
+        seed: '',
         moveNumber: data.moveNumber,
         gameId: data.gameId,
         gameOver: false,
@@ -369,60 +360,22 @@ export function GameBoardClient({ config }: { config: GameConfig }) {
       }
 
       const payload: Record<string, unknown> = {
-        board: baselineState.board,
-        score: baselineState.score,
         direction,
         moveNumber: baselineState.moveNumber,
-        seed: baselineState.seed,
         clientTimestamp: Date.now(),
         ...config.extraMovePayload,
         ...(baselineState.gameId ? { gameId: baselineState.gameId } : {}),
       }
-      const responsePromise = fetch(config.moveUrl, {
+      const res = await fetch(config.moveUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       })
 
-      let predictedMove: Awaited<ReturnType<typeof predictRemoteMove>> | null = null
-      try {
-        predictedMove = await predictRemoteMove(baselineState, direction)
-      } catch {
-        predictedMove = null
-      }
-
       if (moveRequestIdRef.current !== requestId) {
         return
       }
 
-      let optimisticApplied = false
-
-      if (predictedMove) {
-        if (!predictedMove.moved) {
-          setShaking(true)
-          if (shakeTimeoutRef.current !== null) {
-            window.clearTimeout(shakeTimeoutRef.current)
-          }
-          shakeTimeoutRef.current = window.setTimeout(() => setShaking(false), 400)
-        } else {
-          optimisticApplied = true
-          applyNewBoard(
-            predictedMove.board,
-            Number(predictedMove.score),
-            baselineState.score,
-            direction,
-            {
-              moveNumber: predictedMove.moveNumber,
-              gameOver: predictedMove.gameOver,
-            },
-            {
-              notifyGameOver: false,
-            }
-          )
-        }
-      }
-
-      const res = await responsePromise
       const data = await res.json()
 
       if (moveRequestIdRef.current !== requestId) {
@@ -430,16 +383,10 @@ export function GameBoardClient({ config }: { config: GameConfig }) {
       }
 
       if (!res.ok) {
-        if (optimisticApplied) {
-          rollbackState(baselineState)
-        }
         if (data.timeout) setState((p) => p ? { ...p, timedOut: true, gameOver: true } : p)
         return
       }
       if (!data.moved) {
-        if (optimisticApplied) {
-          rollbackState(baselineState)
-        }
         setShaking(true)
         if (shakeTimeoutRef.current !== null) {
           window.clearTimeout(shakeTimeoutRef.current)
@@ -451,47 +398,6 @@ export function GameBoardClient({ config }: { config: GameConfig }) {
       const serverScore = Number(data.score)
       const serverBoard = data.board as number[][]
       const serverGameOver = data.gameOver ?? false
-
-      if (
-        optimisticApplied &&
-        predictedMove &&
-        predictedMove.moveNumber === data.moveNumber &&
-        predictedMove.gameOver === serverGameOver &&
-        predictedMove.score === serverScore &&
-        boardsEqual(predictedMove.board, serverBoard)
-      ) {
-        setState((prev) => {
-          if (!prev) return prev
-          if (serverGameOver) config.onGameOver?.(serverScore)
-          return {
-            ...prev,
-            board: serverBoard,
-            score: serverScore,
-            moveNumber: data.moveNumber,
-            gameOver: serverGameOver,
-            bestScore: Math.max(prev.bestScore, serverScore),
-          }
-        })
-        prevBoardRef.current = serverBoard
-        return
-      }
-
-      if (optimisticApplied) {
-        applyNewBoard(
-          serverBoard,
-          serverScore,
-          baselineState.score,
-          direction,
-          {
-            moveNumber: data.moveNumber,
-            gameOver: serverGameOver,
-          },
-          {
-            animate: false,
-          }
-        )
-        return
-      }
 
       applyNewBoard(serverBoard, serverScore, baselineState.score, direction, {
         moveNumber: data.moveNumber,

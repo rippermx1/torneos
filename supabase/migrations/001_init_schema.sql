@@ -1,5 +1,5 @@
 -- ============================================================
--- Torneos 2048 — Schema base
+-- TorneosPlay — Schema base
 -- Baseline para proyectos Supabase remotos vacíos.
 -- Baseline historico. La migracion 007 migra profiles.id a uuid
 -- para el runtime actual con Supabase Auth.
@@ -59,9 +59,6 @@ create table wallet_transactions (
 alter table wallet_transactions enable row level security;
 
 create index idx_wallet_user_created on wallet_transactions(user_id, created_at desc);
-create unique index idx_wallet_unique_mp_payment
-  on wallet_transactions ((metadata->>'mp_payment_id'))
-  where metadata ? 'mp_payment_id';
 
 create policy "Usuario ve sus transacciones"
   on wallet_transactions for select

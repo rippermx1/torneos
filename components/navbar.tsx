@@ -111,7 +111,7 @@ export function Navbar() {
 
           <div className="flex items-center gap-6">
             <Link href="/" className="font-bold text-lg tracking-tight">
-              Torneos 2048
+              TorneosPlay
             </Link>
             <div className="hidden sm:flex items-center gap-4">
               {navLinks.map(({ href, label }) => (

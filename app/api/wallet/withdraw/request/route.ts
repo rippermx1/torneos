@@ -13,6 +13,7 @@ import {
   MONTHLY_WITHDRAWAL_CAP_CENTS,
 } from '@/lib/wallet/limits'
 import { isValidRut, samePersonName, sameRut } from '@/lib/identity/verification'
+import { checkRateLimit, getRequestIp, rateLimitResponse } from '@/lib/security/rate-limit'
 
 interface WithdrawRequest {
   amountCents: number
@@ -27,6 +28,12 @@ export async function POST(req: Request): Promise<Response> {
   if (!auth.ok) return auth.response
 
   const userId = auth.access.userId
+  const rateLimit = checkRateLimit({
+    key: `wallet:withdraw:${userId}:${getRequestIp(req)}`,
+    limit: 3,
+    windowMs: 60 * 60_000,
+  })
+  if (!rateLimit.ok) return rateLimitResponse(rateLimit)
 
   let body: WithdrawRequest
   try {

@@ -62,22 +62,25 @@ En Modelo A la totalidad del monto cobrado por Flow es venta gravada.
 ### Mensualmente:
 1. **Descargar libro de ventas** desde el panel Flow
    (todos los vouchers emitidos en el mes)
-2. **Conciliar** con `flow_payment_attempts` filtrando
-   `status='credited'` y agrupado por mes calendario
+2. **Conciliar** con `/api/admin/reports/accounting.csv` y
+   `flow_payment_attempts` filtrando `status='paid'` y agrupado por mes
+   calendario según `settled_at`
 3. **F29 línea 110** (ventas afectas):
-   - Base: `SUM(charged_amount_cents) / 100 / 1.19`
-   - IVA débito: `SUM(charged_amount_cents) / 100 - base`
+   - Bruto: `f29_venta_afecta_bruta_clp`
+   - Base: `f29_base_neta_clp`
+   - IVA débito: `f29_iva_debito_clp`
 4. **F29 línea 521** (IVA crédito): IVA pagado en facturas de gastos
    (Flow fees facturados a la empresa, hosting, etc.)
 5. **IVA neto a pagar** = débito − crédito
 
 ### Reportes internos en la plataforma
-- `/admin/reports/finance.csv` exporta el detalle por inscripción
-  con `entry_fee_cents`, `prize_fund_contribution_cents` y
-  `platform_fee_gross_cents`. **En Modelo A**, el campo a usar para
-  declaración es `entry_fee_cents` (gross). Los demás son métricas
-  internas que serán fiscalmente relevantes el día que migremos a
-  Modelo B.
+- `/admin/reports` muestra el resumen mensual Modelo A y obligaciones de wallet.
+- `/api/admin/reports/accounting.csv` es el CSV principal para conciliación
+  mensual. **En Modelo A**, los campos tributarios principales son
+  `f29_venta_afecta_bruta_clp`, `f29_base_neta_clp` e
+  `f29_iva_debito_clp`.
+- `/api/admin/reports/finance.csv` queda como reporte interno de comisión de
+  plataforma y será fiscalmente más relevante si se migra a Modelo B.
 
 ## 4. Renta (F22 anual)
 

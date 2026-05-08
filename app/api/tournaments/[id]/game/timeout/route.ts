@@ -2,6 +2,7 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { requireAnyRoleForApi } from '@/lib/supabase/auth'
 import { checkPlayWindow } from '@/lib/tournament/helpers'
 import { calculateGameDeadline, isPastGameDeadline } from '@/lib/tournament/game-deadline'
+import { checkRateLimit, getRequestIp, rateLimitResponse } from '@/lib/security/rate-limit'
 import type { Game, Tournament } from '@/types/database'
 
 interface TimeoutRequest {
@@ -16,6 +17,12 @@ export async function POST(
   if (!auth.ok) return auth.response
 
   const userId = auth.access.userId
+  const rateLimit = checkRateLimit({
+    key: `game:timeout:${userId}:${getRequestIp(req)}`,
+    limit: 30,
+    windowMs: 60_000,
+  })
+  if (!rateLimit.ok) return rateLimitResponse(rateLimit)
 
   let body: TimeoutRequest
   try {

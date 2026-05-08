@@ -15,8 +15,6 @@ Variables solo de runtime del servidor:
 
 - `APP_URL`
 - `SUPABASE_SECRET_KEY`
-- `MERCADOPAGO_ACCESS_TOKEN`
-- `MERCADOPAGO_WEBHOOK_SECRET`
 - `FLOW_API_KEY`
 - `FLOW_API_SECRET`
 - `FLOW_API_BASE`
@@ -26,8 +24,6 @@ Compatibilidad heredada:
 
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` sigue funcionando como fallback del browser key
 - `SUPABASE_SERVICE_ROLE_KEY` sigue funcionando como fallback del server key
-- `MP_API_TOKEN` sigue funcionando como alias de `MERCADOPAGO_ACCESS_TOKEN`
-- `MP_SECRET_WEBHOOK` sigue funcionando como alias de `MERCADOPAGO_WEBHOOK_SECRET`
 - `NEXT_PUBLIC_APP_URL` sigue funcionando como fallback de `APP_URL`
 
 ## Validacion previa
@@ -41,7 +37,7 @@ npm run check:production-env
 Ese chequeo falla si detecta:
 
 - `localhost` en `APP_URL` o `NEXT_PUBLIC_SUPABASE_URL`
-- token `TEST-` de Mercado Pago
+- `FLOW_API_BASE` apuntando a sandbox
 - `CRON_SECRET` faltante o demasiado corto
 
 ## Flow
@@ -61,7 +57,7 @@ https://www.torneosplay.cl/api/webhooks/flow
 `createFlowPayment` envia por pago:
 
 - `urlConfirmation`: `${APP_URL}/api/webhooks/flow`
-- `urlReturn`: `${APP_URL}/wallet?deposit=flow_return`
+- `urlReturn`: `${APP_URL}/tournaments/{id}/return`
 
 Antes de promover a produccion real, cambia:
 
@@ -108,8 +104,6 @@ Y ejecutarse con las variables privadas en runtime:
 docker run --rm -p 3000:3000 ^
   -e APP_URL=https://www.torneosplay.cl ^
   -e SUPABASE_SECRET_KEY=sb_secret_REEMPLAZAR ^
-  -e MERCADOPAGO_ACCESS_TOKEN=APP_USR_REEMPLAZAR ^
-  -e MERCADOPAGO_WEBHOOK_SECRET=REEMPLAZAR ^
   -e FLOW_API_KEY=REEMPLAZAR ^
   -e FLOW_API_SECRET=REEMPLAZAR ^
   -e FLOW_API_BASE=https://sandbox.flow.cl/api ^
@@ -141,8 +135,8 @@ Para preparar usuarios de prueba reutilizables:
 npm run setup:test-users
 ```
 
-Ese script crea o actualiza tres usuarios confirmados, deja uno como admin y
-recarga saldo para pruebas de torneos.
+Ese script crea o actualiza tres usuarios confirmados y deja uno como admin
+para pruebas de torneos.
 
 ## Scheduler en Hobby
 

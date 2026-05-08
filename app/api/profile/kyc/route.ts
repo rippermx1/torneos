@@ -5,12 +5,19 @@ import {
   isOwnKycDocumentPath,
   isValidRut,
 } from '@/lib/identity/verification'
+import { checkRateLimit, getRequestIp, rateLimitResponse } from '@/lib/security/rate-limit'
 
 export async function POST(req: Request): Promise<Response> {
   const auth = await requireAnyRoleForApi(['user'])
   if (!auth.ok) return auth.response
 
   const userId = auth.access.userId
+  const rateLimit = checkRateLimit({
+    key: `profile:kyc:${userId}:${getRequestIp(req)}`,
+    limit: 5,
+    windowMs: 60 * 60_000,
+  })
+  if (!rateLimit.ok) return rateLimitResponse(rateLimit)
 
   let body: {
     full_name?: string

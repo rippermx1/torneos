@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/server'
 import { requireAnyRoleForApi } from '@/lib/supabase/auth'
+import { checkRateLimit, getRequestIp, rateLimitResponse } from '@/lib/security/rate-limit'
 import type { DisputeType } from '@/types/database'
 
 const VALID_TYPES = new Set<string>(['payment', 'tournament_result', 'technical', 'other'])
@@ -15,6 +16,12 @@ export async function POST(req: Request): Promise<Response> {
   if (!auth.ok) return auth.response
 
   const userId = auth.access.userId
+  const rateLimit = checkRateLimit({
+    key: `support:dispute:${userId}:${getRequestIp(req)}`,
+    limit: 10,
+    windowMs: 60 * 60_000,
+  })
+  if (!rateLimit.ok) return rateLimitResponse(rateLimit)
 
   let body: DisputeBody
   try {

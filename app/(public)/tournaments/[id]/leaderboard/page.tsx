@@ -140,6 +140,15 @@ export default async function LeaderboardPage({
         </p>
       )}
 
+      {isCompleted && (
+        <Link
+          href={`/tournaments/${id}/audit`}
+          className="inline-flex text-sm font-medium underline underline-offset-4 hover:text-muted-foreground"
+        >
+          Ver auditoría pública
+        </Link>
+      )}
+
       {/* Premios rápidos */}
       <div className="grid grid-cols-3 gap-2">
         {[
@@ -243,7 +252,7 @@ export default async function LeaderboardPage({
 
       {/* Aviso competencia habilidad */}
       <p className="text-xs text-muted-foreground text-center">
-        Torneos 2048 es una competencia de habilidad. El ranking refleja el puntaje obtenido en
+        TorneosPlay es una competencia de habilidad. El ranking refleja el puntaje obtenido en
         tiempo real. Los resultados son públicos y auditables.{' '}
         <Link href="/legal/terminos" className="underline underline-offset-2 hover:text-foreground">
           Términos y condiciones

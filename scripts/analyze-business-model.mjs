@@ -29,19 +29,10 @@ const FLOW_NEXT_DAY_FEE_BPS = 319
 const IVA_MULTIPLIER_BPS = BPS + IVA_BPS
 const FLOW_EFFECTIVE_COST_BPS = Math.ceil((FLOW_NEXT_DAY_FEE_BPS * IVA_MULTIPLIER_BPS) / BPS)
 const FLOW_NET_BPS = BPS - FLOW_EFFECTIVE_COST_BPS
-const DEFAULT_PRIZE_FUND_BPS = 8500
 
 function requiredRevenueCents(prizeCents) {
   if (prizeCents <= 0) return 0
   return Math.ceil((prizeCents * IVA_MULTIPLIER_BPS) / FLOW_NET_BPS)
-}
-
-function ivaIncludedBreakdown(grossCents) {
-  const ivaCents = Math.round((grossCents * IVA_BPS) / IVA_MULTIPLIER_BPS)
-  return {
-    netCents: grossCents - ivaCents,
-    ivaCents,
-  }
 }
 
 function formatCLP(cents) {
@@ -102,32 +93,6 @@ async function main() {
   const activeTournamentRisks = activeTournaments
     .filter((tournament) => tournament.entry_fee_cents > 0)
     .map((tournament) => {
-      if (tournament.prize_model === 'entry_pool') {
-        const prizeFundBps = tournament.prize_fund_bps ?? DEFAULT_PRIZE_FUND_BPS
-        const minRevenueCents = tournament.entry_fee_cents * tournament.min_players
-        const prizeCents = Math.round((minRevenueCents * prizeFundBps) / BPS)
-        const platformFeeGrossCents = minRevenueCents - prizeCents
-        const platformTax = ivaIncludedBreakdown(platformFeeGrossCents)
-        const minMarginBps = minRevenueCents > 0
-          ? Math.round((platformTax.netCents * BPS) / minRevenueCents)
-          : 0
-
-        return {
-          id: tournament.id,
-          name: tournament.name,
-          status: tournament.status,
-          prizeModel: 'entry_pool',
-          minRevenueCents,
-          prizeCents,
-          platformFeeGrossCents,
-          platformFeeNetCents: platformTax.netCents,
-          platformFeeIvaCents: platformTax.ivaCents,
-          minProfitCents: platformTax.netCents,
-          minMarginBps,
-          ok: platformTax.netCents >= 0,
-        }
-      }
-
       const prizeCents =
         tournament.prize_1st_cents + tournament.prize_2nd_cents + tournament.prize_3rd_cents
       const minRevenueCents = tournament.entry_fee_cents * tournament.min_players
@@ -172,7 +137,7 @@ async function main() {
       ivaRate: '19%',
       flowNextDayFee: '3.19% + IVA',
       flowNetBps: FLOW_NET_BPS,
-      entryPoolModel: '85% fondo de premios / 15% fee plataforma IVA incluido',
+      entryPoolModel: 'premios fijos publicados; 75% reserva premios / 25% fee plataforma IVA incluido',
     },
     wallet: {
       usersWithBalance: latestBalances.size,

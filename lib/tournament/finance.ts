@@ -4,7 +4,7 @@ const BPS = 10000
 
 export const IVA_BPS = 1900
 export const DEFAULT_PRIZE_MODEL = 'entry_pool' as const
-export const DEFAULT_PRIZE_FUND_BPS = 8500
+export const DEFAULT_PRIZE_FUND_BPS = 7500
 export const DEFAULT_PRIZE_POOL_BPS = DEFAULT_PRIZE_FUND_BPS
 export const DEFAULT_PLATFORM_FEE_BPS = BPS - DEFAULT_PRIZE_FUND_BPS
 export const DEFAULT_PRIZE_1ST_BPS = 7000
@@ -107,7 +107,7 @@ export const TOURNAMENT_PRESETS = [
     key: 'express',
     label: 'Express diario',
     shortLabel: 'Express',
-    description: 'Entrada baja y premios dinámicos para actividad diaria.',
+    description: 'Entrada baja, premio fijo y rotación diaria.',
     entryFeePesos: 1000,
     minPlayers: 8,
     targetPlayers: 30,
@@ -120,7 +120,7 @@ export const TOURNAMENT_PRESETS = [
     key: 'standard',
     label: 'Estándar balanceado',
     shortLabel: 'Estándar',
-    description: 'Premios crecientes con buena relación premio/entrada.',
+    description: 'Premio fijo atractivo con margen de plataforma sano.',
     entryFeePesos: 3000,
     minPlayers: 6,
     targetPlayers: 30,
@@ -133,7 +133,7 @@ export const TOURNAMENT_PRESETS = [
     key: 'elite',
     label: 'Elite alto premio',
     shortLabel: 'Elite',
-    description: 'Ticket alto, cupos limitados y premio principal fuerte.',
+    description: 'Ticket alto, cupos limitados y premio publicado antes de inscribir.',
     entryFeePesos: 10000,
     minPlayers: 4,
     targetPlayers: 20,
@@ -245,27 +245,28 @@ export function calculateTournamentDisplayPayouts(
   tournament: TournamentPrizeDisplayInput,
   playerCount: number
 ): PrizeFundPayouts {
-  if (tournament.entry_fee_cents > 0) {
-    return calculatePrizeFundPayouts({
-      entryFeeCents: tournament.entry_fee_cents,
-      playerCount: Math.max(playerCount, tournament.min_players),
-      prizeFundBps: tournament.prize_fund_bps ?? tournament.prize_pool_bps ?? DEFAULT_PRIZE_FUND_BPS,
-      prize1Bps: tournament.prize_1st_bps ?? DEFAULT_PRIZE_1ST_BPS,
-      prize2Bps: tournament.prize_2nd_bps ?? DEFAULT_PRIZE_2ND_BPS,
-      prize3Bps: tournament.prize_3rd_bps ?? DEFAULT_PRIZE_3RD_BPS,
-    })
+  const fixedPrizeFundCents =
+    tournament.prize_1st_cents + tournament.prize_2nd_cents + tournament.prize_3rd_cents
+
+  if (fixedPrizeFundCents > 0 || tournament.entry_fee_cents === 0) {
+    return {
+      playerCount,
+      prizeFundCents: fixedPrizeFundCents,
+      prizePoolCents: fixedPrizeFundCents,
+      prize1Cents: tournament.prize_1st_cents,
+      prize2Cents: tournament.prize_2nd_cents,
+      prize3Cents: tournament.prize_3rd_cents,
+    }
   }
 
-  return {
-    playerCount,
-    prizeFundCents:
-      tournament.prize_1st_cents + tournament.prize_2nd_cents + tournament.prize_3rd_cents,
-    prizePoolCents:
-      tournament.prize_1st_cents + tournament.prize_2nd_cents + tournament.prize_3rd_cents,
-    prize1Cents: tournament.prize_1st_cents,
-    prize2Cents: tournament.prize_2nd_cents,
-    prize3Cents: tournament.prize_3rd_cents,
-  }
+  return calculatePrizeFundPayouts({
+    entryFeeCents: tournament.entry_fee_cents,
+    playerCount: Math.max(playerCount, tournament.min_players),
+    prizeFundBps: tournament.prize_fund_bps ?? tournament.prize_pool_bps ?? DEFAULT_PRIZE_FUND_BPS,
+    prize1Bps: tournament.prize_1st_bps ?? DEFAULT_PRIZE_1ST_BPS,
+    prize2Bps: tournament.prize_2nd_bps ?? DEFAULT_PRIZE_2ND_BPS,
+    prize3Bps: tournament.prize_3rd_bps ?? DEFAULT_PRIZE_3RD_BPS,
+  })
 }
 
 export function calculateEntryPoolFinancials(input: {

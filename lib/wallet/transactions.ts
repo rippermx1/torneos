@@ -46,21 +46,7 @@ export async function getBalance(userId: string): Promise<number> {
   return data ? Number(data.balance_after_cents) : 0
 }
 
-// Verifica si un payment_id de Mercado Pago ya fue procesado (idempotencia).
-export async function isMpPaymentAlreadyProcessed(mpPaymentId: string): Promise<boolean> {
-  const supabase = createAdminClient()
-
-  const { count } = await supabase
-    .from('wallet_transactions')
-    .select('*', { count: 'exact', head: true })
-    .eq('metadata->>mp_payment_id', mpPaymentId)
-
-  return (count ?? 0) > 0
-}
-
-// Saldo retirable: solo lo ganado en torneos menos lo retirado.
-// Los depósitos no son retirables hasta haber pasado por un torneo
-// (esto evita lavado y absorción de comisiones de pasarela).
+// Saldo retirable: premios, reembolsos de torneo y devoluciones permitidas menos retiros.
 export async function getWithdrawableBalance(userId: string): Promise<number> {
   const supabase = createAdminClient()
   const { data, error } = await supabase.rpc('wallet_withdrawable_balance', {

@@ -15,7 +15,3 @@ export const DAILY_WITHDRAWAL_CAP_CENTS = 50000000  // $500.000
 
 /** Cap mensual por usuario (suma de retiros en últimos 30 días). */
 export const MONTHLY_WITHDRAWAL_CAP_CENTS = 200000000 // $2.000.000
-
-/** Mínimo y máximo de recarga por operación. */
-export const MIN_DEPOSIT_CENTS = 100000   // $1.000
-export const MAX_DEPOSIT_CENTS = 50000000 // $500.000

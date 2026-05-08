@@ -42,7 +42,7 @@ export function TournamentPresetForm({
 }: TournamentPresetFormProps) {
   const [presetKey, setPresetKey] = useState<TournamentType>('standard')
   const [name, setName] = useState('Torneo Estándar')
-  const [description, setDescription] = useState('Premios dinámicos: 85% de cada inscripción va a premios.')
+  const [description, setDescription] = useState('Premios fijos publicados antes de la inscripción.')
   const [values, setValues] = useState(() => valuesFromPreset(TOURNAMENT_PRESETS[1]))
   const [dates, setDates] = useState({
     registrationOpensAt,
@@ -131,7 +131,7 @@ export function TournamentPresetForm({
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <Metric label="Entrada" value={formatPesos(preset.entryFeePesos)} />
-                  <Metric label="Premio mín." value={formatCents(presetFinancials.minPrizeFundCents)} />
+                  <Metric label="Premio fijo" value={formatCents(presetFinancials.minPrizeFundCents)} />
                   <Metric label="Mínimo" value={`${preset.minPlayers} jugadores`} />
                   <Metric label="Fee neto" value={preset.entryFeePesos > 0 ? formatBps(presetFinancials.platformNetMarginBps) : 'Costo promo'} />
                 </div>
@@ -184,9 +184,9 @@ export function TournamentPresetForm({
               )}
             </div>
             <div className="space-y-2 text-sm">
-              <MetricRow label="Premio mínimo" value={formatCents(financials.minPrizeFundCents)} />
-              <MetricRow label="Premio objetivo" value={formatCents(financials.targetPrizeFundCents)} />
-              <MetricRow label="Premio máximo" value={formatCents(financials.maxPrizeFundCents)} />
+              <MetricRow label="Premio fijo publicado" value={formatCents(financials.minPrizeFundCents)} />
+              <MetricRow label="Recaudación objetivo" value={formatCents(financials.targetRevenueCents)} />
+              <MetricRow label="Recaudación máxima" value={formatCents(financials.maxRevenueCents)} />
               <MetricRow label="Fee plataforma bruto" value={formatCents(financials.targetPlatformFeeGrossCents)} />
               <MetricRow label="IVA fee objetivo" value={formatCents(financials.targetPlatformFeeIvaCents)} />
               <MetricRow label="Ingreso neto objetivo" value={formatCents(financials.targetPlatformFeeNetCents)} tone="green" />

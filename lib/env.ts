@@ -54,20 +54,6 @@ export function getAllowedOrigins() {
   )
 }
 
-export function getMercadoPagoAccessToken() {
-  return firstNonEmpty(
-    process.env.MERCADOPAGO_ACCESS_TOKEN,
-    process.env.MP_API_TOKEN
-  )
-}
-
-export function getMercadoPagoWebhookSecret() {
-  return firstNonEmpty(
-    process.env.MERCADOPAGO_WEBHOOK_SECRET,
-    process.env.MP_SECRET_WEBHOOK
-  )
-}
-
 export function getFlowApiKey() {
   // Hubo un período con la variable mal escrita ("FLOW_APÏ_KEY"); aceptamos ambos
   // hasta que todos los entornos estén normalizados, luego se elimina el fallback.

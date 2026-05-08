@@ -1,5 +1,5 @@
 ## ============================================================
-## Torneos 2048 — Stack local de base de datos
+## TorneosPlay — Stack local de base de datos
 ##
 ## Ofrece solo DB + PostgREST local:
 ##   postgres  → base de datos

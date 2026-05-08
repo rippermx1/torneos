@@ -8,7 +8,7 @@ const geist = Geist({
 })
 
 export const metadata: Metadata = {
-  title: 'Torneos 2048',
+  title: 'TorneosPlay',
   description: 'Compite en torneos de 2048 y gana premios reales en pesos chilenos.',
 }
 

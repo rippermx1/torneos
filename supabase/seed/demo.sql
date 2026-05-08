@@ -1,5 +1,5 @@
 -- ============================================================
--- Torneos 2048 — Seed de demo
+-- TorneosPlay — Seed de demo
 -- Crea perfiles de prueba, torneos en distintos estados,
 -- partidas y resultados para validar la plataforma localmente.
 --

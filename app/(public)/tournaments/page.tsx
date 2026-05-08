@@ -5,7 +5,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Torneos — Torneos 2048',
+  title: 'Torneos — TorneosPlay',
   description: 'Explora los torneos de 2048 disponibles y compite por premios en pesos chilenos.',
 }
 
@@ -71,7 +71,7 @@ export default async function TournamentsPage() {
             <div className="text-sm text-muted-foreground space-y-1">
               <p>Inscripción: <span className="text-foreground font-medium">{formatCLP(t.entry_fee_cents)}</span></p>
               <p>
-                1° Premio mín.:{' '}
+                1° premio fijo:{' '}
                 <span className="text-foreground font-medium">{formatCLP(t.prize_1st_cents)}</span>
               </p>
               <p>Inicio: {formatDateTimeCL(t.play_window_start)}</p>

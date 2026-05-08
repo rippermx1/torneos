@@ -45,8 +45,8 @@ export default async function HomePage() {
               Demuestra tu habilidad.<br />Ve por el primer lugar.
             </h1>
             <p className="text-lg opacity-70 max-w-lg mx-auto">
-              Cada movimiento cuenta. Entra a torneos de 2048, supera a otros
-              jugadores y sube al puesto que importa: el primero.
+              Cada movimiento cuenta. Premios fijos publicados antes de pagar,
+              ranking auditado por servidor y práctica gratis sin cuenta.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
               <Link
@@ -73,7 +73,7 @@ export default async function HomePage() {
               {[
                 { n: '1', title: 'Elige un torneo', desc: 'Revisa entrada, premios, cupos y ventana de juego antes de participar.' },
                 { n: '2', title: 'Paga la inscripción', desc: 'Flow confirma el pago y tu inscripción queda registrada en el torneo.' },
-                { n: '3', title: 'Juega y gana', desc: 'Tienes una sola partida. El puntaje más alto al cierre lleva el premio.' },
+                { n: '3', title: 'Juega y compite', desc: 'Tienes una sola partida. El puntaje más alto al cierre gana el premio publicado.' },
               ].map(({ n, title, desc }) => (
                 <div key={n} className="bg-white rounded-2xl p-6 border space-y-3">
                   <div className="w-9 h-9 rounded-full bg-foreground text-background flex items-center justify-center font-bold text-sm">
@@ -133,7 +133,7 @@ export default async function HomePage() {
                       <div className="text-right shrink-0">
                         <p className="font-bold text-lg">{formatCLP(totalPrize)}</p>
                         <p className="text-xs text-muted-foreground">
-                          premio mínimo
+                          premio fijo
                         </p>
                       </div>
                     </Link>

@@ -121,6 +121,28 @@ async function ensureProfile(user, fixture) {
   })
 
   if (error) throw error
+
+  const roles = [
+    {
+      profile_id: user.id,
+      role: 'user',
+      granted_by: user.id,
+    },
+  ]
+
+  if (fixture.isAdmin) {
+    roles.push({
+      profile_id: user.id,
+      role: 'admin',
+      granted_by: user.id,
+    })
+  }
+
+  const { error: rolesError } = await supabase
+    .from('profile_roles')
+    .upsert(roles, { onConflict: 'profile_id,role' })
+
+  if (rolesError) throw rolesError
 }
 
 async function ensureBalance(userId, balanceTarget) {

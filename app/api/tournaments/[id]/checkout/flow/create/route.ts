@@ -5,6 +5,7 @@ import { getAppUrl } from '@/lib/env'
 import { createFlowPayment, buildFlowCheckoutUrl } from '@/lib/flow/payments'
 import { computeDepositBreakdown } from '@/lib/flow/fees'
 import { checkRegistrationWindow } from '@/lib/tournament/helpers'
+import { checkRateLimit, getRequestIp, rateLimitResponse } from '@/lib/security/rate-limit'
 
 // ───────────────────────────────────────────────────────────────
 // Checkout Flow para inscripcion a torneo (Ruta 1).
@@ -31,6 +32,13 @@ export async function POST(
 
   const { user } = auth.access
   const userId = auth.access.userId
+  const rateLimit = checkRateLimit({
+    key: `checkout:flow:${userId}:${getRequestIp(req)}`,
+    limit: 5,
+    windowMs: 10 * 60_000,
+  })
+  if (!rateLimit.ok) return rateLimitResponse(rateLimit)
+
   const { id: tournamentId } = await params
   const admin = createAdminClient()
 
@@ -196,7 +204,7 @@ export async function POST(
   try {
     const flowResponse = await createFlowPayment({
       commerceOrder,
-      subject: `Inscripción torneo — Torneos 2048`,
+      subject: `Inscripción torneo - TorneosPlay`,
       amount: breakdown.chargedPesos,
       email: user.email ?? '',
       urlConfirmation: `${appUrl}/api/webhooks/flow`,

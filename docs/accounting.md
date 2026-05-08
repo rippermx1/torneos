@@ -1,73 +1,153 @@
-# Contabilidad simple de Torneos 2048
+# Contabilidad simple de TorneosPlay
 
-## Modelo de negocio
+## Modelo de salida a producción
 
-La plataforma no debe tratar cada deposito como ingreso. Un deposito crea caja,
-pero tambien crea una obligacion con el usuario por el saldo disponible en su
-billetera.
+El lanzamiento usa **Modelo A**:
 
-La contabilidad operativa puede manejarse con cinco bloques:
+- Cada inscripción pagada se cobra directamente en Flow.
+- La plataforma no acepta recargas ni depósitos prepagados.
+- El voucher/comprobante electrónico de Flow es la boleta electrónica cuando el
+  modelo de emisión está declarado correctamente ante el SII.
+- Para F29, la venta afecta se controla desde `flow_payment_attempts.status =
+  'paid'` y el monto base es `charged_amount_cents`.
 
-- `Caja Flow/banco`: dinero recibido desde Flow menos comisiones.
-- `Saldo usuario`: obligacion por saldos disponibles en billeteras.
-- `Pasivo de premios`: premios comprometidos por torneos activos.
-- `Ingreso por torneo`: cuotas consumidas cuando un torneo se completa.
-- `Costo de premios/promocion`: premios pagados y freerolls.
+El modelo interno separa la economía del torneo:
 
-El ingreso economico aparece cuando el usuario gasta saldo en una inscripcion,
-no cuando recarga. Los premios se registran como costo y vuelven a aumentar el
-saldo de usuarios ganadores.
+- `prize_fund_contribution_cents`: reserva de premios de referencia.
+- `platform_fee_gross_cents`: comisión bruta de plataforma con IVA incluido.
+- `platform_fee_net_cents`: comisión neta de plataforma.
+- `platform_fee_iva_cents`: IVA interno asociado al fee de plataforma.
+
+Los premios publicados son fijos y no se recalculan al cierre. En Modelo A, esa
+separación sirve para gestión y rentabilidad; la declaración mensual se concilia
+contra el total cobrado por Flow.
+
+## Reportes disponibles
+
+### Panel admin
+
+Ruta:
+
+```text
+/admin/reports
+```
+
+Muestra:
+
+- venta afecta F29,
+- base neta F29,
+- IVA débito F29,
+- comisión Flow estimada,
+- reserva de premios de referencia,
+- premios acreditados,
+- saldo wallet de cierre,
+- retiros pendientes,
+- resultado operativo devengado estimado.
+
+### CSV contable principal
+
+Ruta:
+
+```text
+/api/admin/reports/accounting.csv
+```
+
+Columnas clave:
+
+- `f29_venta_afecta_bruta_clp`: total bruto cobrado por Flow en pagos `paid`.
+- `f29_base_neta_clp`: venta neta estimada (`bruto / 1,19`).
+- `f29_iva_debito_clp`: IVA débito estimado.
+- `flow_comision_neta_estimada_clp`: comisión Flow estimada al 3,19%.
+- `flow_iva_credito_estimado_clp`: IVA crédito estimado sobre comisión Flow.
+- `reserva_premios_ref_clp`: reserva interna de referencia; no aumenta los premios por inscritos.
+- `premios_acreditados_clp`: premios fijos registrados en wallet.
+- `saldo_wallet_cierre_clp`: obligación con usuarios al cierre del mes.
+- `retiros_pendientes_cierre_clp`: solicitudes pendientes al cierre del mes.
+- `resultado_operativo_devengado_est_clp`: referencia de gestión, no sustituto
+  de la declaración tributaria.
+
+La comisión e IVA de Flow son estimaciones operativas. Para F29 se deben cuadrar
+contra la factura real de Flow y los demás documentos de compra.
+
+### CSV de fee plataforma
+
+Ruta:
+
+```text
+/api/admin/reports/finance.csv
+```
+
+Este CSV conserva el desglose interno de `entry_pool`. Es útil para medir
+rentabilidad por comisiones de plataforma, pero no reemplaza el CSV contable
+Modelo A.
+
+## Checklist mensual F29
+
+1. Descargar el reporte `accounting.csv`.
+2. Descargar el libro/registro de ventas o reporte tributario desde Flow.
+3. Conciliar pagos `paid`:
+   - `flow_cobrado_bruto_clp` contra total bruto Flow.
+   - `flow_pagos_pendientes` debe quedar en 0 o explicado por reconciliación.
+4. Declarar ventas afectas usando:
+   - `f29_venta_afecta_bruta_clp`,
+   - `f29_base_neta_clp`,
+   - `f29_iva_debito_clp`.
+5. Registrar IVA crédito contra documentos reales:
+   - factura de Flow,
+   - hosting,
+   - software,
+   - otros gastos con respaldo tributario.
+6. Revisar obligaciones:
+   - `saldo_wallet_cierre_clp`,
+   - `retiros_pendientes_cierre_clp`,
+   - premios comprometidos en `/admin/reports`.
+
+## Checklist anual F22
+
+Para el contador:
+
+- ventas netas: suma anual de `f29_base_neta_clp`;
+- premios: revisar `premios_acreditados_clp` y retiros efectivamente pagados;
+- comisiones Flow: usar facturas reales, no sólo la estimación;
+- freerolls: clasificar como gasto promocional/marketing si corresponde;
+- otros costos: hosting, software, servicios profesionales y gastos bancarios;
+- régimen sugerido inicial: Pro Pyme General, si cumple requisitos.
+
+## Controles de salud
+
+Ejecutar:
+
+```bash
+npm run analyze:business
+```
+
+Ese script alerta si:
+
+- hay pagos Flow pendientes;
+- los retiros pendientes superan la obligación wallet;
+- hay torneos pagados activos con riesgo de pérdida al mínimo.
 
 ## Guardia de rentabilidad
 
-Antes de crear un torneo pagado, la recaudacion minima debe cubrir los premios
-comprometidos, el IVA y el costo Flow absorbido por la plataforma:
+En el modelo actual, cada inscripción pagada se divide así:
 
 ```text
-min_players * entry_fee >= sum_premios * 1.19 / (1 - flow_fee * 1.19)
+75% reserva de premios de referencia
+25% fee bruto plataforma, IVA incluido
 ```
 
-Donde:
-
-- `sum_premios` es `prize_1st + prize_2nd + prize_3rd`.
-- `1.19` incorpora IVA.
-- `flow_fee` es la tasa Flow elegida para el abono.
-- `entry_fee` y premios se calculan en centavos.
-
-Con abono al dia habil siguiente, Flow publica 3,19% + IVA. En codigo se usa
-un neto conservador de 96,20% aproximadamente.
-
-En codigo, la comparacion se hace con enteros:
+El margen neto de plataforma por inscripción es aproximadamente:
 
 ```text
-flow_effective_cost_bps = ceil(319 * 11900 / 10000)
-flow_net_bps = 10000 - flow_effective_cost_bps
-required_revenue_cents = ceil(sum_premios_cents * 11900 / flow_net_bps)
-min_revenue_cents = min_players * entry_fee_cents
+25% / 1,19 = 21,01%
 ```
 
-Los freerolls quedan fuera de esta guardia porque no tienen `entry_fee`; su
-premio es un costo promocional cubierto por la plataforma.
+El cargo de procesamiento de Flow se cobra al usuario de forma visible y se
+calcula para cubrir una comisión estimada de tarjeta con abono al día hábil
+siguiente.
 
-## Lectura de rentabilidad
+Reglas prácticas:
 
-Para cada torneo pagado:
-
-```text
-utilidad_minima = min_players * entry_fee - required_revenue
-margen_minimo = utilidad_minima / (min_players * entry_fee)
-```
-
-Reglas practicas:
-
-- Margen minimo negativo: no publicar.
-- Margen minimo entre 0% y 12%: usar solo como adquisicion o evento especial.
-- Margen minimo sobre 12%: sano para operacion normal.
-- Freeroll: medir como CAC/promocion, no como torneo rentable.
-
-## Cadencia recomendada
-
-- Express rentable: bajo ticket, alta frecuencia, premios moderados.
-- Estandar balanceado: ticket medio, margen sano, principal formato diario.
-- Elite: menor frecuencia, ticket alto, premio fuerte y cupos limitados.
-- Freeroll: una vez por semana como activacion, con presupuesto fijo.
+- Express y Standard: formatos principales de operación.
+- Elite: usar sólo cuando haya demanda suficiente.
+- Freeroll: costo de adquisición, no torneo rentable.

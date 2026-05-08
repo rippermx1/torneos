@@ -1,12 +1,7 @@
 -- ============================================================
 -- Hardening de wallet:
 -- - serialización por usuario para evitar saldos inconsistentes
--- - idempotencia fuerte para pagos de Mercado Pago
 -- ============================================================
-
-create unique index if not exists idx_wallet_unique_mp_payment
-  on wallet_transactions ((metadata->>'mp_payment_id'))
-  where metadata ? 'mp_payment_id';
 
 create or replace function wallet_insert_transaction(
   p_user_id text,

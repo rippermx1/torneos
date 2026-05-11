@@ -5,6 +5,8 @@ import type { Tournament } from '@/types/database'
 import { TournamentActions } from '@/components/tournament/tournament-actions'
 import { calculateEntryPoolFinancials } from '@/lib/tournament/finance'
 
+export const revalidate = 0
+
 const STATUS_LABEL: Record<Tournament['status'], string> = {
   scheduled: 'Programado',
   open: 'Inscripciones abiertas',

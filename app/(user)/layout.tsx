@@ -22,7 +22,7 @@ export default async function UserLayout({ children }: { children: React.ReactNo
 
   return (
     <>
-      <Navbar />
+      <Navbar initialIsSignedIn initialHasUserRole />
       <main className={`flex-1 max-w-5xl mx-auto px-4 py-10 w-full ${showTermsBanner ? 'pb-32' : ''}`}>
         {children}
       </main>

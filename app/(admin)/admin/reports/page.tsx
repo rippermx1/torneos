@@ -1,4 +1,4 @@
-import { buildModeloAAccountingReport } from '@/lib/accounting/model-a-report'
+import { buildModeloAAccountingReport, type ReconciliationCheck } from '@/lib/accounting/model-a-report'
 import { createAdminClient } from '@/lib/supabase/server'
 import { formatCLP } from '@/lib/utils'
 import Link from 'next/link'
@@ -65,6 +65,8 @@ export default async function AdminReportsPage({
           sub={`${report.snapshot.prizeLiabilityPendingCount} torneos scheduled/open`}
         />
       </section>
+
+      <ReconciliationBanner reconciliation={report.reconciliation} />
 
       {rows.length === 0 ? (
         <div className="border rounded-xl p-5 space-y-2">
@@ -194,6 +196,56 @@ export default async function AdminReportsPage({
           <p key={note}>{note}</p>
         ))}
       </div>
+    </div>
+  )
+}
+
+function ReconciliationBanner({ reconciliation }: { reconciliation: ReconciliationCheck }) {
+  if (reconciliation.ok) {
+    return (
+      <div className="rounded-xl border border-green-300 bg-green-50 px-4 py-3 text-sm text-green-900">
+        Conciliación: invariantes contables OK.
+      </div>
+    )
+  }
+
+  const flags: Array<{ label: string; count: number; samples: string[] }> = [
+    {
+      label: 'Flow attempts con charged ≠ net + user_fee',
+      count: reconciliation.flowAttemptInternalMismatch.count,
+      samples: reconciliation.flowAttemptInternalMismatch.sampleIds,
+    },
+    {
+      label: 'Registrations con fee_gross ≠ net + iva',
+      count: reconciliation.registrationFeeMismatch.count,
+      samples: reconciliation.registrationFeeMismatch.sampleIds,
+    },
+    {
+      label: 'Pagos Flow sin inscripción asociada',
+      count: reconciliation.paidAttemptWithoutRegistration.count,
+      samples: reconciliation.paidAttemptWithoutRegistration.sampleIds,
+    },
+    {
+      label: 'Usuarios con drift en wallet ledger',
+      count: reconciliation.walletLedgerDrift.count,
+      samples: reconciliation.walletLedgerDrift.sampleUserIds,
+    },
+  ].filter((flag) => flag.count > 0)
+
+  return (
+    <div className="rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-900 space-y-2">
+      <p className="font-semibold">Conciliación: invariantes contables con problemas.</p>
+      <ul className="list-disc pl-5 space-y-1">
+        {flags.map((flag) => (
+          <li key={flag.label}>
+            <span className="font-medium">{flag.label}: </span>
+            {flag.count}
+            {flag.samples.length > 0 && (
+              <span className="text-xs text-red-800/80"> · IDs muestra: {flag.samples.join(', ')}</span>
+            )}
+          </li>
+        ))}
+      </ul>
     </div>
   )
 }

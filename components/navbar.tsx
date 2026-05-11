@@ -21,12 +21,23 @@ const adminLinks = [
   { href: '/admin', label: 'Admin' },
 ]
 
-export function Navbar() {
+interface NavbarProps {
+  initialIsSignedIn?: boolean
+  initialHasUserRole?: boolean
+  initialHasAdminRole?: boolean
+}
+
+export function Navbar({
+  initialIsSignedIn = false,
+  initialHasUserRole = false,
+  initialHasAdminRole = false,
+}: NavbarProps = {}) {
   const pathname = usePathname()
   const router = useRouter()
   const [user, setUser] = useState<User | null>(null)
   const [roles, setRoles] = useState<AppRole[]>([])
   const [open, setOpen] = useState(false)
+  const [hydrated, setHydrated] = useState(false)
 
   useEffect(() => {
     const supabase = createClient()
@@ -63,7 +74,7 @@ export function Navbar() {
 
     supabase.auth.getUser().then(({ data }) => {
       setUser(data.user)
-      void loadRoles(data.user)
+      void loadRoles(data.user).then(() => setHydrated(true))
     })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
       const nextUser = session?.user ?? null
@@ -87,9 +98,10 @@ export function Navbar() {
     router.refresh()
   }
 
-  const isSignedIn = !!user
-  const hasUserRole = roles.includes('user')
-  const hasAdminRole = roles.includes('admin') || roles.includes('owner')
+  // Before client hydration completes, use server-provided initial values to avoid flash.
+  const isSignedIn = hydrated ? !!user : initialIsSignedIn
+  const hasUserRole = hydrated ? roles.includes('user') : initialHasUserRole
+  const hasAdminRole = hydrated ? (roles.includes('admin') || roles.includes('owner')) : initialHasAdminRole
   const allMobileLinks = [
     ...navLinks,
     ...(isSignedIn && hasUserRole ? userLinks : []),

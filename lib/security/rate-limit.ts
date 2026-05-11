@@ -1,12 +1,9 @@
+import { createAdminClient } from '@/lib/supabase/server'
+
 interface RateLimitOptions {
   key: string
   limit: number
   windowMs: number
-}
-
-interface Bucket {
-  count: number
-  resetAt: number
 }
 
 export interface RateLimitResult {
@@ -16,9 +13,6 @@ export interface RateLimitResult {
   resetAt: number
   retryAfterSeconds: number
 }
-
-const buckets = new Map<string, Bucket>()
-let lastSweepAt = 0
 
 export function getRequestIp(req: Request) {
   const forwardedFor = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
@@ -30,33 +24,60 @@ export function getRequestIp(req: Request) {
   )
 }
 
-export function checkRateLimit(options: RateLimitOptions): RateLimitResult {
+// A1: Rate limiting distribuido. La fuente de verdad es la tabla
+// public.rate_limit_buckets accedida via RPC atomica rate_limit_consume.
+// Antes habia un Map en memoria por proceso, evadible escalando lambdas.
+//
+// Fail-open: si la RPC falla (DB caida, latencia extrema), permitimos la
+// request pero registramos el incidente. Bloquear todo el trafico durante
+// un incidente de DB es peor que tolerar un breve rebase de los limites.
+export async function checkRateLimit(options: RateLimitOptions): Promise<RateLimitResult> {
   const now = Date.now()
+  const supabase = createAdminClient()
 
-  if (now - lastSweepAt > 60_000) {
-    lastSweepAt = now
-    for (const [key, bucket] of buckets.entries()) {
-      if (bucket.resetAt <= now) buckets.delete(key)
+  try {
+    const { data, error } = await supabase.rpc('rate_limit_consume', {
+      p_key: options.key,
+      p_limit: options.limit,
+      p_window_ms: options.windowMs,
+    })
+
+    if (error || !data) {
+      console.error('[rate-limit] RPC error, fail-open', { key: options.key, error })
+      return failOpen(options, now)
     }
+
+    const payload = data as {
+      ok: boolean
+      limit: number
+      count: number
+      remaining: number
+      expires_at: string
+      retry_after_seconds: number
+    }
+
+    const resetAt = Date.parse(payload.expires_at)
+
+    return {
+      ok: payload.ok,
+      limit: payload.limit,
+      remaining: payload.remaining,
+      resetAt: Number.isFinite(resetAt) ? resetAt : now + options.windowMs,
+      retryAfterSeconds: payload.retry_after_seconds,
+    }
+  } catch (err) {
+    console.error('[rate-limit] unexpected error, fail-open', { key: options.key, err })
+    return failOpen(options, now)
   }
+}
 
-  const existing = buckets.get(options.key)
-  const bucket = !existing || existing.resetAt <= now
-    ? { count: 0, resetAt: now + options.windowMs }
-    : existing
-
-  bucket.count += 1
-  buckets.set(options.key, bucket)
-
-  const retryAfterSeconds = Math.max(1, Math.ceil((bucket.resetAt - now) / 1000))
-  const remaining = Math.max(0, options.limit - bucket.count)
-
+function failOpen(options: RateLimitOptions, now: number): RateLimitResult {
   return {
-    ok: bucket.count <= options.limit,
+    ok: true,
     limit: options.limit,
-    remaining,
-    resetAt: bucket.resetAt,
-    retryAfterSeconds,
+    remaining: options.limit,
+    resetAt: now + options.windowMs,
+    retryAfterSeconds: Math.ceil(options.windowMs / 1000),
   }
 }
 

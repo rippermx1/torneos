@@ -90,6 +90,7 @@ export interface Tournament {
   play_window_end: string
   status: TournamentStatus
   max_game_duration_seconds: number
+  is_test: boolean
   created_by: string | null
   created_at: string
 }
@@ -284,7 +285,7 @@ export type Database = {
       }
       tournaments: {
         Row: Tournament & DbRecord
-        Insert: InsertWithOptional<Tournament, 'id' | 'created_at' | 'description' | 'game_type' | 'tournament_type' | 'prize_model' | 'prize_2nd_cents' | 'prize_3rd_cents' | 'prize_fund_bps' | 'platform_fee_bps' | 'prize_1st_bps' | 'prize_2nd_bps' | 'prize_3rd_bps' | 'min_players' | 'max_players' | 'status' | 'max_game_duration_seconds' | 'created_by'>
+        Insert: InsertWithOptional<Tournament, 'id' | 'created_at' | 'description' | 'game_type' | 'tournament_type' | 'prize_model' | 'prize_2nd_cents' | 'prize_3rd_cents' | 'prize_fund_bps' | 'platform_fee_bps' | 'prize_1st_bps' | 'prize_2nd_bps' | 'prize_3rd_bps' | 'min_players' | 'max_players' | 'status' | 'max_game_duration_seconds' | 'is_test' | 'created_by'>
         Update: Partial<Omit<Tournament, 'id'>> & DbRecord
         Relationships: []
       }
@@ -472,6 +473,21 @@ export type Database = {
           p_payload?: Record<string, unknown>
         } & DbRecord
         Returns: string
+      }
+      rate_limit_consume: {
+        Args: {
+          p_key: string
+          p_limit: number
+          p_window_ms: number
+        } & DbRecord
+        Returns: {
+          ok: boolean
+          limit: number
+          count: number
+          remaining: number
+          expires_at: string
+          retry_after_seconds: number
+        }
       }
     }
     Enums: {

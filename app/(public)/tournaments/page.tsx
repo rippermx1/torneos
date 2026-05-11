@@ -34,6 +34,7 @@ export default async function TournamentsPage() {
     .from('tournaments')
     .select('*')
     .in('status', ['scheduled', 'open', 'live'])
+    .eq('is_test', false)
     .order('play_window_start', { ascending: true })
 
   if (error) {

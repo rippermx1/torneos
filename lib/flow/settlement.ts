@@ -159,31 +159,58 @@ export function previewBoletaForEntry(entryFeeCents: number, prizeFundBps?: numb
   }
 }
 
-export async function readFlowToken(req: Request): Promise<string | null> {
+// Lee body con tope estricto de bytes; aborta si se excede.
+async function readBoundedText(req: Request, maxBytes: number): Promise<string | null> {
+  if (!req.body) return ''
+  const reader = req.body.getReader()
+  const chunks: Uint8Array[] = []
+  let total = 0
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    if (value) {
+      total += value.byteLength
+      if (total > maxBytes) {
+        try {
+          await reader.cancel()
+        } catch {
+          // no-op
+        }
+        return null
+      }
+      chunks.push(value)
+    }
+  }
+  const buf = new Uint8Array(total)
+  let offset = 0
+  for (const c of chunks) {
+    buf.set(c, offset)
+    offset += c.byteLength
+  }
+  return new TextDecoder('utf-8').decode(buf)
+}
+
+export async function readFlowToken(req: Request, maxBytes = 4096): Promise<string | null> {
   const url = new URL(req.url)
   const queryToken = url.searchParams.get('token')
   if (queryToken) return queryToken
 
-  const contentType = req.headers.get('content-type') ?? ''
+  const text = await readBoundedText(req, maxBytes)
+  if (text == null) return null
+  if (!text) return null
 
-  if (contentType.includes('application/x-www-form-urlencoded')) {
-    const text = await req.text()
-    return new URLSearchParams(text).get('token')
-  }
+  const contentType = (req.headers.get('content-type') ?? '').toLowerCase()
 
   if (contentType.includes('application/json')) {
     try {
-      const body = (await req.json()) as { token?: string }
+      const body = JSON.parse(text) as { token?: string }
       return body.token ?? null
     } catch {
       return null
     }
   }
 
-  try {
-    const text = await req.text()
-    return new URLSearchParams(text).get('token')
-  } catch {
-    return null
-  }
+  // x-www-form-urlencoded, text/plain o sin header: parseamos como URLSearchParams.
+  return new URLSearchParams(text).get('token')
 }

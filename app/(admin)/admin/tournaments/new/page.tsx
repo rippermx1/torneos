@@ -80,6 +80,16 @@ async function createTournament(formData: FormData) {
   const prize2 = entryFee > 0 ? entryPool.minPayouts.prize2Cents : 0
   const prize3 = entryFee > 0 ? entryPool.minPayouts.prize3Cents : 0
 
+  // C6 guard: para torneos pagados, los premios fijos no pueden superar la
+  // recaudacion bruta al minimo de jugadores. Este chequeo replica el CHECK
+  // de DB pero da un error amigable antes de impactar la transaccion.
+  const totalPrizeCents = prize1 + prize2 + prize3
+  if (entryFee > 0 && totalPrizeCents > entryFee * minPlayers) {
+    throw new Error(
+      `Los premios publicados (${totalPrizeCents} centavos) exceden la recaudacion minima (${entryFee * minPlayers} centavos al minimo de ${minPlayers} jugadores). Reduce los premios o aumenta el minimo.`
+    )
+  }
+
   // Freerolls: máximo 1 por semana activo (scheduled/open/live)
   if (tournamentType === 'freeroll') {
     const supabaseCheck = createAdminClient()

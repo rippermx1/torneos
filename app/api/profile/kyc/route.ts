@@ -4,6 +4,8 @@ import {
   isKycDocumentType,
   isOwnKycDocumentPath,
   isValidRut,
+  samePersonName,
+  sameRut,
 } from '@/lib/identity/verification'
 import { checkRateLimit, getRequestIp, rateLimitResponse } from '@/lib/security/rate-limit'
 
@@ -12,7 +14,7 @@ export async function POST(req: Request): Promise<Response> {
   if (!auth.ok) return auth.response
 
   const userId = auth.access.userId
-  const rateLimit = checkRateLimit({
+  const rateLimit = await checkRateLimit({
     key: `profile:kyc:${userId}:${getRequestIp(req)}`,
     limit: 5,
     windowMs: 60 * 60_000,
@@ -83,6 +85,22 @@ export async function POST(req: Request): Promise<Response> {
     return Response.json({ error: 'RUT de titular bancario inválido' }, { status: 400 })
   }
 
+  // A7: el RUT y nombre del titular bancario deben coincidir con el solicitante.
+  // Antes esto se chequeaba solo al solicitar retiro; aplicarlo en KYC bloquea
+  // datos inconsistentes desde el primer momento (defensa AML/PLA).
+  if (!sameRut(rut, bank_account_rut)) {
+    return Response.json(
+      { error: 'El RUT del titular bancario debe coincidir con tu RUT verificado.' },
+      { status: 400 }
+    )
+  }
+  if (!samePersonName(full_name, bank_account_holder)) {
+    return Response.json(
+      { error: 'El nombre del titular bancario debe coincidir con tu nombre completo verificado.' },
+      { status: 400 }
+    )
+  }
+
   // Validar mayoría de edad (18 años)
   const birth = new Date(birth_date)
   if (Number.isNaN(birth.getTime())) {
@@ -129,6 +147,19 @@ export async function POST(req: Request): Promise<Response> {
     .neq('kyc_status', 'approved') // guard: no degradar un approved
 
   if (error) {
+    // A7: detectar colision de RUT entre cuentas. La constraint UNIQUE en
+    // profiles.rut previene fraude por multi-account, pero el error generico
+    // de Postgres ("duplicate key value violates unique constraint") confunde
+    // al usuario. Surfaceamos un mensaje claro y un 409.
+    if (error.code === '23505' && /rut/i.test(error.message)) {
+      return Response.json(
+        {
+          error:
+            'Ya existe una cuenta verificada con este RUT. Contacta soporte si crees que es un error.',
+        },
+        { status: 409 }
+      )
+    }
     return Response.json({ error: `Error guardando datos: ${error.message}` }, { status: 500 })
   }
 

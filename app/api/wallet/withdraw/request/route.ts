@@ -28,7 +28,7 @@ export async function POST(req: Request): Promise<Response> {
   if (!auth.ok) return auth.response
 
   const userId = auth.access.userId
-  const rateLimit = checkRateLimit({
+  const rateLimit = await checkRateLimit({
     key: `wallet:withdraw:${userId}:${getRequestIp(req)}`,
     limit: 3,
     windowMs: 60 * 60_000,

@@ -17,7 +17,7 @@ export async function POST(
   if (!auth.ok) return auth.response
 
   const userId = auth.access.userId
-  const rateLimit = checkRateLimit({
+  const rateLimit = await checkRateLimit({
     key: `game:timeout:${userId}:${getRequestIp(req)}`,
     limit: 30,
     windowMs: 60_000,

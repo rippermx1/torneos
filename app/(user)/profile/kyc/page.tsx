@@ -4,6 +4,11 @@ import { KycForm } from './kyc-form'
 import type { KycSubmission, Profile } from '@/types/database'
 import Link from 'next/link'
 
+// Strip OAuth provider display-name artifacts like "(cv)" that come from Google display names.
+function cleanDisplayName(name: string | null): string {
+  return (name ?? '').replace(/\s*\([^)]*\)\s*$/, '').trim()
+}
+
 export default async function KycPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -74,12 +79,12 @@ export default async function KycPage() {
           birth_date: profile.birth_date ?? '',
           phone:      profile.phone ?? '',
           city:       profile.city ?? '',
-          full_name:  profile.full_name ?? '',
+          full_name:  cleanDisplayName(profile.full_name),
           document_type: latestSubmission?.document_type ?? 'cedula_chilena',
           document_number: latestSubmission?.document_number ?? '',
           document_front_path: latestSubmission?.document_front_path ?? '',
           document_back_path: latestSubmission?.document_back_path ?? '',
-          bank_account_holder: latestSubmission?.bank_account_holder ?? profile.full_name ?? '',
+          bank_account_holder: latestSubmission?.bank_account_holder ?? cleanDisplayName(profile.full_name),
           bank_account_rut: latestSubmission?.bank_account_rut ?? profile.rut ?? '',
         }}
       />

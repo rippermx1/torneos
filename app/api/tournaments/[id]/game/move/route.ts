@@ -25,7 +25,7 @@ export async function POST(
   if (!auth.ok) return auth.response
 
   const userId = auth.access.userId
-  const rateLimit = checkRateLimit({
+  const rateLimit = await checkRateLimit({
     key: `game:move:${userId}:${getRequestIp(req)}`,
     limit: 240,
     windowMs: 60_000,
@@ -197,23 +197,37 @@ export async function POST(
     return Response.json({ error: `Error actualizando partida: ${updateErr.message}` }, { status: 500 })
   }
 
-  // Análisis anticheat (asíncrono, no bloquea la respuesta al cliente).
-  // El ban se aplica en la DB — el siguiente movimiento del usuario recibirá 403.
-  analyzeMove({
-    gameId,
-    userId,
-    moveNumber,
-    clientTimestamp,
-    serverTimestamp: insertedMove?.server_timestamp,
-    moveCount: newMoveCount,
-    currentScore: engine.score,
-  }).then((ac) => {
-    if (ac.autoBanned) {
-      console.warn(`[anticheat] Usuario ${userId} baneado automáticamente. Razón: ${ac.reason}`)
-    }
-  }).catch((err) => {
-    console.error('[anticheat] Error en análisis:', err)
-  })
+  // A2: Analisis anticheat sincrono. Antes era fire-and-forget pero en
+  // entornos serverless (Vercel) la lambda puede terminar antes de que la
+  // promise resuelva, perdiendo bans. Ademas, si el movimiento actual es
+  // el que dispara el ban, queremos rechazarlo aqui mismo en vez de dejar
+  // pasar uno mas. Costo: 1-2 SELECT extra por movimiento (acotado por el
+  // rate limit de 240/min).
+  let anticheat: Awaited<ReturnType<typeof analyzeMove>>
+  try {
+    anticheat = await analyzeMove({
+      gameId,
+      userId,
+      moveNumber,
+      clientTimestamp,
+      serverTimestamp: insertedMove?.server_timestamp,
+      moveCount: newMoveCount,
+      currentScore: engine.score,
+    })
+  } catch (err) {
+    // Fail-open: si el detector falla, no bloqueamos el juego. El ban
+    // sintetico se reevaluara en el siguiente movimiento.
+    console.error('[anticheat] Error en analisis:', err)
+    anticheat = { suspicious: false }
+  }
+
+  if (anticheat.autoBanned) {
+    console.warn(`[anticheat] Usuario ${userId} baneado automaticamente. Razon: ${anticheat.reason}`)
+    return Response.json(
+      { error: 'Cuenta suspendida por comportamiento sospechoso.' },
+      { status: 403 }
+    )
+  }
 
   return Response.json({
     moved: true,

@@ -4,6 +4,12 @@ const nextConfig: NextConfig = {
   // Genera una salida standalone para el Dockerfile de producción.
   // next build copia solo las dependencias necesarias en .next/standalone.
   output: "standalone",
+  async redirects() {
+    return [
+      { source: '/practice', destination: '/play', permanent: true },
+      { source: '/support', destination: '/support/dispute', permanent: false },
+    ]
+  },
   async headers() {
     return [
       {

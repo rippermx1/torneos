@@ -9,7 +9,7 @@ export async function POST(req: Request): Promise<Response> {
   const auth = await requireAnyRoleForApi(['user'])
   if (!auth.ok) return auth.response
 
-  const rateLimit = checkRateLimit({
+  const rateLimit = await checkRateLimit({
     key: `profile:accept-terms:${auth.access.userId}:${getRequestIp(req)}`,
     limit: 10,
     windowMs: 60_000,

@@ -49,4 +49,26 @@ describe('readFlowToken', () => {
 
     await expect(readFlowToken(req)).resolves.toBeNull()
   })
+
+  it('aborta y retorna null si el body excede el limite', async () => {
+    const huge = 'x'.repeat(10_000)
+    const req = new Request('https://www.torneosplay.cl/api/flow/return', {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      body: `token=${huge}`,
+    })
+
+    await expect(readFlowToken(req, 4096)).resolves.toBeNull()
+  })
+
+  it('respeta el query token aunque el body sea enorme (no lee body)', async () => {
+    const huge = 'x'.repeat(10_000)
+    const req = new Request('https://www.torneosplay.cl/api/flow/return?token=q', {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      body: `token=${huge}`,
+    })
+
+    await expect(readFlowToken(req, 4096)).resolves.toBe('q')
+  })
 })

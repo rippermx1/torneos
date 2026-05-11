@@ -16,7 +16,7 @@ export async function POST(req: Request): Promise<Response> {
   if (!auth.ok) return auth.response
 
   const userId = auth.access.userId
-  const rateLimit = checkRateLimit({
+  const rateLimit = await checkRateLimit({
     key: `support:dispute:${userId}:${getRequestIp(req)}`,
     limit: 10,
     windowMs: 60 * 60_000,

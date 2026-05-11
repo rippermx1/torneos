@@ -6,12 +6,16 @@ import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 
 export default async function HomePage() {
-  // Torneos destacados: próximos abiertos o programados
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const isSignedIn = !!user
+
+  // Torneos destacados: próximos abiertos o programados
   const { data } = await supabase
     .from('tournaments')
     .select('*')
     .in('status', ['live', 'open', 'scheduled'])
+    .eq('is_test', false)
     .order('play_window_start', { ascending: true })
     .limit(3)
 
@@ -33,7 +37,7 @@ export default async function HomePage() {
 
   return (
     <>
-      <Navbar />
+      <Navbar initialIsSignedIn={isSignedIn} initialHasUserRole={isSignedIn} />
       <main id="main-content" className="flex-1">
         {/* ── Hero ─────────────────────────────────────────── */}
         <section className="bg-foreground text-background py-20 px-4">
@@ -145,22 +149,39 @@ export default async function HomePage() {
         </section>
 
         {/* ── CTA final ────────────────────────────────────── */}
-        <section className="py-16 px-4 bg-muted/40 text-center">
-          <div className="max-w-sm mx-auto space-y-4">
-            <p className="text-2xl font-bold">¿Listo para competir?</p>
-            <p className="text-muted-foreground text-sm">
-              Crea tu cuenta gratis, elige un torneo y paga la inscripción con Flow.
-            </p>
-            <Link
-              href="/sign-up"
-              className="inline-block bg-foreground text-background px-7 py-3 rounded-xl font-semibold hover:opacity-90 transition-opacity"
-            >
-              Crear cuenta
-            </Link>
-          </div>
-        </section>
+        {isSignedIn ? (
+          <section className="py-16 px-4 bg-muted/40 text-center">
+            <div className="max-w-sm mx-auto space-y-4">
+              <p className="text-2xl font-bold">¿Listo para competir?</p>
+              <p className="text-muted-foreground text-sm">
+                Elige un torneo, paga la inscripción y demuestra tu habilidad.
+              </p>
+              <Link
+                href="/tournaments"
+                className="inline-block bg-foreground text-background px-7 py-3 rounded-xl font-semibold hover:opacity-90 transition-opacity"
+              >
+                Ver torneos
+              </Link>
+            </div>
+          </section>
+        ) : (
+          <section className="py-16 px-4 bg-muted/40 text-center">
+            <div className="max-w-sm mx-auto space-y-4">
+              <p className="text-2xl font-bold">¿Listo para competir?</p>
+              <p className="text-muted-foreground text-sm">
+                Crea tu cuenta gratis, elige un torneo y paga la inscripción con Flow.
+              </p>
+              <Link
+                href="/sign-up"
+                className="inline-block bg-foreground text-background px-7 py-3 rounded-xl font-semibold hover:opacity-90 transition-opacity"
+              >
+                Crear cuenta
+              </Link>
+            </div>
+          </section>
+        )}
       </main>
-      <Footer />
+      <Footer isSignedIn={isSignedIn} />
     </>
   )
 }

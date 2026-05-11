@@ -1,6 +1,10 @@
 import Link from 'next/link'
 
-export function Footer() {
+interface FooterProps {
+  isSignedIn?: boolean
+}
+
+export function Footer({ isSignedIn = false }: FooterProps) {
   const year = new Date().getFullYear()
 
   return (
@@ -21,8 +25,17 @@ export function Footer() {
           <div className="flex flex-wrap gap-x-8 gap-y-4 text-sm">
             <FooterCol title="Plataforma">
               <FooterLink href="/tournaments">Torneos</FooterLink>
-              <FooterLink href="/sign-up">Crear cuenta</FooterLink>
-              <FooterLink href="/sign-in">Iniciar sesión</FooterLink>
+              {isSignedIn ? (
+                <>
+                  <FooterLink href="/wallet">Mi billetera</FooterLink>
+                  <FooterLink href="/profile">Mi perfil</FooterLink>
+                </>
+              ) : (
+                <>
+                  <FooterLink href="/sign-up">Crear cuenta</FooterLink>
+                  <FooterLink href="/sign-in">Iniciar sesión</FooterLink>
+                </>
+              )}
             </FooterCol>
             <FooterCol title="Legal">
               <FooterLink href="/legal/terminos">Términos y Condiciones</FooterLink>

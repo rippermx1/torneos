@@ -10,8 +10,14 @@ import type {
 } from '@/types/database'
 
 const CHILE_TIME_ZONE = 'America/Santiago'
-const FLOW_CARD_NEXT_DAY_FEE_BPS = 319
-const IVA_BPS = 1900
+
+// Flow tarjeta abono al dia habil siguiente: 3.19% NET (excl. IVA).
+// Flow agrega IVA 19% sobre su comision; la factura electronica que emite
+// es IVA-incluida, por eso usamos calculateIvaIncludedBreakdown para
+// extraer net y IVA con la misma rounding rule que el resto del reporte.
+// Ver lib/flow/fees.ts para el modelo completo de gross-up al usuario.
+const FLOW_CARD_NEXT_DAY_FEE_NET_BPS = 319
+const IVA_MULTIPLIER_BPS = 11900 // 1 + 0.19 escalado por 10000
 const BPS = 10000
 
 type AdminSupabase = SupabaseClient<Database>
@@ -26,6 +32,7 @@ interface PrizeLiabilityRow {
   platform_fee_iva_cents: number
   active_count: number
   pending_count: number
+  unclaimed_prize_cents_total: number
 }
 
 export interface AccountingPeriodRow {
@@ -73,6 +80,19 @@ export interface AccountingSnapshot {
   prizeLiabilityCollectedCents: number
   prizeLiabilityActiveCount: number
   prizeLiabilityPendingCount: number
+  unclaimedPrizeRevenueCents: number
+}
+
+// A5: chequeo de invariantes que SII y un contador esperarian. Si alguna
+// cuenta es > 0 hay un problema de datos que debe investigarse antes de
+// declarar el periodo. Cada flag incluye sample_ids para facilitar el
+// drill-in en SQL.
+export interface ReconciliationCheck {
+  flowAttemptInternalMismatch: { count: number; sampleIds: string[] }
+  registrationFeeMismatch: { count: number; sampleIds: string[] }
+  paidAttemptWithoutRegistration: { count: number; sampleIds: string[] }
+  walletLedgerDrift: { count: number; sampleUserIds: string[] }
+  ok: boolean
 }
 
 export interface AccountingReport {
@@ -81,6 +101,7 @@ export interface AccountingReport {
   notes: string[]
   rows: AccountingPeriodRow[]
   snapshot: AccountingSnapshot
+  reconciliation: ReconciliationCheck
 }
 
 function emptyPeriod(period: string): AccountingPeriodRow {
@@ -177,6 +198,7 @@ async function fetchAll<T>(
 }
 
 function addFlowAttempt(row: AccountingPeriodRow, attempt: FlowPaymentAttempt) {
+  if (attempt.payment_method === 'simulation') return
   switch (attempt.status) {
     case 'paid':
       row.flowPaidCount += 1
@@ -245,14 +267,19 @@ function finalizePeriod(
   row.f29NetSalesCents = salesBreakdown.netCents
   row.f29IvaDebitCents = salesBreakdown.ivaCents
 
-  row.estimatedFlowFeeNetCents = Math.round(
-    (row.flowChargedGrossCents * FLOW_CARD_NEXT_DAY_FEE_BPS) / BPS
+  // A4: Calcular el bruto Flow (IVA-incluido) en una sola pasada y luego
+  // extraer net/IVA con calculateIvaIncludedBreakdown para garantizar
+  // que net + iva = gross exactamente (sin drift por rondeo en cascada).
+  // Antes: round(charged * 3.19%) -> round(net * 19%) -> sum, que podia
+  // diferir en 1 centavo respecto al gross real cobrado por Flow.
+  const flowFeeGrossCents = Math.round(
+    (row.flowChargedGrossCents * FLOW_CARD_NEXT_DAY_FEE_NET_BPS * IVA_MULTIPLIER_BPS) /
+      (BPS * BPS)
   )
-  row.estimatedFlowFeeIvaCreditCents = Math.round(
-    (row.estimatedFlowFeeNetCents * IVA_BPS) / BPS
-  )
-  row.estimatedFlowFeeGrossCents =
-    row.estimatedFlowFeeNetCents + row.estimatedFlowFeeIvaCreditCents
+  const flowFeeBreakdown = calculateIvaIncludedBreakdown(flowFeeGrossCents)
+  row.estimatedFlowFeeGrossCents = flowFeeBreakdown.grossCents
+  row.estimatedFlowFeeNetCents = flowFeeBreakdown.netCents
+  row.estimatedFlowFeeIvaCreditCents = flowFeeBreakdown.ivaCents
 
   const endMs = periodEndMs(row.period)
   const latestBalanceByUser = new Map<string, WalletTransaction>()
@@ -284,6 +311,113 @@ function finalizePeriod(
 
   row.accruedOperatingResultCents =
     row.f29NetSalesCents - row.prizeCreditsCents - row.estimatedFlowFeeNetCents
+}
+
+// A5: invariantes contables. Estas verificaciones son baratas y cubren
+// los caminos donde un bug previo pudo dejar datos inconsistentes:
+//
+//  1. Flow attempt interno: charged_amount = net_amount + user_fee. Una
+//     diferencia indica corrupcion del attempt o un cambio de schema mal
+//     migrado.
+//  2. Registration: platform_fee_gross = net + iva (a nivel registro).
+//  3. Cada PAID attempt con intent=tournament_registration debe tener
+//     una registration concreta. Si falta, el cobro no se asento o el
+//     webhook fallo silenciosamente.
+//  4. Wallet ledger: el campo balance_after_cents de cada movimiento
+//     debe ser igual al previo + amount_cents. Un drift indica que la
+//     funcion wallet_insert_transaction tuvo un bug o que se editaron
+//     filas a mano.
+const SAMPLE_LIMIT = 10
+
+function runReconciliation(
+  flowAttempts: FlowPaymentAttempt[],
+  registrations: Registration[],
+  walletTransactions: WalletTransaction[]
+): ReconciliationCheck {
+  const flowAttemptInternalMismatch = { count: 0, sampleIds: [] as string[] }
+  const registrationFeeMismatch = { count: 0, sampleIds: [] as string[] }
+  const paidAttemptWithoutRegistration = { count: 0, sampleIds: [] as string[] }
+  const walletLedgerDrift = { count: 0, sampleUserIds: [] as string[] }
+
+  for (const attempt of flowAttempts) {
+    if (attempt.charged_amount_cents !== attempt.net_amount_cents + attempt.user_fee_cents) {
+      flowAttemptInternalMismatch.count += 1
+      if (flowAttemptInternalMismatch.sampleIds.length < SAMPLE_LIMIT) {
+        flowAttemptInternalMismatch.sampleIds.push(attempt.id)
+      }
+    }
+  }
+
+  for (const reg of registrations) {
+    const gross = reg.platform_fee_gross_cents ?? 0
+    const net = reg.platform_fee_net_cents ?? 0
+    const iva = reg.platform_fee_iva_cents ?? 0
+    if (gross !== net + iva) {
+      registrationFeeMismatch.count += 1
+      if (registrationFeeMismatch.sampleIds.length < SAMPLE_LIMIT) {
+        registrationFeeMismatch.sampleIds.push(reg.id)
+      }
+    }
+  }
+
+  // Indexamos las registrations por (tournament_id, user_id) para detectar
+  // PAID attempts que no asentaron una inscripcion.
+  const regKey = (tournamentId: string | null, userId: string) =>
+    `${tournamentId ?? ''}::${userId}`
+  const registrationIndex = new Set<string>()
+  for (const reg of registrations) {
+    registrationIndex.add(regKey(reg.tournament_id, reg.user_id))
+  }
+  for (const attempt of flowAttempts) {
+    if (attempt.status !== 'paid' || attempt.intent !== 'tournament_registration') continue
+    if (attempt.payment_method === 'simulation') continue
+    if (!registrationIndex.has(regKey(attempt.tournament_id, attempt.user_id))) {
+      paidAttemptWithoutRegistration.count += 1
+      if (paidAttemptWithoutRegistration.sampleIds.length < SAMPLE_LIMIT) {
+        paidAttemptWithoutRegistration.sampleIds.push(attempt.id)
+      }
+    }
+  }
+
+  // Wallet ledger: ordenamos por created_at ASC y verificamos que cada
+  // balance_after = balance_after_previo + amount. Un drift por usuario
+  // se registra una sola vez.
+  const ledgerByUser = new Map<string, WalletTransaction[]>()
+  for (const tx of walletTransactions) {
+    const list = ledgerByUser.get(tx.user_id) ?? []
+    list.push(tx)
+    ledgerByUser.set(tx.user_id, list)
+  }
+  for (const [userId, txs] of ledgerByUser) {
+    txs.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+    let prevBalance = 0
+    let drifted = false
+    for (const tx of txs) {
+      if (tx.balance_after_cents !== prevBalance + tx.amount_cents) {
+        drifted = true
+        break
+      }
+      prevBalance = tx.balance_after_cents
+    }
+    if (drifted) {
+      walletLedgerDrift.count += 1
+      if (walletLedgerDrift.sampleUserIds.length < SAMPLE_LIMIT) {
+        walletLedgerDrift.sampleUserIds.push(userId)
+      }
+    }
+  }
+
+  return {
+    flowAttemptInternalMismatch,
+    registrationFeeMismatch,
+    paidAttemptWithoutRegistration,
+    walletLedgerDrift,
+    ok:
+      flowAttemptInternalMismatch.count === 0 &&
+      registrationFeeMismatch.count === 0 &&
+      paidAttemptWithoutRegistration.count === 0 &&
+      walletLedgerDrift.count === 0,
+  }
 }
 
 export async function buildModeloAAccountingReport(
@@ -363,11 +497,13 @@ export async function buildModeloAAccountingReport(
 
   const prizeLiability = (prizeLiabilityResult.data ?? {}) as Partial<PrizeLiabilityRow>
   const pendingWithdrawals = withdrawals.filter((withdrawal) => withdrawal.status === 'pending')
+  const reconciliation = runReconciliation(flowAttempts, registrations, walletTransactions)
   const generatedAt = new Date().toISOString()
 
   return {
     generatedAt,
     model: 'Modelo A',
+    reconciliation,
     notes: [
       'Modelo A: el voucher Flow/comprobante de pago electronico es la base del registro de ventas cuando el modelo de emision esta declarado ante SII.',
       'F29: usar f29_venta_afecta_bruta_clp, f29_base_neta_clp e f29_iva_debito_clp; el IVA credito Flow es estimado y debe cuadrarse contra factura del proveedor.',
@@ -392,6 +528,7 @@ export async function buildModeloAAccountingReport(
       prizeLiabilityCollectedCents: prizeLiability.collected_cents ?? 0,
       prizeLiabilityActiveCount: prizeLiability.active_count ?? 0,
       prizeLiabilityPendingCount: prizeLiability.pending_count ?? 0,
+      unclaimedPrizeRevenueCents: prizeLiability.unclaimed_prize_cents_total ?? 0,
     },
   }
 }

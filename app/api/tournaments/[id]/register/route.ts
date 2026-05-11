@@ -18,7 +18,7 @@ export async function POST(
   if (!auth.ok) return auth.response
 
   const userId = auth.access.userId
-  const rateLimit = checkRateLimit({
+  const rateLimit = await checkRateLimit({
     key: `tournament:register:${userId}:${getRequestIp(req)}`,
     limit: 10,
     windowMs: 10 * 60_000,

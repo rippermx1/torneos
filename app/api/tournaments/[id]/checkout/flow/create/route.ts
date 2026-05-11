@@ -32,7 +32,7 @@ export async function POST(
 
   const { user } = auth.access
   const userId = auth.access.userId
-  const rateLimit = checkRateLimit({
+  const rateLimit = await checkRateLimit({
     key: `checkout:flow:${userId}:${getRequestIp(req)}`,
     limit: 5,
     windowMs: 10 * 60_000,

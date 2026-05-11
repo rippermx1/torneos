@@ -2,27 +2,23 @@ import { describe, it, expect } from 'vitest'
 import { DeterministicRNG, generateGameSeed } from '@/lib/game/rng'
 
 describe('generateGameSeed', () => {
-  it('produce el mismo hash para el mismo input', () => {
-    const a = generateGameSeed('tournament-1', 'user-1')
-    const b = generateGameSeed('tournament-1', 'user-1')
-    expect(a).toBe(b)
-  })
-
-  it('produce hashes distintos para distintos torneos', () => {
-    const a = generateGameSeed('tournament-1', 'user-1')
-    const b = generateGameSeed('tournament-2', 'user-1')
-    expect(a).not.toBe(b)
-  })
-
-  it('produce hashes distintos para distintos usuarios', () => {
-    const a = generateGameSeed('tournament-1', 'user-1')
-    const b = generateGameSeed('tournament-1', 'user-2')
-    expect(a).not.toBe(b)
-  })
-
-  it('retorna un string hex de 64 caracteres (SHA-256)', () => {
-    const seed = generateGameSeed('t', 'u')
+  it('retorna un string hex de 64 caracteres (256 bits)', () => {
+    const seed = generateGameSeed()
     expect(seed).toMatch(/^[0-9a-f]{64}$/)
+  })
+
+  it('produce seeds distintos en llamadas sucesivas (CSPRNG)', () => {
+    const seeds = new Set<string>()
+    for (let i = 0; i < 100; i++) {
+      seeds.add(generateGameSeed())
+    }
+    expect(seeds.size).toBe(100)
+  })
+
+  it('no es derivable de identificadores publicos', () => {
+    // Regression guard: el seed NO debe depender de inputs externos.
+    // Si esta firma vuelve a aceptar (tournamentId, userId), el bug C2 reaparece.
+    expect(generateGameSeed.length).toBe(0)
   })
 })
 

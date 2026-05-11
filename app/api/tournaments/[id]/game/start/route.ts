@@ -15,7 +15,7 @@ export async function POST(
   if (!auth.ok) return auth.response
 
   const userId = auth.access.userId
-  const rateLimit = checkRateLimit({
+  const rateLimit = await checkRateLimit({
     key: `game:start:${userId}:${getRequestIp(req)}`,
     limit: 15,
     windowMs: 60_000,
@@ -152,7 +152,7 @@ export async function POST(
   }
 
   // Crear nueva partida
-  const seed = generateGameSeed(tournamentId, userId)
+  const seed = generateGameSeed()
   const gameBoard = new Game2048()
   gameBoard.spawnTile(new DeterministicRNG(seed, 0))
   gameBoard.spawnTile(new DeterministicRNG(seed, 1))

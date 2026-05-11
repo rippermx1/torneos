@@ -71,3 +71,22 @@ export function getFlowApiBase() {
   const value = firstNonEmpty(process.env.FLOW_API_BASE)
   return value ? normalizeUrl(value) : 'https://sandbox.flow.cl/api'
 }
+
+// A3: Umbrales del detector anticheat configurables por env. Permite
+// endurecer o relajar sin redeploy. Si la variable no parsea, se usa el
+// default conservador (no se rompe el detector).
+function parseIntEnv(name: string, fallback: number, min = 1) {
+  const raw = process.env[name]
+  if (!raw) return fallback
+  const n = Number.parseInt(raw, 10)
+  return Number.isFinite(n) && n >= min ? n : fallback
+}
+
+export function getAnticheatConfig() {
+  return {
+    minHumanMoveMs: parseIntEnv('ANTICHEAT_MIN_HUMAN_MOVE_MS', 80),
+    botBurstThreshold: parseIntEnv('ANTICHEAT_BOT_BURST_THRESHOLD', 5, 2),
+    maxAvgPtsPerMove: parseIntEnv('ANTICHEAT_MAX_AVG_PTS_PER_MOVE', 350),
+    minMovesForScoreCheck: parseIntEnv('ANTICHEAT_MIN_MOVES_FOR_SCORE_CHECK', 20),
+  }
+}

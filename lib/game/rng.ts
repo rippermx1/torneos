@@ -1,11 +1,12 @@
-import { createHash } from 'crypto'
+import { createHash, randomBytes } from 'crypto'
 import type { GameRandomSource } from './random-source'
 
-// Genera un seed único por (torneo, usuario). Determinístico: mismo input → mismo seed.
-export function generateGameSeed(tournamentId: string, userId: string): string {
-  return createHash('sha256')
-    .update(`${tournamentId}:${userId}`)
-    .digest('hex')
+// Genera un seed criptograficamente aleatorio (256 bits) para una partida.
+// No derivable de identificadores publicos: imposible precalcular spawns offline
+// conociendo solo (tournamentId, userId). El seed se persiste en games.seed
+// y nunca se expone al cliente.
+export function generateGameSeed(): string {
+  return randomBytes(32).toString('hex')
 }
 
 // RNG determinístico basado en seed + número de movimiento.

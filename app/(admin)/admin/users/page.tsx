@@ -34,13 +34,27 @@ const ROLE_BADGE: Record<AppRole, string> = {
 export default async function AdminUsersPage() {
   const supabase = createAdminClient()
 
-  const { data } = await supabase
-    .from('profiles')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .limit(200)
+  // Los pendientes se cargan sin límite para no perder perfiles admin/antiguos.
+  // El resto se limita a 200 más recientes.
+  const [{ data: pendingData }, { data: otherData }] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('*')
+      .eq('kyc_status', 'pending')
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('profiles')
+      .select('*')
+      .neq('kyc_status', 'pending')
+      .order('created_at', { ascending: false })
+      .limit(200),
+  ])
 
-  const profiles = (data ?? []) as Profile[]
+  const pendingIds = new Set((pendingData ?? []).map((p: Profile) => p.id))
+  const profiles = [
+    ...(pendingData ?? []),
+    ...(otherData ?? []).filter((p: Profile) => !pendingIds.has(p.id)),
+  ] as Profile[]
   const profileIds = profiles.map((p) => p.id)
 
   const [{ data: submissionRows }, { data: roleRows }] = profileIds.length > 0

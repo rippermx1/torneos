@@ -10,7 +10,7 @@ import {
 import { checkRateLimit, getRequestIp, rateLimitResponse } from '@/lib/security/rate-limit'
 
 export async function POST(req: Request): Promise<Response> {
-  const auth = await requireAnyRoleForApi(['user'])
+  const auth = await requireAnyRoleForApi(['user', 'admin', 'owner'])
   if (!auth.ok) return auth.response
 
   const userId = auth.access.userId

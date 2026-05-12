@@ -209,6 +209,7 @@ export default async function AdminTournamentsPage() {
         {tournaments.map((t) => {
           const playerCount = counts[t.id] ?? 0
           const canFinalize = t.status === 'live' || t.status === 'finalizing'
+          const canCancel   = t.status === 'scheduled' || t.status === 'open'
           const paidTournament = t.entry_fee_cents > 0
           const financialHealth = getTournamentFinancialHealth(t, Math.max(playerCount, t.min_players))
 
@@ -255,8 +256,12 @@ export default async function AdminTournamentsPage() {
                 >
                   Ranking
                 </Link>
-                {canFinalize && (
-                  <TournamentActions tournamentId={t.id} />
+                {(canFinalize || canCancel) && (
+                  <TournamentActions
+                    tournamentId={t.id}
+                    canFinalize={canFinalize}
+                    canCancel={canCancel}
+                  />
                 )}
               </div>
             </div>

@@ -1,6 +1,8 @@
 import { createAdminClient } from '@/lib/supabase/server'
 import { requireAnyRoleForApi } from '@/lib/supabase/auth'
 import { recordAdminAction } from '@/lib/admin/audit'
+import { issueFlowRefunds } from '@/lib/tournament/refunds'
+import { getAppUrl } from '@/lib/env'
 
 export async function POST(
   _req: Request,
@@ -38,14 +40,29 @@ export async function POST(
     return Response.json({ error: error.message }, { status: 500 })
   }
 
+  const cancelData = data as { refunds_to_issue: number; entry_fee_cents: number }
+
+  // Emitir reversas Flow para cada inscrito con pago acreditado
+  let refundsInitiated = 0
+  let refundsFailed = 0
+  if (cancelData.entry_fee_cents > 0 && cancelData.refunds_to_issue > 0) {
+    const requestOrigin = new URL(_req.url).origin
+    const appUrl = getAppUrl(requestOrigin) ?? requestOrigin
+    const refundResults = await issueFlowRefunds(tournamentId, cancelData.entry_fee_cents, appUrl)
+    refundsInitiated = refundResults.filter((r) => !r.error).length
+    refundsFailed    = refundResults.filter((r) => !!r.error).length
+  }
+
+  const result = { ...cancelData, refunds_initiated: refundsInitiated, refunds_failed: refundsFailed }
+
   await recordAdminAction(supabase, {
     adminId: userId,
     action: 'tournament.cancel',
     targetType: 'tournament',
     targetId: tournamentId,
     summary: 'Cancelación manual de torneo',
-    payload: { result: data as unknown as Record<string, unknown> },
+    payload: { result },
   })
 
-  return Response.json({ ok: true, result: data })
+  return Response.json({ ok: true, result })
 }

@@ -3,7 +3,6 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { requireAnyRoleForApi } from '@/lib/supabase/auth'
 import { getAppUrl } from '@/lib/env'
 import { createFlowPayment, buildFlowCheckoutUrl } from '@/lib/flow/payments'
-import { computeDepositBreakdown } from '@/lib/flow/fees'
 import { checkRegistrationWindow } from '@/lib/tournament/helpers'
 import { checkRateLimit, getRequestIp, rateLimitResponse } from '@/lib/security/rate-limit'
 
@@ -169,8 +168,10 @@ export async function POST(
     return Response.json({ error: 'El torneo está lleno' }, { status: 400 })
   }
 
-  // Calculo del cobro: entry_fee neto + fee Flow al usuario
-  const breakdown = computeDepositBreakdown(tournament.entry_fee_cents)
+  // El usuario paga exactamente el entry_fee. La plataforma absorbe el costo
+  // de Flow y su IVA desde el margen operacional del 30%.
+  const entryFeeCents = tournament.entry_fee_cents
+  const entryFeePesos = Math.ceil(entryFeeCents / 100)
   const requestOrigin = new URL(req.url).origin
   const appUrl = getAppUrl(requestOrigin) ?? requestOrigin
   const commerceOrder = `tour-${randomUUID()}`
@@ -180,9 +181,9 @@ export async function POST(
     .insert({
       user_id: userId,
       commerce_order: commerceOrder,
-      net_amount_cents: breakdown.netCents,
-      charged_amount_cents: breakdown.chargedCents,
-      user_fee_cents: breakdown.userFeeCents,
+      net_amount_cents: entryFeeCents,
+      charged_amount_cents: entryFeeCents,
+      user_fee_cents: 0,
       status: 'pending',
       intent: 'tournament_registration',
       tournament_id: tournamentId,
@@ -205,14 +206,14 @@ export async function POST(
     const flowResponse = await createFlowPayment({
       commerceOrder,
       subject: `Inscripción torneo - TorneosPlay`,
-      amount: breakdown.chargedPesos,
+      amount: entryFeePesos,
       email: user.email ?? '',
       urlConfirmation: `${appUrl}/api/webhooks/flow`,
       urlReturn: `${appUrl}/tournaments/${tournamentId}/return`,
       optional: {
         user_id: userId,
         tournament_id: tournamentId,
-        entry_fee_cents: String(breakdown.netCents),
+        entry_fee_cents: String(entryFeeCents),
       },
       timeout: 1800,
     })
@@ -227,11 +228,6 @@ export async function POST(
 
     return Response.json({
       redirectUrl: buildFlowCheckoutUrl(flowResponse),
-      breakdown: {
-        entryFeeCents: breakdown.netCents,
-        chargedCents: breakdown.chargedCents,
-        userFeeCents: breakdown.userFeeCents,
-      },
     })
   } catch (err) {
     await admin

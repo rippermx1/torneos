@@ -107,15 +107,24 @@ export default async function TournamentDetailPage({
 
       {t.entry_fee_cents > 0 && (
         <div className="border rounded-xl p-5 space-y-2 text-sm">
-          <h2 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground">Distribución contable</h2>
+          <h2 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground">¿Cómo se usa tu inscripción?</h2>
           <div className="flex justify-between gap-4">
-            <span className="text-muted-foreground">Reserva de premios por inscripción</span>
+            <span className="text-muted-foreground">Fondo de premios del torneo</span>
             <span className="font-medium">{formatCLP(split.prizeFundContributionCents)}</span>
           </div>
           <div className="flex justify-between gap-4">
-            <span className="text-muted-foreground">Fee plataforma IVA incluido</span>
+            <span className="text-muted-foreground">Operación de la plataforma (IVA y procesamiento incluidos)</span>
             <span className="font-medium">{formatCLP(split.platformFeeGrossCents)}</span>
           </div>
+        </div>
+      )}
+
+      {t.entry_fee_cents > 0 && ['scheduled', 'open'].includes(t.status) && (
+        <div className="border border-amber-200 bg-amber-50 rounded-xl p-4 text-sm text-amber-800 space-y-1">
+          <p className="font-semibold">Garantía de reembolso</p>
+          <p>
+            Si al inicio del torneo no se han inscrito al menos {t.min_players} jugadores, el torneo se cancela automáticamente y recibirás el 100% de tu inscripción ({formatCLP(t.entry_fee_cents)}) en tu wallet.
+          </p>
         </div>
       )}
 

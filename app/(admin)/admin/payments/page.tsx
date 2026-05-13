@@ -9,6 +9,7 @@ export const revalidate = 0
 const STATUS_LABEL: Record<FlowAttemptStatus, string> = {
   pending: 'Pendiente',
   paid: 'Pagado',
+  credited: 'Acreditado',
   rejected: 'Rechazado',
   cancelled: 'Cancelado',
   expired: 'Expirado',
@@ -17,12 +18,13 @@ const STATUS_LABEL: Record<FlowAttemptStatus, string> = {
 const STATUS_TONE: Record<FlowAttemptStatus, string> = {
   pending: 'bg-amber-100 text-amber-700',
   paid: 'bg-green-100 text-green-700',
+  credited: 'bg-emerald-100 text-emerald-700',
   rejected: 'bg-red-100 text-red-700',
   cancelled: 'bg-slate-100 text-slate-700',
   expired: 'bg-slate-100 text-slate-700',
 }
 
-const ALL_STATUSES: FlowAttemptStatus[] = ['pending', 'paid', 'rejected', 'cancelled', 'expired']
+const ALL_STATUSES: FlowAttemptStatus[] = ['pending', 'paid', 'credited', 'rejected', 'cancelled', 'expired']
 
 export default async function AdminPaymentsPage({
   searchParams,
@@ -56,7 +58,7 @@ export default async function AdminPaymentsPage({
 
   // Conteos por estado para los chips
   const counts: Record<FlowAttemptStatus, number> = {
-    pending: 0, paid: 0, rejected: 0, cancelled: 0, expired: 0,
+    pending: 0, paid: 0, credited: 0, rejected: 0, cancelled: 0, expired: 0,
   }
   const { data: countRows } = await supabase
     .from('flow_payment_attempts')

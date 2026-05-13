@@ -42,8 +42,12 @@ export function TournamentActions({ tournamentId, canFinalize, canCancel }: Prop
           )
         } else {
           const d = data.result
+          const initiated = d?.refunds_initiated ?? 0
+          const failed    = d?.refunds_failed ?? 0
           setResult(
-            `${successPrefix} — ${d?.refunds_issued ?? 0} reembolsos emitidos`
+            failed > 0
+              ? `${successPrefix} — ${initiated} reversas Flow iniciadas, ${failed} fallidas (revisar admin)`
+              : `${successPrefix} — ${initiated} reversas Flow iniciadas`
           )
         }
         router.refresh()

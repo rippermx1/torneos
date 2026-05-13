@@ -4,7 +4,7 @@ const BPS = 10000
 
 export const IVA_BPS = 1900
 export const DEFAULT_PRIZE_MODEL = 'entry_pool' as const
-export const DEFAULT_PRIZE_FUND_BPS = 7500
+export const DEFAULT_PRIZE_FUND_BPS = 7000
 export const DEFAULT_PRIZE_POOL_BPS = DEFAULT_PRIZE_FUND_BPS
 export const DEFAULT_PLATFORM_FEE_BPS = BPS - DEFAULT_PRIZE_FUND_BPS
 export const DEFAULT_PRIZE_1ST_BPS = 7000
@@ -29,7 +29,7 @@ export interface TournamentPreset {
   maxPlayers: number
   durationMinutes: number
   windowHours: number
-  strategy: 'acquisition' | 'daily' | 'balanced' | 'premium'
+  strategy: 'acquisition' | 'daily' | 'balanced' | 'premium' | 'growth'
 }
 
 export interface TournamentFinancials {
@@ -117,6 +117,19 @@ export const TOURNAMENT_PRESETS = [
     strategy: 'daily',
   },
   {
+    key: 'challenger',
+    label: 'Challenger',
+    shortLabel: 'Challenger',
+    description: 'Punto medio entre Express y Estándar. Mayor premio con menor barrera.',
+    entryFeePesos: 1500,
+    minPlayers: 6,
+    targetPlayers: 25,
+    maxPlayers: 80,
+    durationMinutes: 8,
+    windowHours: 6,
+    strategy: 'growth',
+  },
+  {
     key: 'standard',
     label: 'Estándar balanceado',
     shortLabel: 'Estándar',
@@ -128,6 +141,19 @@ export const TOURNAMENT_PRESETS = [
     durationMinutes: 10,
     windowHours: 24,
     strategy: 'balanced',
+  },
+  {
+    key: 'pro',
+    label: 'Pro',
+    shortLabel: 'Pro',
+    description: 'Premio de alto impacto para competidores regulares exigentes.',
+    entryFeePesos: 5000,
+    minPlayers: 4,
+    targetPlayers: 15,
+    maxPlayers: 30,
+    durationMinutes: 12,
+    windowHours: 24,
+    strategy: 'premium',
   },
   {
     key: 'elite',

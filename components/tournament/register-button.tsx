@@ -21,7 +21,6 @@ export function RegisterButton({ tournamentId, entryFeeCents, className }: Props
 
     try {
       if (entryFeeCents > 0) {
-        // Torneo pagado: redirigir a Flow checkout (Ruta 1).
         const res = await fetch(`/api/tournaments/${tournamentId}/checkout/flow/create`, {
           method: 'POST',
         })

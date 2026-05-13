@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import { createAdminClient } from '@/lib/supabase/server'
-import { requireUser } from '@/lib/supabase/auth'
 import { formatCLP } from '@/lib/utils'
 
 // ───────────────────────────────────────────────────────────────
@@ -8,6 +7,8 @@ import { formatCLP } from '@/lib/utils'
 // Flow redirige aquí con ?token=... cuando el usuario vuelve del
 // gateway. La acreditación autoritativa la hace el webhook; esta
 // página solo refleja el estado actual del flow_payment_attempt.
+// No requiere sesión activa: el token Flow es el identificador
+// seguro del intento (unguessable, generado por Flow).
 // ───────────────────────────────────────────────────────────────
 
 interface Props {
@@ -18,7 +19,6 @@ interface Props {
 export default async function TournamentReturnPage({ params, searchParams }: Props) {
   const { id: tournamentId } = await params
   const { token } = await searchParams
-  await requireUser()
 
   const admin = createAdminClient()
 

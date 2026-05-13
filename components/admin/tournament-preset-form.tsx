@@ -31,6 +31,7 @@ const PRESET_ICONS: Record<TournamentPreset['strategy'], ComponentType<{ classNa
   acquisition: Gift,
   daily: Zap,
   balanced: Trophy,
+  growth: Rocket,
   premium: Gem,
 }
 
@@ -90,7 +91,7 @@ export function TournamentPresetForm({
     values.maxPlayers >= values.minPlayers &&
     values.targetPlayers <= values.maxPlayers
   const economicsValid = values.entryFeePesos >= 0 && values.durationMinutes > 0
-  const paidPlayersValid = !paidTournament || values.minPlayers >= 3
+  const paidPlayersValid = !paidTournament || values.minPlayers >= 2
   const canLaunch = datesValid && capacityValid && economicsValid && paidPlayersValid
 
   return (

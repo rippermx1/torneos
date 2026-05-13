@@ -27,7 +27,9 @@ async function createTournament(formData: FormData) {
   const tournamentType: TournamentType =
     rawTournamentType === 'express' ||
     rawTournamentType === 'elite' ||
-    rawTournamentType === 'freeroll'
+    rawTournamentType === 'freeroll' ||
+    rawTournamentType === 'challenger' ||
+    rawTournamentType === 'pro'
       ? rawTournamentType
       : 'standard'
   const entryFeePesos    = Number.parseFloat(String(formData.get('entry_fee') ?? ''))
@@ -66,8 +68,8 @@ async function createTournament(formData: FormData) {
     throw new Error('Datos del torneo inválidos')
   }
 
-  if (entryFee > 0 && minPlayers < 3) {
-    throw new Error('Los torneos pagados requieren al menos 3 jugadores para distribuir premios.')
+  if (entryFee > 0 && minPlayers < 2) {
+    throw new Error('Los torneos pagados requieren al menos 2 jugadores.')
   }
 
   const entryPool = calculateEntryPoolFinancials({

@@ -124,7 +124,7 @@ create table tournaments (
   description text,
   game_type text not null default '2048_score',
   tournament_type text not null default 'standard'
-    check (tournament_type in ('standard','express','elite','freeroll')),
+    check (tournament_type in ('standard','express','elite','freeroll','challenger','pro')),
   entry_fee_cents bigint not null,
   prize_1st_cents bigint not null,
   prize_2nd_cents bigint not null default 0,

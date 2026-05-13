@@ -1,5 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/server'
 import type { Tournament } from '@/types/database'
+import { issueFlowRefunds } from '@/lib/tournament/refunds'
+import { getAppUrl } from '@/lib/env'
 
 export interface TransitionResult {
   tournamentId: string
@@ -75,11 +77,23 @@ async function processSingleTournament(
       const playerCount = count ?? 0
 
       if (playerCount < tournament.min_players) {
-        // No alcanzó mínimo → cancelar y reembolsar
+        // No alcanzó mínimo → cancelar y emitir reversas Flow
         const { data, error } = await supabase.rpc('cancel_tournament', {
           p_tournament_id: tournament.id,
         })
         if (error) throw new Error(error.message)
+
+        const cancelData = data as { refunds_to_issue: number; entry_fee_cents: number }
+        let refundResults: { error?: string }[] = []
+        if (cancelData.entry_fee_cents > 0 && cancelData.refunds_to_issue > 0) {
+          refundResults = await issueFlowRefunds(
+            tournament.id,
+            cancelData.entry_fee_cents,
+            getAppUrl() ?? 'https://torneosplay.cl'
+          )
+        }
+
+        const refundErrors = refundResults.filter((r) => r.error).length
         return {
           ...base,
           action: 'cancelled',
@@ -87,7 +101,9 @@ async function processSingleTournament(
             playerCount,
             reason: 'min_players_not_reached',
             previousActions,
-            ...data,
+            refunds_to_issue: cancelData.refunds_to_issue,
+            refunds_initiated: refundResults.length - refundErrors,
+            refunds_failed: refundErrors,
           },
         }
       }

@@ -11,7 +11,7 @@ export type WalletTransactionType =
   | 'prize_credit'
   | 'refund'
   | 'adjustment'
-export type TournamentType = 'standard' | 'express' | 'elite' | 'freeroll'
+export type TournamentType = 'standard' | 'express' | 'elite' | 'freeroll' | 'challenger' | 'pro'
 export type PrizeModel = 'entry_pool'
 export type TournamentStatus =
   | 'scheduled'
@@ -193,7 +193,25 @@ export interface KycAuditEvent {
   created_at: string
 }
 
-export type FlowAttemptStatus = 'pending' | 'paid' | 'rejected' | 'cancelled' | 'expired'
+export type FlowAttemptStatus = 'pending' | 'paid' | 'credited' | 'rejected' | 'cancelled' | 'expired'
+export type FlowRefundStatus = 'pending' | 'completed' | 'rejected' | 'cancelled'
+
+export interface FlowRefundAttempt {
+  id: string
+  tournament_id: string
+  user_id: string
+  flow_payment_attempt_id: string
+  refund_commerce_order: string
+  flow_refund_token: string | null
+  flow_refund_order: string | null
+  amount_cents: number
+  amount_pesos: number
+  receiver_email: string
+  status: FlowRefundStatus
+  error_message: string | null
+  created_at: string
+  settled_at: string | null
+}
 
 export interface AdminAction {
   id: string
@@ -353,6 +371,12 @@ export type Database = {
         Row: AdminAction & DbRecord
         Insert: InsertWithOptional<AdminAction, 'id' | 'created_at' | 'target_id' | 'summary' | 'payload'>
         Update: Partial<Omit<AdminAction, 'id' | 'created_at'>> & DbRecord
+        Relationships: []
+      }
+      flow_refund_attempts: {
+        Row: FlowRefundAttempt & DbRecord
+        Insert: InsertWithOptional<FlowRefundAttempt, 'id' | 'created_at' | 'flow_refund_token' | 'flow_refund_order' | 'error_message' | 'settled_at'>
+        Update: Partial<Omit<FlowRefundAttempt, 'id' | 'created_at'>> & DbRecord
         Relationships: []
       }
     }

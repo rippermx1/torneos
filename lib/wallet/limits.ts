@@ -1,5 +1,5 @@
 // ───────────────────────────────────────────────────────────────
-// Límites operacionales de la billetera.
+// Límites operacionales del saldo retirable.
 // Estos valores están hardcoded a propósito: cambiarlos requiere
 // PR + revisión, no debe ser configurable en runtime.
 // ───────────────────────────────────────────────────────────────

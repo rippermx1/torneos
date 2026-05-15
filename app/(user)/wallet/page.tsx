@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 
 const TYPE_LABEL: Record<WalletTransaction['type'], string> = {
-  deposit: 'Depósito',
+  deposit: 'Abono',
   withdrawal: 'Retiro',
   ticket_debit: 'Inscripción a torneo',
   prize_credit: 'Premio',
@@ -37,7 +37,7 @@ export default async function WalletPage() {
     <div className="space-y-6 max-w-lg">
       <div className="flex items-end justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Mi billetera</h1>
+          <h1 className="text-2xl font-bold">Mi saldo</h1>
           <p className="text-3xl font-bold mt-1">{formatCLP(balance)}</p>
           <p className="text-sm text-muted-foreground">Saldo disponible</p>
           <p className="text-xs text-muted-foreground mt-1">

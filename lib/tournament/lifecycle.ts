@@ -89,7 +89,8 @@ async function processSingleTournament(
           refundResults = await issueFlowRefunds(
             tournament.id,
             cancelData.entry_fee_cents,
-            getAppUrl() ?? 'https://torneosplay.cl'
+            getAppUrl() ?? 'https://torneosplay.cl',
+            tournament.name
           )
         }
 

@@ -12,7 +12,7 @@ export default function PrivacidadPage() {
       <div>
         <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">← Inicio</Link>
         <h1 className="text-3xl font-bold mt-4">Política de Privacidad</h1>
-        <p className="text-sm text-muted-foreground mt-1">Última actualización: 8 de mayo de 2026</p>
+        <p className="text-sm text-muted-foreground mt-1">Última actualización: 15 de mayo de 2026</p>
       </div>
 
       <Section title="1. Responsable del tratamiento">
@@ -40,7 +40,7 @@ export default function PrivacidadPage() {
         <p>Usamos tus datos para:</p>
         <ul>
           <li>Verificar tu identidad, documentos y titularidad bancaria, y cumplir con requisitos legales (KYC/AML).</li>
-          <li>Gestionar tu cuenta, billetera y transacciones.</li>
+          <li>Gestionar tu cuenta, premios, retiros y transacciones.</li>
           <li>Procesar inscripciones, premios y retiros.</li>
           <li>Auditar la integridad de las competencias y detectar conductas fraudulentas.</li>
           <li>Comunicarte información relevante sobre torneos y la plataforma.</li>

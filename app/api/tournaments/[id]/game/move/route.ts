@@ -1,3 +1,4 @@
+import { after } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { requireAnyRoleForApi } from '@/lib/supabase/auth'
 import { Game2048 } from '@/lib/game/engine'
@@ -197,37 +198,30 @@ export async function POST(
     return Response.json({ error: `Error actualizando partida: ${updateErr.message}` }, { status: 500 })
   }
 
-  // A2: Analisis anticheat sincrono. Antes era fire-and-forget pero en
-  // entornos serverless (Vercel) la lambda puede terminar antes de que la
-  // promise resuelva, perdiendo bans. Ademas, si el movimiento actual es
-  // el que dispara el ban, queremos rechazarlo aqui mismo en vez de dejar
-  // pasar uno mas. Costo: 1-2 SELECT extra por movimiento (acotado por el
-  // rate limit de 240/min).
-  let anticheat: Awaited<ReturnType<typeof analyzeMove>>
-  try {
-    anticheat = await analyzeMove({
-      gameId,
-      userId,
-      moveNumber,
-      clientTimestamp,
-      serverTimestamp: insertedMove?.server_timestamp,
-      moveCount: newMoveCount,
-      currentScore: engine.score,
-    })
-  } catch (err) {
-    // Fail-open: si el detector falla, no bloqueamos el juego. El ban
-    // sintetico se reevaluara en el siguiente movimiento.
-    console.error('[anticheat] Error en analisis:', err)
-    anticheat = { suspicious: false }
-  }
-
-  if (anticheat.autoBanned) {
-    console.warn(`[anticheat] Usuario ${userId} baneado automaticamente. Razon: ${anticheat.reason}`)
-    return Response.json(
-      { error: 'Cuenta suspendida por comportamiento sospechoso.' },
-      { status: 403 }
-    )
-  }
+  // Anticheat corre DESPUÉS de responder usando after() (= waitUntil de Vercel).
+  // El ban queda escrito en DB antes de que el siguiente movimiento pase el check
+  // is_banned al inicio de esta route, por lo que bots quedan bloqueados en el
+  // movimiento N+1. Ganancia: ~50-200ms por movimiento al eliminar los SELECT
+  // extra que antes bloqueaban sincrónamente la respuesta.
+  const serverTimestampForAnticheat = insertedMove?.server_timestamp ?? null
+  after(async () => {
+    try {
+      const anticheat = await analyzeMove({
+        gameId,
+        userId,
+        moveNumber,
+        clientTimestamp,
+        serverTimestamp: serverTimestampForAnticheat,
+        moveCount: newMoveCount,
+        currentScore: engine.score,
+      })
+      if (anticheat.autoBanned) {
+        console.warn(`[anticheat] Usuario ${userId} baneado. Razón: ${anticheat.reason}`)
+      }
+    } catch (err) {
+      console.error('[anticheat] Error en análisis (fail-open):', err)
+    }
+  })
 
   return Response.json({
     moved: true,

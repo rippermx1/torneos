@@ -36,6 +36,7 @@ export function OnboardingForm({ defaultUsername, defaultFullName }: Props) {
     const fd = new FormData()
     fd.append('username', username.trim())
     fd.append('fullName', fullName.trim())
+    fd.append('acceptedTerms', 'true')
 
     startTransition(async () => {
       const result = await completeOnboarding(fd)

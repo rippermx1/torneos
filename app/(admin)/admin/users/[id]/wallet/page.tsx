@@ -7,7 +7,7 @@ import type { Profile, WalletTransaction, WalletTransactionType } from '@/types/
 export const revalidate = 0
 
 const TYPE_LABEL: Record<WalletTransactionType, string> = {
-  deposit: 'Depósito',
+  deposit: 'Abono',
   withdrawal: 'Retiro',
   ticket_debit: 'Inscripción',
   prize_credit: 'Premio',
@@ -69,7 +69,7 @@ export default async function AdminUserWalletPage({
           ← Usuarios
         </Link>
         <div>
-          <h1 className="text-2xl font-bold">Billetera · {profile.username}</h1>
+          <h1 className="text-2xl font-bold">Saldo · {profile.username}</h1>
           <p className="text-sm text-muted-foreground">
             {profile.full_name ?? '—'} · RUT {profile.rut ?? '—'}
           </p>

@@ -13,6 +13,7 @@ export type AdminActionName =
   | 'tournament.finalize'
   | 'tournament.cancel'
   | 'flow.reverify'
+  | 'refund.retry'
 
 export type AdminActionTargetType =
   | 'withdrawal_request'
@@ -20,6 +21,7 @@ export type AdminActionTargetType =
   | 'dispute'
   | 'tournament'
   | 'flow_payment_attempt'
+  | 'flow_refund_attempt'
 
 export interface RecordAdminActionParams {
   adminId: string

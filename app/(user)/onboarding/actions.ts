@@ -9,9 +9,14 @@ export async function completeOnboarding(formData: FormData) {
 
   const username = (formData.get('username') as string).trim()
   const fullName = (formData.get('fullName') as string).trim()
+  const acceptedTerms = formData.get('acceptedTerms') === 'true'
 
   if (username.length < 3 || !/^[a-zA-Z0-9_]+$/.test(username)) {
     return { error: 'Nombre de usuario inválido.' }
+  }
+
+  if (!acceptedTerms) {
+    return { error: 'Debes aceptar los términos y condiciones para continuar.' }
   }
 
   const adminSupabase = createAdminClient()
@@ -22,6 +27,7 @@ export async function completeOnboarding(formData: FormData) {
         id: access.userId,
         username,
         full_name: fullName || null,
+        terms_accepted_at: new Date().toISOString(),
       },
       {
         onConflict: 'id',

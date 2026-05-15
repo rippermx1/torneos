@@ -80,7 +80,7 @@ export default async function ProfilePage() {
 
       <div className="flex gap-3">
         <Link href="/wallet" className="flex-1 text-center border rounded-xl py-2.5 text-sm hover:bg-muted transition-colors">
-          Mi billetera
+          Mi saldo
         </Link>
         <Link href="/support/dispute" className="flex-1 text-center border rounded-xl py-2.5 text-sm hover:bg-muted transition-colors">
           Mis disputas

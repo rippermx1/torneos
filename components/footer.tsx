@@ -27,7 +27,7 @@ export function Footer({ isSignedIn = false }: FooterProps) {
               <FooterLink href="/tournaments">Torneos</FooterLink>
               {isSignedIn ? (
                 <>
-                  <FooterLink href="/wallet">Mi billetera</FooterLink>
+                  <FooterLink href="/wallet">Mi saldo</FooterLink>
                   <FooterLink href="/profile">Mi perfil</FooterLink>
                 </>
               ) : (

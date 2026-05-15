@@ -12,7 +12,7 @@ export default function TerminosPage() {
       <div>
         <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">← Inicio</Link>
         <h1 className="text-3xl font-bold mt-4">Términos y Condiciones</h1>
-        <p className="text-sm text-muted-foreground mt-1">Última actualización: 8 de mayo de 2026</p>
+        <p className="text-sm text-muted-foreground mt-1">Última actualización: 15 de mayo de 2026</p>
       </div>
 
       <Section title="1. Naturaleza del servicio">
@@ -72,19 +72,15 @@ export default function TerminosPage() {
           promoción separada antes de abrir inscripciones.
         </p>
         <p>
-          Para el MVP, la contabilidad interna separa cada inscripción en una reserva de premios de
-          referencia del <strong>75%</strong> y un <strong>25%</strong> de fee bruto de plataforma,
-          con IVA incluido. La utilidad tributable de la plataforma se determina sobre sus ingresos
-          por servicio, descontando los premios efectivamente acreditados, costos de pasarela y
-          demás costos aceptados, conforme al criterio contable y tributario aplicable.
+          En cada inscripción, un <strong>75%</strong> se orienta al premio del torneo y un
+          {' '}<strong>25%</strong> corresponde al fee bruto de la plataforma, ambos con IVA incluido.
         </p>
         <p>
           El cobro de la inscripción se realiza directamente a través de Flow.cl al momento de
           inscribirse. El checkout puede incluir un cargo de procesamiento visible antes del pago,
-          destinado a cubrir costos de pasarela. Bajo el modelo tributario vigente de lanzamiento
-          (&quot;Modelo A&quot;), el comprobante de pago electrónico emitido por Flow opera como boleta
-          electrónica del servicio para efectos del Servicio de Impuestos Internos (SII), cuando
-          dicha modalidad se encuentre correctamente habilitada para el comercio.
+          destinado a cubrir costos de pasarela. El comprobante de pago electrónico emitido por Flow
+          opera como boleta electrónica del servicio para efectos del Servicio de Impuestos Internos
+          (SII), cuando dicha modalidad se encuentre correctamente habilitada para el comercio.
         </p>
         <p>
           El <strong>puntaje final</strong> es la única métrica de clasificación. En caso de
@@ -94,37 +90,36 @@ export default function TerminosPage() {
         <p>
           Si el torneo no alcanza el número mínimo de participantes inscritos al momento del
           cierre de inscripciones, será cancelado y <strong>todas las cuotas de inscripción serán
-          reembolsadas</strong>. Por defecto, el reembolso se acredita como saldo retirable en la
-          billetera del jugador; si Flow u otro proveedor permite una reversa operacional al medio
+          reembolsadas</strong>. Por defecto, el reembolso se acredita como saldo retirable asociado
+          a la cuenta del jugador; si Flow u otro proveedor permite una reversa operacional al medio
           de pago original, la plataforma podrá usar esa vía en lugar del crédito interno.
         </p>
       </Section>
 
-      <Section title="5. Billetera y premios">
+      <Section title="5. Premios y saldo retirable">
         <p>
-          La billetera de la plataforma se utiliza <strong>únicamente para administrar premios
-          ganados y reembolsos acreditados</strong>. La plataforma no acepta depósitos prepagados ni recargas:
-          cada inscripción a un torneo se cobra de forma individual al momento de inscribirse.
+          La plataforma no acepta depósitos prepagados ni recargas. Cada inscripción a un torneo se
+          cobra de forma individual al momento de inscribirse.
         </p>
         <p>
-          Los <strong>premios</strong> obtenidos se acreditan automáticamente en la billetera del
-          ganador una vez finalizado y verificado el torneo. El saldo retirable se compone de
-          premios ganados, reembolsos de torneos cancelados acreditados a billetera y devoluciones
+          Los <strong>premios</strong> obtenidos se acreditan automáticamente como saldo retirable
+          asociado a la cuenta del ganador una vez finalizado y verificado el torneo. El saldo
+          retirable se compone de premios ganados, reembolsos de torneos cancelados y devoluciones
           asociadas a solicitudes de retiro rechazadas, conforme a la política de retiros vigente.
         </p>
         <p>
-          Las transacciones de la billetera se registran de forma inmutable y el saldo disponible
-          se actualiza en tiempo real.
+          Los movimientos asociados a premios, reembolsos y retiros se registran de forma inmutable
+          y el saldo disponible se actualiza en tiempo real.
         </p>
       </Section>
 
       <Section title="6. Retiros">
         <p>
           Los usuarios con KYC aprobado pueden solicitar el retiro de su saldo retirable, compuesto
-          por premios ganados, reembolsos de torneos cancelados acreditados a billetera y
-          devoluciones de retiros rechazados, mediante
-          transferencia bancaria a una cuenta a su nombre en un banco chileno. Solo se permite
-          una solicitud pendiente a la vez y el plazo de procesamiento es de hasta 3 días hábiles.
+          por premios ganados, reembolsos de torneos cancelados y devoluciones de retiros
+          rechazados, mediante transferencia bancaria a una cuenta a su nombre en un banco chileno.
+          Solo se permite una solicitud pendiente a la vez y el plazo de procesamiento es de hasta
+          3 días hábiles.
           Ver{' '}
           <Link href="/legal/reembolso" className="underline underline-offset-2">
             Política de Reembolso
@@ -166,10 +161,10 @@ export default function TerminosPage() {
       <Section title="9. Impuestos">
         <p>
           Cada cobro de inscripción incluye el IVA correspondiente al servicio prestado por la
-          plataforma. En el Modelo A de lanzamiento, la plataforma utiliza el voucher o comprobante
-          electrónico de Flow como boleta electrónica cuando dicha emisión esté habilitada ante el
-          SII. La plataforma podrá migrar a un modelo de emisión propia de documentos tributarios si
-          el volumen, la operación o la normativa lo hacen conveniente.
+          plataforma. Cuando dicha modalidad esté habilitada ante el SII, la plataforma puede
+          utilizar el voucher o comprobante electrónico de Flow como boleta electrónica del
+          servicio. La plataforma podrá adoptar otra modalidad de emisión de documentos tributarios
+          si el volumen, la operación o la normativa lo hacen conveniente.
         </p>
         <p>
           Los premios obtenidos en competencias de habilidad pueden estar sujetos a tributación

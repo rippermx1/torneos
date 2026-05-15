@@ -166,6 +166,13 @@ export async function requireUserRole(): Promise<AuthAccess> {
     redirect('/')
   }
 
+  // Bloquea usuarios que no han verificado su email.
+  // Los admin/owner se omiten porque son cuentas internas de confianza.
+  // Los usuarios OAuth (Google) tienen email_confirmed_at ya seteado por el proveedor.
+  if (!access.isAdmin && !access.user.email_confirmed_at) {
+    redirect('/verify-email')
+  }
+
   return access
 }
 
@@ -200,6 +207,19 @@ export async function requireAnyRoleForApi(
     return {
       ok: false,
       response: Response.json({ error: 'Sin permisos suficientes' }, { status: 403 }),
+    }
+  }
+
+  // Misma restricción de email que requireUserRole(), pero solo en rutas de
+  // usuario puro (no en rutas admin/owner que usan roles de confianza interna).
+  const isUserOnlyRoute = roles.every((r) => r === 'user')
+  if (isUserOnlyRoute && !access.isAdmin && !access.user.email_confirmed_at) {
+    return {
+      ok: false,
+      response: Response.json(
+        { error: 'Debes verificar tu email antes de continuar.', emailNotConfirmed: true },
+        { status: 403 },
+      ),
     }
   }
 

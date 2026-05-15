@@ -12,7 +12,7 @@ export default function ReembolsoPage() {
       <div>
         <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">← Inicio</Link>
         <h1 className="text-3xl font-bold mt-4">Política de Reembolso y Retiros</h1>
-        <p className="text-sm text-muted-foreground mt-1">Última actualización: 8 de mayo de 2026</p>
+        <p className="text-sm text-muted-foreground mt-1">Última actualización: 15 de mayo de 2026</p>
       </div>
 
       <Section title="1. Cuotas de inscripción — Regla general">
@@ -32,11 +32,11 @@ export default function ReembolsoPage() {
         <p>
           Si TorneosPlay cancela un torneo por cualquier motivo (problemas técnicos graves,
           fuerza mayor u otras causas), <strong>todas las cuotas de inscripción serán
-          reembolsadas en su totalidad</strong>, incluyendo la reserva de premios de referencia y
-          el fee de plataforma asociado. Por defecto, el reembolso se acredita como saldo retirable
-          en la billetera del participante en un plazo de 24 horas hábiles. Si Flow u otro proveedor
-          permite una reversa operacional al medio de pago original, la plataforma podrá utilizar
-          esa vía en lugar del crédito interno.
+          reembolsadas en su totalidad</strong>, incluyendo la parte orientada al premio del torneo
+          y el fee de plataforma asociado. Por defecto, el reembolso se acredita como saldo
+          retirable asociado a la cuenta del participante en un plazo de 24 horas hábiles. Si Flow
+          u otro proveedor permite una reversa operacional al medio de pago original, la plataforma
+          podrá utilizar esa vía en lugar del crédito interno.
         </p>
       </Section>
 
@@ -47,7 +47,8 @@ export default function ReembolsoPage() {
           cuotas de inscripción serán reembolsadas íntegramente, incluyendo el fee de plataforma,
           sin necesidad de solicitud por parte del usuario. El cargo de procesamiento de la pasarela
           podrá depender de las reglas del proveedor de pago y se informará cuando corresponda.
-          El reembolso operativo estándar se acredita a billetera como saldo retirable.
+          El reembolso operativo estándar se acredita como saldo retirable asociado a la cuenta del
+          participante.
         </p>
       </Section>
 
@@ -68,10 +69,10 @@ export default function ReembolsoPage() {
       <Section title="5. Retiros de fondos">
         <p>
           Los usuarios con KYC aprobado pueden solicitar el retiro de su saldo retirable,
-          compuesto por premios ganados en torneos, reembolsos de torneos cancelados acreditados a
-          billetera y devoluciones asociadas a solicitudes de retiro rechazadas. La plataforma no
-          acepta recargas ni depósitos prepagados; cada inscripción pagada se cobra directamente en
-          Flow al momento de participar.
+          compuesto por premios ganados en torneos, reembolsos de torneos cancelados y devoluciones
+          asociadas a solicitudes de retiro rechazadas. La plataforma no acepta recargas ni
+          depósitos prepagados; cada inscripción pagada se cobra directamente en Flow al momento de
+          participar.
         </p>
         <ul>
           <li>Monto mínimo de retiro: <strong>$5.000 CLP</strong>.</li>
@@ -94,8 +95,8 @@ export default function ReembolsoPage() {
         </ul>
         <p>
           En caso de rechazo, los fondos son devueltos automáticamente al saldo disponible de la
-          billetera si no existe investigación activa que justifique una retención temporal. El
-          usuario es notificado con la razón del rechazo.
+          cuenta si no existe investigación activa que justifique una retención temporal. El usuario
+          es notificado con la razón del rechazo.
         </p>
       </Section>
 

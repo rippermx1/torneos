@@ -13,7 +13,7 @@ const navLinks = [
   { href: '/play', label: 'Practicar' },
 ]
 const userLinks = [
-  { href: '/wallet', label: 'Mi billetera' },
+  { href: '/wallet', label: 'Mi saldo' },
   { href: '/profile', label: 'Mi perfil' },
   { href: '/support/dispute', label: 'Soporte' },
 ]

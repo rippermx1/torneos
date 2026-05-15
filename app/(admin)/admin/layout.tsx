@@ -16,6 +16,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           { href: '/admin/users', label: 'Usuarios / KYC' },
           { href: '/admin/payouts', label: 'Retiros' },
           { href: '/admin/payments', label: 'Pagos Flow' },
+          { href: '/admin/refunds', label: 'Reembolsos' },
           { href: '/admin/disputes', label: 'Disputas' },
           { href: '/admin/reports', label: 'Reportes' },
           { href: '/admin/audit', label: 'Bitácora' },

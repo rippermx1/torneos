@@ -1,5 +1,7 @@
+import { after } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { getFlowRefundStatus } from '@/lib/flow/refunds'
+import { sendRefundCompletedEmail } from '@/lib/email/refund-notifications'
 import { checkRateLimit, getRequestIp, rateLimitResponse } from '@/lib/security/rate-limit'
 import type { FlowRefundStatus } from '@/types/database'
 
@@ -23,7 +25,6 @@ export async function POST(req: Request): Promise<Response> {
   })
   if (!rateLimit.ok) return rateLimitResponse(rateLimit)
 
-  // Leer body con cap de tamaño
   const contentLength = Number(req.headers.get('content-length') ?? 0)
   if (contentLength > MAX_BODY_BYTES) {
     return new Response('Payload too large', { status: 413 })
@@ -56,23 +57,49 @@ export async function POST(req: Request): Promise<Response> {
       : null
 
     if (!status) {
-      // Estado desconocido o pendiente — Flow reintentará
       return new Response('OK', { status: 200 })
     }
 
-    await supabase
+    const { data: attempt } = await supabase
       .from('flow_refund_attempts')
-      .update({
-        status,
-        settled_at: new Date().toISOString(),
-      })
+      .update({ status, settled_at: new Date().toISOString() })
       .eq('flow_refund_token', token)
+      .select('user_id, receiver_email, amount_pesos, tournament_id')
+      .single()
+
+    // Enviar email de confirmación cuando el reembolso se acredita.
+    // Corre después de responder para no demorar el 200 a Flow.
+    if (status === 'completed' && attempt) {
+      const { user_id, receiver_email, amount_pesos, tournament_id } = attempt as {
+        user_id: string
+        receiver_email: string
+        amount_pesos: number
+        tournament_id: string
+      }
+
+      after(async () => {
+        try {
+          const [{ data: authUser }, { data: tournament }] = await Promise.all([
+            supabase.auth.admin.getUserById(user_id),
+            supabase.from('tournaments').select('name').eq('id', tournament_id).single(),
+          ])
+          const username = authUser?.user?.user_metadata?.username ?? receiver_email
+          await sendRefundCompletedEmail({
+            to: receiver_email,
+            username,
+            tournamentName: tournament?.name ?? 'torneo',
+            amountPesos: amount_pesos,
+          })
+        } catch (e) {
+          console.error('[webhook/flow/refund] Error enviando email completado:', e)
+        }
+      })
+    }
 
     return new Response('OK', { status: 200 })
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
     console.error('[webhook/flow/refund] Error procesando token:', token, message)
-    // Devolver 200 igual para que Flow no reintente infinitamente
     return new Response('OK', { status: 200 })
   }
 }

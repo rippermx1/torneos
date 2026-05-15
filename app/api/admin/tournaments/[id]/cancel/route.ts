@@ -48,7 +48,7 @@ export async function POST(
   if (cancelData.entry_fee_cents > 0 && cancelData.refunds_to_issue > 0) {
     const requestOrigin = new URL(_req.url).origin
     const appUrl = getAppUrl(requestOrigin) ?? requestOrigin
-    const refundResults = await issueFlowRefunds(tournamentId, cancelData.entry_fee_cents, appUrl)
+    const refundResults = await issueFlowRefunds(tournamentId, cancelData.entry_fee_cents, appUrl, tData.name)
     refundsInitiated = refundResults.filter((r) => !r.error).length
     refundsFailed    = refundResults.filter((r) => !!r.error).length
   }

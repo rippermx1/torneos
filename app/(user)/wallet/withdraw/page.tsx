@@ -85,7 +85,7 @@ export default function WithdrawPage() {
           onClick={() => router.push('/wallet')}
           className="w-full border rounded-xl py-3 text-sm hover:bg-muted transition-colors"
         >
-          Volver a mi billetera
+          Volver a mi saldo
         </button>
       </div>
     )
@@ -94,7 +94,7 @@ export default function WithdrawPage() {
   return (
     <div className="max-w-sm space-y-6">
       <div className="flex items-center gap-3">
-        <Link href="/wallet" className="text-sm text-muted-foreground hover:text-foreground">← Billetera</Link>
+        <Link href="/wallet" className="text-sm text-muted-foreground hover:text-foreground">← Mi saldo</Link>
         <h1 className="text-2xl font-bold">Retirar saldo</h1>
       </div>
 

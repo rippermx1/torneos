@@ -1,6 +1,8 @@
 'use client'
 
 import { memo, useEffect, useCallback, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { getTileVisual } from './tile-colors'
 import { applyLocalPracticeMove, createLocalPracticeGame } from '@/lib/game/local-practice'
 import type { Direction } from '@/types/game'
@@ -14,6 +16,8 @@ export interface GameConfig {
   timeLimitSeconds?: number
   playWindowEnd?: string
   onGameOver?: (score: number) => void
+  leaderboardUrl?: string
+  tournamentUrl?: string
 }
 
 interface GameState {
@@ -359,6 +363,38 @@ export function GameBoardClient({ config }: { config: GameConfig }) {
         return
       }
 
+      // MODO TORNEO: actualización optimista → red → reconciliar con el servidor.
+      //
+      // 1. Validar localmente si el movimiento cambia el tablero.
+      //    Game2048 es idéntico en cliente y servidor para la lógica de deslizamiento/
+      //    fusión; solo difiere el tile spawneado (semilla del servidor vs local).
+      //    Si localmente moved=false, el servidor también lo dirá → evitamos el round-trip.
+      const optimistic = applyLocalPracticeMove(
+        {
+          board: baselineState.board,
+          score: baselineState.score,
+          seed: baselineState.gameId ?? 'tournament',
+          moveNumber: baselineState.moveNumber,
+        },
+        direction,
+      )
+
+      if (!optimistic.moved) {
+        setShaking(true)
+        if (shakeTimeoutRef.current !== null) window.clearTimeout(shakeTimeoutRef.current)
+        shakeTimeoutRef.current = window.setTimeout(() => setShaking(false), 400)
+        return
+      }
+
+      // 2. Aplicar resultado localmente de forma instantánea (visual igual a práctica).
+      //    gameOver=false intencionalmente: esperamos confirmación del servidor para
+      //    el estado final (el tile spawneado afecta canMove()).
+      applyNewBoard(optimistic.board, optimistic.score, baselineState.score, direction, {
+        moveNumber: optimistic.moveNumber,
+        gameOver: false,
+      })
+
+      // 3. Enviar al servidor y reconciliar con el estado autoritativo.
       const payload: Record<string, unknown> = {
         direction,
         moveNumber: baselineState.moveNumber,
@@ -372,40 +408,47 @@ export function GameBoardClient({ config }: { config: GameConfig }) {
         body: JSON.stringify(payload),
       })
 
-      if (moveRequestIdRef.current !== requestId) {
-        return
-      }
+      if (moveRequestIdRef.current !== requestId) return
 
       const data = await res.json()
 
-      if (moveRequestIdRef.current !== requestId) {
-        return
-      }
+      if (moveRequestIdRef.current !== requestId) return
 
       if (!res.ok) {
         if (data.timeout) setState((p) => p ? { ...p, timedOut: true, gameOver: true } : p)
-        return
-      }
-      if (!data.moved) {
-        setShaking(true)
-        if (shakeTimeoutRef.current !== null) {
-          window.clearTimeout(shakeTimeoutRef.current)
-        }
-        shakeTimeoutRef.current = window.setTimeout(() => setShaking(false), 400)
+        else rollbackState(baselineState)
         return
       }
 
-      const serverScore = Number(data.score)
+      if (!data.moved) {
+        // Inconsistencia servidor/cliente (no debería ocurrir): revertir.
+        rollbackState(baselineState)
+        return
+      }
+
+      // 4. Reconciliar: el tablero ya está visualmente correcto salvo el tile spawneado.
+      //    Actualizamos estado sin animación; el tile corregido reaparecerá en la siguiente
+      //    acción. prevBoardRef se sincroniza con el tablero autoritativo para que el
+      //    próximo movimiento compute animaciones desde la posición real.
       const serverBoard = data.board as number[][]
+      const serverScore = Number(data.score)
       const serverGameOver = data.gameOver ?? false
 
-      applyNewBoard(serverBoard, serverScore, baselineState.score, direction, {
-        moveNumber: data.moveNumber,
-        gameOver: serverGameOver,
+      prevBoardRef.current = serverBoard
+      setState((prev) => {
+        if (!prev) return prev
+        if (serverGameOver) config.onGameOver?.(serverScore)
+        return {
+          ...prev,
+          board: serverBoard,
+          score: serverScore,
+          moveNumber: data.moveNumber,
+          gameOver: serverGameOver,
+          bestScore: Math.max(prev.bestScore, serverScore),
+        }
       })
     } catch {
       rollbackState(baselineState)
-      // fallo de red — no bloqueamos
     } finally {
       if (moveRequestIdRef.current === requestId) {
         setMoving(false)
@@ -486,12 +529,17 @@ export function GameBoardClient({ config }: { config: GameConfig }) {
   const board = state?.board ?? emptyBoardGrid()
   const bestTile = board.flat().reduce((a, b) => Math.max(a, b), 0)
 
+  const isTournament = !isLocalMode && (config.leaderboardUrl || config.tournamentUrl)
+  const gameOver = state?.gameOver ?? false
+  const timedOut = state?.timedOut ?? false
+  const score = state?.score ?? 0
+
   return (
     <div className="flex flex-col items-center gap-4 select-none">
 
       {/* Marcador */}
       <div className="flex items-center justify-between w-full max-w-[380px] gap-2">
-        <ScoreBox label="Puntaje" value={state?.score ?? 0} float={scoreFloat} />
+        <ScoreBox label="Puntaje" value={score} float={scoreFloat} />
         <ScoreBox label="Mejor" value={state?.bestScore ?? 0} />
         {bestTile >= 128 && <BestTileChip value={bestTile} />}
         {timeLeft !== null && (
@@ -513,9 +561,9 @@ export function GameBoardClient({ config }: { config: GameConfig }) {
         board={board}
         cellAnims={cellAnims}
         shaking={shaking}
-        gameOver={state?.gameOver ?? false}
-        timedOut={state?.timedOut ?? false}
-        score={state?.score ?? 0}
+        gameOver={gameOver}
+        timedOut={timedOut}
+        score={score}
         allowRestart={!config.playWindowEnd}
         onRestart={startGame}
         onTouchStart={handleTouchStart}
@@ -525,6 +573,16 @@ export function GameBoardClient({ config }: { config: GameConfig }) {
       <p className="text-xs text-muted-foreground text-center">
         Flechas · WASD · desliza en táctil
       </p>
+
+      {/* Modal de fin de partida (solo torneos) */}
+      {isTournament && gameOver && (
+        <TournamentEndModal
+          score={score}
+          timedOut={timedOut}
+          leaderboardUrl={config.leaderboardUrl}
+          tournamentUrl={config.tournamentUrl}
+        />
+      )}
     </div>
   )
 }
@@ -567,7 +625,7 @@ const GameBoardSurface = memo(function GameBoardSurface({
       <BoardBackground />
       <TilesLayer board={board} cellAnims={cellAnims} />
 
-      {gameOver && (
+      {gameOver && allowRestart && (
         <div
           className="absolute inset-0 rounded-2xl flex flex-col items-center justify-center gap-3 animate-gameover-in"
           style={{ background: 'rgba(187,173,160,0.88)', backdropFilter: 'blur(2px)' }}
@@ -578,15 +636,13 @@ const GameBoardSurface = memo(function GameBoardSurface({
           <p className="text-xl font-semibold" style={{ color: '#776e65' }}>
             {score.toLocaleString('es-CL')} pts
           </p>
-          {allowRestart && (
-            <button
-              onClick={onRestart}
-              className="mt-1 px-7 py-2.5 rounded-xl font-semibold text-white transition-opacity hover:opacity-90"
-              style={{ background: 'linear-gradient(135deg,#a07860,#8f7a66)' }}
-            >
-              Jugar de nuevo
-            </button>
-          )}
+          <button
+            onClick={onRestart}
+            className="mt-1 px-7 py-2.5 rounded-xl font-semibold text-white transition-opacity hover:opacity-90"
+            style={{ background: 'linear-gradient(135deg,#a07860,#8f7a66)' }}
+          >
+            Jugar de nuevo
+          </button>
         </div>
       )}
     </div>
@@ -753,6 +809,89 @@ function BoardSkeleton() {
               style={{ background: 'rgba(205,193,180,0.35)' }}
             />
           ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── Modal fin de torneo ─────────────────────────────────────
+
+function TournamentEndModal({
+  score,
+  timedOut,
+  leaderboardUrl,
+  tournamentUrl,
+}: {
+  score: number
+  timedOut: boolean
+  leaderboardUrl?: string
+  tournamentUrl?: string
+}) {
+  const router = useRouter()
+  const [countdown, setCountdown] = useState(8)
+
+  useEffect(() => {
+    if (!leaderboardUrl) return
+    const id = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(id)
+          router.push(leaderboardUrl)
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+    return () => clearInterval(id)
+  }, [leaderboardUrl, router])
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-gameover-in">
+      <div className="bg-background w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl shadow-2xl p-6 sm:p-8 space-y-5 text-center">
+        <div className="mx-auto w-14 h-14 flex items-center justify-center rounded-full text-3xl"
+          style={{ background: timedOut ? 'rgba(239,68,68,0.1)' : 'rgba(107,114,128,0.1)' }}
+        >
+          {timedOut ? '⏱' : '🎯'}
+        </div>
+
+        <div>
+          <h2 className="text-xl font-bold leading-tight">
+            {timedOut ? '¡Se acabó el tiempo!' : '¡Sin más movimientos!'}
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Tu puntaje ha quedado registrado
+          </p>
+        </div>
+
+        <div className="py-1">
+          <p className="text-4xl font-bold tabular-nums tracking-tight">
+            {score.toLocaleString('es-CL')}
+          </p>
+          <p className="text-sm text-muted-foreground mt-1">puntos</p>
+        </div>
+
+        <div className="flex flex-col gap-2.5 pt-1">
+          {leaderboardUrl && (
+            <Link
+              href={leaderboardUrl}
+              className="w-full py-3 rounded-xl font-semibold text-white text-center text-sm transition-opacity hover:opacity-90 active:opacity-80"
+              style={{ background: 'linear-gradient(135deg,#a07860,#8f7a66)' }}
+            >
+              Ver ranking
+              {countdown > 0 && (
+                <span className="ml-2 opacity-60 font-normal tabular-nums">({countdown}s)</span>
+              )}
+            </Link>
+          )}
+          {tournamentUrl && (
+            <Link
+              href={tournamentUrl}
+              className="w-full py-3 rounded-xl text-sm font-medium text-center border hover:bg-muted transition-colors active:bg-muted"
+            >
+              Volver al torneo
+            </Link>
+          )}
         </div>
       </div>
     </div>

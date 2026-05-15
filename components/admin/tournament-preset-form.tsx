@@ -1,12 +1,13 @@
 'use client'
 
-import { AlertTriangle, CheckCircle2, Gem, Gift, Rocket, Trophy, Zap } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, Gem, Gift, Rocket, Trophy, Zap, FlaskConical } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import type { ComponentType } from 'react'
 import type { TournamentType } from '@/types/database'
 import {
   calculateEntryPoolFinancials,
   TOURNAMENT_PRESETS,
+  LATENCY_PRESET,
   pesosToCents,
   type TournamentPreset,
 } from '@/lib/tournament/finance'
@@ -42,6 +43,7 @@ export function TournamentPresetForm({
   playWindowEnd,
 }: TournamentPresetFormProps) {
   const [presetKey, setPresetKey] = useState<TournamentType>('standard')
+  const [isTest, setIsTest] = useState(false)
   const [name, setName] = useState('Torneo Estándar')
   const [description, setDescription] = useState('Premios fijos publicados antes de la inscripción.')
   const [values, setValues] = useState(() => valuesFromPreset(TOURNAMENT_PRESETS[1]))
@@ -60,9 +62,24 @@ export function TournamentPresetForm({
 
   function applyPreset(preset: TournamentPreset) {
     setPresetKey(preset.key)
+    setIsTest(false)
     setName(`${preset.shortLabel} ${new Date().toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit' })}`)
     setDescription(preset.description)
     setValues(valuesFromPreset(preset))
+  }
+
+  function applyLatencyPreset() {
+    setPresetKey(LATENCY_PRESET.tournamentType)
+    setIsTest(true)
+    setName(`Latencia ${new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}`)
+    setDescription('Torneo de prueba para medir latencia. 1 jugador, sin premio.')
+    setValues({
+      entryFeePesos: LATENCY_PRESET.entryFeePesos,
+      minPlayers: LATENCY_PRESET.minPlayers,
+      targetPlayers: LATENCY_PRESET.targetPlayers,
+      maxPlayers: LATENCY_PRESET.maxPlayers,
+      durationMinutes: LATENCY_PRESET.durationMinutes,
+    })
   }
 
   function setNumeric(field: NumericField, rawValue: string) {
@@ -86,7 +103,7 @@ export function TournamentPresetForm({
     playStartMs < playEndMs &&
     values.durationMinutes * 60 <= playWindowSeconds
   const capacityValid =
-    values.minPlayers >= 2 &&
+    values.minPlayers >= (isTest ? 1 : 2) &&
     values.targetPlayers >= values.minPlayers &&
     values.maxPlayers >= values.minPlayers &&
     values.targetPlayers <= values.maxPlayers
@@ -105,6 +122,7 @@ export function TournamentPresetForm({
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
           {TOURNAMENT_PRESETS.map((preset) => {
+
             const Icon = PRESET_ICONS[preset.strategy]
             const presetFinancials = calculateEntryPoolFinancials({
               entryFeeCents: pesosToCents(preset.entryFeePesos),
@@ -140,11 +158,27 @@ export function TournamentPresetForm({
             )
           })}
         </div>
+
+        <div className="border-t pt-3">
+          <p className="text-xs text-muted-foreground mb-2">Desarrollo</p>
+          <button
+            type="button"
+            onClick={applyLatencyPreset}
+            className={`flex items-center gap-2 text-left border rounded-lg px-3 py-2 text-sm transition-colors ${
+              isTest ? 'border-foreground bg-muted/50' : 'hover:bg-muted/30 border-dashed'
+            }`}
+          >
+            <FlaskConical className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <span className="font-medium">Latencia (1 jugador)</span>
+            <span className="text-xs text-muted-foreground">· Freeroll · 5 min · sin premio</span>
+          </button>
+        </div>
       </section>
 
       <form id="tournament-form" action={action} className="space-y-5">
         <input type="hidden" name="tournament_type" value={presetKey} />
         <input type="hidden" name="target_players" value={values.targetPlayers} />
+        <input type="hidden" name="is_test" value={isTest ? '1' : ''} />
 
         <section className="grid gap-4 lg:grid-cols-[1fr_280px]">
           <div className="space-y-5">

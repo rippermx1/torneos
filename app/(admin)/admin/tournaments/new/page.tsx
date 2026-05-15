@@ -32,6 +32,7 @@ async function createTournament(formData: FormData) {
     rawTournamentType === 'pro'
       ? rawTournamentType
       : 'standard'
+  const isTest           = formData.get('is_test') === '1'
   const entryFeePesos    = Number.parseFloat(String(formData.get('entry_fee') ?? ''))
   const entryFee         = Math.round(entryFeePesos * 100)
   const minPlayers       = Number.parseInt(String(formData.get('min_players') ?? ''), 10)
@@ -56,7 +57,7 @@ async function createTournament(formData: FormData) {
     !Number.isInteger(maxPlayers) ||
     !Number.isInteger(maxDurationMinutes) ||
     entryFee < 0 ||
-    minPlayers < 2 ||
+    minPlayers < (isTest ? 1 : 2) ||
     targetPlayers < minPlayers ||
     maxPlayers < minPlayers ||
     targetPlayers > maxPlayers ||
@@ -68,8 +69,12 @@ async function createTournament(formData: FormData) {
     throw new Error('Datos del torneo inválidos')
   }
 
-  if (entryFee > 0 && minPlayers < 2) {
+  if (!isTest && entryFee > 0 && minPlayers < 2) {
     throw new Error('Los torneos pagados requieren al menos 2 jugadores.')
+  }
+
+  if (isTest && entryFee > 0) {
+    throw new Error('Los torneos de prueba deben ser gratuitos.')
   }
 
   const entryPool = calculateEntryPoolFinancials({
@@ -92,8 +97,8 @@ async function createTournament(formData: FormData) {
     )
   }
 
-  // Freerolls: máximo 1 por semana activo (scheduled/open/live)
-  if (tournamentType === 'freeroll') {
+  // Freerolls: máximo 1 por semana activo (scheduled/open/live). Los de prueba están exentos.
+  if (tournamentType === 'freeroll' && !isTest) {
     const supabaseCheck = createAdminClient()
     const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
     const { count } = await supabaseCheck
@@ -132,6 +137,7 @@ async function createTournament(formData: FormData) {
       play_window_end: playEnd,
       max_game_duration_seconds: maxDuration,
       status: 'scheduled',
+      is_test: isTest,
       created_by: userId,
     })
     .select('id')

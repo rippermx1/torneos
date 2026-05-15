@@ -183,6 +183,15 @@ export const TOURNAMENT_PRESETS = [
   },
 ] as const satisfies readonly TournamentPreset[]
 
+export const LATENCY_PRESET = {
+  entryFeePesos: 0,
+  minPlayers: 1,
+  targetPlayers: 1,
+  maxPlayers: 1,
+  durationMinutes: 5,
+  tournamentType: 'freeroll' as TournamentType,
+} as const
+
 export function pesosToCents(pesos: number) {
   return Math.round(pesos * 100)
 }

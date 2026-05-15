@@ -1,11 +1,8 @@
-import { reconcileStaleRefunds } from '@/lib/tournament/refunds'
+import { reconcileStaleRefunds, autoRetryRejectedRefunds } from '@/lib/tournament/refunds'
 
-// Consulta a Flow el estado real de los reembolsos que llevan más de
-// 10 minutos en 'pending' sin recibir webhook.  Cubre el caso de
-// callbacks perdidos por red o reinicio del servidor.
-//
-// Llamar cada 10-15 minutos:
-//   Authorization: Bearer {CRON_SECRET}
+// Cada 15 minutos (vercel.json):
+// 1. Reconcilia pending cuyo webhook se perdió consultando Flow directamente.
+// 2. Reintenta automáticamente refunds rechazados (hasta 3 intentos por pago).
 
 export const maxDuration = 30
 
@@ -25,13 +22,17 @@ export async function GET(req: Request): Promise<Response> {
   const startedAt = Date.now()
 
   try {
-    const result = await reconcileStaleRefunds(10)
+    const [reconcile, autoRetry] = await Promise.all([
+      reconcileStaleRefunds(10),
+      autoRetryRejectedRefunds(3),
+    ])
 
     return Response.json({
       ok: true,
       processedAt: new Date().toISOString(),
       durationMs: Date.now() - startedAt,
-      ...result,
+      reconcile,
+      autoRetry,
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)

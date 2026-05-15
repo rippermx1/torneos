@@ -1,8 +1,10 @@
 'use server'
 
+import { after } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { requireAnyRole } from '@/lib/supabase/auth'
 import { redirect } from 'next/navigation'
+import { sendWelcomeEmail } from '@/lib/email/account-notifications'
 
 export async function completeOnboarding(formData: FormData) {
   const access = await requireAnyRole(['user'])
@@ -40,6 +42,16 @@ export async function completeOnboarding(formData: FormData) {
     }
     return { error: 'Error al guardar. Inténtalo nuevamente.' }
   }
+
+  after(async () => {
+    try {
+      const email = access.user.email
+      const uname = access.user.user_metadata?.username ?? username
+      if (email) await sendWelcomeEmail({ to: email, username: uname })
+    } catch (e) {
+      console.error('[onboarding] Error enviando email de bienvenida:', e)
+    }
+  })
 
   redirect('/tournaments')
 }

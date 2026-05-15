@@ -1,7 +1,9 @@
+import { after } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { requireAnyRoleForApi } from '@/lib/supabase/auth'
 import { isValidRut, samePersonName, sameRut } from '@/lib/identity/verification'
 import { recordAdminAction } from '@/lib/admin/audit'
+import { sendWithdrawalApprovedEmail } from '@/lib/email/withdrawal-notifications'
 
 export async function POST(
   req: Request,
@@ -19,7 +21,7 @@ export async function POST(
   const adminSupabase = createAdminClient()
   const { data: request } = await adminSupabase
     .from('withdrawal_requests')
-    .select('user_id, account_rut, account_holder, status')
+    .select('user_id, account_rut, account_holder, status, amount_cents, bank_name')
     .eq('id', requestId)
     .single()
 
@@ -77,6 +79,25 @@ export async function POST(
       account_rut: request.account_rut,
       notes: body.notes ?? null,
     },
+  })
+
+  after(async () => {
+    try {
+      const { data: authUser } = await adminSupabase.auth.admin.getUserById(request.user_id)
+      const email = authUser?.user?.email
+      const username = authUser?.user?.user_metadata?.username ?? withdrawalProfile.full_name ?? email
+      if (email) {
+        await sendWithdrawalApprovedEmail({
+          to: email,
+          username,
+          amountCents: request.amount_cents,
+          bankName: request.bank_name,
+          accountHolder: request.account_holder,
+        })
+      }
+    } catch (e) {
+      console.error('[payout.approve] Error enviando email:', e)
+    }
   })
 
   return Response.json({ ok: true })

@@ -2,6 +2,7 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { getFlowPaymentStatus, type FlowPaymentStatus } from '@/lib/flow/payments'
 import { calculateIvaIncludedBreakdown, splitEntryFee } from '@/lib/tournament/finance'
 import { isModeloB } from '@/lib/tax/regime'
+import { sendTournamentRegistrationEmail } from '@/lib/email/tournament-notifications'
 
 export interface FlowSettlement {
   status: FlowPaymentStatus
@@ -62,13 +63,42 @@ export async function settleFlowPayment(token: string): Promise<FlowSettlement> 
 
     const settlement = result as { idempotent: boolean; registration_id: string; attempt_id: string }
 
-    // Encolar boleta DTE solo en Modelo B. En Modelo A interim el voucher
-    // Flow ya funciona como boleta y no necesitamos LibreDTE.
-    if (!settlement.idempotent && isModeloB()) {
-      await enqueueRegistrationBoleta({
-        registrationId: settlement.registration_id,
-        flowAttemptId: settlement.attempt_id,
-      })
+    if (!settlement.idempotent) {
+      // Encolar boleta DTE solo en Modelo B.
+      if (isModeloB()) {
+        await enqueueRegistrationBoleta({
+          registrationId: settlement.registration_id,
+          flowAttemptId: settlement.attempt_id,
+        })
+      }
+
+      // Email de confirmación de inscripción (no bloquea el webhook)
+      void (async () => {
+        try {
+          const { data: tournament } = await admin
+            .from('tournaments')
+            .select('name, play_window_start, play_window_end, entry_fee_cents')
+            .eq('id', attempt.tournament_id)
+            .single()
+
+          const { data: authUser } = await admin.auth.admin.getUserById(attempt.user_id ?? '')
+          const email = authUser?.user?.email
+          const username = authUser?.user?.user_metadata?.username ?? email
+
+          if (email && tournament) {
+            await sendTournamentRegistrationEmail({
+              to: email,
+              username,
+              tournamentName: tournament.name,
+              playWindowStart: tournament.play_window_start,
+              playWindowEnd: tournament.play_window_end,
+              entryFeeCents: tournament.entry_fee_cents,
+            })
+          }
+        } catch (e) {
+          console.error('[settlement] Error enviando email de inscripción:', e)
+        }
+      })()
     }
 
     return {

@@ -1,7 +1,9 @@
+import { after } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { requireAnyRoleForApi } from '@/lib/supabase/auth'
 import { checkRegistrationWindow } from '@/lib/tournament/helpers'
 import { checkRateLimit, getRequestIp, rateLimitResponse } from '@/lib/security/rate-limit'
+import { sendTournamentRegistrationEmail } from '@/lib/email/tournament-notifications'
 
 // ───────────────────────────────────────────────────────────────
 // Inscripcion directa: SOLO para torneos gratuitos (entry_fee=0).
@@ -99,6 +101,26 @@ export async function POST(
     }
     return Response.json({ error: `Error al inscribirse: ${rpcError.message}` }, { status: 500 })
   }
+
+  after(async () => {
+    try {
+      const { data: authUser } = await supabase.auth.admin.getUserById(auth.access.userId)
+      const email = authUser?.user?.email
+      const username = authUser?.user?.user_metadata?.username ?? email
+      if (email) {
+        await sendTournamentRegistrationEmail({
+          to: email,
+          username,
+          tournamentName: tournament.name,
+          playWindowStart: tournament.play_window_start,
+          playWindowEnd: tournament.play_window_end,
+          entryFeeCents: tournament.entry_fee_cents,
+        })
+      }
+    } catch (e) {
+      console.error('[register] Error enviando email de inscripción:', e)
+    }
+  })
 
   return Response.json({ ok: true })
 }

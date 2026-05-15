@@ -1,3 +1,4 @@
+import { after } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { requireAnyRoleForApi } from '@/lib/supabase/auth'
 import {
@@ -6,6 +7,7 @@ import {
   sameRut,
 } from '@/lib/identity/verification'
 import { recordAdminAction } from '@/lib/admin/audit'
+import { sendKycApprovedEmail, sendKycRejectedEmail } from '@/lib/email/kyc-notifications'
 import type { KycSubmission, Profile } from '@/types/database'
 
 export async function POST(
@@ -181,6 +183,22 @@ export async function POST(
       new_status: newStatus,
       notes: reviewNotes,
     },
+  })
+
+  after(async () => {
+    try {
+      const { data: authUser } = await supabase.auth.admin.getUserById(targetUserId)
+      const email = authUser?.user?.email
+      const username = authUser?.user?.user_metadata?.username ?? profile.full_name ?? email
+      if (!email) return
+      if (newStatus === 'approved') {
+        await sendKycApprovedEmail({ to: email, username })
+      } else {
+        await sendKycRejectedEmail({ to: email, username, reason: reviewNotes })
+      }
+    } catch (e) {
+      console.error('[kyc.admin] Error enviando email:', e)
+    }
   })
 
   return Response.json({ ok: true, status: newStatus })

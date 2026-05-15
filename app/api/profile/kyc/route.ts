@@ -1,3 +1,4 @@
+import { after } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { requireAnyRoleForApi } from '@/lib/supabase/auth'
 import {
@@ -8,6 +9,7 @@ import {
   sameRut,
 } from '@/lib/identity/verification'
 import { checkRateLimit, getRequestIp, rateLimitResponse } from '@/lib/security/rate-limit'
+import { sendKycReceivedEmail } from '@/lib/email/kyc-notifications'
 
 export async function POST(req: Request): Promise<Response> {
   const auth = await requireAnyRoleForApi(['user', 'admin', 'owner'])
@@ -200,6 +202,18 @@ export async function POST(req: Request): Promise<Response> {
     .then(({ error: auditError }) => {
       if (auditError) console.error('KYC audit insert failed', auditError)
     })
+
+  after(async () => {
+    try {
+      const email = auth.access.user.email
+      const username = auth.access.user.user_metadata?.username ?? full_name.trim()
+      if (email) {
+        await sendKycReceivedEmail({ to: email, username })
+      }
+    } catch (e) {
+      console.error('[kyc] Error enviando email de recepción:', e)
+    }
+  })
 
   return Response.json({ ok: true })
 }

@@ -1,6 +1,8 @@
+import { after } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { requireAnyRoleForApi } from '@/lib/supabase/auth'
 import { recordAdminAction } from '@/lib/admin/audit'
+import { sendAccountBannedEmail } from '@/lib/email/account-notifications'
 
 export async function POST(
   req: Request,
@@ -80,6 +82,20 @@ export async function POST(
       reason: reason ?? null,
     },
   })
+
+  if (ban) {
+    after(async () => {
+      try {
+        const { data: authUser } = await supabase.auth.admin.getUserById(targetUserId)
+        const email = authUser?.user?.email
+        if (email) {
+          await sendAccountBannedEmail({ to: email, username: target.username, reason: reason ?? null })
+        }
+      } catch (e) {
+        console.error('[ban] Error enviando email de suspensión:', e)
+      }
+    })
+  }
 
   return Response.json({ ok: true, banned: ban, userId: targetUserId })
 }

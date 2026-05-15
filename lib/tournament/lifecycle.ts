@@ -1,7 +1,8 @@
 import { createAdminClient } from '@/lib/supabase/server'
-import type { Tournament } from '@/types/database'
+import type { Tournament, TournamentResult } from '@/types/database'
 import { issueFlowRefunds } from '@/lib/tournament/refunds'
 import { getAppUrl } from '@/lib/env'
+import { sendTournamentPrizeEmail } from '@/lib/email/tournament-notifications'
 
 export interface TransitionResult {
   tournamentId: string
@@ -148,6 +149,9 @@ async function processSingleTournament(
         p_tournament_id: tournament.id,
       })
       if (error) throw new Error(error.message)
+
+      void notifyPrizeWinners(supabase, tournament.id, tournament.name)
+
       return { ...base, action: 'finalized', detail: data as Record<string, unknown> }
     }
 
@@ -217,5 +221,42 @@ export async function forceFinalizeTournament(tournamentId: string): Promise<Tra
     name: tournament.name,
     action: 'finalized',
     detail: data as Record<string, unknown>,
+  }
+}
+
+async function notifyPrizeWinners(
+  supabase: ReturnType<typeof createAdminClient>,
+  tournamentId: string,
+  tournamentName: string,
+): Promise<void> {
+  try {
+    const { data: results } = await supabase
+      .from('tournament_results')
+      .select('user_id, rank, prize_awarded_cents, final_score')
+      .eq('tournament_id', tournamentId)
+      .gt('prize_awarded_cents', 0)
+      .order('rank', { ascending: true })
+
+    for (const result of (results ?? []) as TournamentResult[]) {
+      try {
+        const { data: authUser } = await supabase.auth.admin.getUserById(result.user_id)
+        const email = authUser?.user?.email
+        const username = authUser?.user?.user_metadata?.username ?? email
+        if (email) {
+          await sendTournamentPrizeEmail({
+            to: email,
+            username,
+            tournamentName,
+            rank: result.rank,
+            prizeCents: result.prize_awarded_cents,
+            finalScore: result.final_score,
+          })
+        }
+      } catch (e) {
+        console.error(`[lifecycle] Error enviando email de premio a user ${result.user_id}:`, e)
+      }
+    }
+  } catch (e) {
+    console.error(`[lifecycle] Error notificando ganadores del torneo ${tournamentId}:`, e)
   }
 }

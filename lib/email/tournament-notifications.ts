@@ -1,4 +1,4 @@
-import { sendTemplateEmail } from './client'
+import { sendTemplateEmail, FROM_PAGOS } from './client'
 
 function formatCLPPesos(pesos: number) {
   return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(pesos)
@@ -33,6 +33,7 @@ export async function sendTournamentRegistrationEmail({
   await sendTemplateEmail({
     to,
     templateId: 'ca527eb0-3c59-4e93-9c4f-3be00e7975d9',
+    from: FROM_PAGOS,
     data: {
       username,
       tournamentName,
@@ -63,6 +64,7 @@ export async function sendTournamentPrizeEmail({
   await sendTemplateEmail({
     to,
     templateId: 'b8ecd8b6-0a39-4b0d-8163-03dfe2a9a9e0',
+    from: FROM_PAGOS,
     data: {
       username,
       tournamentName,

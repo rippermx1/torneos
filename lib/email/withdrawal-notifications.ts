@@ -1,4 +1,4 @@
-import { sendTemplateEmail } from './client'
+import { sendTemplateEmail, FROM_PAGOS } from './client'
 
 function formatCLPPesos(pesos: number) {
   return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP' }).format(pesos)
@@ -20,6 +20,7 @@ export async function sendWithdrawalApprovedEmail({
   await sendTemplateEmail({
     to,
     templateId: '9ba1ceda-b0c8-46e7-8721-845d8b506b4a',
+    from: FROM_PAGOS,
     data: {
       username,
       amount: formatCLPPesos(Math.ceil(amountCents / 100)),
@@ -43,6 +44,7 @@ export async function sendWithdrawalRejectedEmail({
   await sendTemplateEmail({
     to,
     templateId: '26ee08d0-1ba8-440b-95e0-0b5798c8ccd2',
+    from: FROM_PAGOS,
     data: {
       username,
       amount: formatCLPPesos(Math.ceil(amountCents / 100)),

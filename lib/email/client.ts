@@ -12,8 +12,11 @@ function getClient(): Resend | null {
   return _client
 }
 
+export const FROM_PAGOS = 'Torneos <pagos@torneosplay.cl>'
+export const FROM_SYSTEM = 'Torneos <system@torneosplay.cl>'
+
 export function getFromAddress() {
-  return process.env.RESEND_FROM_EMAIL ?? 'Torneos <pagos@torneosplay.cl>'
+  return process.env.RESEND_FROM_EMAIL ?? FROM_PAGOS
 }
 
 export interface SendEmailParams {
@@ -43,30 +46,22 @@ export async function sendEmail(params: SendEmailParams): Promise<void> {
 export async function sendTemplateEmail(params: {
   to: string
   templateId: string
-  data: Record<string, unknown>
+  from?: string
+  data: Record<string, string | number | boolean>
 }): Promise<void> {
-  const key = process.env.RESEND_API_KEY
-  if (!key) {
-    console.warn('[email] RESEND_API_KEY no configurado — emails omitidos')
-    return
-  }
+  const client = getClient()
+  if (!client) return
 
-  const res = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${key}`,
-      'Content-Type': 'application/json',
+  const { error } = await client.emails.send({
+    from: params.from ?? getFromAddress(),
+    to: params.to,
+    template: {
+      id: params.templateId,
+      variables: params.data as Record<string, string | number>,
     },
-    body: JSON.stringify({
-      from: getFromAddress(),
-      to: params.to,
-      template_id: params.templateId,
-      data: params.data,
-    }),
   })
 
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}))
-    console.error('[email] Error enviando template email a', params.to, body)
+  if (error) {
+    console.error('[email] Error enviando template email a', params.to, error)
   }
 }

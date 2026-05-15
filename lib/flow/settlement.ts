@@ -38,7 +38,7 @@ export async function settleFlowPayment(token: string): Promise<FlowSettlement> 
 
   const { data: attempt, error: attemptError } = await admin
     .from('flow_payment_attempts')
-    .select('id, intent, tournament_id, net_amount_cents')
+    .select('id, intent, tournament_id, net_amount_cents, user_id')
     .eq('commerce_order', status.commerceOrder)
     .single()
 
@@ -78,7 +78,7 @@ export async function settleFlowPayment(token: string): Promise<FlowSettlement> 
           const { data: tournament } = await admin
             .from('tournaments')
             .select('name, play_window_start, play_window_end, entry_fee_cents')
-            .eq('id', attempt.tournament_id)
+            .eq('id', attempt.tournament_id ?? '')
             .single()
 
           const { data: authUser } = await admin.auth.admin.getUserById(attempt.user_id ?? '')

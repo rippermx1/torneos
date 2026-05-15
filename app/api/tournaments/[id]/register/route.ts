@@ -38,7 +38,7 @@ export async function POST(
       .single(),
     supabase
       .from('tournaments')
-      .select('id, entry_fee_cents, max_players, registration_opens_at, play_window_start, play_window_end, status')
+      .select('id, name, entry_fee_cents, max_players, registration_opens_at, play_window_start, play_window_end, status')
       .eq('id', tournamentId)
       .single(),
   ])

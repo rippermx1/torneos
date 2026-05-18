@@ -426,13 +426,30 @@ export function GameBoardClient({ config }: { config: GameConfig }) {
         return
       }
 
-      // 4. Reconciliar: el tablero ya está visualmente correcto salvo el tile spawneado.
-      //    Actualizamos estado sin animación; el tile corregido reaparecerá en la siguiente
-      //    acción. prevBoardRef se sincroniza con el tablero autoritativo para que el
-      //    próximo movimiento compute animaciones desde la posición real.
+      // 4. Reconciliar con el tablero autoritativo del servidor.
+      //    Las animaciones de deslizamiento/fusión son correctas (algoritmo idéntico).
+      //    El tile spawneado puede estar en otra posición: animarlo para evitar el parpadeo.
       const serverBoard = data.board as number[][]
       const serverScore = Number(data.score)
       const serverGameOver = data.gameOver ?? false
+
+      const serverSpawnKey = (() => {
+        for (let r = 0; r < 4; r++)
+          for (let c = 0; c < 4; c++)
+            if (serverBoard[r][c] !== 0 && optimistic.board[r][c] === 0) return `${r}-${c}`
+        return null
+      })()
+      if (serverSpawnKey) {
+        animVersionRef.current += 1
+        const v = animVersionRef.current
+        setCellAnims((prev) => {
+          const next = new Map(prev)
+          next.set(serverSpawnKey, { slideX: 0, slideY: 0, isMerge: false, isSpawn: true, v })
+          return next
+        })
+        if (animResetTimeoutRef.current !== null) window.clearTimeout(animResetTimeoutRef.current)
+        animResetTimeoutRef.current = window.setTimeout(() => setCellAnims(new Map()), 350)
+      }
 
       prevBoardRef.current = serverBoard
       setState((prev) => {

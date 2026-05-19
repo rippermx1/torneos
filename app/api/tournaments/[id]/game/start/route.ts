@@ -142,6 +142,7 @@ export async function POST(
       moveCount: game.move_count,
       moveNumber: resumeMoveNumber,
       nextRngStates: computeRngStates(game.seed, resumeMoveNumber, RNG_PREVIEW_SIZE),
+      nextRngStatesFrom: resumeMoveNumber,
       deadlineAt: game.started_at
         ? calculateGameDeadline(
             game.started_at,
@@ -187,6 +188,7 @@ export async function POST(
     moveCount: 0,
     moveNumber: 2,
     nextRngStates: computeRngStates(seed, 2, RNG_PREVIEW_SIZE),
+    nextRngStatesFrom: 2,
     deadlineAt: calculateGameDeadline(
       startedAt,
       tournamentState.play_window_end,

@@ -14,6 +14,11 @@ interface MoveRequest {
   direction: Direction
   moveNumber: number
   clientTimestamp: number
+  // Posición optimista del cliente (puede estar adelantado por movimientos rápidos
+  // ya aplicados visualmente pero aún encolados al servidor). Permite al servidor
+  // enviar estados RNG relevantes a la posición actual del cliente en vez de
+  // estados ya consumidos por el buffer optimista.
+  clientCurrentMoveNumber?: number
 }
 
 const VALID_DIRECTIONS = new Set<string>(['up', 'down', 'left', 'right'])
@@ -42,7 +47,7 @@ export async function POST(
     return Response.json({ error: 'Body JSON inválido' }, { status: 400 })
   }
 
-  const { gameId, direction, moveNumber, clientTimestamp } = body
+  const { gameId, direction, moveNumber, clientTimestamp, clientCurrentMoveNumber } = body
 
   if (!VALID_DIRECTIONS.has(direction)) {
     return Response.json({ error: `Dirección inválida: ${direction}` }, { status: 400 })
@@ -226,7 +231,17 @@ export async function POST(
   // Estados RNG para los próximos N movimientos. Permiten al cliente reproducir
   // localmente los spawns del servidor sin recibir el seed → gameplay fluido sin
   // exponer información que comprometa el anti-cheat.
-  const nextRngStates = gameOver ? [] : computeRngStates(game.seed, moveNumber + 1, RNG_PREVIEW_SIZE)
+  //
+  // Se envían desde max(moveNumber+1, clientCurrentMoveNumber) para que ráfagas
+  // rápidas (cliente adelantado al servidor) reciban estados útiles y no estados
+  // que el cliente ya consumió. El cap MAX_AHEAD previene que un cliente malicioso
+  // pida estados muy adelantados para precomputar la partida.
+  const MAX_AHEAD = 20
+  const requestedStart = typeof clientCurrentMoveNumber === 'number'
+    ? Math.min(clientCurrentMoveNumber, moveNumber + 1 + MAX_AHEAD)
+    : moveNumber + 1
+  const nextRngStatesStart = Math.max(moveNumber + 1, requestedStart)
+  const nextRngStates = gameOver ? [] : computeRngStates(game.seed, nextRngStatesStart, RNG_PREVIEW_SIZE)
 
   return Response.json({
     moved: true,
@@ -236,6 +251,7 @@ export async function POST(
     spawnedTile: result.spawnedTile,
     moveNumber: moveNumber + 1,
     nextRngStates,
+    nextRngStatesFrom: nextRngStatesStart,
     gameOver,
   })
 }

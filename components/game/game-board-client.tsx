@@ -305,9 +305,14 @@ export function GameBoardClient({ config }: { config: GameConfig }) {
     const { direction, displayBoard, moveNumber, gameId } = serverQueueRef.current[0]
 
     try {
+      // Posición optimista actual del cliente. El cliente puede tener más movimientos
+      // encolados (ya aplicados visualmente) por delante del que se está enviando.
+      // El servidor usa esto para enviar estados RNG útiles a la posición real.
+      const clientCurrentMoveNumber = moveNumber + serverQueueRef.current.length
       const payload: Record<string, unknown> = {
         direction,
         moveNumber,
+        clientCurrentMoveNumber,
         clientTimestamp: Date.now(),
         ...config.extraMovePayload,
         ...(gameId ? { gameId } : {}),
@@ -351,14 +356,28 @@ export function GameBoardClient({ config }: { config: GameConfig }) {
       lastServerBoardRef.current = { board: serverBoard, score: serverScore, moveNumber: data.moveNumber }
 
       // Rellenar buffer de estados RNG con los próximos movimientos pre-computados.
+      // El servidor envía desde nextRngStatesFrom (puede ser > moveNumber+1 si el
+      // cliente está adelantado por ráfagas rápidas).
       if (Array.isArray(data.nextRngStates)) {
+        const from = typeof data.nextRngStatesFrom === 'number' ? data.nextRngStatesFrom : data.moveNumber
         for (let i = 0; i < data.nextRngStates.length; i++) {
-          rngStateMapRef.current.set(data.moveNumber + i, data.nextRngStates[i] as number)
+          rngStateMapRef.current.set(from + i, data.nextRngStates[i] as number)
         }
       }
 
-      // Animar spawn solo cuando la cola se vació (visual y servidor están sincronizados)
-      if (serverQueueRef.current.length === 0) {
+      // Durante una ráfaga de movimientos rápidos hay varios optimistas aplicados por
+      // delante del que el servidor acaba de procesar. Si reemplazamos state.board con
+      // el serverBoard de este movimiento, el visual retrocede borrando esos optimistas.
+      //
+      // Estrategia:
+      //  - Si la cola se vació (cliente y servidor sincronizados): aplicar serverBoard,
+      //    animar spawn pendiente si lo hay (caso fallback con buffer RNG vacío).
+      //  - Si quedan movimientos pendientes: el visual ya está adelantado y es correcto
+      //    (asumiendo haveRngState=true). Solo propagar gameOver si aplica para detener
+      //    nuevos movimientos optimistas.
+      const queueDrained = serverQueueRef.current.length === 0
+
+      if (queueDrained) {
         const serverNewKeys: string[] = []
         for (let r = 0; r < 4; r++)
           for (let c = 0; c < 4; c++)
@@ -375,21 +394,35 @@ export function GameBoardClient({ config }: { config: GameConfig }) {
           if (animResetTimeoutRef.current !== null) window.clearTimeout(animResetTimeoutRef.current)
           animResetTimeoutRef.current = window.setTimeout(() => setCellAnims(new Map()), 350)
         }
-      }
 
-      prevBoardRef.current = serverBoard
-      setState((prev) => {
-        if (!prev) return prev
-        if (serverGameOver) config.onGameOver?.(serverScore)
-        return {
+        prevBoardRef.current = serverBoard
+        setState((prev) => {
+          if (!prev) return prev
+          if (serverGameOver) config.onGameOver?.(serverScore)
+          return {
+            ...prev,
+            board: serverBoard,
+            score: serverScore,
+            moveNumber: data.moveNumber,
+            gameOver: serverGameOver,
+            bestScore: Math.max(prev.bestScore, serverScore),
+          }
+        })
+      } else if (serverGameOver) {
+        // Game over llegado mientras hay pendientes: detener la cadena optimista.
+        serverQueueRef.current = []
+        prevBoardRef.current = serverBoard
+        config.onGameOver?.(serverScore)
+        setState((prev) => prev ? {
           ...prev,
           board: serverBoard,
           score: serverScore,
           moveNumber: data.moveNumber,
-          gameOver: serverGameOver,
+          gameOver: true,
           bestScore: Math.max(prev.bestScore, serverScore),
-        }
-      })
+        } : prev)
+      }
+      // else: cola con pendientes y juego activo → no tocar visual, esperar a vaciar.
     } catch {
       serverQueueRef.current = []
       if (lastServerBoardRef.current) {
@@ -440,8 +473,9 @@ export function GameBoardClient({ config }: { config: GameConfig }) {
       lastServerBoardRef.current = { board: newBoard, score: Number(data.score ?? 0), moveNumber: data.moveNumber }
       rngStateMapRef.current = new Map()
       if (Array.isArray(data.nextRngStates)) {
+        const from = typeof data.nextRngStatesFrom === 'number' ? data.nextRngStatesFrom : data.moveNumber
         for (let i = 0; i < data.nextRngStates.length; i++) {
-          rngStateMapRef.current.set(data.moveNumber + i, data.nextRngStates[i] as number)
+          rngStateMapRef.current.set(from + i, data.nextRngStates[i] as number)
         }
       }
       setState((prev) => ({

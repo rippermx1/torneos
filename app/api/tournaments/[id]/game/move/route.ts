@@ -2,7 +2,7 @@ import { after } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { requireAnyRoleForApi } from '@/lib/supabase/auth'
 import { Game2048 } from '@/lib/game/engine'
-import { DeterministicRNG } from '@/lib/game/rng'
+import { DeterministicRNG, computeRngStates, RNG_PREVIEW_SIZE } from '@/lib/game/rng'
 import { checkPlayWindow } from '@/lib/tournament/helpers'
 import { isPastGameDeadline } from '@/lib/tournament/game-deadline'
 import { analyzeMove } from '@/lib/anticheat/detector'
@@ -223,6 +223,11 @@ export async function POST(
     }
   })
 
+  // Estados RNG para los próximos N movimientos. Permiten al cliente reproducir
+  // localmente los spawns del servidor sin recibir el seed → gameplay fluido sin
+  // exponer información que comprometa el anti-cheat.
+  const nextRngStates = gameOver ? [] : computeRngStates(game.seed, moveNumber + 1, RNG_PREVIEW_SIZE)
+
   return Response.json({
     moved: true,
     board: engine.board,
@@ -230,6 +235,7 @@ export async function POST(
     scoreGained: result.scoreGained,
     spawnedTile: result.spawnedTile,
     moveNumber: moveNumber + 1,
+    nextRngStates,
     gameOver,
   })
 }

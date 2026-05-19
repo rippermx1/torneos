@@ -4,7 +4,7 @@ import { memo, useEffect, useCallback, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { getTileVisual } from './tile-colors'
-import { applyLocalPracticeMove, createLocalPracticeGame } from '@/lib/game/local-practice'
+import { applyLocalPracticeMove, applyTournamentMove, createLocalPracticeGame } from '@/lib/game/local-practice'
 import type { Direction } from '@/types/game'
 
 export interface GameConfig {
@@ -170,6 +170,22 @@ export function GameBoardClient({ config }: { config: GameConfig }) {
   const moveRequestIdRef = useRef(0)
   const timeoutReportedRef = useRef(false)
 
+  // Queue FIFO para requests al servidor (modo torneo).
+  // Garantiza que cada request llega solo después de que el anterior fue confirmado,
+  // evitando errores de moveNumber fuera de orden por requests concurrentes.
+  const serverQueueRef = useRef<{
+    direction: Direction
+    displayBoard: number[][]
+    moveNumber: number
+    gameId?: string
+  }[]>([])
+  const serverBusyRef = useRef(false)
+  const lastServerBoardRef = useRef<{ board: number[][]; score: number; moveNumber: number } | null>(null)
+  const drainServerQueueRef = useRef<(() => void) | null>(null)
+  // Estados RNG pre-computados por el servidor (uint32) indexados por moveNumber.
+  // Permiten al cliente generar el spawn idéntico al servidor sin esperar respuesta.
+  const rngStateMapRef = useRef<Map<number, number>>(new Map())
+
   // Temporizador
   useEffect(() => {
     const deadlineAt = state?.deadlineAt ?? config.playWindowEnd
@@ -282,6 +298,115 @@ export function GameBoardClient({ config }: { config: GameConfig }) {
     })
   }, [])
 
+  const drainServerQueue = useCallback(async () => {
+    if (serverBusyRef.current || serverQueueRef.current.length === 0) return
+    serverBusyRef.current = true
+
+    const { direction, displayBoard, moveNumber, gameId } = serverQueueRef.current[0]
+
+    try {
+      const payload: Record<string, unknown> = {
+        direction,
+        moveNumber,
+        clientTimestamp: Date.now(),
+        ...config.extraMovePayload,
+        ...(gameId ? { gameId } : {}),
+      }
+      const res = await fetch(config.moveUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+
+      serverQueueRef.current.shift()
+      const data = await res.json()
+
+      if (!res.ok) {
+        serverQueueRef.current = []
+        if (data.timeout) {
+          setState((p) => p ? { ...p, timedOut: true, gameOver: true } : p)
+        } else if (lastServerBoardRef.current) {
+          const s = lastServerBoardRef.current
+          prevBoardRef.current = s.board
+          setCellAnims(new Map())
+          setState((prev) => prev ? { ...prev, board: s.board, score: s.score, moveNumber: s.moveNumber } : prev)
+        }
+        return
+      }
+
+      if (!data.moved) {
+        serverQueueRef.current = []
+        if (lastServerBoardRef.current) {
+          const s = lastServerBoardRef.current
+          prevBoardRef.current = s.board
+          setCellAnims(new Map())
+          setState((prev) => prev ? { ...prev, board: s.board, score: s.score, moveNumber: s.moveNumber } : prev)
+        }
+        return
+      }
+
+      const serverBoard = data.board as number[][]
+      const serverScore = Number(data.score)
+      const serverGameOver = data.gameOver ?? false
+      lastServerBoardRef.current = { board: serverBoard, score: serverScore, moveNumber: data.moveNumber }
+
+      // Rellenar buffer de estados RNG con los próximos movimientos pre-computados.
+      if (Array.isArray(data.nextRngStates)) {
+        for (let i = 0; i < data.nextRngStates.length; i++) {
+          rngStateMapRef.current.set(data.moveNumber + i, data.nextRngStates[i] as number)
+        }
+      }
+
+      // Animar spawn solo cuando la cola se vació (visual y servidor están sincronizados)
+      if (serverQueueRef.current.length === 0) {
+        const serverNewKeys: string[] = []
+        for (let r = 0; r < 4; r++)
+          for (let c = 0; c < 4; c++)
+            if (serverBoard[r][c] !== 0 && displayBoard[r][c] === 0)
+              serverNewKeys.push(`${r}-${c}`)
+        if (serverNewKeys.length === 1) {
+          animVersionRef.current += 1
+          const v = animVersionRef.current
+          setCellAnims((prev) => {
+            const next = new Map(prev)
+            next.set(serverNewKeys[0], { slideX: 0, slideY: 0, isMerge: false, isSpawn: true, v })
+            return next
+          })
+          if (animResetTimeoutRef.current !== null) window.clearTimeout(animResetTimeoutRef.current)
+          animResetTimeoutRef.current = window.setTimeout(() => setCellAnims(new Map()), 350)
+        }
+      }
+
+      prevBoardRef.current = serverBoard
+      setState((prev) => {
+        if (!prev) return prev
+        if (serverGameOver) config.onGameOver?.(serverScore)
+        return {
+          ...prev,
+          board: serverBoard,
+          score: serverScore,
+          moveNumber: data.moveNumber,
+          gameOver: serverGameOver,
+          bestScore: Math.max(prev.bestScore, serverScore),
+        }
+      })
+    } catch {
+      serverQueueRef.current = []
+      if (lastServerBoardRef.current) {
+        const s = lastServerBoardRef.current
+        prevBoardRef.current = s.board
+        setCellAnims(new Map())
+        setState((prev) => prev ? { ...prev, board: s.board, score: s.score, moveNumber: s.moveNumber } : prev)
+      }
+    } finally {
+      serverBusyRef.current = false
+      drainServerQueueRef.current?.()
+    }
+  }, [config, animVersionRef, animResetTimeoutRef])
+
+  // Siempre apunta a la versión más reciente para que el finally pueda llamarla
+  drainServerQueueRef.current = drainServerQueue
+
   const loadGame = useCallback(async () => {
     try {
       timeoutReportedRef.current = false
@@ -310,6 +435,15 @@ export function GameBoardClient({ config }: { config: GameConfig }) {
       const newBoard = data.board as number[][]
       triggerAnims(null, newBoard, null)
       prevBoardRef.current = newBoard
+      serverQueueRef.current = []
+      serverBusyRef.current = false
+      lastServerBoardRef.current = { board: newBoard, score: Number(data.score ?? 0), moveNumber: data.moveNumber }
+      rngStateMapRef.current = new Map()
+      if (Array.isArray(data.nextRngStates)) {
+        for (let i = 0; i < data.nextRngStates.length; i++) {
+          rngStateMapRef.current.set(data.moveNumber + i, data.nextRngStates[i] as number)
+        }
+      }
       setState((prev) => ({
         board: newBoard,
         score: Number(data.score ?? 0),
@@ -337,158 +471,99 @@ export function GameBoardClient({ config }: { config: GameConfig }) {
     void loadGame()
   }, [loadGame])
 
-  const sendMove = useCallback(async (direction: Direction) => {
-    if (!state || state.gameOver || state.timedOut || moving || loading) return
-    const requestId = moveRequestIdRef.current + 1
-    moveRequestIdRef.current = requestId
-    const baselineState = state
-    setMoving(true)
-    try {
-      if (isLocalMode) {
-        const data = applyLocalPracticeMove(state, direction)
+  const sendMove = useCallback((direction: Direction) => {
+    if (!state || state.gameOver || state.timedOut || loading) return
 
-        if (!data.moved) {
-          setShaking(true)
-          if (shakeTimeoutRef.current !== null) {
-            window.clearTimeout(shakeTimeoutRef.current)
-          }
-          shakeTimeoutRef.current = window.setTimeout(() => setShaking(false), 400)
-          return
-        }
-
-        applyNewBoard(data.board, Number(data.score), state.score, direction, {
-          moveNumber: data.moveNumber,
-          gameOver: data.gameOver ?? false,
-        })
-        return
-      }
-
-      // MODO TORNEO: actualización optimista → red → reconciliar con el servidor.
-      //
-      // 1. Validar localmente si el movimiento cambia el tablero.
-      //    Game2048 es idéntico en cliente y servidor para la lógica de deslizamiento/
-      //    fusión; solo difiere el tile spawneado (semilla del servidor vs local).
-      //    Si localmente moved=false, el servidor también lo dirá → evitamos el round-trip.
-      const optimistic = applyLocalPracticeMove(
-        {
-          board: baselineState.board,
-          score: baselineState.score,
-          seed: baselineState.gameId ?? 'tournament',
-          moveNumber: baselineState.moveNumber,
-        },
-        direction,
-      )
-
-      if (!optimistic.moved) {
+    // ── Modo práctica (local) ──────────────────────────────────
+    if (isLocalMode) {
+      if (moving) return  // evitar doble proceso síncrono
+      setMoving(true)
+      const data = applyLocalPracticeMove(state, direction)
+      if (!data.moved) {
         setShaking(true)
         if (shakeTimeoutRef.current !== null) window.clearTimeout(shakeTimeoutRef.current)
         shakeTimeoutRef.current = window.setTimeout(() => setShaking(false), 400)
+        setMoving(false)
         return
       }
+      applyNewBoard(data.board, Number(data.score), state.score, direction, {
+        moveNumber: data.moveNumber,
+        gameOver: data.gameOver ?? false,
+      })
+      setMoving(false)
+      return
+    }
 
-      // 2. Mostrar deslizamientos de inmediato, SIN el tile de spawn optimista.
-      //    Cliente y servidor pueden elegir posiciones de spawn distintas (semillas
-      //    diferentes). Si mostramos el spawn optimista, aparece en posición A y luego
-      //    salta a posición B cuando llega la respuesta del servidor → bug visual.
-      //    Solución: suprimir el spawn optimista aquí y animarlo en el paso 4 con la
-      //    posición real que confirme el servidor.
+    // ── Modo torneo ────────────────────────────────────────────
+    // El teclado nunca se bloquea. Los requests al servidor van en cola FIFO para
+    // evitar errores de moveNumber fuera de orden por requests concurrentes.
+    const baselineState = state
+
+    // Si tenemos el estado RNG del servidor para este movimiento, podemos calcular
+    // el spawn idéntico al servidor → experiencia visual = modo práctica.
+    // Si no (ráfaga rápida que vació el buffer), diferimos el spawn al paso de
+    // reconciliación: comportamiento de fallback con slides sin spawn.
+    const rngState = rngStateMapRef.current.get(baselineState.moveNumber)
+    const haveRngState = rngState !== undefined
+
+    const optimistic = haveRngState
+      ? applyTournamentMove(
+          {
+            board: baselineState.board,
+            score: baselineState.score,
+            moveNumber: baselineState.moveNumber,
+          },
+          direction,
+          rngState,
+        )
+      : applyLocalPracticeMove(
+          {
+            board: baselineState.board,
+            score: baselineState.score,
+            seed: baselineState.gameId ?? 'tournament',
+            moveNumber: baselineState.moveNumber,
+          },
+          direction,
+        )
+
+    if (!optimistic.moved) {
+      setShaking(true)
+      if (shakeTimeoutRef.current !== null) window.clearTimeout(shakeTimeoutRef.current)
+      shakeTimeoutRef.current = window.setTimeout(() => setShaking(false), 400)
+      return
+    }
+
+    // Si tenemos el estado RNG correcto: el spawn coincide con el del servidor →
+    // mostramos el tablero completo (con spawn animado). Si no: suprimimos el spawn
+    // optimista para evitar el bug de "tile en posición A → salta a posición B".
+    let displayBoard: number[][]
+    if (haveRngState) {
+      displayBoard = optimistic.board
+      rngStateMapRef.current.delete(baselineState.moveNumber)
+    } else {
       const optimisticAnims = computeTileMovements(baselineState.board, optimistic.board, direction)
       const optimisticSpawnEntry = [...optimisticAnims.entries()].find(([, a]) => a.isSpawn)
-      const displayBoard = optimisticSpawnEntry
+      displayBoard = optimisticSpawnEntry
         ? optimistic.board.map((row, r) =>
             row.map((v, c) => (optimisticSpawnEntry[0] === `${r}-${c}` ? 0 : v))
           )
         : optimistic.board
-
-      applyNewBoard(displayBoard, optimistic.score, baselineState.score, direction, {
-        moveNumber: optimistic.moveNumber,
-        gameOver: false,
-      })
-      // Desbloquear teclado inmediatamente — igual que modo práctica.
-      // La red sigue en vuelo; solo el spawn queda diferido al paso 4.
-      setMoving(false)
-
-      // 3. Enviar al servidor y reconciliar con el estado autoritativo.
-      const payload: Record<string, unknown> = {
-        direction,
-        moveNumber: baselineState.moveNumber,
-        clientTimestamp: Date.now(),
-        ...config.extraMovePayload,
-        ...(baselineState.gameId ? { gameId: baselineState.gameId } : {}),
-      }
-      const res = await fetch(config.moveUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
-
-      if (moveRequestIdRef.current !== requestId) return
-
-      const data = await res.json()
-
-      if (moveRequestIdRef.current !== requestId) return
-
-      if (!res.ok) {
-        if (data.timeout) setState((p) => p ? { ...p, timedOut: true, gameOver: true } : p)
-        else rollbackState(baselineState)
-        return
-      }
-
-      if (!data.moved) {
-        // Inconsistencia servidor/cliente (no debería ocurrir): revertir.
-        rollbackState(baselineState)
-        return
-      }
-
-      // 4. Reconciliar con el tablero autoritativo del servidor.
-      //    Los deslizamientos ya están animados. Aquí animamos el spawn real del servidor
-      //    (diferido desde el paso 2). displayBoard no tiene spawn → cualquier celda
-      //    no-cero en serverBoard que era cero en displayBoard es el tile nuevo.
-      const serverBoard = data.board as number[][]
-      const serverScore = Number(data.score)
-      const serverGameOver = data.gameOver ?? false
-
-      // Tiles presentes en serverBoard pero no en displayBoard → spawn real del servidor.
-      // Pueden ser varios si el usuario movió en cadena antes de que llegara la respuesta.
-      const serverNewKeys: string[] = []
-      for (let r = 0; r < 4; r++)
-        for (let c = 0; c < 4; c++)
-          if (serverBoard[r][c] !== 0 && displayBoard[r][c] === 0)
-            serverNewKeys.push(`${r}-${c}`)
-      if (serverNewKeys.length > 0) {
-        animVersionRef.current += 1
-        const v = animVersionRef.current
-        setCellAnims((prev) => {
-          const next = new Map(prev)
-          for (const key of serverNewKeys)
-            next.set(key, { slideX: 0, slideY: 0, isMerge: false, isSpawn: true, v })
-          return next
-        })
-        if (animResetTimeoutRef.current !== null) window.clearTimeout(animResetTimeoutRef.current)
-        animResetTimeoutRef.current = window.setTimeout(() => setCellAnims(new Map()), 350)
-      }
-
-      prevBoardRef.current = serverBoard
-      setState((prev) => {
-        if (!prev) return prev
-        if (serverGameOver) config.onGameOver?.(serverScore)
-        return {
-          ...prev,
-          board: serverBoard,
-          score: serverScore,
-          moveNumber: data.moveNumber,
-          gameOver: serverGameOver,
-          bestScore: Math.max(prev.bestScore, serverScore),
-        }
-      })
-    } catch {
-      rollbackState(baselineState)
-    } finally {
-      if (moveRequestIdRef.current === requestId) {
-        setMoving(false)
-      }
     }
-  }, [state, moving, loading, isLocalMode, config, applyNewBoard, rollbackState])
+
+    applyNewBoard(displayBoard, optimistic.score, baselineState.score, direction, {
+      moveNumber: optimistic.moveNumber,
+      gameOver: false,
+    })
+
+    // Encolar el request. drainServerQueue lo enviará cuando el anterior complete.
+    serverQueueRef.current.push({
+      direction,
+      displayBoard,
+      moveNumber: baselineState.moveNumber,
+      gameId: baselineState.gameId,
+    })
+    drainServerQueueRef.current?.()
+  }, [state, moving, loading, isLocalMode, applyNewBoard])
 
   // Teclado
   useEffect(() => {

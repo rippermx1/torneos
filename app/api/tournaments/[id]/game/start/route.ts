@@ -1,7 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/server'
 import { requireAnyRoleForApi } from '@/lib/supabase/auth'
 import { Game2048 } from '@/lib/game/engine'
-import { DeterministicRNG, generateGameSeed } from '@/lib/game/rng'
+import { DeterministicRNG, generateGameSeed, computeRngStates, RNG_PREVIEW_SIZE } from '@/lib/game/rng'
 import { checkPlayWindow } from '@/lib/tournament/helpers'
 import { calculateGameDeadline, isPastGameDeadline } from '@/lib/tournament/game-deadline'
 import { checkRateLimit, getRequestIp, rateLimitResponse } from '@/lib/security/rate-limit'
@@ -134,12 +134,14 @@ export async function POST(
     }
 
     // Retornar estado actual para reanudar
+    const resumeMoveNumber = game.move_count + 2 // +2 por los dos spawns iniciales
     return Response.json({
       gameId: game.id,
       board: game.current_board,
       score: game.final_score,
       moveCount: game.move_count,
-      moveNumber: game.move_count + 2, // +2 por los dos spawns iniciales
+      moveNumber: resumeMoveNumber,
+      nextRngStates: computeRngStates(game.seed, resumeMoveNumber, RNG_PREVIEW_SIZE),
       deadlineAt: game.started_at
         ? calculateGameDeadline(
             game.started_at,
@@ -184,6 +186,7 @@ export async function POST(
     score: 0,
     moveCount: 0,
     moveNumber: 2,
+    nextRngStates: computeRngStates(seed, 2, RNG_PREVIEW_SIZE),
     deadlineAt: calculateGameDeadline(
       startedAt,
       tournamentState.play_window_end,

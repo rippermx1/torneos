@@ -404,6 +404,9 @@ export function GameBoardClient({ config }: { config: GameConfig }) {
         moveNumber: optimistic.moveNumber,
         gameOver: false,
       })
+      // Desbloquear teclado inmediatamente — igual que modo práctica.
+      // La red sigue en vuelo; solo el spawn queda diferido al paso 4.
+      setMoving(false)
 
       // 3. Enviar al servidor y reconciliar con el estado autoritativo.
       const payload: Record<string, unknown> = {
@@ -445,18 +448,20 @@ export function GameBoardClient({ config }: { config: GameConfig }) {
       const serverScore = Number(data.score)
       const serverGameOver = data.gameOver ?? false
 
-      const serverSpawnKey = (() => {
-        for (let r = 0; r < 4; r++)
-          for (let c = 0; c < 4; c++)
-            if (serverBoard[r][c] !== 0 && displayBoard[r][c] === 0) return `${r}-${c}`
-        return null
-      })()
-      if (serverSpawnKey) {
+      // Tiles presentes en serverBoard pero no en displayBoard → spawn real del servidor.
+      // Pueden ser varios si el usuario movió en cadena antes de que llegara la respuesta.
+      const serverNewKeys: string[] = []
+      for (let r = 0; r < 4; r++)
+        for (let c = 0; c < 4; c++)
+          if (serverBoard[r][c] !== 0 && displayBoard[r][c] === 0)
+            serverNewKeys.push(`${r}-${c}`)
+      if (serverNewKeys.length > 0) {
         animVersionRef.current += 1
         const v = animVersionRef.current
         setCellAnims((prev) => {
           const next = new Map(prev)
-          next.set(serverSpawnKey, { slideX: 0, slideY: 0, isMerge: false, isSpawn: true, v })
+          for (const key of serverNewKeys)
+            next.set(key, { slideX: 0, slideY: 0, isMerge: false, isSpawn: true, v })
           return next
         })
         if (animResetTimeoutRef.current !== null) window.clearTimeout(animResetTimeoutRef.current)

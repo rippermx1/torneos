@@ -7,7 +7,41 @@ import { checkPlayWindow } from '@/lib/tournament/helpers'
 import { isPastGameDeadline } from '@/lib/tournament/game-deadline'
 import { analyzeMove } from '@/lib/anticheat/detector'
 import { checkRateLimit, getRequestIp, rateLimitResponse } from '@/lib/security/rate-limit'
-import type { Game, Direction } from '@/types/database'
+import type { Game, Tournament, Direction } from '@/types/database'
+
+// ── Tournament cache ─────────────────────────────────────────────────────────
+// Tournament rows are immutable during the play window (status, window dates,
+// max_game_duration_seconds never change mid-game). Caching them eliminates
+// one DB round-trip on every move request after the first.
+type TournamentRow = Pick<
+  Tournament,
+  'id' | 'status' | 'play_window_start' | 'play_window_end' | 'max_game_duration_seconds'
+>
+type CacheEntry = { data: TournamentRow; expiresAt: number }
+const tournamentCache = new Map<string, CacheEntry>()
+const TOURNAMENT_TTL_MS = 5 * 60 * 1_000 // 5 min
+
+async function getTournament(
+  supabase: ReturnType<typeof createAdminClient>,
+  tournamentId: string,
+): Promise<TournamentRow | null> {
+  const cached = tournamentCache.get(tournamentId)
+  if (cached && cached.expiresAt > Date.now()) return cached.data
+
+  const { data } = await supabase
+    .from('tournaments')
+    .select('id, status, play_window_start, play_window_end, max_game_duration_seconds')
+    .eq('id', tournamentId)
+    .single()
+
+  if (!data) return null
+  tournamentCache.set(tournamentId, {
+    data: data as TournamentRow,
+    expiresAt: Date.now() + TOURNAMENT_TTL_MS,
+  })
+  return data as TournamentRow
+}
+// ────────────────────────────────────────────────────────────────────────────
 
 interface MoveRequest {
   gameId: string
@@ -61,10 +95,12 @@ export async function POST(
 
   const supabase = createAdminClient()
 
+  // tournament is served from in-process cache after the first request;
+  // profile + game always hit the DB (ban status must be fresh, game state changes every move).
   const [
     { data: profileCheck },
     { data: gameData },
-    { data: tournament },
+    tournament,
   ] = await Promise.all([
     supabase
       .from('profiles')
@@ -78,11 +114,7 @@ export async function POST(
       .eq('tournament_id', tournamentId)
       .eq('user_id', userId)
       .single(),
-    supabase
-      .from('tournaments')
-      .select('id, status, play_window_start, play_window_end, max_game_duration_seconds')
-      .eq('id', tournamentId)
-      .single(),
+    getTournament(supabase, tournamentId),
   ])
 
   if (profileCheck?.is_banned) {
@@ -160,47 +192,29 @@ export async function POST(
   const newMoveCount = game.move_count + 1
   const now = new Date().toISOString()
 
-  // Persistir movimiento en game_moves
-  const { data: insertedMove, error: moveErr } = await supabase
-    .from('game_moves')
-    .insert({
-      game_id: gameId,
-      move_number: moveNumber,
-      direction,
-      board_before: board,
-      board_after: engine.board,
-      score_gained: result.scoreGained,
-      spawned_tile: result.spawnedTile,
-      client_timestamp: clientTimestamp,
-    })
-    .select('server_timestamp')
-    .single()
+  // Single RPC call = INSERT game_moves + UPDATE games in one DB round-trip
+  // (replaces the two sequential awaits that existed before).
+  // @ts-expect-error – record_game_move not yet in generated Supabase types
+  const { data: rpcResult, error: rpcErr } = await supabase.rpc('record_game_move', {
+    p_game_id: gameId,
+    p_move_number: moveNumber,
+    p_direction: direction,
+    p_board_before: board,
+    p_board_after: engine.board,
+    p_score_gained: result.scoreGained,
+    p_spawned_tile: result.spawnedTile ?? null,
+    p_client_timestamp: clientTimestamp,
+    p_current_board: engine.board,
+    p_final_score: engine.score,
+    p_highest_tile: engine.highestTile(),
+    p_move_count: newMoveCount,
+    p_status: gameOver ? 'completed' : null,
+    p_end_reason: gameOver ? 'no_moves' : null,
+    p_ended_at: gameOver ? now : null,
+  })
 
-  if (moveErr) {
-    return Response.json({ error: `Error guardando movimiento: ${moveErr.message}` }, { status: 500 })
-  }
-
-  // Actualizar estado del juego
-  const updatePayload: Record<string, unknown> = {
-    current_board: engine.board,
-    final_score: engine.score,
-    highest_tile: engine.highestTile(),
-    move_count: newMoveCount,
-  }
-
-  if (gameOver) {
-    updatePayload.status = 'completed'
-    updatePayload.end_reason = 'no_moves'
-    updatePayload.ended_at = now
-  }
-
-  const { error: updateErr } = await supabase
-    .from('games')
-    .update(updatePayload)
-    .eq('id', gameId)
-
-  if (updateErr) {
-    return Response.json({ error: `Error actualizando partida: ${updateErr.message}` }, { status: 500 })
+  if (rpcErr) {
+    return Response.json({ error: `Error guardando movimiento: ${rpcErr.message}` }, { status: 500 })
   }
 
   // Anticheat corre DESPUÉS de responder usando after() (= waitUntil de Vercel).
@@ -208,7 +222,8 @@ export async function POST(
   // is_banned al inicio de esta route, por lo que bots quedan bloqueados en el
   // movimiento N+1. Ganancia: ~50-200ms por movimiento al eliminar los SELECT
   // extra que antes bloqueaban sincrónamente la respuesta.
-  const serverTimestampForAnticheat = insertedMove?.server_timestamp ?? null
+  const serverTimestampForAnticheat =
+    (rpcResult as unknown as Array<{ server_timestamp: string }> | null)?.[0]?.server_timestamp ?? null
   after(async () => {
     try {
       const anticheat = await analyzeMove({

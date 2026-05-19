@@ -386,10 +386,21 @@ export function GameBoardClient({ config }: { config: GameConfig }) {
         return
       }
 
-      // 2. Aplicar resultado localmente de forma instantánea (visual igual a práctica).
-      //    gameOver=false intencionalmente: esperamos confirmación del servidor para
-      //    el estado final (el tile spawneado afecta canMove()).
-      applyNewBoard(optimistic.board, optimistic.score, baselineState.score, direction, {
+      // 2. Mostrar deslizamientos de inmediato, SIN el tile de spawn optimista.
+      //    Cliente y servidor pueden elegir posiciones de spawn distintas (semillas
+      //    diferentes). Si mostramos el spawn optimista, aparece en posición A y luego
+      //    salta a posición B cuando llega la respuesta del servidor → bug visual.
+      //    Solución: suprimir el spawn optimista aquí y animarlo en el paso 4 con la
+      //    posición real que confirme el servidor.
+      const optimisticAnims = computeTileMovements(baselineState.board, optimistic.board, direction)
+      const optimisticSpawnEntry = [...optimisticAnims.entries()].find(([, a]) => a.isSpawn)
+      const displayBoard = optimisticSpawnEntry
+        ? optimistic.board.map((row, r) =>
+            row.map((v, c) => (optimisticSpawnEntry[0] === `${r}-${c}` ? 0 : v))
+          )
+        : optimistic.board
+
+      applyNewBoard(displayBoard, optimistic.score, baselineState.score, direction, {
         moveNumber: optimistic.moveNumber,
         gameOver: false,
       })
@@ -427,8 +438,9 @@ export function GameBoardClient({ config }: { config: GameConfig }) {
       }
 
       // 4. Reconciliar con el tablero autoritativo del servidor.
-      //    Las animaciones de deslizamiento/fusión son correctas (algoritmo idéntico).
-      //    El tile spawneado puede estar en otra posición: animarlo para evitar el parpadeo.
+      //    Los deslizamientos ya están animados. Aquí animamos el spawn real del servidor
+      //    (diferido desde el paso 2). displayBoard no tiene spawn → cualquier celda
+      //    no-cero en serverBoard que era cero en displayBoard es el tile nuevo.
       const serverBoard = data.board as number[][]
       const serverScore = Number(data.score)
       const serverGameOver = data.gameOver ?? false
@@ -436,7 +448,7 @@ export function GameBoardClient({ config }: { config: GameConfig }) {
       const serverSpawnKey = (() => {
         for (let r = 0; r < 4; r++)
           for (let c = 0; c < 4; c++)
-            if (serverBoard[r][c] !== 0 && optimistic.board[r][c] === 0) return `${r}-${c}`
+            if (serverBoard[r][c] !== 0 && displayBoard[r][c] === 0) return `${r}-${c}`
         return null
       })()
       if (serverSpawnKey) {

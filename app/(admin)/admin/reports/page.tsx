@@ -22,9 +22,9 @@ export default async function AdminReportsPage({
         <div>
           <h1 className="text-2xl font-bold">Contabilidad Modelo A</h1>
           <p className="text-sm text-muted-foreground mt-0.5 max-w-3xl">
-            Reporte mínimo para operación con voucher Flow como boleta electrónica: ventas
-            afectas para F29, IVA débito, estimación de comisión Flow, premios, retiros y
-            obligaciones de wallet.
+            Contabilidad efectiva de la plataforma: el IVA se reconoce sobre el margen real
+            (cobros por inscripción menos premios pagados a ganadores). El voucher Flow y las
+            columnas F29 quedan como referencia del comprobante, no como base del IVA.
           </p>
         </div>
         <div className="flex gap-2">
@@ -96,22 +96,37 @@ export default async function AdminReportsPage({
 
           {selected && (
             <div className="space-y-4">
-              <section className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <Card
-                  label="Venta afecta F29"
-                  value={formatCLP(selected.f29GrossSalesCents)}
-                  sub={`${selected.flowPaidCount} pagos Flow pagados`}
-                />
-                <Card
-                  label="Base neta F29"
-                  value={formatCLP(selected.f29NetSalesCents)}
-                  sub="Venta bruta / 1,19"
-                />
-                <Card
-                  label="IVA débito F29"
-                  value={formatCLP(selected.f29IvaDebitCents)}
-                  sub="Diferencia bruto - neto"
-                />
+              <section className="space-y-2">
+                <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                  Contabilidad efectiva · IVA = 19/119 × (cobros − premios)
+                </h2>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <Card
+                    label="Cobros inscripción"
+                    value={formatCLP(selected.effectiveEntriesCollectedCents)}
+                    sub={`${selected.registrationsCount} inscripciones`}
+                  />
+                  <Card
+                    label="Premios pagados"
+                    value={formatCLP(selected.prizeCreditsCents)}
+                    sub="a quienes ganan"
+                  />
+                  <Card
+                    label="IVA débito efectivo"
+                    value={formatCLP(selected.effectiveIvaDebitCents)}
+                    sub={`Margen afecto ${formatCLP(selected.effectiveTaxableMarginCents)}`}
+                  />
+                  <Card
+                    label="Resultado neto efectivo"
+                    value={formatCLP(selected.effectiveNetResultCents)}
+                    sub="Margen − IVA"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Referencia comprobante (no es la base del IVA): venta bruta Flow{' '}
+                  {formatCLP(selected.f29GrossSalesCents)} · IVA voucher{' '}
+                  {formatCLP(selected.f29IvaDebitCents)}.
+                </p>
               </section>
 
               <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -133,10 +148,10 @@ export default async function AdminReportsPage({
                   </h2>
                   <MetricRow label="Inscripciones" value={selected.registrationsCount.toLocaleString('es-CL')} />
                   <MetricRow label="Usuarios únicos" value={selected.uniqueUsers.toLocaleString('es-CL')} />
-                  <MetricRow label="Reserva premios ref." value={formatCLP(selected.prizeFundCents)} />
-                  <MetricRow label="Fee plataforma bruto" value={formatCLP(selected.platformFeeGrossCents)} />
+                  <MetricRow label="Split contable ref. (70/30)" value={formatCLP(selected.platformFeeGrossCents)} />
                   <MetricRow label="Premios acreditados" value={formatCLP(selected.prizeCreditsCents)} />
-                  <MetricRow label="Resultado devengado estimado" value={formatCLP(selected.accruedOperatingResultCents)} tone={selected.accruedOperatingResultCents >= 0 ? 'green' : 'red'} />
+                  <MetricRow label="Margen afecto efectivo" value={formatCLP(selected.effectiveTaxableMarginCents)} />
+                  <MetricRow label="Resultado neto efectivo" value={formatCLP(selected.effectiveNetResultCents)} tone={selected.effectiveNetResultCents >= 0 ? 'green' : 'red'} />
                 </div>
               </section>
 
@@ -162,25 +177,25 @@ export default async function AdminReportsPage({
                 <thead className="bg-muted/40 text-xs uppercase tracking-wide text-muted-foreground">
                   <tr>
                     <Th>Periodo</Th>
-                    <Th align="right">Venta F29</Th>
-                    <Th align="right">Neto</Th>
-                    <Th align="right">IVA</Th>
+                    <Th align="right">Cobros</Th>
                     <Th align="right">Premios</Th>
+                    <Th align="right">Margen afecto</Th>
+                    <Th align="right">IVA efectivo</Th>
                     <Th align="right">Wallet cierre</Th>
-                    <Th align="right">Resultado est.</Th>
+                    <Th align="right">Resultado neto</Th>
                   </tr>
                 </thead>
                 <tbody>
                   {rows.map((row) => (
                     <tr key={row.period} className="border-t">
                       <Td>{row.period}</Td>
-                      <Td align="right">{formatCLP(row.f29GrossSalesCents)}</Td>
-                      <Td align="right">{formatCLP(row.f29NetSalesCents)}</Td>
-                      <Td align="right">{formatCLP(row.f29IvaDebitCents)}</Td>
+                      <Td align="right">{formatCLP(row.effectiveEntriesCollectedCents)}</Td>
                       <Td align="right">{formatCLP(row.prizeCreditsCents)}</Td>
+                      <Td align="right">{formatCLP(row.effectiveTaxableMarginCents)}</Td>
+                      <Td align="right">{formatCLP(row.effectiveIvaDebitCents)}</Td>
                       <Td align="right">{formatCLP(row.closingWalletLiabilityCents)}</Td>
-                      <Td align="right" tone={row.accruedOperatingResultCents >= 0 ? 'green' : 'red'}>
-                        {formatCLP(row.accruedOperatingResultCents)}
+                      <Td align="right" tone={row.effectiveNetResultCents >= 0 ? 'green' : 'red'}>
+                        {formatCLP(row.effectiveNetResultCents)}
                       </Td>
                     </tr>
                   ))}

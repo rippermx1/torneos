@@ -20,25 +20,28 @@ describe('tournament finance', () => {
     expect(required).toBeGreaterThanOrEqual(pesosToCents(33300))
   })
 
-  it('separa cada inscripción en fondo de premios y fee con IVA incluido', () => {
+  // Split canónico vigente: 70% fondo de premios / 30% fee plataforma
+  // (DEFAULT_PRIZE_FUND_BPS=7000). El cambio 75%→70% fue deliberado (commit
+  // 0272e75) al agregar los modos Challenger/Pro, ampliando el margen 25%→30%.
+  it('separa cada inscripción en fondo de premios (70%) y fee (30%) con IVA incluido', () => {
     const split = splitEntryFee(pesosToCents(1000))
 
-    expect(split.prizeFundContributionCents).toBe(pesosToCents(750))
-    expect(split.platformFeeGrossCents).toBe(pesosToCents(250))
-    expect(split.platformFeeIvaCents).toBe(calculateIvaIncludedBreakdown(pesosToCents(250)).ivaCents)
+    expect(split.prizeFundContributionCents).toBe(pesosToCents(700))
+    expect(split.platformFeeGrossCents).toBe(pesosToCents(300))
+    expect(split.platformFeeIvaCents).toBe(calculateIvaIncludedBreakdown(pesosToCents(300)).ivaCents)
     expect(split.platformFeeNetCents).toBe(split.platformFeeGrossCents - split.platformFeeIvaCents)
   })
 
-  it('calcula reserva de premios con distribución 70/20/10', () => {
+  it('calcula reserva de premios (fondo 70%) con distribución 70/20/10', () => {
     const payouts = calculatePrizeFundPayouts({
       entryFeeCents: pesosToCents(1000),
       playerCount: 10,
     })
 
-    expect(payouts.prizeFundCents).toBe(pesosToCents(7500))
-    expect(payouts.prize1Cents).toBe(pesosToCents(5250))
-    expect(payouts.prize2Cents).toBe(pesosToCents(1500))
-    expect(payouts.prize3Cents).toBe(pesosToCents(750))
+    expect(payouts.prizeFundCents).toBe(pesosToCents(7000))
+    expect(payouts.prize1Cents).toBe(pesosToCents(4900))
+    expect(payouts.prize2Cents).toBe(pesosToCents(1400))
+    expect(payouts.prize3Cents).toBe(pesosToCents(700))
   })
 
   it('muestra el premio fijo publicado en torneos pagados', () => {
@@ -70,9 +73,9 @@ describe('tournament finance', () => {
       maxPlayers: 100,
     })
 
-    expect(financials.targetPlatformFeeGrossCents).toBe(pesosToCents(22500))
-    expect(financials.targetPlatformFeeNetCents).toBeGreaterThan(pesosToCents(18000))
-    expect(financials.platformNetMarginBps).toBeGreaterThanOrEqual(2000)
+    expect(financials.targetPlatformFeeGrossCents).toBe(pesosToCents(27000))
+    expect(financials.targetPlatformFeeNetCents).toBeGreaterThan(pesosToCents(22000))
+    expect(financials.platformNetMarginBps).toBeGreaterThanOrEqual(2500)
   })
 
   it('computes the required minimum players for an unsafe tournament', () => {

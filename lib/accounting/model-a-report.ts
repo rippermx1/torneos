@@ -66,6 +66,18 @@ export interface AccountingPeriodRow {
   withdrawalRejectedCents: number
   closingWalletLiabilityCents: number
   closingPendingWithdrawalsCents: number
+  // Contabilidad efectiva de la plataforma (criterio acordado):
+  // el IVA se reconoce sobre lo que la plataforma EFECTIVAMENTE retiene,
+  // es decir cobros por inscripción menos pagos a quienes ganan (y menos
+  // reembolsos por torneos cancelados). No depende del split contable
+  // 70/30 por inscripción: usa los flujos reales.
+  //   margen afecto (IVA incl.) = cobros_inscripcion − premios_pagados − reembolsos
+  //   IVA débito efectivo       = margen × 19/119
+  //   resultado neto efectivo   = margen − IVA
+  effectiveEntriesCollectedCents: number
+  effectiveTaxableMarginCents: number
+  effectiveIvaDebitCents: number
+  effectiveNetResultCents: number
   accruedOperatingResultCents: number
 }
 
@@ -136,7 +148,53 @@ function emptyPeriod(period: string): AccountingPeriodRow {
     withdrawalRejectedCents: 0,
     closingWalletLiabilityCents: 0,
     closingPendingWithdrawalsCents: 0,
+    effectiveEntriesCollectedCents: 0,
+    effectiveTaxableMarginCents: 0,
+    effectiveIvaDebitCents: 0,
+    effectiveNetResultCents: 0,
     accruedOperatingResultCents: 0,
+  }
+}
+
+// IVA incluido con signo: el margen efectivo de un periodo puede ser
+// negativo en el borde de mes (premios pagados de torneos cuya inscripción
+// se cobró el mes anterior). En ese caso el IVA débito es negativo
+// (remanente a favor) y debe arrastrarse, no truncarse a cero.
+function ivaIncludedSigned(grossCents: number): { netCents: number; ivaCents: number } {
+  if (grossCents >= 0) {
+    const breakdown = calculateIvaIncludedBreakdown(grossCents)
+    return { netCents: breakdown.netCents, ivaCents: breakdown.ivaCents }
+  }
+  const breakdown = calculateIvaIncludedBreakdown(-grossCents)
+  return { netCents: -breakdown.netCents, ivaCents: -breakdown.ivaCents }
+}
+
+export interface EffectivePeriodTax {
+  /** cobros − premios − reembolsos (IVA incluido) */
+  taxableMarginCents: number
+  /** 19/119 del margen (negativo = remanente a favor) */
+  ivaDebitCents: number
+  /** margen − IVA */
+  netResultCents: number
+}
+
+// Núcleo del modelo de IVA efectivo de la plataforma. Función pura: el IVA se
+// reconoce sobre lo que la plataforma EFECTIVAMENTE retiene (cobros por
+// inscripción menos premios pagados a ganadores menos reembolsos). No usa el
+// split contable 70/30. Como cobros y premios comparten la tasa 19%,
+// IVA(cobros) − IVA(premios) = 19/119 × (cobros − premios − reembolsos).
+export function calculateEffectivePeriodTax(input: {
+  entriesCollectedCents: number
+  prizesPaidCents: number
+  refundsCents: number
+}): EffectivePeriodTax {
+  const taxableMarginCents =
+    input.entriesCollectedCents - input.prizesPaidCents - input.refundsCents
+  const breakdown = ivaIncludedSigned(taxableMarginCents)
+  return {
+    taxableMarginCents,
+    ivaDebitCents: breakdown.ivaCents,
+    netResultCents: taxableMarginCents - breakdown.ivaCents,
   }
 }
 
@@ -227,6 +285,12 @@ function addRegistration(
   periodTournaments: Map<string, Set<string>>
 ) {
   row.registrationsCount += 1
+  // Cobro efectivo de la inscripción (valor neto de la entrada, sin el fee de
+  // procesamiento Flow que es pass-through al usuario). Es la base del modelo
+  // de IVA efectivo.
+  row.effectiveEntriesCollectedCents += registration.entry_fee_cents ?? 0
+  // Split contable referencial (70/30). Ya NO es la base del IVA: se conserva
+  // solo como referencia y para la conciliación fee_gross = net + iva.
   row.prizeFundCents += registration.prize_fund_contribution_cents ?? 0
   row.platformFeeGrossCents += registration.platform_fee_gross_cents ?? 0
   row.platformFeeNetCents += registration.platform_fee_net_cents ?? 0
@@ -309,8 +373,23 @@ function finalizePeriod(
     })
     .reduce((total, withdrawal) => total + withdrawal.amount_cents, 0)
 
-  row.accruedOperatingResultCents =
-    row.f29NetSalesCents - row.prizeCreditsCents - row.estimatedFlowFeeNetCents
+  // ── Contabilidad efectiva (criterio de la plataforma) ──────────────
+  // El IVA se reconoce sobre el margen que la plataforma realmente retiene:
+  // cobros por inscripción − premios pagados a ganadores − reembolsos.
+  // Equivale a "IVA(cobros) − IVA(premios)" porque ambos comparten la misma
+  // tasa: 19/119 × (cobros − premios − reembolsos). La comisión Flow no entra
+  // (se traslada al usuario vía gross-up), así que no reduce el resultado.
+  const effectiveTax = calculateEffectivePeriodTax({
+    entriesCollectedCents: row.effectiveEntriesCollectedCents,
+    prizesPaidCents: row.prizeCreditsCents,
+    refundsCents: row.refundsCents,
+  })
+  row.effectiveTaxableMarginCents = effectiveTax.taxableMarginCents
+  row.effectiveIvaDebitCents = effectiveTax.ivaDebitCents
+  row.effectiveNetResultCents = effectiveTax.netResultCents
+
+  // El resultado operativo del periodo ES el resultado neto efectivo.
+  row.accruedOperatingResultCents = row.effectiveNetResultCents
 }
 
 // A5: invariantes contables. Estas verificaciones son baratas y cubren
@@ -505,10 +584,11 @@ export async function buildModeloAAccountingReport(
     model: 'Modelo A',
     reconciliation,
     notes: [
-      'Modelo A: el voucher Flow/comprobante de pago electronico es la base del registro de ventas cuando el modelo de emision esta declarado ante SII.',
-      'F29: usar f29_venta_afecta_bruta_clp, f29_base_neta_clp e f29_iva_debito_clp; el IVA credito Flow es estimado y debe cuadrarse contra factura del proveedor.',
-      'F22/gestion: premios_acreditados_clp y retiros son separados; los premios del torneo son fijos y publicados antes del pago.',
-      'Validar criterio tributario final con contador antes de declarar renta anual.',
+      'Contabilidad efectiva: el IVA de la plataforma se reconoce sobre el margen real = cobros por inscripcion menos premios pagados a ganadores (menos reembolsos). IVA debito efectivo = 19/119 del margen. No depende del split contable 70/30 por inscripcion.',
+      'Por que es no ambiguo: como cobros y premios comparten la tasa 19%, IVA(cobros) - IVA(premios) = 19/119 x (cobros - premios). El antiguo dilema (IVA sobre el 30% del fee vs sobre el 100% de la entrada) queda resuelto por un unico criterio sobre flujos reales.',
+      'La comision Flow no afecta el resultado: se traslada al usuario via gross-up (fee de procesamiento visible en checkout). Las columnas f29_* y flow_* quedan como referencia del comprobante/voucher, no como base del IVA.',
+      'Punto formal unico para el contador: definir si la boleta electronica se emite por el total de la inscripcion o por el margen. El calculo interno efectivo ya es univoco; falta el criterio de emision ante SII.',
+      'F22/gestion: premios y retiros se reportan aparte; los premios del torneo son fijos y publicados antes del pago.',
     ],
     rows: [...periods.values()].sort((left, right) => right.period.localeCompare(left.period)),
     snapshot: {
@@ -569,6 +649,11 @@ export function accountingReportToCsv(report: AccountingReport): string {
     'retiros_rechazados_clp',
     'saldo_wallet_cierre_clp',
     'retiros_pendientes_cierre_clp',
+    'efectivo_cobros_inscripcion_clp',
+    'efectivo_premios_pagados_clp',
+    'efectivo_margen_afecto_clp',
+    'efectivo_iva_debito_clp',
+    'efectivo_resultado_neto_clp',
     'resultado_operativo_devengado_est_clp',
   ]
 
@@ -607,6 +692,11 @@ export function accountingReportToCsv(report: AccountingReport): string {
         centsToPesos(row.withdrawalRejectedCents),
         centsToPesos(row.closingWalletLiabilityCents),
         centsToPesos(row.closingPendingWithdrawalsCents),
+        centsToPesos(row.effectiveEntriesCollectedCents),
+        centsToPesos(row.prizeCreditsCents),
+        centsToPesos(row.effectiveTaxableMarginCents),
+        centsToPesos(row.effectiveIvaDebitCents),
+        centsToPesos(row.effectiveNetResultCents),
         centsToPesos(row.accruedOperatingResultCents),
       ].join(',')
     )

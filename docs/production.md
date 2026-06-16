@@ -113,8 +113,12 @@ docker run --rm -p 3000:3000 ^
 
 ## Base de datos
 
-La base remota `baeylvoipmazcthnwxmz` ya tiene aplicadas las migraciones `001` a `009`
-y `20260428134528`.
+La base remota `baeylvoipmazcthnwxmz` tiene aplicadas todas las migraciones del
+repo (verificado 2026-06-16: columnas `prize_fund_bps`/`prize_model`/`is_test`,
+vistas `monthly_platform_finance` y `prize_liability`, y RPCs `finalize_tournament`,
+`record_game_move`, etc.). Incluye `20260616000000_align_prize_fund_default_70.sql`
+(aplicada 2026-06-16). La base está en estado limpio pre-lanzamiento (sin torneos
+ni movimientos reales).
 
 Para futuros cambios de schema, evita empujar desde la maquina manualmente. Usa CI/CD con:
 

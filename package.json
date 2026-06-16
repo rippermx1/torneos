@@ -8,6 +8,8 @@
     "start": "node scripts/start-standalone.mjs",
     "check:production-env": "node scripts/check-production-env.mjs",
     "setup:test-users": "node scripts/setup-test-users.mjs",
+    "create:admin": "node scripts/create-admin.mjs",
+    "reset:production-db": "node scripts/reset-production-db.mjs",
     "cleanup:simulation": "node scripts/cleanup-simulation-data.mjs",
     "smoke:local": "node scripts/smoke-local-e2e.mjs",
     "smoke:flow": "node scripts/test-flow-tournament-checkout.mjs",

@@ -13,6 +13,13 @@ export const DEFAULT_PRIZE_3RD_BPS = BPS - DEFAULT_PRIZE_1ST_BPS - DEFAULT_PRIZE
 export const MIN_TARGET_PLATFORM_NET_MARGIN_BPS = 1000
 export const MIN_TARGET_MARGIN_BPS = MIN_TARGET_PLATFORM_NET_MARGIN_BPS
 
+// Premio de 1er lugar por defecto para freerolls de adquisición. Un freeroll
+// sin premio no capta a nadie: el premio ES la herramienta de adquisición. Es
+// costo de marketing puro (sin cuota que lo financie) y configurable por torneo.
+export const DEFAULT_FREEROLL_PRIZE_CENTS = 500000
+// Tope de sanidad para evitar premios de freeroll por error de tipeo.
+export const MAX_FREEROLL_PRIZE_CENTS = 50000000
+
 export const FLOW_NEXT_DAY_FEE_BPS = 319
 const IVA_MULTIPLIER_BPS = BPS + IVA_BPS
 const FLOW_EFFECTIVE_COST_BPS = Math.ceil((FLOW_NEXT_DAY_FEE_BPS * IVA_MULTIPLIER_BPS) / BPS)

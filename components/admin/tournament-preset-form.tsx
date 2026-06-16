@@ -6,6 +6,8 @@ import type { ComponentType } from 'react'
 import type { TournamentType } from '@/types/database'
 import {
   calculateEntryPoolFinancials,
+  centsToPesos,
+  DEFAULT_FREEROLL_PRIZE_CENTS,
   TOURNAMENT_PRESETS,
   LATENCY_PRESET,
   pesosToCents,
@@ -23,6 +25,7 @@ interface TournamentPresetFormProps {
 
 type NumericField =
   | 'entryFeePesos'
+  | 'freerollPrizePesos'
   | 'minPlayers'
   | 'targetPlayers'
   | 'maxPlayers'
@@ -72,9 +75,10 @@ export function TournamentPresetForm({
     setPresetKey(LATENCY_PRESET.tournamentType)
     setIsTest(true)
     setName(`Latencia ${new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })}`)
-    setDescription('Torneo de prueba para medir latencia. 1 jugador, sin premio.')
+    setDescription('Torneo de prueba para medir latencia. 1 jugador, premio mínimo.')
     setValues({
       entryFeePesos: LATENCY_PRESET.entryFeePesos,
+      freerollPrizePesos: 1,
       minPlayers: LATENCY_PRESET.minPlayers,
       targetPlayers: LATENCY_PRESET.targetPlayers,
       maxPlayers: LATENCY_PRESET.maxPlayers,
@@ -91,6 +95,11 @@ export function TournamentPresetForm({
   }
 
   const paidTournament = values.entryFeePesos > 0
+  // En pagados el premio se deriva del 70% al mínimo; en freerolls es el premio
+  // de adquisición configurable (costo de marketing, sin cuota que lo financie).
+  const publishedPrizeCents = paidTournament
+    ? financials.minPrizeFundCents
+    : pesosToCents(values.freerollPrizePesos)
   const registrationOpensMs = Date.parse(dates.registrationOpensAt)
   const playStartMs = Date.parse(dates.playWindowStart)
   const playEndMs = Date.parse(dates.playWindowEnd)
@@ -109,7 +118,9 @@ export function TournamentPresetForm({
     values.targetPlayers <= values.maxPlayers
   const economicsValid = values.entryFeePesos >= 0 && values.durationMinutes > 0
   const paidPlayersValid = !paidTournament || values.minPlayers >= 2
-  const canLaunch = datesValid && capacityValid && economicsValid && paidPlayersValid
+  // Un freeroll sin premio no capta usuarios: exige premio de adquisición > 0.
+  const freerollPrizeValid = paidTournament || values.freerollPrizePesos > 0
+  const canLaunch = datesValid && capacityValid && economicsValid && paidPlayersValid && freerollPrizeValid
 
   return (
     <div className="space-y-6">
@@ -150,7 +161,7 @@ export function TournamentPresetForm({
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <Metric label="Entrada" value={formatPesos(preset.entryFeePesos)} />
-                  <Metric label="Premio fijo" value={formatCents(presetFinancials.minPrizeFundCents)} />
+                  <Metric label="Premio" value={formatCents(preset.entryFeePesos > 0 ? presetFinancials.minPrizeFundCents : DEFAULT_FREEROLL_PRIZE_CENTS)} />
                   <Metric label="Mínimo" value={`${preset.minPlayers} jugadores`} />
                   <Metric label="Fee neto" value={preset.entryFeePesos > 0 ? formatBps(presetFinancials.platformNetMarginBps) : 'Costo promo'} />
                 </div>
@@ -191,6 +202,9 @@ export function TournamentPresetForm({
             <fieldset className="border rounded-lg p-4 space-y-4">
               <legend className="text-sm font-medium px-1">Entrada y cupos</legend>
               <NumberField label="Cuota de inscripción" name="entry_fee" value={values.entryFeePesos} onChange={(value) => setNumeric('entryFeePesos', value)} required />
+              {!paidTournament && (
+                <NumberField label="Premio 1er lugar (adquisición)" name="freeroll_prize" value={values.freerollPrizePesos} onChange={(value) => setNumeric('freerollPrizePesos', value)} required />
+              )}
               <div className="grid grid-cols-3 gap-3">
                 <NumberField label="Mínimo" name="min_players" value={values.minPlayers} onChange={(value) => setNumeric('minPlayers', value)} required />
                 <NumberField label="Objetivo" name="target_players_visible" value={values.targetPlayers} onChange={(value) => setNumeric('targetPlayers', value)} />
@@ -219,7 +233,7 @@ export function TournamentPresetForm({
               )}
             </div>
             <div className="space-y-2 text-sm">
-              <MetricRow label="Premio fijo publicado" value={formatCents(financials.minPrizeFundCents)} />
+              <MetricRow label={paidTournament ? 'Premio fijo publicado' : 'Premio adquisición'} value={formatCents(publishedPrizeCents)} />
               <MetricRow label="Recaudación objetivo" value={formatCents(financials.targetRevenueCents)} />
               <MetricRow label="Recaudación máxima" value={formatCents(financials.maxRevenueCents)} />
               <MetricRow label="Fee plataforma bruto" value={formatCents(financials.targetPlatformFeeGrossCents)} />
@@ -242,9 +256,14 @@ export function TournamentPresetForm({
                 El fee neto queda estrecho. Úsalo sólo como adquisición.
               </p>
             )}
+            {!paidTournament && !freerollPrizeValid && (
+              <p className="text-xs text-red-700">
+                El freeroll necesita un premio de adquisición mayor a 0.
+              </p>
+            )}
             {!paidTournament && (
               <p className="text-xs text-muted-foreground">
-                Freeroll: registrar como costo de marketing y limitar frecuencia.
+                Freeroll: el premio es costo de marketing. Limita la frecuencia (máx. 1/semana).
               </p>
             )}
             <button
@@ -265,6 +284,7 @@ export function TournamentPresetForm({
 function valuesFromPreset(preset: TournamentPreset) {
   return {
     entryFeePesos: preset.entryFeePesos,
+    freerollPrizePesos: centsToPesos(DEFAULT_FREEROLL_PRIZE_CENTS),
     minPlayers: preset.minPlayers,
     targetPlayers: preset.targetPlayers,
     maxPlayers: preset.maxPlayers,

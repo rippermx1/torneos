@@ -5,16 +5,16 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import type { TournamentType } from '@/types/database'
 import {
+  DEFAULT_FREEROLL_PRIZE_CENTS,
   DEFAULT_PLATFORM_FEE_BPS,
   DEFAULT_PRIZE_1ST_BPS,
   DEFAULT_PRIZE_2ND_BPS,
   DEFAULT_PRIZE_3RD_BPS,
   DEFAULT_PRIZE_FUND_BPS,
+  MAX_FREEROLL_PRIZE_CENTS,
   calculateEntryPoolFinancials,
 } from '@/lib/tournament/finance'
 import { TournamentPresetForm } from '@/components/admin/tournament-preset-form'
-
-const FREEROLL_PRIZE_1_CENTS = 500000
 
 async function createTournament(formData: FormData) {
   'use server'
@@ -35,6 +35,10 @@ async function createTournament(formData: FormData) {
   const isTest           = formData.get('is_test') === '1'
   const entryFeePesos    = Number.parseFloat(String(formData.get('entry_fee') ?? ''))
   const entryFee         = Math.round(entryFeePesos * 100)
+  const freerollPrizeInput = Number.parseFloat(String(formData.get('freeroll_prize') ?? ''))
+  const freerollPrizeCents = Number.isFinite(freerollPrizeInput) && freerollPrizeInput > 0
+    ? Math.round(freerollPrizeInput * 100)
+    : DEFAULT_FREEROLL_PRIZE_CENTS
   const minPlayers       = Number.parseInt(String(formData.get('min_players') ?? ''), 10)
   const targetPlayers    = Number.parseInt(String(formData.get('target_players') ?? minPlayers), 10)
   const maxPlayers       = Number.parseInt(String(formData.get('max_players') ?? ''), 10)
@@ -77,13 +81,17 @@ async function createTournament(formData: FormData) {
     throw new Error('Los torneos de prueba deben ser gratuitos.')
   }
 
+  if (entryFee === 0 && (freerollPrizeCents <= 0 || freerollPrizeCents > MAX_FREEROLL_PRIZE_CENTS)) {
+    throw new Error('El premio del freeroll debe ser mayor a 0 y hasta $500.000.')
+  }
+
   const entryPool = calculateEntryPoolFinancials({
     entryFeeCents: entryFee,
     minPlayers,
     targetPlayers,
     maxPlayers,
   })
-  const prize1 = entryFee > 0 ? entryPool.minPayouts.prize1Cents : FREEROLL_PRIZE_1_CENTS
+  const prize1 = entryFee > 0 ? entryPool.minPayouts.prize1Cents : freerollPrizeCents
   const prize2 = entryFee > 0 ? entryPool.minPayouts.prize2Cents : 0
   const prize3 = entryFee > 0 ? entryPool.minPayouts.prize3Cents : 0
 

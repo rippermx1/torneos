@@ -12,7 +12,7 @@ import {
   DEFAULT_PRIZE_3RD_BPS,
   DEFAULT_PRIZE_FUND_BPS,
   MAX_FREEROLL_PRIZE_CENTS,
-  calculateEntryPoolFinancials,
+  buildPrizeLadder,
 } from '@/lib/tournament/finance'
 import { TournamentPresetForm } from '@/components/admin/tournament-preset-form'
 
@@ -85,15 +85,18 @@ async function createTournament(formData: FormData) {
     throw new Error('El premio del freeroll debe ser mayor a 0 y hasta $500.000.')
   }
 
-  const entryPool = calculateEntryPoolFinancials({
-    entryFeeCents: entryFee,
-    minPlayers,
-    targetPlayers,
-    maxPlayers,
-  })
-  const prize1 = entryFee > 0 ? entryPool.minPayouts.prize1Cents : freerollPrizeCents
-  const prize2 = entryFee > 0 ? entryPool.minPayouts.prize2Cents : 0
-  const prize3 = entryFee > 0 ? entryPool.minPayouts.prize3Cents : 0
+  // Escalera de premios publicada. Torneos pagados: bolsa garantizada escalonada
+  // que sube por tramos con la convocatoria (buildPrizeLadder). Freerolls: un
+  // único tramo con el premio fijo de marketing. El tramo base define las
+  // columnas prize_*_cents del torneo (compatibilidad y fallback de finalize).
+  const prizeLadder =
+    entryFee > 0
+      ? buildPrizeLadder({ entryFeeCents: entryFee, minPlayers, maxPlayers })
+      : [{ thresholdPlayers: minPlayers, fundCents: freerollPrizeCents, prize1Cents: freerollPrizeCents, prize2Cents: 0, prize3Cents: 0 }]
+  const baseTier = prizeLadder[0]!
+  const prize1 = baseTier.prize1Cents
+  const prize2 = baseTier.prize2Cents
+  const prize3 = baseTier.prize3Cents
 
   // C6 guard: para torneos pagados, los premios fijos no pueden superar la
   // recaudacion bruta al minimo de jugadores. Este chequeo replica el CHECK
@@ -152,6 +155,25 @@ async function createTournament(formData: FormData) {
     .single()
 
   if (error) throw new Error(`Error creando torneo: ${error.message}`)
+
+  // Publicar la escalera de premios. Si falla, revertir el torneo para no dejar
+  // torneos huérfanos sin escalera (finalize caería al fallback, pero la ficha
+  // no mostraría los tramos publicados).
+  const { error: tiersError } = await supabase.from('tournament_prize_tiers').insert(
+    prizeLadder.map((tier) => ({
+      tournament_id: data.id,
+      min_players_threshold: tier.thresholdPlayers,
+      prize_fund_cents: tier.fundCents,
+      prize_1st_cents: tier.prize1Cents,
+      prize_2nd_cents: tier.prize2Cents,
+      prize_3rd_cents: tier.prize3Cents,
+    }))
+  )
+  if (tiersError) {
+    await supabase.from('tournaments').delete().eq('id', data.id)
+    throw new Error(`Error publicando la escalera de premios: ${tiersError.message}`)
+  }
+
   redirect(`/tournaments/${data.id}`)
 }
 

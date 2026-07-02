@@ -213,6 +213,17 @@ export interface FlowRefundAttempt {
   settled_at: string | null
 }
 
+export interface TournamentPrizeTier {
+  id: string
+  tournament_id: string
+  min_players_threshold: number
+  prize_fund_cents: number
+  prize_1st_cents: number
+  prize_2nd_cents: number
+  prize_3rd_cents: number
+  created_at: string
+}
+
 export interface AdminAction {
   id: string
   admin_id: string
@@ -377,6 +388,12 @@ export type Database = {
         Row: FlowRefundAttempt & DbRecord
         Insert: InsertWithOptional<FlowRefundAttempt, 'id' | 'created_at' | 'flow_refund_token' | 'flow_refund_order' | 'error_message' | 'settled_at'>
         Update: Partial<Omit<FlowRefundAttempt, 'id' | 'created_at'>> & DbRecord
+        Relationships: []
+      }
+      tournament_prize_tiers: {
+        Row: TournamentPrizeTier & DbRecord
+        Insert: InsertWithOptional<TournamentPrizeTier, 'id' | 'created_at' | 'prize_2nd_cents' | 'prize_3rd_cents'>
+        Update: Partial<Omit<TournamentPrizeTier, 'id' | 'created_at'>> & DbRecord
         Relationships: []
       }
     }

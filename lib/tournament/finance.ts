@@ -283,6 +283,95 @@ export function calculatePrizeFundPayouts(input: {
   }
 }
 
+// ── Escalera de premios ("bolsa garantizada escalonada") ──────────────
+// Premios fijos y publicados por tramos que suben con la convocatoria. Cada
+// tramo mantiene ~30% de margen (RTP ~70% en su umbral), evitando que el
+// retorno al jugador colapse al llenarse el torneo. Ver
+// docs/roadmap-retencion-rentabilidad.md.
+
+/** Múltiplos del mínimo que definen los umbrales de la escalera. */
+export const DEFAULT_PRIZE_LADDER_MULTIPLES = [1, 2.5, 5, 8, 13] as const
+
+export interface PrizeTier {
+  /** El tramo aplica cuando los inscritos ≥ thresholdPlayers. */
+  thresholdPlayers: number
+  fundCents: number
+  prize1Cents: number
+  prize2Cents: number
+  prize3Cents: number
+}
+
+/**
+ * Construye la escalera publicada para un torneo PAGADO (entry > 0).
+ * Para cada umbral (round(múltiplo × mínimo), único, ≤ maxPlayers), el fondo =
+ * prizeFundBps × entry × umbral, repartido 70/20/10. Invariante de solvencia:
+ * fondo ≤ entry × umbral (porque prizeFundBps ≤ 100%), garantizado a ese llenado.
+ * Los freerolls (entry = 0) NO usan esta función: su premio es un costo fijo de
+ * marketing, se maneja como un único tramo aparte en createTournament.
+ */
+export function buildPrizeLadder(input: {
+  entryFeeCents: number
+  minPlayers: number
+  maxPlayers?: number
+  prizeFundBps?: number
+  prize1Bps?: number
+  prize2Bps?: number
+  prize3Bps?: number
+  multiples?: readonly number[]
+}): PrizeTier[] {
+  const { entryFeeCents, minPlayers } = input
+  if (!Number.isInteger(entryFeeCents) || entryFeeCents < 0) {
+    throw new Error(`entryFeeCents inválido: ${entryFeeCents}`)
+  }
+  if (!Number.isInteger(minPlayers) || minPlayers < 1) {
+    throw new Error(`minPlayers inválido: ${minPlayers}`)
+  }
+
+  const prizeFundBps = input.prizeFundBps ?? DEFAULT_PRIZE_FUND_BPS
+  const prize1Bps = input.prize1Bps ?? DEFAULT_PRIZE_1ST_BPS
+  const prize2Bps = input.prize2Bps ?? DEFAULT_PRIZE_2ND_BPS
+  const prize3Bps = input.prize3Bps ?? DEFAULT_PRIZE_3RD_BPS
+  if (prize1Bps + prize2Bps + prize3Bps !== BPS) {
+    throw new Error('La distribución de premios debe sumar 100%')
+  }
+
+  const maxPlayers = input.maxPlayers ?? Number.POSITIVE_INFINITY
+  const multiples = input.multiples ?? DEFAULT_PRIZE_LADDER_MULTIPLES
+
+  // Umbrales: el base (mínimo) siempre; el resto = round(múltiplo × min), únicos,
+  // dentro de [min, maxPlayers]. Orden ascendente.
+  const thresholds = new Set<number>([minPlayers])
+  for (const m of multiples) {
+    const t = Math.round(m * minPlayers)
+    if (t >= minPlayers && t <= maxPlayers) thresholds.add(t)
+  }
+
+  return [...thresholds]
+    .sort((a, b) => a - b)
+    .map((threshold) => {
+      const fund = Math.round((entryFeeCents * threshold * prizeFundBps) / BPS)
+      const prize1Cents = Math.round((fund * prize1Bps) / BPS)
+      const prize2Cents = Math.round((fund * prize2Bps) / BPS)
+      const prize3Cents = fund - prize1Cents - prize2Cents
+      return { thresholdPlayers: threshold, fundCents: fund, prize1Cents, prize2Cents, prize3Cents }
+    })
+}
+
+/**
+ * Selecciona el tramo aplicable dado el número de inscritos: el de mayor umbral
+ * que no supere `registeredCount`. Si ninguno aplica (registrados < base),
+ * retorna el tramo base. Asume `tiers` ascendente por thresholdPlayers.
+ */
+export function selectPrizeTier(tiers: readonly PrizeTier[], registeredCount: number): PrizeTier {
+  if (tiers.length === 0) throw new Error('No hay tramos de premio')
+  let selected = tiers[0]!
+  for (const tier of tiers) {
+    if (registeredCount >= tier.thresholdPlayers) selected = tier
+    else break
+  }
+  return selected
+}
+
 export function calculateTournamentDisplayPayouts(
   tournament: TournamentPrizeDisplayInput,
   playerCount: number

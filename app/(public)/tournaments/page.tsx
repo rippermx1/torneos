@@ -72,7 +72,7 @@ export default async function TournamentsPage() {
             <div className="text-sm text-muted-foreground space-y-1">
               <p>Inscripción: <span className="text-foreground font-medium">{formatCLP(t.entry_fee_cents)}</span></p>
               <p>
-                1° premio fijo:{' '}
+                1° premio{t.entry_fee_cents > 0 ? ' desde' : ''}:{' '}
                 <span className="text-foreground font-medium">{formatCLP(t.prize_1st_cents)}</span>
               </p>
               <p>Inicio: {formatDateTimeCL(t.play_window_start)}</p>

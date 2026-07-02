@@ -3,7 +3,7 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { createFlowRefund, getFlowRefundStatus } from '@/lib/flow/refunds'
 import { getAppUrl } from '@/lib/env'
 import { sendTournamentCancelledEmail } from '@/lib/email/refund-notifications'
-import type { FlowPaymentAttempt, FlowRefundAttempt } from '@/types/database'
+import type { FlowPaymentAttempt, FlowRefundAttempt, Tournament } from '@/types/database'
 
 // ───────────────────────────────────────────────────────────────
 // Lógica de reembolsos Flow para torneos cancelados.
@@ -47,12 +47,28 @@ export async function issueFlowRefunds(
     .select('id, user_id, commerce_order, flow_order')
     .eq('tournament_id', tournamentId)
     .eq('intent', 'tournament_registration')
-    .eq('status', 'credited')
+    .eq('status', 'paid')
   const attempts = rawAttempts as AttemptRow[] | null
 
   if (!attempts?.length) return results
 
+  // Idempotencia: no reemitir una reversa para un pago que ya tiene un intento
+  // de reembolso (en cualquier estado). Los 'rejected' los reintenta
+  // autoRetryRejectedRefunds; aquí solo emitimos la PRIMERA reversa de cada pago.
+  // Permite llamar issueFlowRefunds tanto en la cancelación inmediata (lifecycle)
+  // como desde la red de seguridad (reconcileCancelledTournamentRefunds) sin duplicar.
+  const { data: existingRefunds } = await supabase
+    .from('flow_refund_attempts')
+    .select('flow_payment_attempt_id')
+    .eq('tournament_id', tournamentId)
+  const alreadyRefunded = new Set(
+    (existingRefunds ?? [])
+      .map((row) => (row as { flow_payment_attempt_id: string | null }).flow_payment_attempt_id)
+      .filter((id): id is string => Boolean(id))
+  )
+
   for (const attempt of attempts) {
+    if (alreadyRefunded.has(attempt.id)) continue
     const { data: { user }, error: userErr } = await supabase.auth.admin.getUserById(attempt.user_id)
 
     if (userErr || !user?.email) {
@@ -292,4 +308,52 @@ export async function reconcileStaleRefunds(minAgeMinutes = 10): Promise<{
   }
 
   return { checked: rows.length, updated, errors }
+}
+
+/**
+ * Red de seguridad de reembolsos: emite la reversa Flow para torneos ya
+ * CANCELADOS que tengan pagos acreditados sin ninguna reversa emitida.
+ *
+ * Por qué existe: la emisión inmediata en el lifecycle puede no ocurrir en
+ * todos los caminos de cancelación (p. ej. el auto-cancel de game/start llama
+ * a cancel_tournament pero no emite reembolsos) o puede fallar parcialmente.
+ * Este barrido idempotente garantiza que todo inscrito de un torneo cancelado
+ * termine reembolsado. issueFlowRefunds omite los pagos que ya tienen un
+ * intento de reembolso, así que reejecutar es seguro.
+ *
+ * Acotado a torneos recientes (lookbackDays) para mantener el barrido barato.
+ */
+export async function reconcileCancelledTournamentRefunds(lookbackDays = 3): Promise<{
+  tournamentsChecked: number
+  refundsIssued: number
+  refundsFailed: number
+}> {
+  const supabase = createAdminClient()
+  const appUrl = getAppUrl()
+  if (!appUrl) {
+    console.error('[refund-reconcile] APP_URL no configurado, omitiendo barrido de cancelados')
+    return { tournamentsChecked: 0, refundsIssued: 0, refundsFailed: 0 }
+  }
+
+  const cutoff = new Date(Date.now() - lookbackDays * 24 * 60 * 60 * 1000).toISOString()
+  const { data: cancelled } = await supabase
+    .from('tournaments')
+    .select('id, name, entry_fee_cents')
+    .eq('status', 'cancelled')
+    .gt('entry_fee_cents', 0)
+    .gte('play_window_start', cutoff)
+
+  const tournaments = (cancelled ?? []) as Pick<Tournament, 'id' | 'name' | 'entry_fee_cents'>[]
+  let refundsIssued = 0
+  let refundsFailed = 0
+
+  for (const t of tournaments) {
+    const refundResults = await issueFlowRefunds(t.id, t.entry_fee_cents, appUrl, t.name)
+    for (const r of refundResults) {
+      if (r.error) refundsFailed++
+      else refundsIssued++
+    }
+  }
+
+  return { tournamentsChecked: tournaments.length, refundsIssued, refundsFailed }
 }

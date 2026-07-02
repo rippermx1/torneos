@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { calculateEffectivePeriodTax } from '@/lib/accounting/model-a-report'
+import { calculateEffectivePeriodTax, applyAbsorbedFlowCost } from '@/lib/accounting/model-a-report'
 import { calculateIvaIncludedBreakdown, pesosToCents } from '@/lib/tournament/finance'
 
 // Contabilidad efectiva de la plataforma:
@@ -70,5 +70,37 @@ describe('contabilidad efectiva (IVA sobre margen real)', () => {
     })
 
     expect(tax).toEqual({ taxableMarginCents: 0, ivaDebitCents: 0, netResultCents: 0 })
+  })
+})
+
+// La plataforma absorbe la comisión Flow (checkout cobra solo el entry_fee):
+// su costo neto reduce el resultado operativo y su IVA es crédito fiscal.
+// Antes se asumía gross-up, sobreestimando utilidad e IVA.
+describe('absorción de comisión Flow (applyAbsorbedFlowCost)', () => {
+  it('resta el costo neto Flow del resultado y toma su IVA como crédito', () => {
+    const result = applyAbsorbedFlowCost({
+      effectiveNetResultCents: 65042,
+      effectiveIvaDebitCents: 12358,
+      flowFeeNetCents: 2871,
+      flowFeeIvaCreditCents: 545,
+    })
+
+    expect(result.operatingResultCents).toBe(65042 - 2871)
+    expect(result.ivaPayableCents).toBe(12358 - 545)
+    // El punto del fix: el resultado operativo ya NO sobreestima (es menor que el
+    // margen neto pre-Flow por exactamente la comisión absorbida).
+    expect(result.operatingResultCents).toBeLessThan(65042)
+  })
+
+  it('sin comisión Flow (periodo sin cobros) no altera las cifras de ventas', () => {
+    const result = applyAbsorbedFlowCost({
+      effectiveNetResultCents: 65042,
+      effectiveIvaDebitCents: 12358,
+      flowFeeNetCents: 0,
+      flowFeeIvaCreditCents: 0,
+    })
+
+    expect(result.operatingResultCents).toBe(65042)
+    expect(result.ivaPayableCents).toBe(12358)
   })
 })

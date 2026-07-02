@@ -72,8 +72,8 @@ export default function TerminosPage() {
           promoción separada antes de abrir inscripciones.
         </p>
         <p>
-          En cada inscripción, un <strong>75%</strong> se orienta al premio del torneo y un
-          {' '}<strong>25%</strong> corresponde al fee bruto de la plataforma, ambos con IVA incluido.
+          En cada inscripción, un <strong>70%</strong> se orienta al premio del torneo y un
+          {' '}<strong>30%</strong> corresponde al fee bruto de la plataforma, ambos con IVA incluido.
         </p>
         <p>
           El cobro de la inscripción se realiza directamente a través de Flow.cl al momento de
@@ -86,6 +86,13 @@ export default function TerminosPage() {
           El <strong>puntaje final</strong> es la única métrica de clasificación. En caso de
           empate, se considera el tile más alto alcanzado y luego la menor cantidad de movimientos.
           Los resultados son públicos y auditables a través del leaderboard de cada torneo.
+        </p>
+        <p>
+          Los premios publicados se otorgan a los jugadores mejor clasificados que hayan{' '}
+          <strong>completado una partida válida</strong> dentro de la ventana del torneo. Si el
+          número de jugadores que completan una partida es menor a la cantidad de posiciones
+          premiadas, los premios de las posiciones no cubiertas <strong>no se otorgan ni se
+          acumulan</strong> para torneos futuros.
         </p>
         <p>
           Si el torneo no alcanza el número mínimo de participantes inscritos al momento del

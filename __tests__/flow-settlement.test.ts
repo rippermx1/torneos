@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { readFlowToken } from '@/lib/flow/settlement'
+import { readFlowToken, isTerminalRegistrationFailure } from '@/lib/flow/settlement'
 
 describe('readFlowToken', () => {
   it('lee token desde query string', async () => {
@@ -70,5 +70,23 @@ describe('readFlowToken', () => {
     })
 
     await expect(readFlowToken(req, 4096)).resolves.toBe('q')
+  })
+})
+
+// Un pago Flow confirmado cuya inscripción no puede asentarse por estas causas
+// debe gatillar reembolso automático (terminal), no un reintento indefinido.
+describe('isTerminalRegistrationFailure', () => {
+  it('clasifica como terminales las fallas de negocio de register_for_tournament', () => {
+    expect(isTerminalRegistrationFailure('Torneo lleno')).toBe(true)
+    expect(isTerminalRegistrationFailure('Inscripciones cerradas')).toBe(true)
+    expect(isTerminalRegistrationFailure('Cuota inconsistente: esperado=1000, recibido=500')).toBe(true)
+  })
+
+  it('trata como transitorios (reintentables) los demás errores', () => {
+    expect(isTerminalRegistrationFailure('deadlock detected')).toBe(false)
+    expect(isTerminalRegistrationFailure('could not serialize access')).toBe(false)
+    // Monto inconsistente indica manipulación/datos corruptos: se investiga, no se auto-reembolsa.
+    expect(isTerminalRegistrationFailure('Monto inconsistente: esperado=1000, recibido=999')).toBe(false)
+    expect(isTerminalRegistrationFailure('Attempt no encontrado: tour-x')).toBe(false)
   })
 })

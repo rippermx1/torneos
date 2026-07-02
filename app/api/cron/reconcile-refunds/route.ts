@@ -1,8 +1,15 @@
-import { reconcileStaleRefunds, autoRetryRejectedRefunds } from '@/lib/tournament/refunds'
+import {
+  reconcileStaleRefunds,
+  autoRetryRejectedRefunds,
+  reconcileCancelledTournamentRefunds,
+} from '@/lib/tournament/refunds'
 
-// Cada 15 minutos (vercel.json):
-// 1. Reconcilia pending cuyo webhook se perdió consultando Flow directamente.
-// 2. Reintenta automáticamente refunds rechazados (hasta 3 intentos por pago).
+// Programado vía GitHub Actions (.github/workflows/reconcile-refunds.yml) cada
+// 10 min, con respaldo diario en Vercel (vercel.json) por si Actions se deshabilita.
+// El endpoint es idempotente, así que ejecutarlo desde ambos schedulers es seguro.
+// 1. Emite reversas faltantes de torneos cancelados (red de seguridad idempotente).
+// 2. Reconcilia pending cuyo webhook se perdió consultando Flow directamente.
+// 3. Reintenta automáticamente refunds rechazados (hasta 3 intentos por pago).
 
 export const maxDuration = 30
 
@@ -22,6 +29,9 @@ export async function GET(req: Request): Promise<Response> {
   const startedAt = Date.now()
 
   try {
+    // El barrido de cancelados va primero: emite las reversas que falten para
+    // que reconcileStaleRefunds/autoRetry las recojan en las siguientes pasadas.
+    const cancelledSweep = await reconcileCancelledTournamentRefunds(3)
     const [reconcile, autoRetry] = await Promise.all([
       reconcileStaleRefunds(10),
       autoRetryRejectedRefunds(3),
@@ -31,6 +41,7 @@ export async function GET(req: Request): Promise<Response> {
       ok: true,
       processedAt: new Date().toISOString(),
       durationMs: Date.now() - startedAt,
+      cancelledSweep,
       reconcile,
       autoRetry,
     })

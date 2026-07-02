@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useMemo, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { completeOnboarding } from './actions'
+import { isAdult } from '@/lib/identity/verification'
 
 interface Props {
   defaultUsername: string
@@ -12,9 +13,17 @@ interface Props {
 export function OnboardingForm({ defaultUsername, defaultFullName }: Props) {
   const [username, setUsername] = useState(defaultUsername.startsWith('user_') ? '' : defaultUsername)
   const [fullName, setFullName] = useState(defaultFullName)
+  const [birthDate, setBirthDate] = useState('')
   const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [error, setError] = useState('')
   const [isPending, startTransition] = useTransition()
+
+  // Fecha máxima seleccionable = hace 18 años (impide elegir una edad < 18).
+  const maxBirthDate = useMemo(() => {
+    const d = new Date()
+    d.setFullYear(d.getFullYear() - 18)
+    return d.toISOString().slice(0, 10)
+  }, [])
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -28,6 +37,14 @@ export function OnboardingForm({ defaultUsername, defaultFullName }: Props) {
       setError('Solo se permiten letras, números y guión bajo.')
       return
     }
+    if (!birthDate) {
+      setError('Ingresa tu fecha de nacimiento.')
+      return
+    }
+    if (!isAdult(birthDate)) {
+      setError('Debes ser mayor de 18 años para usar TorneosPlay.')
+      return
+    }
     if (!acceptedTerms) {
       setError('Debes aceptar los términos y condiciones para continuar.')
       return
@@ -36,6 +53,7 @@ export function OnboardingForm({ defaultUsername, defaultFullName }: Props) {
     const fd = new FormData()
     fd.append('username', username.trim())
     fd.append('fullName', fullName.trim())
+    fd.append('birthDate', birthDate)
     fd.append('acceptedTerms', 'true')
 
     startTransition(async () => {
@@ -79,6 +97,22 @@ export function OnboardingForm({ defaultUsername, defaultFullName }: Props) {
           maxLength={80}
           className="w-full border rounded-xl px-3 py-2.5 text-sm bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground"
         />
+      </div>
+
+      <div className="space-y-1.5">
+        <label htmlFor="birthDate" className="text-sm font-medium">
+          Fecha de nacimiento <span aria-hidden="true">*</span>
+        </label>
+        <input
+          id="birthDate"
+          type="date"
+          value={birthDate}
+          onChange={(e) => setBirthDate(e.target.value)}
+          max={maxBirthDate}
+          required
+          className="w-full border rounded-xl px-3 py-2.5 text-sm bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground"
+        />
+        <p className="text-xs text-muted-foreground">Debes ser mayor de 18 años para participar por premios.</p>
       </div>
 
       {/* Términos y condiciones */}

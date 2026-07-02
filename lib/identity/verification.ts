@@ -67,6 +67,50 @@ export function samePersonName(
   return shorter.every(token => longer.includes(token))
 }
 
+// Edad cumplida a partir de una fecha de nacimiento. Acepta 'YYYY-MM-DD' (como
+// viene la columna date de Supabase) o Date. Para el string parsea los
+// componentes directamente, sin pasar por UTC, evitando el off-by-one de
+// `new Date('YYYY-MM-DD')` en zonas horarias negativas (Chile es UTC-4/-3).
+// Retorna null si la fecha es inválida o ausente.
+export function getAgeFromBirthDate(
+  birthDate: string | Date | null | undefined,
+  now: Date = new Date()
+): number | null {
+  if (!birthDate) return null
+
+  let by: number
+  let bm: number
+  let bd: number
+  if (typeof birthDate === 'string') {
+    const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(birthDate.trim())
+    if (!match) return null
+    by = Number(match[1])
+    bm = Number(match[2])
+    bd = Number(match[3])
+  } else {
+    if (Number.isNaN(birthDate.getTime())) return null
+    by = birthDate.getFullYear()
+    bm = birthDate.getMonth() + 1
+    bd = birthDate.getDate()
+  }
+  if (bm < 1 || bm > 12 || bd < 1 || bd > 31) return null
+
+  let age = now.getFullYear() - by
+  const nowMonth = now.getMonth() + 1
+  const nowDay = now.getDate()
+  if (nowMonth < bm || (nowMonth === bm && nowDay < bd)) age -= 1
+  return age
+}
+
+// true si la persona tiene 18 años cumplidos. Fecha ausente/ inválida ⇒ false.
+export function isAdult(
+  birthDate: string | Date | null | undefined,
+  now: Date = new Date()
+): boolean {
+  const age = getAgeFromBirthDate(birthDate, now)
+  return age !== null && age >= 18
+}
+
 export function isOwnKycDocumentPath(
   path: string | null | undefined,
   userId: string

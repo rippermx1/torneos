@@ -1,5 +1,8 @@
+import { randomUUID } from 'crypto'
 import { createAdminClient } from '@/lib/supabase/server'
 import { getFlowPaymentStatus, type FlowPaymentStatus } from '@/lib/flow/payments'
+import { createFlowRefund } from '@/lib/flow/refunds'
+import { getAppUrl } from '@/lib/env'
 import { calculateIvaIncludedBreakdown, splitEntryFee } from '@/lib/tournament/finance'
 import { isModeloB } from '@/lib/tax/regime'
 import { sendTournamentRegistrationEmail } from '@/lib/email/tournament-notifications'
@@ -59,7 +62,28 @@ export async function settleFlowPayment(token: string): Promise<FlowSettlement> 
       p_raw: status as unknown as Record<string, unknown>,
     })
 
-    if (error) throw new Error(error.message)
+    if (error) {
+      // Pago confirmado por Flow pero la inscripción no pudo asentarse porque el
+      // torneo se llenó o la ventana de inscripción cerró mientras el usuario
+      // pagaba. El dinero ya está cobrado: reembolsamos automáticamente en vez de
+      // dejar el intento colgado (que terminaría 'expired' sin devolución).
+      if (isTerminalRegistrationFailure(error.message)) {
+        await refundUnsettleablePayment({
+          attemptId: attempt.id,
+          userId: attempt.user_id,
+          tournamentId: attempt.tournament_id,
+          commerceOrder: status.commerceOrder,
+          flowOrder: status.flowOrder,
+          amountCents,
+          payerEmail: status.payer ?? null,
+          reason: error.message,
+        })
+        return { status, credited: false, intent: 'tournament_registration' }
+      }
+      // Error transitorio (deadlock, red, etc.): propagar para que el webhook o el
+      // cron de reconciliación reintente el settlement.
+      throw new Error(error.message)
+    }
 
     const settlement = result as { idempotent: boolean; registration_id: string; attempt_id: string }
 
@@ -120,6 +144,114 @@ export async function settleFlowPayment(token: string): Promise<FlowSettlement> 
     .eq('id', attempt.id)
 
   return { status, credited: false, intent: 'wallet_deposit' }
+}
+
+// Fallas de negocio de register_for_tournament que son TERMINALES: el pago no
+// podrá asentar inscripción por más que se reintente, así que corresponde
+// reembolsar. Se distinguen de errores transitorios (que deben reintentarse).
+// Los mensajes provienen de las RAISE EXCEPTION de register_for_tournament.
+export const TERMINAL_REGISTRATION_FAILURES = ['Torneo lleno', 'Inscripciones cerradas', 'Cuota inconsistente']
+
+export function isTerminalRegistrationFailure(message: string): boolean {
+  return TERMINAL_REGISTRATION_FAILURES.some((m) => message.includes(m))
+}
+
+// Reembolsa un pago Flow confirmado (status=2) cuya inscripción no pudo asentarse.
+// Idempotente: solo el proceso que gana la transición atómica pending→cancelled
+// emite la reversa; cualquier reintento posterior encuentra el intento ya no-pending
+// (o una reversa existente) y no duplica.
+async function refundUnsettleablePayment(input: {
+  attemptId: string
+  userId: string
+  tournamentId: string | null
+  commerceOrder: string
+  flowOrder: number
+  amountCents: number
+  payerEmail: string | null
+  reason: string
+}): Promise<void> {
+  const admin = createAdminClient()
+
+  if (!input.tournamentId) {
+    console.error(
+      `[settlement] Intento ${input.commerceOrder} sin tournament_id; requiere reversa manual. Razón: ${input.reason}`
+    )
+    return
+  }
+
+  // 1. Claim atómico: solo un proceso pasa el intento de pending→cancelled.
+  // flow_status_code=2 preserva que Flow confirmó el cobro (para auditoría).
+  const { data: claimed } = await admin
+    .from('flow_payment_attempts')
+    .update({ status: 'cancelled', flow_status_code: 2, settled_at: new Date().toISOString() })
+    .eq('id', input.attemptId)
+    .eq('status', 'pending')
+    .select('id')
+    .maybeSingle()
+
+  if (!claimed) return // otro proceso (webhook o reconcile) ya lo tomó
+
+  // 2. Idempotencia adicional: no duplicar si ya existe una reversa para este pago.
+  const { count } = await admin
+    .from('flow_refund_attempts')
+    .select('id', { count: 'exact', head: true })
+    .eq('flow_payment_attempt_id', input.attemptId)
+  if ((count ?? 0) > 0) return
+
+  if (!input.payerEmail) {
+    console.error(
+      `[settlement] Pago ${input.commerceOrder} no asentable y sin email de pagador; requiere reversa manual. Razón: ${input.reason}`
+    )
+    return
+  }
+
+  const appUrl = getAppUrl() ?? 'https://www.torneosplay.cl'
+  const refundCommerceOrder = `ref-${randomUUID()}`
+  const amountPesos = Math.ceil(input.amountCents / 100)
+
+  try {
+    const flowResponse = await createFlowRefund({
+      refundCommerceOrder,
+      receiverEmail: input.payerEmail,
+      amountPesos,
+      urlCallBack: `${appUrl}/api/webhooks/flow/refund`,
+      flowTrxId: input.flowOrder,
+    })
+
+    await admin.from('flow_refund_attempts').insert({
+      tournament_id: input.tournamentId,
+      user_id: input.userId,
+      flow_payment_attempt_id: input.attemptId,
+      refund_commerce_order: refundCommerceOrder,
+      flow_refund_token: flowResponse.token,
+      flow_refund_order: flowResponse.flowRefundOrder,
+      amount_cents: input.amountCents,
+      amount_pesos: amountPesos,
+      receiver_email: input.payerEmail,
+      status: 'pending',
+    })
+    console.warn(
+      `[settlement] Reversa emitida por inscripción no asentable (${input.reason}) commerce_order=${input.commerceOrder}`
+    )
+  } catch (err) {
+    // Registrar como rechazada para que autoRetryRejectedRefunds la reintente.
+    const message = err instanceof Error ? err.message : String(err)
+    const { error: insertErr } = await admin.from('flow_refund_attempts').insert({
+      tournament_id: input.tournamentId,
+      user_id: input.userId,
+      flow_payment_attempt_id: input.attemptId,
+      refund_commerce_order: refundCommerceOrder,
+      amount_cents: input.amountCents,
+      amount_pesos: amountPesos,
+      receiver_email: input.payerEmail,
+      status: 'rejected',
+      error_message: message,
+    })
+    if (insertErr) {
+      console.error('[settlement] No se pudo registrar reversa rechazada:', insertErr)
+    }
+    console.error(`[settlement] Falló reversa de inscripción no asentable ${input.commerceOrder}:`, message)
+  }
 }
 
 // ───────────────────────────────────────────────────────────────
@@ -195,7 +327,6 @@ async function readBoundedText(req: Request, maxBytes: number): Promise<string |
   const reader = req.body.getReader()
   const chunks: Uint8Array[] = []
   let total = 0
-  // eslint-disable-next-line no-constant-condition
   while (true) {
     const { done, value } = await reader.read()
     if (done) break

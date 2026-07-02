@@ -4,6 +4,7 @@ import { requireAnyRoleForApi } from '@/lib/supabase/auth'
 import { checkRegistrationWindow } from '@/lib/tournament/helpers'
 import { checkRateLimit, getRequestIp, rateLimitResponse } from '@/lib/security/rate-limit'
 import { sendTournamentRegistrationEmail } from '@/lib/email/tournament-notifications'
+import { isAdult } from '@/lib/identity/verification'
 
 // ───────────────────────────────────────────────────────────────
 // Inscripcion directa: SOLO para torneos gratuitos (entry_fee=0).
@@ -54,15 +55,16 @@ export async function POST(
     )
   }
 
-  if (profile?.birth_date) {
-    const birthDate = new Date(profile.birth_date)
-    const now = new Date()
-    let age = now.getFullYear() - birthDate.getFullYear()
-    const monthDiff = now.getMonth() - birthDate.getMonth()
-    if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < birthDate.getDate())) age--
-    if (age < 18) {
-      return Response.json({ error: 'Debes ser mayor de 18 años para participar.' }, { status: 403 })
-    }
+  // Age-gate obligatorio también en freerolls: sin fecha de nacimiento verificada
+  // no se permite competir por premios (antes se saltaba si birth_date era nulo).
+  if (!isAdult(profile?.birth_date)) {
+    return Response.json(
+      {
+        error: 'Debes registrar tu fecha de nacimiento (mayor de 18 años) en tu perfil para participar.',
+        birthDateRequired: true,
+      },
+      { status: 403 }
+    )
   }
 
   if (!tournament) return Response.json({ error: 'Torneo no encontrado' }, { status: 404 })

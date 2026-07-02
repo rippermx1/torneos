@@ -5,6 +5,7 @@ import { getAppUrl } from '@/lib/env'
 import { createFlowPayment, buildFlowCheckoutUrl } from '@/lib/flow/payments'
 import { checkRegistrationWindow } from '@/lib/tournament/helpers'
 import { checkRateLimit, getRequestIp, rateLimitResponse } from '@/lib/security/rate-limit'
+import { isAdult } from '@/lib/identity/verification'
 
 // ───────────────────────────────────────────────────────────────
 // Checkout Flow para inscripcion a torneo (Ruta 1).
@@ -76,12 +77,7 @@ export async function POST(
     )
   }
 
-  const birthDate = new Date(profile.birth_date)
-  const now = new Date()
-  let age = now.getFullYear() - birthDate.getFullYear()
-  const monthDiff = now.getMonth() - birthDate.getMonth()
-  if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < birthDate.getDate())) age--
-  if (age < 18) {
+  if (!isAdult(profile.birth_date)) {
     return Response.json({ error: 'Debes ser mayor de 18 años para participar.' }, { status: 403 })
   }
 

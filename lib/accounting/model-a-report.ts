@@ -78,6 +78,11 @@ export interface AccountingPeriodRow {
   effectiveTaxableMarginCents: number
   effectiveIvaDebitCents: number
   effectiveNetResultCents: number
+  // La plataforma absorbe la comisión Flow (el checkout cobra solo el entry_fee),
+  // así que su costo neto reduce el resultado operativo y su IVA es crédito fiscal.
+  //   IVA a pagar efectivo   = IVA débito del margen − IVA crédito comisión Flow
+  //   resultado operativo    = resultado neto efectivo − comisión Flow neta
+  effectiveIvaPayableCents: number
   accruedOperatingResultCents: number
 }
 
@@ -152,6 +157,7 @@ function emptyPeriod(period: string): AccountingPeriodRow {
     effectiveTaxableMarginCents: 0,
     effectiveIvaDebitCents: 0,
     effectiveNetResultCents: 0,
+    effectiveIvaPayableCents: 0,
     accruedOperatingResultCents: 0,
   }
 }
@@ -195,6 +201,29 @@ export function calculateEffectivePeriodTax(input: {
     taxableMarginCents,
     ivaDebitCents: breakdown.ivaCents,
     netResultCents: taxableMarginCents - breakdown.ivaCents,
+  }
+}
+
+export interface EffectiveOperatingResult {
+  /** IVA a pagar tras crédito de la comisión Flow (débito del margen − crédito Flow). */
+  ivaPayableCents: number
+  /** Resultado operativo tras absorber el costo neto de la comisión Flow. */
+  operatingResultCents: number
+}
+
+// Ajuste por absorción de la comisión Flow. El checkout cobra exactamente el
+// entry_fee (user_fee=0), así que la plataforma ABSORBE la comisión Flow: es un
+// costo real que reduce el resultado operativo, y su IVA (19%, facturado por Flow)
+// es crédito fiscal que reduce el IVA a pagar. Función pura para testeo.
+export function applyAbsorbedFlowCost(input: {
+  effectiveNetResultCents: number
+  effectiveIvaDebitCents: number
+  flowFeeNetCents: number
+  flowFeeIvaCreditCents: number
+}): EffectiveOperatingResult {
+  return {
+    ivaPayableCents: input.effectiveIvaDebitCents - input.flowFeeIvaCreditCents,
+    operatingResultCents: input.effectiveNetResultCents - input.flowFeeNetCents,
   }
 }
 
@@ -374,11 +403,9 @@ function finalizePeriod(
     .reduce((total, withdrawal) => total + withdrawal.amount_cents, 0)
 
   // ── Contabilidad efectiva (criterio de la plataforma) ──────────────
-  // El IVA se reconoce sobre el margen que la plataforma realmente retiene:
-  // cobros por inscripción − premios pagados a ganadores − reembolsos.
-  // Equivale a "IVA(cobros) − IVA(premios)" porque ambos comparten la misma
-  // tasa: 19/119 × (cobros − premios − reembolsos). La comisión Flow no entra
-  // (se traslada al usuario vía gross-up), así que no reduce el resultado.
+  // Lado ventas: el IVA débito se reconoce sobre el margen que la plataforma
+  // retiene = cobros por inscripción − premios pagados − reembolsos. Equivale a
+  // "IVA(cobros) − IVA(premios)" porque comparten tasa: 19/119 × margen.
   const effectiveTax = calculateEffectivePeriodTax({
     entriesCollectedCents: row.effectiveEntriesCollectedCents,
     prizesPaidCents: row.prizeCreditsCents,
@@ -388,8 +415,18 @@ function finalizePeriod(
   row.effectiveIvaDebitCents = effectiveTax.ivaDebitCents
   row.effectiveNetResultCents = effectiveTax.netResultCents
 
-  // El resultado operativo del periodo ES el resultado neto efectivo.
-  row.accruedOperatingResultCents = row.effectiveNetResultCents
+  // Absorción de la comisión Flow: el checkout cobra solo el entry_fee, así que
+  // la plataforma asume el costo Flow. Se resta del resultado operativo y su IVA
+  // se toma como crédito, reduciendo el IVA a pagar. (Antes se asumía gross-up,
+  // lo que sobreestimaba utilidad e IVA.)
+  const operating = applyAbsorbedFlowCost({
+    effectiveNetResultCents: effectiveTax.netResultCents,
+    effectiveIvaDebitCents: effectiveTax.ivaDebitCents,
+    flowFeeNetCents: row.estimatedFlowFeeNetCents,
+    flowFeeIvaCreditCents: row.estimatedFlowFeeIvaCreditCents,
+  })
+  row.effectiveIvaPayableCents = operating.ivaPayableCents
+  row.accruedOperatingResultCents = operating.operatingResultCents
 }
 
 // A5: invariantes contables. Estas verificaciones son baratas y cubren
@@ -586,7 +623,7 @@ export async function buildModeloAAccountingReport(
     notes: [
       'Contabilidad efectiva: el IVA de la plataforma se reconoce sobre el margen real = cobros por inscripcion menos premios pagados a ganadores (menos reembolsos). IVA debito efectivo = 19/119 del margen. No depende del split contable 70/30 por inscripcion.',
       'Por que es no ambiguo: como cobros y premios comparten la tasa 19%, IVA(cobros) - IVA(premios) = 19/119 x (cobros - premios). El antiguo dilema (IVA sobre el 30% del fee vs sobre el 100% de la entrada) queda resuelto por un unico criterio sobre flujos reales.',
-      'La comision Flow no afecta el resultado: se traslada al usuario via gross-up (fee de procesamiento visible en checkout). Las columnas f29_* y flow_* quedan como referencia del comprobante/voucher, no como base del IVA.',
+      'La plataforma ABSORBE la comision Flow: el checkout cobra solo el entry_fee (sin recargo al usuario). Por eso su costo neto se resta del resultado operativo devengado y su IVA (19%, facturado por Flow) se toma como credito, reduciendo el IVA a pagar (columna efectivo_iva_a_pagar). Las columnas f29_* quedan como referencia del comprobante/voucher.',
       'Punto formal unico para el contador: definir si la boleta electronica se emite por el total de la inscripcion o por el margen. El calculo interno efectivo ya es univoco; falta el criterio de emision ante SII.',
       'F22/gestion: premios y retiros se reportan aparte; los premios del torneo son fijos y publicados antes del pago.',
     ],
@@ -654,6 +691,7 @@ export function accountingReportToCsv(report: AccountingReport): string {
     'efectivo_margen_afecto_clp',
     'efectivo_iva_debito_clp',
     'efectivo_resultado_neto_clp',
+    'efectivo_iva_a_pagar_clp',
     'resultado_operativo_devengado_est_clp',
   ]
 
@@ -697,6 +735,7 @@ export function accountingReportToCsv(report: AccountingReport): string {
         centsToPesos(row.effectiveTaxableMarginCents),
         centsToPesos(row.effectiveIvaDebitCents),
         centsToPesos(row.effectiveNetResultCents),
+        centsToPesos(row.effectiveIvaPayableCents),
         centsToPesos(row.accruedOperatingResultCents),
       ].join(',')
     )

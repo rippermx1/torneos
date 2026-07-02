@@ -117,9 +117,9 @@ export default async function AdminReportsPage({
                     sub={`Margen afecto ${formatCLP(selected.effectiveTaxableMarginCents)}`}
                   />
                   <Card
-                    label="Resultado neto efectivo"
-                    value={formatCLP(selected.effectiveNetResultCents)}
-                    sub="Margen − IVA"
+                    label="Resultado operativo"
+                    value={formatCLP(selected.accruedOperatingResultCents)}
+                    sub="Margen − IVA − comisión Flow"
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">
@@ -139,6 +139,7 @@ export default async function AdminReportsPage({
                   <MetricRow label="Fee usuario" value={formatCLP(selected.flowUserFeeCents)} />
                   <MetricRow label="Comisión Flow neta estimada" value={formatCLP(selected.estimatedFlowFeeNetCents)} />
                   <MetricRow label="IVA crédito Flow estimado" value={formatCLP(selected.estimatedFlowFeeIvaCreditCents)} />
+                  <MetricRow label="IVA a pagar efectivo (débito − crédito)" value={formatCLP(selected.effectiveIvaPayableCents)} />
                   <MetricRow label="Pagos pendientes" value={selected.flowPendingCount.toLocaleString('es-CL')} />
                 </div>
 
@@ -151,7 +152,8 @@ export default async function AdminReportsPage({
                   <MetricRow label="Split contable ref. (70/30)" value={formatCLP(selected.platformFeeGrossCents)} />
                   <MetricRow label="Premios acreditados" value={formatCLP(selected.prizeCreditsCents)} />
                   <MetricRow label="Margen afecto efectivo" value={formatCLP(selected.effectiveTaxableMarginCents)} />
-                  <MetricRow label="Resultado neto efectivo" value={formatCLP(selected.effectiveNetResultCents)} tone={selected.effectiveNetResultCents >= 0 ? 'green' : 'red'} />
+                  <MetricRow label="Resultado neto efectivo (pre-Flow)" value={formatCLP(selected.effectiveNetResultCents)} />
+                  <MetricRow label="Resultado operativo (post-Flow)" value={formatCLP(selected.accruedOperatingResultCents)} tone={selected.accruedOperatingResultCents >= 0 ? 'green' : 'red'} />
                 </div>
               </section>
 

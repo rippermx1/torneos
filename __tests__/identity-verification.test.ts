@@ -6,7 +6,38 @@ import {
   normalizeRut,
   samePersonName,
   sameRut,
+  getAgeFromBirthDate,
+  isAdult,
 } from '@/lib/identity/verification'
+
+describe('age gate (getAgeFromBirthDate / isAdult)', () => {
+  // now local fijo = 2026-07-01 (constructor local, mes 0-indexado) para
+  // determinismo independiente de la zona horaria del runner.
+  const now = new Date(2026, 6, 1)
+
+  it('calcula la edad cumplida sin desfase de zona horaria', () => {
+    expect(getAgeFromBirthDate('2008-07-01', now)).toBe(18) // cumple justo hoy
+    expect(getAgeFromBirthDate('2008-06-30', now)).toBe(18) // ya cumplió
+    expect(getAgeFromBirthDate('2008-07-02', now)).toBe(17) // cumple mañana
+    expect(getAgeFromBirthDate('2010-01-01', now)).toBe(16)
+  })
+
+  it('isAdult exige 18 años cumplidos', () => {
+    expect(isAdult('2008-07-01', now)).toBe(true)
+    expect(isAdult('2008-07-02', now)).toBe(false) // un día menos de 18
+    expect(isAdult('2000-05-15', now)).toBe(true)
+    expect(isAdult('2012-01-01', now)).toBe(false)
+  })
+
+  it('fecha ausente o inválida ⇒ no adulto', () => {
+    expect(getAgeFromBirthDate(null, now)).toBeNull()
+    expect(getAgeFromBirthDate(undefined, now)).toBeNull()
+    expect(getAgeFromBirthDate('', now)).toBeNull()
+    expect(getAgeFromBirthDate('no-es-fecha', now)).toBeNull()
+    expect(isAdult(null, now)).toBe(false)
+    expect(isAdult('2008-13-40', now)).toBe(false)
+  })
+})
 
 describe('identity verification helpers', () => {
   it('normalizes and validates Chilean RUT values', () => {

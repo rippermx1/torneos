@@ -105,10 +105,14 @@ Leyenda: ✅ hecho · 🚧 en progreso · ⬜ pendiente
 
 ### Fase 2 — Motor de retención
 - ✅ **Brackets por habilidad** (rama `feat/skill-brackets`) — migración `20260702020000_skill_brackets` (`player_ratings` + `tournaments.skill_tier`); `lib/tournament/rating.ts` (`tierForRating`/`updateRating`/`canRegisterForTier` + tests); rating actualizado tras `finalize` en el lifecycle; **gate de inscripción** en checkout + register; select de división en el admin; badge en la ficha. **NO aplicada a prod aún.** Umbrales de división (8.000 / 30.000) a CALIBRAR con datos reales.
-- 🚧 **Rakeback en créditos**. **Incrementos 1 y 2-parte-1 HECHOS** (no aplicados a prod; increment 1 en `main` inerte, redención en rama `feat/rakeback-redeem`):
-  - Incr. 1 (`main`, inerte): migración `20260702030000` (tipo `tournament_credit` + `wallet_credit_balance`), helper `lib/wallet/rakeback.ts`, **otorgamiento** del 7% al liquidar.
-  - Incr. 2 parte 1 (`feat/rakeback-redeem`): **consumo todo-o-nada** — migración `20260702040000` (`register_with_credit`, RPC atómico: verifica crédito ≥ cuota, inscribe, debita); checkout con flag `useCredit`; UI (botón "inscribirme con crédito" + saldo en wallet/ficha); smoke `scripts/smoke-rakeback-redeem.mjs`.
-  - **PENDIENTE incremento 2 parte 2 (antes de desplegar):** (b) contabilidad — asentar el grant como marketing en `model-a-report`, excluir inscripciones con crédito de los cobros efectivos (confirmar con contador); (c) **expiración FIFO a 30 días** (cron). La aplicación PARCIAL (crédito + Flow por el resto) queda como mejora futura; hoy es todo-o-nada.
+- ✅ **Rakeback en créditos — COMPLETO** (rama `feat/rakeback-redeem`; **no aplicado a prod**). Piezas:
+  - **Otorgamiento** 7% al liquidar (migración `20260702030000`, ya en `main` inerte; `settlement.ts`).
+  - **Redención todo-o-nada** (migración `20260702040000` `register_with_credit`, RPC atómico: crédito ≥ cuota → inscribe → debita); checkout con flag `useCredit`; UI (botón "inscribirme con crédito" + saldo en wallet/ficha).
+  - **Contabilidad cash-accurate** (`model-a-report`): inscripciones con crédito NO suman a cobros efectivos (su costo = ingreso no percibido, sin doble contar el grant); columnas `rakeback_otorgado`/`credito_redimido` + nota. Confirmar criterio con contador.
+  - **Expiración FIFO 30d**: `computeExpiredCredit` (puro + tests) + `expireStaleCredits` cableado en el cron `reconcile-refunds`.
+  - Smokes: `npm run smoke:ladder`, `npm run smoke:rakeback`.
+  - **Deploy:** aplicar migraciones `20260702030000` + `20260702040000` → merge a `main` → push → correr smokes. La aplicación PARCIAL (crédito + Flow por el resto) queda como mejora futura.
+  - Nota de solvencia: una inscripción con crédito ocupa un cupo premiable sin cash de ESE torneo; solvente en agregado (el crédito vino de cash previo), no necesariamente por torneo.
 - ⬜ Temporadas / ranking.
 
 ### Fase 3

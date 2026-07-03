@@ -3,6 +3,7 @@ import {
   autoRetryRejectedRefunds,
   reconcileCancelledTournamentRefunds,
 } from '@/lib/tournament/refunds'
+import { expireStaleCredits } from '@/lib/wallet/credit-expiry'
 
 // Programado vía GitHub Actions (.github/workflows/reconcile-refunds.yml) cada
 // 10 min, con respaldo diario en Vercel (vercel.json) por si Actions se deshabilita.
@@ -10,6 +11,7 @@ import {
 // 1. Emite reversas faltantes de torneos cancelados (red de seguridad idempotente).
 // 2. Reconcilia pending cuyo webhook se perdió consultando Flow directamente.
 // 3. Reintenta automáticamente refunds rechazados (hasta 3 intentos por pago).
+// 4. Expira créditos de rakeback vencidos (>30 días, FIFO por usuario).
 
 export const maxDuration = 30
 
@@ -32,6 +34,7 @@ export async function GET(req: Request): Promise<Response> {
     // El barrido de cancelados va primero: emite las reversas que falten para
     // que reconcileStaleRefunds/autoRetry las recojan en las siguientes pasadas.
     const cancelledSweep = await reconcileCancelledTournamentRefunds(3)
+    const creditExpiry = await expireStaleCredits()
     const [reconcile, autoRetry] = await Promise.all([
       reconcileStaleRefunds(10),
       autoRetryRejectedRefunds(3),
@@ -42,6 +45,7 @@ export async function GET(req: Request): Promise<Response> {
       processedAt: new Date().toISOString(),
       durationMs: Date.now() - startedAt,
       cancelledSweep,
+      creditExpiry,
       reconcile,
       autoRetry,
     })

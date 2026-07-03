@@ -60,6 +60,12 @@ export interface AccountingPeriodRow {
   prizeCreditsCents: number
   refundsCents: number
   adjustmentsCents: number
+  // Rakeback: crédito otorgado (informativo — indica el pasivo generado) y crédito
+  // redimido (inscripciones pagadas con crédito). El costo del programa se refleja
+  // como ingreso NO percibido: las inscripciones con crédito NO suman a cobros
+  // efectivos (ver effectiveEntriesCollectedCents), evitando doble conteo.
+  rakebackGrantedCents: number
+  creditRedeemedCents: number
   withdrawalTransactionsCents: number
   withdrawalRequestedCents: number
   withdrawalApprovedCents: number
@@ -147,6 +153,8 @@ function emptyPeriod(period: string): AccountingPeriodRow {
     prizeCreditsCents: 0,
     refundsCents: 0,
     adjustmentsCents: 0,
+    rakebackGrantedCents: 0,
+    creditRedeemedCents: 0,
     withdrawalTransactionsCents: 0,
     withdrawalRequestedCents: 0,
     withdrawalApprovedCents: 0,
@@ -311,13 +319,17 @@ function addRegistration(
   row: AccountingPeriodRow,
   registration: Registration,
   periodUsers: Map<string, Set<string>>,
-  periodTournaments: Map<string, Set<string>>
+  periodTournaments: Map<string, Set<string>>,
+  creditFundedKeys: Set<string>
 ) {
   row.registrationsCount += 1
-  // Cobro efectivo de la inscripción (valor neto de la entrada, sin el fee de
-  // procesamiento Flow que es pass-through al usuario). Es la base del modelo
-  // de IVA efectivo.
-  row.effectiveEntriesCollectedCents += registration.entry_fee_cents ?? 0
+  // Cobro efectivo de la inscripción (cash). Las inscripciones pagadas con crédito
+  // de rakeback NO ingresan cash, así que se EXCLUYEN de los cobros efectivos: su
+  // costo es el ingreso no percibido (criterio cash, sin doble contar el grant).
+  const creditFunded = creditFundedKeys.has(`${registration.tournament_id}::${registration.user_id}`)
+  if (!creditFunded) {
+    row.effectiveEntriesCollectedCents += registration.entry_fee_cents ?? 0
+  }
   // Split contable referencial (70/30). Ya NO es la base del IVA: se conserva
   // solo como referencia y para la conciliación fee_gross = net + iva.
   row.prizeFundCents += registration.prize_fund_contribution_cents ?? 0
@@ -339,6 +351,13 @@ function addWalletTransaction(row: AccountingPeriodRow, tx: WalletTransaction) {
   if (tx.type === 'refund') row.refundsCents += tx.amount_cents
   if (tx.type === 'adjustment') row.adjustmentsCents += tx.amount_cents
   if (tx.type === 'withdrawal') row.withdrawalTransactionsCents += tx.amount_cents
+  if (tx.type === 'tournament_credit') {
+    if (tx.amount_cents > 0) {
+      row.rakebackGrantedCents += tx.amount_cents
+    } else if ((tx.metadata as { kind?: string })?.kind === 'redeem') {
+      row.creditRedeemedCents += -tx.amount_cents
+    }
+  }
 }
 
 function addWithdrawal(row: AccountingPeriodRow, withdrawal: WithdrawalRequest) {
@@ -577,6 +596,21 @@ export async function buildModeloAAccountingReport(
   const periodUsers = new Map<string, Set<string>>()
   const periodTournaments = new Map<string, Set<string>>()
 
+  // Claves (torneo::usuario) de inscripciones pagadas con crédito de rakeback:
+  // tienen una redención (tournament_credit negativo, kind='redeem') que referencia
+  // el torneo. Se usan para excluirlas de los cobros efectivos (cash).
+  const creditFundedKeys = new Set<string>()
+  for (const tx of walletTransactions) {
+    if (
+      tx.type === 'tournament_credit' &&
+      tx.amount_cents < 0 &&
+      (tx.metadata as { kind?: string })?.kind === 'redeem' &&
+      tx.reference_id
+    ) {
+      creditFundedKeys.add(`${tx.reference_id}::${tx.user_id}`)
+    }
+  }
+
   for (const attempt of flowAttempts) {
     const period = periodKey(attempt.settled_at ?? attempt.created_at)
     addFlowAttempt(getOrCreatePeriod(periods, period), attempt)
@@ -584,7 +618,7 @@ export async function buildModeloAAccountingReport(
 
   for (const registration of registrations) {
     const period = periodKey(registration.registered_at)
-    addRegistration(getOrCreatePeriod(periods, period), registration, periodUsers, periodTournaments)
+    addRegistration(getOrCreatePeriod(periods, period), registration, periodUsers, periodTournaments, creditFundedKeys)
   }
 
   for (const tx of walletTransactions) {
@@ -626,6 +660,7 @@ export async function buildModeloAAccountingReport(
       'La plataforma ABSORBE la comision Flow: el checkout cobra solo el entry_fee (sin recargo al usuario). Por eso su costo neto se resta del resultado operativo devengado y su IVA (19%, facturado por Flow) se toma como credito, reduciendo el IVA a pagar (columna efectivo_iva_a_pagar). Las columnas f29_* quedan como referencia del comprobante/voucher.',
       'Punto formal unico para el contador: definir si la boleta electronica se emite por el total de la inscripcion o por el margen. El calculo interno efectivo ya es univoco; falta el criterio de emision ante SII.',
       'F22/gestion: premios y retiros se reportan aparte; los premios del torneo son fijos y publicados antes del pago.',
+      'Rakeback: el credito otorgado (rakeback_otorgado) es informativo del pasivo generado. El costo del programa se refleja como ingreso NO percibido: las inscripciones pagadas con credito NO suman a cobros efectivos (reducen el margen afecto). No se asienta el grant como gasto aparte, para evitar doble conteo. Nota: una inscripcion con credito ocupa un cupo premiable sin ingreso cash de ese torneo; la solvencia se mantiene en agregado (el credito provino de cash de inscripciones previas), no necesariamente por torneo.',
     ],
     rows: [...periods.values()].sort((left, right) => right.period.localeCompare(left.period)),
     snapshot: {
@@ -680,6 +715,8 @@ export function accountingReportToCsv(report: AccountingReport): string {
     'premios_acreditados_clp',
     'reembolsos_wallet_clp',
     'ajustes_wallet_clp',
+    'rakeback_otorgado_clp',
+    'credito_redimido_clp',
     'retiros_wallet_clp',
     'retiros_solicitados_clp',
     'retiros_aprobados_clp',
@@ -724,6 +761,8 @@ export function accountingReportToCsv(report: AccountingReport): string {
         centsToPesos(row.prizeCreditsCents),
         centsToPesos(row.refundsCents),
         centsToPesos(row.adjustmentsCents),
+        centsToPesos(row.rakebackGrantedCents),
+        centsToPesos(row.creditRedeemedCents),
         centsToPesos(row.withdrawalTransactionsCents),
         centsToPesos(row.withdrawalRequestedCents),
         centsToPesos(row.withdrawalApprovedCents),

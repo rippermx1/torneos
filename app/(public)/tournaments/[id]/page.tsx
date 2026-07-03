@@ -74,6 +74,7 @@ export default async function TournamentDetailPage({
 
   // Verificar si el usuario está inscrito (necesita admin para bypassear RLS)
   let isRegistered = false
+  let creditBalanceCents = 0
   if (userId) {
     const { data: reg } = await admin
       .from('registrations')
@@ -82,6 +83,11 @@ export default async function TournamentDetailPage({
       .eq('user_id', userId)
       .single()
     isRegistered = !!reg
+
+    if (t.entry_fee_cents > 0) {
+      const { data: credit } = await admin.rpc('wallet_credit_balance', { p_user_id: userId })
+      creditBalanceCents = Number(credit ?? 0)
+    }
   }
 
   const registrationWindow = checkRegistrationWindow(t)
@@ -242,6 +248,7 @@ export default async function TournamentDetailPage({
           <RegisterButton
             tournamentId={id}
             entryFeeCents={t.entry_fee_cents}
+            creditBalanceCents={creditBalanceCents}
             className="flex-1"
           />
         ) : (

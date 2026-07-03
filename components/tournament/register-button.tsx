@@ -8,17 +8,21 @@ import { formatCLP, cn } from '@/lib/utils'
 interface Props {
   tournamentId: string
   entryFeeCents: number
+  /** Crédito de torneo (rakeback) disponible del usuario, en centavos. */
+  creditBalanceCents?: number
   className?: string
 }
 
-export function RegisterButton({ tournamentId, entryFeeCents, className }: Props) {
+export function RegisterButton({ tournamentId, entryFeeCents, creditBalanceCents = 0, className }: Props) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [needsTerms, setNeedsTerms] = useState(false)
   const [acceptingTerms, setAcceptingTerms] = useState(false)
   const router = useRouter()
 
-  async function doRegister() {
+  const canUseCredit = entryFeeCents > 0 && creditBalanceCents >= entryFeeCents
+
+  async function doRegister(useCredit = false) {
     setLoading(true)
     setError(null)
 
@@ -26,14 +30,19 @@ export function RegisterButton({ tournamentId, entryFeeCents, className }: Props
       if (entryFeeCents > 0) {
         const res = await fetch(`/api/tournaments/${tournamentId}/checkout/flow/create`, {
           method: 'POST',
+          ...(useCredit
+            ? { headers: { 'content-type': 'application/json' }, body: JSON.stringify({ useCredit: true }) }
+            : {}),
         })
         const data = await res.json()
-        if (!res.ok || !data?.redirectUrl) {
+        if (!res.ok) {
           if (data?.termsRequired) { setNeedsTerms(true); return }
-          setError(data?.error ?? 'No se pudo iniciar el pago')
+          setError(data?.error ?? 'No se pudo procesar la inscripción')
           return
         }
-        window.location.href = data.redirectUrl
+        if (data?.registered) { router.refresh(); return } // inscrito con crédito
+        if (data?.redirectUrl) { window.location.href = data.redirectUrl; return }
+        setError('No se pudo iniciar el pago')
         return
       }
 
@@ -109,9 +118,18 @@ export function RegisterButton({ tournamentId, entryFeeCents, className }: Props
   }
 
   return (
-    <div className={cn('flex flex-col gap-1', className)}>
+    <div className={cn('flex flex-col gap-2', className)}>
+      {canUseCredit && (
+        <button
+          onClick={() => doRegister(true)}
+          disabled={loading}
+          className="w-full border-2 border-emerald-500 text-emerald-700 py-3 rounded-xl font-medium hover:bg-emerald-50 transition-colors disabled:opacity-50"
+        >
+          {loading ? 'Procesando...' : `Inscribirme con crédito — gratis (${formatCLP(entryFeeCents)})`}
+        </button>
+      )}
       <button
-        onClick={doRegister}
+        onClick={() => doRegister(false)}
         disabled={loading}
         className="w-full bg-foreground text-background py-3 rounded-xl font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
       >
@@ -119,6 +137,8 @@ export function RegisterButton({ tournamentId, entryFeeCents, className }: Props
           ? 'Procesando...'
           : entryFeeCents === 0
           ? 'Inscribirme gratis'
+          : canUseCredit
+          ? `Pagar en efectivo — ${formatCLP(entryFeeCents)}`
           : `Inscribirme — ${formatCLP(entryFeeCents)}`}
       </button>
       {error && <p className="text-xs text-red-600 text-center">{error}</p>}

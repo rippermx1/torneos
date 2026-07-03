@@ -460,6 +460,18 @@ export type Database = {
         Args: { p_user_id: string } & DbRecord
         Returns: number
       }
+      wallet_credit_balance: {
+        Args: { p_user_id: string } & DbRecord
+        Returns: number
+      }
+      register_with_credit: {
+        Args: {
+          p_user_id: string
+          p_tournament_id: string
+          p_entry_fee_cents: number
+        } & DbRecord
+        Returns: string
+      }
       wallet_withdrawn_in_window: {
         Args: { p_user_id: string; p_window: string } & DbRecord
         Returns: number

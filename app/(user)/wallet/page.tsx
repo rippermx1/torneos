@@ -20,7 +20,7 @@ export default async function WalletPage() {
   if (!user) redirect('/sign-in')
 
   const adminSupabase = createAdminClient()
-  const [{ data }, { data: withdrawableData }] = await Promise.all([
+  const [{ data }, { data: withdrawableData }, { data: creditData }] = await Promise.all([
     adminSupabase
       .from('wallet_transactions')
       .select('*')
@@ -28,11 +28,13 @@ export default async function WalletPage() {
       .order('created_at', { ascending: false })
       .limit(50),
     adminSupabase.rpc('wallet_withdrawable_balance', { p_user_id: user.id }),
+    adminSupabase.rpc('wallet_credit_balance', { p_user_id: user.id }),
   ])
 
   const transactions = (data ?? []) as WalletTransaction[]
   const balance = transactions[0]?.balance_after_cents ?? 0
   const withdrawable = Number(withdrawableData ?? 0)
+  const credit = Number(creditData ?? 0)
 
   return (
     <div className="space-y-6 max-w-lg">
@@ -45,6 +47,12 @@ export default async function WalletPage() {
             Retirable: <span className="font-medium">{formatCLP(withdrawable)}</span>
             <span className="ml-1">(premios ganados)</span>
           </p>
+          {credit > 0 && (
+            <p className="text-xs text-emerald-700 mt-1">
+              Crédito de torneo: <span className="font-medium">{formatCLP(credit)}</span>
+              <span className="ml-1 text-muted-foreground">(para inscripciones, no retirable)</span>
+            </p>
+          )}
         </div>
         <div className="flex gap-2">
           <Link

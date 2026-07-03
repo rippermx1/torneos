@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto'
+import { after } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { requireAnyRoleForApi } from '@/lib/supabase/auth'
 import { getAppUrl } from '@/lib/env'
@@ -7,6 +8,7 @@ import { checkRegistrationWindow } from '@/lib/tournament/helpers'
 import { checkRateLimit, getRequestIp, rateLimitResponse } from '@/lib/security/rate-limit'
 import { isAdult } from '@/lib/identity/verification'
 import { canRegisterForTier, DEFAULT_SKILL_TIER, SKILL_TIER_LABELS } from '@/lib/tournament/rating'
+import { sendTournamentRegistrationEmail } from '@/lib/email/tournament-notifications'
 import type { SkillTier } from '@/types/database'
 
 // ───────────────────────────────────────────────────────────────
@@ -43,6 +45,15 @@ export async function POST(
 
   const { id: tournamentId } = await params
   const admin = createAdminClient()
+
+  // Flag opcional: inscribirse usando crédito de rakeback (sin pasar por Flow).
+  let useCredit = false
+  try {
+    const body = await req.json()
+    useCredit = body?.useCredit === true
+  } catch {
+    // Sin body → flujo Flow normal.
+  }
 
   const [{ data: profile }, { data: tournament }] = await Promise.all([
     admin
@@ -185,9 +196,66 @@ export async function POST(
     return Response.json({ error: 'El torneo está lleno' }, { status: 400 })
   }
 
+  const entryFeeCents = tournament.entry_fee_cents
+
+  // Inscripción con crédito de rakeback (todo-o-nada): si el usuario lo pide y su
+  // crédito cubre la cuota completa, se inscribe sin pasar por Flow.
+  if (useCredit) {
+    const { data: creditBalance } = await admin.rpc('wallet_credit_balance', { p_user_id: userId })
+    if (Number(creditBalance ?? 0) < entryFeeCents) {
+      return Response.json(
+        { error: 'No tienes crédito suficiente para cubrir la inscripción completa.', insufficientCredit: true },
+        { status: 400 }
+      )
+    }
+
+    const { data: registrationId, error: creditError } = await admin.rpc('register_with_credit', {
+      p_user_id: userId,
+      p_tournament_id: tournamentId,
+      p_entry_fee_cents: entryFeeCents,
+    })
+
+    if (creditError) {
+      const msg = creditError.message
+      if (msg.includes('Torneo lleno')) return Response.json({ error: 'El torneo está lleno' }, { status: 400 })
+      if (msg.includes('Inscripciones cerradas')) return Response.json({ error: 'Inscripciones cerradas' }, { status: 400 })
+      if (msg.includes('Crédito insuficiente')) {
+        return Response.json({ error: 'No tienes crédito suficiente para cubrir la inscripción completa.', insufficientCredit: true }, { status: 400 })
+      }
+      if (creditError.code === '23505' || msg.includes('unique')) {
+        return Response.json({ error: 'Ya estás inscrito en este torneo' }, { status: 409 })
+      }
+      console.error('Error inscribiendo con crédito:', msg)
+      return Response.json({ error: 'No se pudo inscribir con crédito' }, { status: 500 })
+    }
+
+    after(async () => {
+      try {
+        const { data: t } = await admin
+          .from('tournaments')
+          .select('name, play_window_start, play_window_end, entry_fee_cents')
+          .eq('id', tournamentId)
+          .single()
+        if (user.email && t) {
+          await sendTournamentRegistrationEmail({
+            to: user.email,
+            username: user.user_metadata?.username ?? user.email,
+            tournamentName: t.name,
+            playWindowStart: t.play_window_start,
+            playWindowEnd: t.play_window_end,
+            entryFeeCents: t.entry_fee_cents,
+          })
+        }
+      } catch (e) {
+        console.error('[checkout] Error email inscripción con crédito:', e)
+      }
+    })
+
+    return Response.json({ registered: true, viaCredit: true, registrationId })
+  }
+
   // El usuario paga exactamente el entry_fee. La plataforma absorbe el costo
   // de Flow y su IVA desde el margen operacional del 30%.
-  const entryFeeCents = tournament.entry_fee_cents
   const entryFeePesos = Math.ceil(entryFeeCents / 100)
   const requestOrigin = new URL(req.url).origin
   const appUrl = getAppUrl(requestOrigin) ?? requestOrigin

@@ -11,6 +11,7 @@ const TYPE_LABEL: Record<WalletTransaction['type'], string> = {
   prize_credit: 'Premio',
   refund: 'Reembolso',
   adjustment: 'Ajuste',
+  tournament_credit: 'Crédito de torneo',
 }
 
 export default async function WalletPage() {

@@ -11,6 +11,7 @@ export type WalletTransactionType =
   | 'prize_credit'
   | 'refund'
   | 'adjustment'
+  | 'tournament_credit'
 export type TournamentType = 'standard' | 'express' | 'elite' | 'freeroll' | 'challenger' | 'pro'
 export type PrizeModel = 'entry_pool'
 export type SkillTier = 'novato' | 'intermedio' | 'pro'

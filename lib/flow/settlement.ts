@@ -6,6 +6,7 @@ import { getAppUrl } from '@/lib/env'
 import { calculateIvaIncludedBreakdown, splitEntryFee } from '@/lib/tournament/finance'
 import { isModeloB } from '@/lib/tax/regime'
 import { sendTournamentRegistrationEmail } from '@/lib/email/tournament-notifications'
+import { computeRakebackCents, rakebackExpiryIso } from '@/lib/wallet/rakeback'
 
 export interface FlowSettlement {
   status: FlowPaymentStatus
@@ -88,6 +89,29 @@ export async function settleFlowPayment(token: string): Promise<FlowSettlement> 
     const settlement = result as { idempotent: boolean; registration_id: string; attempt_id: string }
 
     if (!settlement.idempotent) {
+      // Rakeback: crédito de torneo (no retirable) por la inscripción, para subir
+      // frecuencia y retención. No bloquea el settlement si falla.
+      try {
+        const rakebackCents = computeRakebackCents(attempt.net_amount_cents)
+        if (rakebackCents > 0) {
+          const { error: rakebackError } = await admin.rpc('wallet_insert_transaction', {
+            p_user_id: attempt.user_id,
+            p_type: 'tournament_credit',
+            p_amount_cents: rakebackCents,
+            p_reference_type: 'rakeback',
+            p_reference_id: attempt.tournament_id,
+            p_metadata: {
+              kind: 'rakeback_grant',
+              entry_cents: attempt.net_amount_cents,
+              expires_at: rakebackExpiryIso(),
+            },
+          })
+          if (rakebackError) console.error('[settlement] Rakeback grant falló:', rakebackError.message)
+        }
+      } catch (e) {
+        console.error('[settlement] Rakeback grant excepción:', e)
+      }
+
       // Encolar boleta DTE solo en Modelo B.
       if (isModeloB()) {
         await enqueueRegistrationBoleta({

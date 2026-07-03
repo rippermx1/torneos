@@ -13,6 +13,7 @@ const TYPE_LABEL: Record<WalletTransactionType, string> = {
   prize_credit: 'Premio',
   refund: 'Reembolso',
   adjustment: 'Ajuste',
+  tournament_credit: 'Crédito',
 }
 
 const TYPE_TONE: Record<WalletTransactionType, string> = {
@@ -22,6 +23,7 @@ const TYPE_TONE: Record<WalletTransactionType, string> = {
   ticket_debit: 'bg-amber-100 text-amber-700',
   withdrawal: 'bg-purple-100 text-purple-700',
   adjustment: 'bg-slate-100 text-slate-700',
+  tournament_credit: 'bg-indigo-100 text-indigo-700',
 }
 
 export default async function AdminUserWalletPage({

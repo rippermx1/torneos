@@ -105,7 +105,7 @@ Leyenda: ✅ hecho · 🚧 en progreso · ⬜ pendiente
 
 ### Fase 2 — Motor de retención
 - ✅ **Brackets por habilidad** (rama `feat/skill-brackets`) — migración `20260702020000_skill_brackets` (`player_ratings` + `tournaments.skill_tier`); `lib/tournament/rating.ts` (`tierForRating`/`updateRating`/`canRegisterForTier` + tests); rating actualizado tras `finalize` en el lifecycle; **gate de inscripción** en checkout + register; select de división en el admin; badge en la ficha. **NO aplicada a prod aún.** Umbrales de división (8.000 / 30.000) a CALIBRAR con datos reales.
-- ⬜ **Rakeback en créditos** (7% no retirable, vence 30d): tipo `tournament_credit`, otorgar al liquidar, consumir en checkout, asentar como marketing en `model-a-report`. El más complejo (toca checkout + contabilidad + expiración) — siguiente incremento.
+- 🚧 **Rakeback en créditos** (rama `feat/rakeback-credits`). **Incremento 1 HECHO** (no aplicado a prod): migración `20260702030000` (tipo `tournament_credit` + `wallet_credit_balance`), helper puro `lib/wallet/rakeback.ts` (`computeRakebackCents`/`rakebackExpiryIso` + tests), y **otorgamiento** del 7% al liquidar (`settlement.ts`, no bloqueante). **PENDIENTE incremento 2**: (a) consumo en checkout — el crédito paga parte de la inscripción y Flow el resto; RPC atómico crédito+registro; (b) contabilidad — asentar el grant como marketing en `model-a-report` (cobros efectivos = solo el efectivo cobrado, no la parte con crédito; confirmar con contador); (c) expiración FIFO a 30 días (cron); (d) UI — saldo de crédito y aplicarlo en el checkout.
 - ⬜ Temporadas / ranking.
 
 ### Fase 3

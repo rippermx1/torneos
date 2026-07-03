@@ -8,6 +8,7 @@ import type { Metadata } from 'next'
 import { checkPlayWindow, checkRegistrationWindow } from '@/lib/tournament/helpers'
 import { calculateTournamentDisplayPayouts, splitEntryFee, selectPrizeTier, type PrizeTier } from '@/lib/tournament/finance'
 import { PrizeLadder } from '@/components/tournament/prize-ladder'
+import { SKILL_TIER_LABELS } from '@/lib/tournament/rating'
 
 export async function generateMetadata({
   params,
@@ -112,6 +113,11 @@ export default async function TournamentDetailPage({
     <div className="max-w-2xl mx-auto px-4 py-10 space-y-8">
       <div className="space-y-2">
         <h1 className="text-3xl font-bold">{t.name}</h1>
+        {t.skill_tier && (
+          <span className="inline-block text-xs font-medium bg-muted text-foreground rounded-full px-2.5 py-1">
+            División {SKILL_TIER_LABELS[t.skill_tier]}
+          </span>
+        )}
         {t.description && <p className="text-muted-foreground">{t.description}</p>}
       </div>
 

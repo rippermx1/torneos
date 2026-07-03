@@ -103,8 +103,13 @@ Leyenda: ✅ hecho · 🚧 en progreso · ⬜ pendiente
 - ⬜ Eventos PostHog de retención/liquidez.
 - ⬜ Hold & review de premios grandes.
 
-### Fases 2-3
-- ⬜ Rakeback · ⬜ Brackets · ⬜ Insignia/temporadas · ⬜ Automatización retiros/KYC · ⬜ Anti-cheat v2.
+### Fase 2 — Motor de retención
+- ✅ **Brackets por habilidad** (rama `feat/skill-brackets`) — migración `20260702020000_skill_brackets` (`player_ratings` + `tournaments.skill_tier`); `lib/tournament/rating.ts` (`tierForRating`/`updateRating`/`canRegisterForTier` + tests); rating actualizado tras `finalize` en el lifecycle; **gate de inscripción** en checkout + register; select de división en el admin; badge en la ficha. **NO aplicada a prod aún.** Umbrales de división (8.000 / 30.000) a CALIBRAR con datos reales.
+- ⬜ **Rakeback en créditos** (7% no retirable, vence 30d): tipo `tournament_credit`, otorgar al liquidar, consumir en checkout, asentar como marketing en `model-a-report`. El más complejo (toca checkout + contabilidad + expiración) — siguiente incremento.
+- ⬜ Temporadas / ranking.
+
+### Fase 3
+- ⬜ Insignia semanal · ⬜ Automatización retiros/KYC · ⬜ Anti-cheat v2 · ⬜ Referidos.
 
 **Despliegue:** este trabajo es feature nueva → flujo normal (rama → review → merge → deploy Vercel + aplicar migración). NO aplicar migraciones de feature directo a prod (a diferencia del hotfix de reembolsos, que fue autorizado explícitamente).
 

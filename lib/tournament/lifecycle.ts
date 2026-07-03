@@ -3,6 +3,7 @@ import type { Tournament, TournamentResult } from '@/types/database'
 import { issueFlowRefunds } from '@/lib/tournament/refunds'
 import { getAppUrl } from '@/lib/env'
 import { sendTournamentPrizeEmail } from '@/lib/email/tournament-notifications'
+import { updateRating } from '@/lib/tournament/rating'
 
 export interface TransitionResult {
   tournamentId: string
@@ -151,6 +152,7 @@ async function processSingleTournament(
       if (error) throw new Error(error.message)
 
       void notifyPrizeWinners(supabase, tournament.id, tournament.name)
+      void updatePlayerRatings(supabase, tournament.id)
 
       return { ...base, action: 'finalized', detail: data as Record<string, unknown> }
     }
@@ -258,5 +260,54 @@ async function notifyPrizeWinners(
     }
   } catch (e) {
     console.error(`[lifecycle] Error notificando ganadores del torneo ${tournamentId}:`, e)
+  }
+}
+
+// Actualiza el rating por habilidad de cada participante tras finalizar, usando su
+// score final (EMA). No bloquea el pago; si falla, se recupera en el próximo torneo.
+async function updatePlayerRatings(
+  supabase: ReturnType<typeof createAdminClient>,
+  tournamentId: string,
+): Promise<void> {
+  try {
+    const { data: results } = await supabase
+      .from('tournament_results')
+      .select('user_id, final_score')
+      .eq('tournament_id', tournamentId)
+
+    const rows = (results ?? []) as Pick<TournamentResult, 'user_id' | 'final_score'>[]
+    if (rows.length === 0) return
+
+    const userIds = rows.map((r) => r.user_id)
+    const { data: existing } = await supabase
+      .from('player_ratings')
+      .select('profile_id, rating, games_rated')
+      .in('profile_id', userIds)
+
+    const byUser = new Map(
+      (existing ?? []).map((r) => [r.profile_id, r as { profile_id: string; rating: number; games_rated: number }])
+    )
+
+    const nowIso = new Date().toISOString()
+    const upserts = rows.map((r) => {
+      const prev = byUser.get(r.user_id)
+      const next = updateRating(prev?.rating ?? 0, prev?.games_rated ?? 0, Number(r.final_score))
+      return {
+        profile_id: r.user_id,
+        rating: next.rating,
+        games_rated: next.gamesRated,
+        tier: next.tier,
+        updated_at: nowIso,
+      }
+    })
+
+    const { error } = await supabase
+      .from('player_ratings')
+      .upsert(upserts, { onConflict: 'profile_id' })
+    if (error) {
+      console.error(`[lifecycle] Error actualizando ratings del torneo ${tournamentId}:`, error.message)
+    }
+  } catch (e) {
+    console.error(`[lifecycle] Error en updatePlayerRatings ${tournamentId}:`, e)
   }
 }

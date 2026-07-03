@@ -6,6 +6,8 @@ import { createFlowPayment, buildFlowCheckoutUrl } from '@/lib/flow/payments'
 import { checkRegistrationWindow } from '@/lib/tournament/helpers'
 import { checkRateLimit, getRequestIp, rateLimitResponse } from '@/lib/security/rate-limit'
 import { isAdult } from '@/lib/identity/verification'
+import { canRegisterForTier, DEFAULT_SKILL_TIER, SKILL_TIER_LABELS } from '@/lib/tournament/rating'
+import type { SkillTier } from '@/types/database'
 
 // ───────────────────────────────────────────────────────────────
 // Checkout Flow para inscripcion a torneo (Ruta 1).
@@ -50,7 +52,7 @@ export async function POST(
       .single(),
     admin
       .from('tournaments')
-      .select('id, entry_fee_cents, max_players, registration_opens_at, play_window_start, play_window_end, status')
+      .select('id, entry_fee_cents, max_players, registration_opens_at, play_window_start, play_window_end, status, skill_tier')
       .eq('id', tournamentId)
       .single(),
   ])
@@ -98,6 +100,25 @@ export async function POST(
   const playability = checkRegistrationWindow(tournament)
   if (!playability.ok) {
     return Response.json({ error: playability.reason }, { status: 400 })
+  }
+
+  // División por habilidad: si el torneo la restringe, solo esa división entra.
+  if (tournament.skill_tier) {
+    const { data: ratingRow } = await admin
+      .from('player_ratings')
+      .select('tier')
+      .eq('profile_id', userId)
+      .maybeSingle()
+    const playerTier = (ratingRow?.tier ?? DEFAULT_SKILL_TIER) as SkillTier
+    if (!canRegisterForTier(playerTier, tournament.skill_tier as SkillTier)) {
+      return Response.json(
+        {
+          error: `Este torneo es solo para la división ${SKILL_TIER_LABELS[tournament.skill_tier as SkillTier]}. Tu división actual es ${SKILL_TIER_LABELS[playerTier]}.`,
+          tierMismatch: true,
+        },
+        { status: 403 }
+      )
+    }
   }
 
   // Pre-flight: ya inscrito?

@@ -3,7 +3,7 @@ import { requireAdmin } from '@/lib/supabase/auth'
 import { formatDateTimeLocalInput, parseDateTimeLocalToIso } from '@/lib/utils'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import type { TournamentType } from '@/types/database'
+import type { TournamentType, SkillTier } from '@/types/database'
 import {
   DEFAULT_FREEROLL_PRIZE_CENTS,
   DEFAULT_PLATFORM_FEE_BPS,
@@ -33,6 +33,11 @@ async function createTournament(formData: FormData) {
       ? rawTournamentType
       : 'standard'
   const isTest           = formData.get('is_test') === '1'
+  const rawSkillTier     = formData.get('skill_tier')
+  const skillTier: SkillTier | null =
+    rawSkillTier === 'novato' || rawSkillTier === 'intermedio' || rawSkillTier === 'pro'
+      ? rawSkillTier
+      : null
   const entryFeePesos    = Number.parseFloat(String(formData.get('entry_fee') ?? ''))
   const entryFee         = Math.round(entryFeePesos * 100)
   const freerollPrizeInput = Number.parseFloat(String(formData.get('freeroll_prize') ?? ''))
@@ -149,6 +154,7 @@ async function createTournament(formData: FormData) {
       max_game_duration_seconds: maxDuration,
       status: 'scheduled',
       is_test: isTest,
+      skill_tier: skillTier,
       created_by: userId,
     })
     .select('id')

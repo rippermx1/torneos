@@ -5,6 +5,8 @@ import { checkRegistrationWindow } from '@/lib/tournament/helpers'
 import { checkRateLimit, getRequestIp, rateLimitResponse } from '@/lib/security/rate-limit'
 import { sendTournamentRegistrationEmail } from '@/lib/email/tournament-notifications'
 import { isAdult } from '@/lib/identity/verification'
+import { canRegisterForTier, DEFAULT_SKILL_TIER, SKILL_TIER_LABELS } from '@/lib/tournament/rating'
+import type { SkillTier } from '@/types/database'
 
 // ───────────────────────────────────────────────────────────────
 // Inscripcion directa: SOLO para torneos gratuitos (entry_fee=0).
@@ -39,7 +41,7 @@ export async function POST(
       .single(),
     supabase
       .from('tournaments')
-      .select('id, name, entry_fee_cents, max_players, registration_opens_at, play_window_start, play_window_end, status')
+      .select('id, name, entry_fee_cents, max_players, registration_opens_at, play_window_start, play_window_end, status, skill_tier')
       .eq('id', tournamentId)
       .single(),
   ])
@@ -83,6 +85,25 @@ export async function POST(
   const playability = checkRegistrationWindow(tournament)
   if (!playability.ok) {
     return Response.json({ error: playability.reason }, { status: 400 })
+  }
+
+  // División por habilidad: si el torneo la restringe, solo esa división entra.
+  if (tournament.skill_tier) {
+    const { data: ratingRow } = await supabase
+      .from('player_ratings')
+      .select('tier')
+      .eq('profile_id', userId)
+      .maybeSingle()
+    const playerTier = (ratingRow?.tier ?? DEFAULT_SKILL_TIER) as SkillTier
+    if (!canRegisterForTier(playerTier, tournament.skill_tier as SkillTier)) {
+      return Response.json(
+        {
+          error: `Este torneo es solo para la división ${SKILL_TIER_LABELS[tournament.skill_tier as SkillTier]}. Tu división actual es ${SKILL_TIER_LABELS[playerTier]}.`,
+          tierMismatch: true,
+        },
+        { status: 403 }
+      )
+    }
   }
 
   const { error: rpcError } = await supabase.rpc('register_for_tournament', {

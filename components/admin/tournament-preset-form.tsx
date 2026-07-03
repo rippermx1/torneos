@@ -47,6 +47,7 @@ export function TournamentPresetForm({
 }: TournamentPresetFormProps) {
   const [presetKey, setPresetKey] = useState<TournamentType>('standard')
   const [isTest, setIsTest] = useState(false)
+  const [skillTier, setSkillTier] = useState('')
   const [name, setName] = useState('Torneo Estándar')
   const [description, setDescription] = useState('Premios fijos publicados antes de la inscripción.')
   const [values, setValues] = useState(() => valuesFromPreset(TOURNAMENT_PRESETS[1]))
@@ -197,6 +198,24 @@ export function TournamentPresetForm({
               <legend className="text-sm font-medium px-1">Datos principales</legend>
               <Field label="Nombre del torneo" name="name" required value={name} onChange={setName} />
               <Field label="Descripción" name="description" value={description} onChange={setDescription} />
+              <div className="space-y-1.5">
+                <label htmlFor="skill_tier" className="text-sm font-medium">División por habilidad</label>
+                <select
+                  id="skill_tier"
+                  name="skill_tier"
+                  value={skillTier}
+                  onChange={(event) => setSkillTier(event.target.value)}
+                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-foreground/20 bg-background"
+                >
+                  <option value="">Abierto (todas las divisiones)</option>
+                  <option value="novato">Solo Novato</option>
+                  <option value="intermedio">Solo Intermedio</option>
+                  <option value="pro">Solo Pro</option>
+                </select>
+                <p className="text-xs text-muted-foreground">
+                  Restringe la inscripción a una división para que compitan entre pares. &quot;Abierto&quot; admite a cualquiera.
+                </p>
+              </div>
             </fieldset>
 
             <fieldset className="border rounded-lg p-4 space-y-4">

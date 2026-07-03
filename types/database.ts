@@ -13,6 +13,7 @@ export type WalletTransactionType =
   | 'adjustment'
 export type TournamentType = 'standard' | 'express' | 'elite' | 'freeroll' | 'challenger' | 'pro'
 export type PrizeModel = 'entry_pool'
+export type SkillTier = 'novato' | 'intermedio' | 'pro'
 export type TournamentStatus =
   | 'scheduled'
   | 'open'
@@ -92,6 +93,7 @@ export interface Tournament {
   max_game_duration_seconds: number
   is_test: boolean
   created_by: string | null
+  skill_tier: SkillTier | null
   created_at: string
 }
 
@@ -290,6 +292,14 @@ export interface Dispute {
   created_at: string
 }
 
+export interface PlayerRating {
+  profile_id: string
+  rating: number
+  games_rated: number
+  tier: SkillTier
+  updated_at: string
+}
+
 // Tipo Database completo requerido por @supabase/supabase-js v2
 export type Database = {
   public: {
@@ -314,7 +324,7 @@ export type Database = {
       }
       tournaments: {
         Row: Tournament & DbRecord
-        Insert: InsertWithOptional<Tournament, 'id' | 'created_at' | 'description' | 'game_type' | 'tournament_type' | 'prize_model' | 'prize_2nd_cents' | 'prize_3rd_cents' | 'prize_fund_bps' | 'platform_fee_bps' | 'prize_1st_bps' | 'prize_2nd_bps' | 'prize_3rd_bps' | 'min_players' | 'max_players' | 'status' | 'max_game_duration_seconds' | 'is_test' | 'created_by'>
+        Insert: InsertWithOptional<Tournament, 'id' | 'created_at' | 'description' | 'game_type' | 'tournament_type' | 'prize_model' | 'prize_2nd_cents' | 'prize_3rd_cents' | 'prize_fund_bps' | 'platform_fee_bps' | 'prize_1st_bps' | 'prize_2nd_bps' | 'prize_3rd_bps' | 'min_players' | 'max_players' | 'status' | 'max_game_duration_seconds' | 'is_test' | 'created_by' | 'skill_tier'>
         Update: Partial<Omit<Tournament, 'id'>> & DbRecord
         Relationships: []
       }
@@ -394,6 +404,12 @@ export type Database = {
         Row: TournamentPrizeTier & DbRecord
         Insert: InsertWithOptional<TournamentPrizeTier, 'id' | 'created_at' | 'prize_2nd_cents' | 'prize_3rd_cents'>
         Update: Partial<Omit<TournamentPrizeTier, 'id' | 'created_at'>> & DbRecord
+        Relationships: []
+      }
+      player_ratings: {
+        Row: PlayerRating & DbRecord
+        Insert: InsertWithOptional<PlayerRating, 'rating' | 'games_rated' | 'tier' | 'updated_at'>
+        Update: Partial<Omit<PlayerRating, 'profile_id'>> & DbRecord
         Relationships: []
       }
     }

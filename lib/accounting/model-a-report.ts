@@ -4,6 +4,7 @@ import { calculateIvaIncludedBreakdown } from '@/lib/tournament/finance'
 import type {
   Database,
   FlowPaymentAttempt,
+  FlowRefundAttempt,
   Registration,
   WalletTransaction,
   WithdrawalRequest,
@@ -59,6 +60,13 @@ export interface AccountingPeriodRow {
   platformFeeIvaCents: number
   prizeCreditsCents: number
   refundsCents: number
+  // Reversas Flow COMPLETADAS de pagos asentados (torneos cancelados): devuelven
+  // cash al medio de pago original, así que se descuentan del margen efectivo.
+  flowRefundsCents: number
+  // Base de "reembolsos" del IVA efectivo: refunds de wallet ligados a torneos
+  // (reference_type='tournament') + reversas Flow completadas. Excluye los refunds
+  // por retiro fallido (ajuste de pasivo, no reversa de venta).
+  effectiveRefundsCents: number
   adjustmentsCents: number
   // Rakeback: crédito otorgado (informativo — indica el pasivo generado) y crédito
   // redimido (inscripciones pagadas con crédito). El costo del programa se refleja
@@ -152,6 +160,8 @@ function emptyPeriod(period: string): AccountingPeriodRow {
     platformFeeIvaCents: 0,
     prizeCreditsCents: 0,
     refundsCents: 0,
+    flowRefundsCents: 0,
+    effectiveRefundsCents: 0,
     adjustmentsCents: 0,
     rakebackGrantedCents: 0,
     creditRedeemedCents: 0,
@@ -346,12 +356,27 @@ function addRegistration(
   }
 }
 
-function addWalletTransaction(row: AccountingPeriodRow, tx: WalletTransaction) {
-  if (tx.type === 'prize_credit') row.prizeCreditsCents += tx.amount_cents
-  if (tx.type === 'refund') row.refundsCents += tx.amount_cents
+function addWalletTransaction(
+  row: AccountingPeriodRow,
+  tx: WalletTransaction,
+  isTestTournamentIds: Set<string>
+) {
+  // Los flujos de torneos is_test no entran al P&L (sí al pasivo de wallet, que
+  // se calcula aparte desde la cadena de saldos y debe reflejar el ledger real).
+  const fromTestTournament = !!tx.reference_id && isTestTournamentIds.has(tx.reference_id)
+
+  if (tx.type === 'prize_credit' && !fromTestTournament) row.prizeCreditsCents += tx.amount_cents
+  if (tx.type === 'refund') {
+    row.refundsCents += tx.amount_cents
+    // Solo los refunds ligados a torneos reales reversan una venta. Los de
+    // reference_type='withdrawal' compensan un retiro fallido (pasivo, no venta).
+    if (tx.reference_type === 'tournament' && !fromTestTournament) {
+      row.effectiveRefundsCents += tx.amount_cents
+    }
+  }
   if (tx.type === 'adjustment') row.adjustmentsCents += tx.amount_cents
   if (tx.type === 'withdrawal') row.withdrawalTransactionsCents += tx.amount_cents
-  if (tx.type === 'tournament_credit') {
+  if (tx.type === 'tournament_credit' && !fromTestTournament) {
     if (tx.amount_cents > 0) {
       row.rakebackGrantedCents += tx.amount_cents
     } else if ((tx.metadata as { kind?: string })?.kind === 'redeem') {
@@ -428,7 +453,9 @@ function finalizePeriod(
   const effectiveTax = calculateEffectivePeriodTax({
     entriesCollectedCents: row.effectiveEntriesCollectedCents,
     prizesPaidCents: row.prizeCreditsCents,
-    refundsCents: row.refundsCents,
+    // Reembolsos que reversan ventas: refunds de wallet ligados a torneos +
+    // reversas Flow completadas de pagos asentados (torneos cancelados).
+    refundsCents: row.effectiveRefundsCents + row.flowRefundsCents,
   })
   row.effectiveTaxableMarginCents = effectiveTax.taxableMarginCents
   row.effectiveIvaDebitCents = effectiveTax.ivaDebitCents
@@ -564,6 +591,8 @@ export async function buildModeloAAccountingReport(
     walletTransactions,
     withdrawals,
     prizeLiabilityResult,
+    testTournaments,
+    flowRefunds,
   ] = await Promise.all([
     fetchAll<FlowPaymentAttempt>(
       supabase,
@@ -586,11 +615,21 @@ export async function buildModeloAAccountingReport(
       'id, user_id, amount_cents, status, bank_name, bank_account, account_rut, account_holder, admin_notes, reviewed_by, reviewed_at, created_at'
     ),
     supabase.from('prize_liability').select('*').maybeSingle(),
+    fetchAll<{ id: string }>(supabase, 'tournaments', 'id, is_test').then((rows) =>
+      (rows as { id: string; is_test?: boolean }[]).filter((t) => t.is_test).map((t) => t.id)
+    ),
+    fetchAll<FlowRefundAttempt>(
+      supabase,
+      'flow_refund_attempts',
+      'id, flow_payment_attempt_id, amount_cents, status, created_at, settled_at'
+    ),
   ])
 
   if (prizeLiabilityResult.error) {
     throw new Error(`prize_liability: ${prizeLiabilityResult.error.message}`)
   }
+
+  const isTestTournamentIds = new Set(testTournaments)
 
   const periods = new Map<string, AccountingPeriodRow>()
   const periodUsers = new Map<string, Set<string>>()
@@ -617,13 +656,31 @@ export async function buildModeloAAccountingReport(
   }
 
   for (const registration of registrations) {
+    // Torneos de prueba no entran al P&L.
+    if (isTestTournamentIds.has(registration.tournament_id)) continue
     const period = periodKey(registration.registered_at)
     addRegistration(getOrCreatePeriod(periods, period), registration, periodUsers, periodTournaments, creditFundedKeys)
   }
 
   for (const tx of walletTransactions) {
     const period = periodKey(tx.created_at)
-    addWalletTransaction(getOrCreatePeriod(periods, period), tx)
+    addWalletTransaction(getOrCreatePeriod(periods, period), tx, isTestTournamentIds)
+  }
+
+  // Reversas Flow completadas de pagos que SÍ asentaron inscripción (torneos
+  // cancelados). Devuelven cash: se descuentan del margen efectivo en el período
+  // en que se completaron. Las reversas de pagos no asentables (attempt terminó
+  // 'cancelled', nunca contó como cobro) se excluyen para no descontar dos veces.
+  const attemptStatusById = new Map(flowAttempts.map((a) => [a.id, a.status]))
+  const refundedAttemptIds = new Set<string>()
+  for (const refund of flowRefunds) {
+    if (refund.status !== 'completed') continue
+    if (!refund.flow_payment_attempt_id) continue
+    if (refundedAttemptIds.has(refund.flow_payment_attempt_id)) continue
+    if (attemptStatusById.get(refund.flow_payment_attempt_id) !== 'paid') continue
+    refundedAttemptIds.add(refund.flow_payment_attempt_id)
+    const period = periodKey(refund.settled_at ?? refund.created_at)
+    getOrCreatePeriod(periods, period).flowRefundsCents += refund.amount_cents
   }
 
   for (const withdrawal of withdrawals) {
@@ -661,6 +718,8 @@ export async function buildModeloAAccountingReport(
       'Punto formal unico para el contador: definir si la boleta electronica se emite por el total de la inscripcion o por el margen. El calculo interno efectivo ya es univoco; falta el criterio de emision ante SII.',
       'F22/gestion: premios y retiros se reportan aparte; los premios del torneo son fijos y publicados antes del pago.',
       'Rakeback: el credito otorgado (rakeback_otorgado) es informativo del pasivo generado. El costo del programa se refleja como ingreso NO percibido: las inscripciones pagadas con credito NO suman a cobros efectivos (reducen el margen afecto). No se asienta el grant como gasto aparte, para evitar doble conteo. Nota: una inscripcion con credito ocupa un cupo premiable sin ingreso cash de ese torneo; la solvencia se mantiene en agregado (el credito provino de cash de inscripciones previas), no necesariamente por torneo.',
+      'Reembolsos del margen efectivo (efectivo_reembolsos): refunds de wallet ligados a torneos + reversas Flow COMPLETADAS de pagos asentados (torneos cancelados), en el periodo en que se completaron. Los refunds por retiro fallido (reference_type=withdrawal) son ajuste de pasivo y NO reducen el margen. Las reversas de pagos no asentables tampoco (ese cobro nunca conto como venta).',
+      'Torneos is_test quedan excluidos del P&L (inscripciones, premios y creditos). El pasivo de wallet al cierre si refleja el ledger completo.',
     ],
     rows: [...periods.values()].sort((left, right) => right.period.localeCompare(left.period)),
     snapshot: {
@@ -714,6 +773,8 @@ export function accountingReportToCsv(report: AccountingReport): string {
     'fee_plataforma_iva_clp',
     'premios_acreditados_clp',
     'reembolsos_wallet_clp',
+    'reversas_flow_clp',
+    'efectivo_reembolsos_clp',
     'ajustes_wallet_clp',
     'rakeback_otorgado_clp',
     'credito_redimido_clp',
@@ -760,6 +821,8 @@ export function accountingReportToCsv(report: AccountingReport): string {
         centsToPesos(row.platformFeeIvaCents),
         centsToPesos(row.prizeCreditsCents),
         centsToPesos(row.refundsCents),
+        centsToPesos(row.flowRefundsCents),
+        centsToPesos(row.effectiveRefundsCents + row.flowRefundsCents),
         centsToPesos(row.adjustmentsCents),
         centsToPesos(row.rakebackGrantedCents),
         centsToPesos(row.creditRedeemedCents),

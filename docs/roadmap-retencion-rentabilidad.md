@@ -115,6 +115,11 @@ Leyenda: ✅ hecho · 🚧 en progreso · ⬜ pendiente
   - Nota de solvencia: una inscripción con crédito ocupa un cupo premiable sin cash de ESE torneo; solvente en agregado (el crédito vino de cash previo), no necesariamente por torneo.
 - ⬜ Temporadas / ranking.
 
+### Verificación contable post-implementación (2026-07-06)
+- ✅ Auditoría de cómo escalera+brackets+rakeback determinan la contabilidad. **Guía operativa: `docs/contabilidad-producto.md`** (criterio único, mapa evento→efecto, ejemplo, checklist de cierre, puntos con contador).
+- ✅ 3 brechas del reporte corregidas (rama `fix/accounting-report-gaps`): (1) reversas Flow completadas de torneos cancelados ahora SÍ se descuentan del margen (antes margen/IVA sobreestimados); (2) refunds por retiro fallido ya no reducen el margen (ajuste de pasivo); (3) torneos `is_test` excluidos del P&L. Columnas nuevas `reversas_flow` / `efectivo_reembolsos`.
+- Prod verificado limpio pre-lanzamiento: 0 torneos/tx, ledger sin drift, sin datos de prueba.
+
 ### Fase 3
 - ⬜ Insignia semanal · ⬜ Automatización retiros/KYC · ⬜ Anti-cheat v2 · ⬜ Referidos.
 

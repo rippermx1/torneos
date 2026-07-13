@@ -33,6 +33,10 @@ const JOBS = [
   },
 ]
 
+/**
+ * @param {Record<string, string | undefined>} env
+ * @param {...string} names
+ */
 function firstNonEmpty(env, ...names) {
   for (const name of names) {
     const value = env[name]
@@ -45,6 +49,7 @@ export function sqlLiteral(value) {
   return `'${String(value).replaceAll("'", "''")}'`
 }
 
+/** @param {Record<string, string | undefined>} env */
 export function validateSchedulerConfig(env = process.env) {
   const appUrl = firstNonEmpty(env, 'APP_URL', 'NEXT_PUBLIC_APP_URL', 'NEXT_PUBLIC_SITE_URL')
   const supabaseUrl = firstNonEmpty(env, 'NEXT_PUBLIC_SUPABASE_URL')

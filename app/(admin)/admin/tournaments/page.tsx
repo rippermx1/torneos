@@ -128,7 +128,7 @@ export default async function AdminTournamentsPage() {
         <div>
           <h1 className="text-2xl font-bold">Torneos</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            GitHub Actions procesa torneos cada 5 minutos; Flow se reconcilia cada 10 minutos.
+            Supabase procesa torneos cada 5 minutos y concilia Flow cada 10; los respaldos externos cubren contingencias.
           </p>
         </div>
         <Link

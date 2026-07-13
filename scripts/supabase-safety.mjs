@@ -25,6 +25,7 @@ export function getSupabaseProjectRef(supabaseUrl) {
   return match[1]
 }
 
+/** @param {Record<string, string | undefined>} env */
 function protectedProjectRefs(env) {
   const refs = new Set(KNOWN_PRODUCTION_PROJECT_REFS)
   if (env.PRODUCTION_SUPABASE_PROJECT_REF) {
@@ -33,6 +34,11 @@ function protectedProjectRefs(env) {
   return refs
 }
 
+/**
+ * @param {string} supabaseUrl
+ * @param {string} operation
+ * @param {Record<string, string | undefined>} env
+ */
 export function requireExplicitProjectTarget(supabaseUrl, operation, env = process.env) {
   const projectRef = getSupabaseProjectRef(supabaseUrl)
 
@@ -45,6 +51,11 @@ export function requireExplicitProjectTarget(supabaseUrl, operation, env = proce
   return projectRef
 }
 
+/**
+ * @param {string} supabaseUrl
+ * @param {string} operation
+ * @param {Record<string, string | undefined>} env
+ */
 export function requireNonProductionProject(supabaseUrl, operation, env = process.env) {
   const projectRef = getSupabaseProjectRef(supabaseUrl)
 
@@ -57,6 +68,10 @@ export function requireNonProductionProject(supabaseUrl, operation, env = proces
   return requireExplicitProjectTarget(supabaseUrl, operation, env)
 }
 
+/**
+ * @param {string} supabaseUrl
+ * @param {Record<string, string | undefined>} env
+ */
 export function requireDestructiveReset(supabaseUrl, env = process.env) {
   const projectRef = requireExplicitProjectTarget(
     supabaseUrl,

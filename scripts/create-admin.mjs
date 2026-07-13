@@ -11,12 +11,14 @@
  *   ADMIN_PASSWORD       contraseña (mín. 8 caracteres)
  *   ADMIN_USERNAME       username visible en la plataforma
  *   ADMIN_FULL_NAME      nombre completo (opcional, default: "Administrador")
+ *   CONFIRM_SUPABASE_PROJECT_REF  ref exacto del proyecto destino
  */
 
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import nextEnv from '@next/env'
 import { createClient } from '@supabase/supabase-js'
+import { requireExplicitProjectTarget } from './supabase-safety.mjs'
 
 const { loadEnvConfig } = nextEnv
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -53,6 +55,11 @@ if (password.length < 8) {
   process.exit(1)
 }
 
+const targetProjectRef = requireExplicitProjectTarget(
+  supabaseUrl,
+  'Creación o actualización de administrador'
+)
+
 // ── Cliente service_role ─────────────────────────────────────
 
 const supabase = createClient(supabaseUrl, serviceKey, {
@@ -76,6 +83,7 @@ async function findUserByEmail(targetEmail) {
 // ── Main ─────────────────────────────────────────────────────
 
 async function main() {
+  console.log(`Proyecto confirmado: ${targetProjectRef}`)
   console.log(`\nCreando admin: ${email} (${username})…\n`)
 
   // 1. Auth user — crear o actualizar

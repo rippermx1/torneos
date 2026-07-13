@@ -6,9 +6,8 @@ import {
 import { expireStaleCredits } from '@/lib/wallet/credit-expiry'
 import { recordHeartbeat } from '@/lib/ops/heartbeat'
 
-// Programado vía GitHub Actions (.github/workflows/reconcile-refunds.yml) cada
-// 10 min, con respaldo diario en Vercel (vercel.json) por si Actions se deshabilita.
-// El endpoint es idempotente, así que ejecutarlo desde ambos schedulers es seguro.
+// Programado vía Supabase Cron cada 10 min, con respaldos en GitHub Actions y
+// Vercel. El endpoint es idempotente, así que las corridas pueden coincidir.
 // 1. Emite reversas faltantes de torneos cancelados (red de seguridad idempotente).
 // 2. Reconcilia pending cuyo webhook se perdió consultando Flow directamente.
 // 3. Reintenta automáticamente refunds rechazados (hasta 3 intentos por pago).

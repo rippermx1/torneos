@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import nextEnv from '@next/env'
 import { createClient } from '@supabase/supabase-js'
+import { requireNonProductionProject } from './supabase-safety.mjs'
 
 const { loadEnvConfig } = nextEnv
 
@@ -21,6 +22,11 @@ if (!supabaseUrl || !supabaseServiceKey) {
   )
   process.exit(1)
 }
+
+const targetProjectRef = requireNonProductionProject(
+  supabaseUrl,
+  'Limpieza de datos de simulación'
+)
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey, {
   auth: {
@@ -182,6 +188,7 @@ async function cleanupUsers() {
 }
 
 async function main() {
+  console.log(`Proyecto de pruebas confirmado: ${targetProjectRef}`)
   const tournamentCleanup = await cleanupTournaments()
   const userCleanup = await cleanupUsers()
 

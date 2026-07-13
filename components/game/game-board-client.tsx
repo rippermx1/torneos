@@ -167,7 +167,6 @@ export function GameBoardClient({ config }: { config: GameConfig }) {
   const animResetTimeoutRef = useRef<number | null>(null)
   const scoreFloatTimeoutRef = useRef<number | null>(null)
   const shakeTimeoutRef = useRef<number | null>(null)
-  const moveRequestIdRef = useRef(0)
   const timeoutReportedRef = useRef(false)
 
   // Queue FIFO para requests al servidor (modo torneo).
@@ -286,17 +285,6 @@ export function GameBoardClient({ config }: { config: GameConfig }) {
     },
     [triggerAnims, config],
   )
-
-  const rollbackState = useCallback((snapshot: GameState, override?: Partial<GameState>) => {
-    prevBoardRef.current = snapshot.board
-    setCellAnims(new Map())
-    setScoreFloat(null)
-    setState({
-      ...snapshot,
-      ...override,
-      bestScore: Math.max(snapshot.bestScore, override?.score ?? snapshot.score),
-    })
-  }, [])
 
   const drainServerQueue = useCallback(async () => {
     if (serverBusyRef.current || serverQueueRef.current.length === 0) return
@@ -437,8 +425,16 @@ export function GameBoardClient({ config }: { config: GameConfig }) {
     }
   }, [config, animVersionRef, animResetTimeoutRef])
 
-  // Siempre apunta a la versión más reciente para que el finally pueda llamarla
-  drainServerQueueRef.current = drainServerQueue
+  // Siempre apunta a la versión más reciente para que el finally pueda llamarla.
+  // La sincronización ocurre después del commit: escribir refs durante render
+  // puede romper las garantías de concurrencia de React.
+  useEffect(() => {
+    drainServerQueueRef.current = drainServerQueue
+
+    return () => {
+      drainServerQueueRef.current = null
+    }
+  }, [drainServerQueue])
 
   const loadGame = useCallback(async () => {
     try {

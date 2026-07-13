@@ -1,15 +1,17 @@
 import { sendEmail } from '@/lib/email/client'
 import { getAlertEmail } from '@/lib/env'
+import { createAdminClient } from '@/lib/supabase/server'
 
 // Alertas operativas para el operador de la plataforma (no para usuarios):
-// crons caídos, ganadores con estadísticas anómalas, etc. Requiere ALERT_EMAIL.
+// crons caídos, ganadores con estadísticas anómalas, etc. ALERT_EMAIL tiene
+// prioridad; si falta, se usa el email del owner/admin para no perder alertas.
 export async function sendOpsAlertEmail(input: {
   subject: string
   lines: string[]
 }): Promise<void> {
-  const to = getAlertEmail()
+  const to = await resolveOpsAlertEmail()
   if (!to) {
-    console.warn(`[ops-alert] ALERT_EMAIL no configurado — alerta solo en logs: ${input.subject}`)
+    console.warn(`[ops-alert] Sin ALERT_EMAIL ni owner/admin con email — alerta solo en logs: ${input.subject}`)
     console.warn('[ops-alert]', input.lines.join(' | '))
     return
   }
@@ -32,6 +34,41 @@ export async function sendOpsAlertEmail(input: {
   } catch (e) {
     console.error('[ops-alert] Error enviando alerta:', e)
   }
+}
+
+async function resolveOpsAlertEmail(): Promise<string | undefined> {
+  const configured = getAlertEmail()
+  if (configured) return configured
+
+  try {
+    const admin = createAdminClient()
+    const { data, error } = await admin
+      .from('profile_roles')
+      .select('profile_id, role, granted_at')
+      .in('role', ['owner', 'admin'])
+      .limit(20)
+
+    if (error) throw error
+
+    const rows = [...(data ?? [])].sort((a, b) => {
+      const rolePriority = (role: string) => role === 'owner' ? 0 : 1
+      const priorityDifference = rolePriority(a.role) - rolePriority(b.role)
+      if (priorityDifference !== 0) return priorityDifference
+      return new Date(a.granted_at).getTime() - new Date(b.granted_at).getTime()
+    })
+
+    const seen = new Set<string>()
+    for (const row of rows) {
+      if (seen.has(row.profile_id)) continue
+      seen.add(row.profile_id)
+      const { data: authData } = await admin.auth.admin.getUserById(row.profile_id)
+      if (authData.user?.email) return authData.user.email
+    }
+  } catch (error) {
+    console.error('[ops-alert] No se pudo resolver el email owner/admin:', error)
+  }
+
+  return undefined
 }
 
 function escapeHtml(s: string): string {

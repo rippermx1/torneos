@@ -42,7 +42,7 @@ export async function GET(req: Request): Promise<Response> {
     )
 
     return Response.json({
-      ok: true,
+      ok: errors.length === 0,
       processedAt: new Date().toISOString(),
       durationMs: Date.now() - startedAt,
       total: results.length,
@@ -55,7 +55,7 @@ export async function GET(req: Request): Promise<Response> {
         ...(r.detail ? { detail: r.detail } : {}),
         ...(r.error ? { error: r.error } : {}),
       })),
-    })
+    }, { status: errors.length > 0 ? 500 : 200 })
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
     console.error('[cron] Error fatal en process-tournaments:', message)

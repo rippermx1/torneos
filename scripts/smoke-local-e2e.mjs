@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 import nextEnv from '@next/env'
 import { createClient } from '@supabase/supabase-js'
 import { createServerClient } from '@supabase/ssr'
+import { requireNonProductionProject } from './supabase-safety.mjs'
 
 const { loadEnvConfig } = nextEnv
 
@@ -19,7 +20,7 @@ const supabaseBrowserKey =
 const supabaseServiceKey =
   process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY
 const cronSecret = process.env.CRON_SECRET
-const fixturePassword = process.env.SUPABASE_E2E_PASSWORD ?? 'Torneos2048!Local'
+const fixturePassword = process.env.SUPABASE_E2E_PASSWORD
 const smokePassword = process.env.SUPABASE_SMOKE_PASSWORD ?? fixturePassword
 const smokeEmailDomain = process.env.SUPABASE_SMOKE_EMAIL_DOMAIN ?? 'mailinator.com'
 
@@ -34,6 +35,16 @@ if (!cronSecret) {
   console.error('Falta CRON_SECRET para probar las transiciones locales del torneo.')
   process.exit(1)
 }
+
+if (!smokePassword) {
+  console.error('Falta SUPABASE_SMOKE_PASSWORD o SUPABASE_E2E_PASSWORD.')
+  process.exit(1)
+}
+
+const targetProjectRef = requireNonProductionProject(
+  supabaseUrl,
+  'Smoke test local'
+)
 
 const adminSupabase = createClient(supabaseUrl, supabaseServiceKey, {
   auth: {
@@ -363,6 +374,7 @@ async function playSomeMoves(cookieJar, tournamentId, gameId, initialMoveNumber,
 }
 
 async function main() {
+  console.log(`Proyecto de pruebas confirmado: ${targetProjectRef}`)
   console.log(`Base URL: ${baseUrl}`)
 
   await expectPage(`${baseUrl}/sign-up`, { text: 'Crear cuenta' })

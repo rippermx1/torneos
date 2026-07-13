@@ -12,6 +12,7 @@ import { fileURLToPath } from 'node:url'
 import nextEnv from '@next/env'
 import { createHmac, randomUUID } from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
+import { requireNonProductionProject } from './supabase-safety.mjs'
 
 const { loadEnvConfig } = nextEnv
 const __filename = fileURLToPath(import.meta.url)
@@ -42,6 +43,16 @@ if (!tournamentId || !userId) {
   console.error('Uso: node scripts/test-flow-tournament-checkout.mjs <tournament_id> <user_id> [--create-only]')
   process.exit(1)
 }
+
+if (new URL(base).hostname !== 'sandbox.flow.cl') {
+  console.error('Este smoke test solo puede usar https://sandbox.flow.cl/api.')
+  process.exit(1)
+}
+
+const targetProjectRef = requireNonProductionProject(
+  supabaseUrl,
+  'Smoke test de checkout Flow'
+)
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey, {
   auth: { persistSession: false },
@@ -132,6 +143,7 @@ async function assertSingleRegistration() {
 }
 
 async function main() {
+  console.log(`Proyecto de pruebas confirmado: ${targetProjectRef}`)
   const [{ data: authUser, error: authError }, { data: tournament, error: tournamentError }] =
     await Promise.all([
       supabase.auth.admin.getUserById(userId),

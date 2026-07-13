@@ -10,6 +10,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import nextEnv from '@next/env'
 import { createClient } from '@supabase/supabase-js'
+import { requireNonProductionProject } from './supabase-safety.mjs'
 
 const { loadEnvConfig } = nextEnv
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
@@ -17,11 +18,12 @@ loadEnvConfig(rootDir)
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL
 const key = process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY
-if (!url || !key) { console.error('Faltan credenciales Supabase.'); process.exit(1) }
+const PW = process.env.SUPABASE_E2E_PASSWORD
+if (!url || !key || !PW) { console.error('Faltan credenciales Supabase o SUPABASE_E2E_PASSWORD.'); process.exit(1) }
+const targetProjectRef = requireNonProductionProject(url, 'Smoke test de escalera de premios')
 const sb = createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } })
 
 const ENTRY = 100000, MIN = 2, MAX = 20, N = 5 // 5 inscritos -> tramo 5
-const PW = process.env.SUPABASE_E2E_PASSWORD ?? 'Torneos2048!Smoke'
 
 // Réplica de buildPrizeLadder (lib/tournament/finance.ts) para verificación.
 function buildLadder(entry, min, max) {
@@ -74,6 +76,7 @@ function check(name, ok, detail) {
 }
 
 async function main() {
+  console.log(`Proyecto de pruebas confirmado: ${targetProjectRef}`)
   const ladder = buildLadder(ENTRY, MIN, MAX)
   const expected = ladder.find((t) => t.threshold === N)
   console.log('Escalera esperada:', ladder.map((t) => `${t.threshold}+→${t.fund}`).join('  '))

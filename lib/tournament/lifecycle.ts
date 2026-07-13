@@ -15,8 +15,8 @@ export interface TransitionResult {
   error?: string
 }
 
-// Procesa TODOS los torneos que necesitan una transición de estado.
-// Llamado por el cron cada minuto.
+// Procesa los torneos que necesitan una transición de estado.
+// Llamado por el scheduler cada cinco minutos y por un respaldo independiente.
 export async function processTournamentTransitions(): Promise<TransitionResult[]> {
   const supabase = createAdminClient()
   const results: TransitionResult[] = []
@@ -28,6 +28,7 @@ export async function processTournamentTransitions(): Promise<TransitionResult[]
     .select('*')
     .in('status', ['scheduled', 'open', 'live', 'finalizing'])
     .order('play_window_start', { ascending: true })
+    .limit(25)
 
   if (error) {
     throw new Error(`Error obteniendo torneos: ${error.message}`)
@@ -56,13 +57,14 @@ async function processSingleTournament(
       currentStatus === 'scheduled' &&
       nowMs >= new Date(tournament.registration_opens_at).getTime()
     ) {
-      const { error } = await supabase
-        .from('tournaments')
-        .update({ status: 'open' })
-        .eq('id', tournament.id)
-        .eq('status', 'scheduled') // guard contra race condition
+      const claimed = await claimTournamentStatus(
+        supabase,
+        tournament.id,
+        'scheduled',
+        'open'
+      )
+      if (!claimed) return concurrentTransition(base, 'scheduled')
 
-      if (error) throw new Error(error.message)
       currentStatus = 'open'
       previousActions.push('opened')
 
@@ -73,10 +75,12 @@ async function processSingleTournament(
 
     // ── open → live o cancelled ──────────────────────────────
     if (currentStatus === 'open' && nowMs >= new Date(tournament.play_window_start).getTime()) {
-      const { count } = await supabase
+      const { count, error: countError } = await supabase
         .from('registrations')
         .select('*', { count: 'exact', head: true })
         .eq('tournament_id', tournament.id)
+
+      if (countError) throw new Error(countError.message)
 
       const playerCount = count ?? 0
 
@@ -85,7 +89,11 @@ async function processSingleTournament(
         const { data, error } = await supabase.rpc('cancel_tournament', {
           p_tournament_id: tournament.id,
         })
-        if (error) throw new Error(error.message)
+        if (error) {
+          const latestStatus = await readTournamentStatus(supabase, tournament.id)
+          if (latestStatus === 'cancelled') return concurrentTransition(base, 'open')
+          throw new Error(error.message)
+        }
 
         const cancelData = data as { refunds_to_issue: number; entry_fee_cents: number }
         let refundResults: { error?: string }[] = []
@@ -114,13 +122,14 @@ async function processSingleTournament(
       }
 
       // Suficientes jugadores → activar
-      const { error } = await supabase
-        .from('tournaments')
-        .update({ status: 'live' })
-        .eq('id', tournament.id)
-        .eq('status', 'open')
+      const claimed = await claimTournamentStatus(
+        supabase,
+        tournament.id,
+        'open',
+        'live'
+      )
+      if (!claimed) return concurrentTransition(base, 'open')
 
-      if (error) throw new Error(error.message)
       currentStatus = 'live'
       previousActions.push('started')
 
@@ -131,33 +140,44 @@ async function processSingleTournament(
 
     // ── live → finalizing ────────────────────────────────────
     if (currentStatus === 'live' && nowMs >= new Date(tournament.play_window_end).getTime()) {
-      const { error } = await supabase
-        .from('tournaments')
-        .update({ status: 'finalizing' })
-        .eq('id', tournament.id)
-        .eq('status', 'live')
+      const claimed = await claimTournamentStatus(
+        supabase,
+        tournament.id,
+        'live',
+        'finalizing'
+      )
+      if (!claimed) return concurrentTransition(base, 'live')
 
-      if (error) throw new Error(error.message)
       currentStatus = 'finalizing'
       previousActions.push('set_finalizing')
-
-      return { ...base, action: 'set_finalizing', detail: { previousActions } }
     }
 
     // ── finalizing → completed ───────────────────────────────
-    // La transición de live→finalizing ocurre en una pasada y
-    // completed en la siguiente para que sean dos operaciones cortas.
+    // Se finaliza en la misma pasada. Ambas operaciones de base de datos son
+    // cortas y separadas; no se mantiene un lock durante llamadas externas.
     if (currentStatus === 'finalizing') {
-      const { data, error } = await supabase.rpc('finalize_tournament', {
-        p_tournament_id: tournament.id,
-      })
-      if (error) throw new Error(error.message)
+      const finalization = await finalizeTournament(supabase, tournament.id)
+      if (finalization.completedByAnotherExecution) {
+        return concurrentTransition(base, 'finalizing')
+      }
 
-      void notifyPrizeWinners(supabase, tournament.id, tournament.name)
-      void updatePlayerRatings(supabase, tournament.id)
-      void reviewPrizeWinners(supabase, tournament.id, tournament.name)
+      // En runtimes serverless el trabajo no esperado puede cortarse al enviar
+      // la respuesta. Esperar garantiza que ratings y controles post-premio
+      // terminen antes de dar por exitosa esta corrida.
+      await Promise.all([
+        notifyPrizeWinners(supabase, tournament.id, tournament.name),
+        updatePlayerRatings(supabase, tournament.id),
+        reviewPrizeWinners(supabase, tournament.id, tournament.name),
+      ])
 
-      return { ...base, action: 'finalized', detail: data as Record<string, unknown> }
+      return {
+        ...base,
+        action: 'finalized',
+        detail: {
+          ...finalization.data,
+          previousActions,
+        },
+      }
     }
 
     return { ...base, action: 'skipped' }
@@ -168,16 +188,96 @@ async function processSingleTournament(
   }
 }
 
+type AdminClient = ReturnType<typeof createAdminClient>
+
+async function claimTournamentStatus(
+  supabase: AdminClient,
+  tournamentId: string,
+  fromStatus: Tournament['status'],
+  toStatus: Tournament['status']
+): Promise<boolean> {
+  const { data, error } = await supabase
+    .from('tournaments')
+    .update({ status: toStatus })
+    .eq('id', tournamentId)
+    .eq('status', fromStatus)
+    .select('id')
+    .maybeSingle()
+
+  if (error) throw new Error(error.message)
+  return Boolean(data)
+}
+
+async function readTournamentStatus(
+  supabase: AdminClient,
+  tournamentId: string
+): Promise<Tournament['status'] | null> {
+  const { data, error } = await supabase
+    .from('tournaments')
+    .select('status')
+    .eq('id', tournamentId)
+    .maybeSingle()
+
+  if (error) throw new Error(error.message)
+  return (data?.status as Tournament['status'] | undefined) ?? null
+}
+
+async function finalizeTournament(
+  supabase: AdminClient,
+  tournamentId: string
+): Promise<{
+  data: Record<string, unknown>
+  completedByAnotherExecution: boolean
+}> {
+  const { data, error } = await supabase.rpc('finalize_tournament', {
+    p_tournament_id: tournamentId,
+  })
+
+  if (!error) {
+    return {
+      data: (data ?? {}) as Record<string, unknown>,
+      completedByAnotherExecution: false,
+    }
+  }
+
+  // El scheduler principal y el respaldo pueden coincidir. La funcion SQL
+  // serializa por torneo; si otra corrida termino primero, no es un fallo.
+  const latestStatus = await readTournamentStatus(supabase, tournamentId)
+  if (latestStatus === 'completed') {
+    return { data: {}, completedByAnotherExecution: true }
+  }
+
+  throw new Error(error.message)
+}
+
+function concurrentTransition(
+  base: Pick<TransitionResult, 'tournamentId' | 'name'>,
+  fromStatus: Tournament['status']
+): TransitionResult {
+  return {
+    ...base,
+    action: 'skipped',
+    detail: {
+      reason: 'transition_claimed_by_another_execution',
+      fromStatus,
+    },
+  }
+}
+
 // Fuerza la finalización de un torneo específico (uso admin / manual).
 // Solo funciona si el torneo está en live o finalizing.
 export async function forceFinalizeTournament(tournamentId: string): Promise<TransitionResult> {
   const supabase = createAdminClient()
 
-  const { data: tData } = await supabase
+  const { data: tData, error: tournamentError } = await supabase
     .from('tournaments')
     .select('*')
     .eq('id', tournamentId)
     .single()
+
+  if (tournamentError) {
+    throw new Error(`No se pudo obtener el torneo: ${tournamentError.message}`)
+  }
 
   if (!tData) {
     throw new Error('Torneo no encontrado')
@@ -190,7 +290,7 @@ export async function forceFinalizeTournament(tournamentId: string): Promise<Tra
   }
 
   if (tournament.status === 'live' && Date.now() < new Date(tournament.play_window_end).getTime()) {
-    const [{ count: registeredCount }, { count: completedGamesCount }] = await Promise.all([
+    const [registrationsResult, gamesResult] = await Promise.all([
       supabase
         .from('registrations')
         .select('*', { count: 'exact', head: true })
@@ -202,6 +302,12 @@ export async function forceFinalizeTournament(tournamentId: string): Promise<Tra
         .eq('status', 'completed'),
     ])
 
+    if (registrationsResult.error) throw new Error(registrationsResult.error.message)
+    if (gamesResult.error) throw new Error(gamesResult.error.message)
+
+    const registeredCount = registrationsResult.count
+    const completedGamesCount = gamesResult.count
+
     if ((completedGamesCount ?? 0) < (registeredCount ?? 0)) {
       throw new Error('No se puede finalizar antes del cierre mientras haya inscritos sin partida completada.')
     }
@@ -209,23 +315,39 @@ export async function forceFinalizeTournament(tournamentId: string): Promise<Tra
 
   // Pasar a finalizing si está en live
   if (tournament.status === 'live') {
-    await supabase
-      .from('tournaments')
-      .update({ status: 'finalizing' })
-      .eq('id', tournamentId)
+    const claimed = await claimTournamentStatus(
+      supabase,
+      tournamentId,
+      'live',
+      'finalizing'
+    )
+    if (!claimed) {
+      const latestStatus = await readTournamentStatus(supabase, tournamentId)
+      if (latestStatus !== 'finalizing' && latestStatus !== 'completed') {
+        throw new Error(`No se pudo iniciar la finalización (estado actual: ${latestStatus ?? 'desconocido'}).`)
+      }
+    }
   }
 
-  const { data, error } = await supabase.rpc('finalize_tournament', {
-    p_tournament_id: tournamentId,
-  })
+  const finalization = await finalizeTournament(supabase, tournamentId)
+  if (finalization.completedByAnotherExecution) {
+    return concurrentTransition(
+      { tournamentId, name: tournament.name },
+      'finalizing'
+    )
+  }
 
-  if (error) throw new Error(error.message)
+  await Promise.all([
+    notifyPrizeWinners(supabase, tournament.id, tournament.name),
+    updatePlayerRatings(supabase, tournament.id),
+    reviewPrizeWinners(supabase, tournament.id, tournament.name),
+  ])
 
   return {
     tournamentId,
     name: tournament.name,
     action: 'finalized',
-    detail: data as Record<string, unknown>,
+    detail: finalization.data,
   }
 }
 

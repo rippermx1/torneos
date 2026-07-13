@@ -9,6 +9,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import nextEnv from '@next/env'
 import { createClient } from '@supabase/supabase-js'
+import { requireNonProductionProject } from './supabase-safety.mjs'
 
 const { loadEnvConfig } = nextEnv
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
@@ -16,10 +17,12 @@ loadEnvConfig(rootDir)
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL
 const key = process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY
-if (!url || !key) { console.error('Faltan credenciales Supabase.'); process.exit(1) }
+const PW = process.env.SUPABASE_E2E_PASSWORD
+if (!url || !key || !PW) { console.error('Faltan credenciales Supabase o SUPABASE_E2E_PASSWORD.'); process.exit(1) }
+const targetProjectRef = requireNonProductionProject(url, 'Smoke test de rakeback')
 const sb = createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } })
 
-const ENTRY = 100000, GRANT = 250000, MIN = 2, PW = process.env.SUPABASE_E2E_PASSWORD ?? 'Torneos2048!Smoke'
+const ENTRY = 100000, GRANT = 250000, MIN = 2
 
 const results = []
 const check = (name, ok, detail) => { results.push({ ok }); console.log(`${ok ? 'PASS' : 'FAIL'} · ${name}${detail ? ' · ' + detail : ''}`) }
@@ -46,6 +49,7 @@ let tournamentId = null
 let userId = null
 
 async function main() {
+  console.log(`Proyecto de pruebas confirmado: ${targetProjectRef}`)
   userId = await ensureUser(1)
 
   const now = Date.now(), iso = (ms) => new Date(ms).toISOString()

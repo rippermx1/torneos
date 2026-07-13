@@ -5,6 +5,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 import nextEnv from '@next/env'
 import { createClient } from '@supabase/supabase-js'
 import { createServerClient } from '@supabase/ssr'
+import { requireNonProductionProject } from './supabase-safety.mjs'
 
 const { loadEnvConfig } = nextEnv
 
@@ -21,7 +22,7 @@ export const supabaseBrowserKey =
 export const supabaseServiceKey =
   process.env.SUPABASE_SECRET_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY
 export const cronSecret = process.env.CRON_SECRET
-export const password = process.env.SUPABASE_E2E_PASSWORD ?? 'Torneos2048!Local'
+export const password = process.env.SUPABASE_E2E_PASSWORD
 export const emailDomain = process.env.SIM_TOURNAMENT_EMAIL_DOMAIN ?? 'mailinator.com'
 export const outputDir = process.env.SIM_TOURNAMENT_OUTPUT_DIR ?? path.join(rootDir, 'artifacts')
 export const concurrency = Number(process.env.SIM_TOURNAMENT_CONCURRENCY ?? '12')
@@ -37,12 +38,17 @@ const USER_FEE_RATE =
   FLOW_CARD_NEXT_DAY_FEE_RATE / (PLATFORM_FEE_NET_SHARE - FLOW_CARD_NEXT_DAY_FEE_RATE)
 const USER_FEE_MIN_CENTS = 15000
 
-if (!supabaseUrl || !supabaseBrowserKey || !supabaseServiceKey || !cronSecret) {
+if (!supabaseUrl || !supabaseBrowserKey || !supabaseServiceKey || !cronSecret || !password) {
   console.error(
-    'Faltan NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY/NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SECRET_KEY/SUPABASE_SERVICE_ROLE_KEY o CRON_SECRET.'
+    'Faltan credenciales Supabase, CRON_SECRET o SUPABASE_E2E_PASSWORD.'
   )
   process.exit(1)
 }
+
+export const targetProjectRef = requireNonProductionProject(
+  supabaseUrl,
+  'Simulación de torneos'
+)
 
 export const adminSupabase = createClient(supabaseUrl, supabaseServiceKey, {
   auth: {
@@ -1183,6 +1189,7 @@ async function runScenario(adminSession, sessions, scenario, overflowSession) {
 }
 
 export async function main() {
+  console.log(`Proyecto de pruebas confirmado: ${targetProjectRef}`)
   console.log(`Base URL: ${baseUrl}`)
   console.log(`Concurrencia: ${concurrency}`)
   console.log(`Concurrencia auth: ${authConcurrency}`)

@@ -19,6 +19,10 @@ Variables solo de runtime del servidor:
 - `FLOW_API_SECRET`
 - `FLOW_API_BASE`
 - `CRON_SECRET`
+- `RESEND_API_KEY`
+
+`ALERT_EMAIL` es opcional. Si no está definido, las alertas operativas se
+envían al primer `owner` o `admin` con email disponible.
 
 Compatibilidad heredada:
 
@@ -67,25 +71,31 @@ FLOW_API_BASE=https://www.flow.cl/api
 
 y rota `FLOW_API_KEY`/`FLOW_API_SECRET` a credenciales productivas.
 
-## Cron Flow
+## Procesos programados
 
-En Hobby, Vercel solo acepta cron diario. Por eso [`vercel.json`](/C:/torneos/vercel.json:1)
-mantiene una reconciliacion diaria de respaldo:
+Supabase Cron es el programador principal:
 
-```json
-{
-  "crons": [
-    {
-      "path": "/api/cron/flow-reconcile",
-      "schedule": "0 0 * * *"
-    }
-  ]
-}
+- ciclo de torneos: cada 5 minutos
+- conciliación Flow: cada 10 minutos
+- conciliación de reembolsos: cada 10 minutos
+- watchdog de latidos: cada hora
+
+La migración crea `pg_cron`, `pg_net` y la función privada que despacha las
+llamadas. La URL pública y `CRON_SECRET` no se guardan en el repositorio: el
+configurador los cifra en Supabase Vault.
+
+Después de aplicar las migraciones, configura o rota el scheduler con una
+confirmación explícita del proyecto:
+
+```powershell
+$env:CONFIRM_SUPABASE_PROJECT_REF='baeylvoipmazcthnwxmz'
+npm run configure:scheduler
 ```
 
-La reconciliacion frecuente vive en
-[.github/workflows/flow-reconcile.yml](/C:/torneos/.github/workflows/flow-reconcile.yml:1),
-que ejecuta `/api/cron/flow-reconcile` cada 10 minutos con `CRON_SECRET`.
+Los workflows de GitHub Actions permanecen activos como respaldo y usan horas
+desfasadas. Vercel conserva tareas diarias de respaldo y watchdog. Los
+endpoints son idempotentes y reportan HTTP 500/503 si el procesamiento falla,
+de modo que un resultado con errores no aparezca como exitoso.
 
 ## Docker
 
@@ -113,47 +123,44 @@ docker run --rm -p 3000:3000 ^
 
 ## Base de datos
 
-La base remota `baeylvoipmazcthnwxmz` tiene aplicadas todas las migraciones del
-repo (verificado 2026-06-16: columnas `prize_fund_bps`/`prize_model`/`is_test`,
-vistas `monthly_platform_finance` y `prize_liability`, y RPCs `finalize_tournament`,
-`record_game_move`, etc.). Incluye `20260616000000_align_prize_fund_default_70.sql`
-(aplicada 2026-06-16). La base está en estado limpio pre-lanzamiento (sin torneos
-ni movimientos reales).
+Durante la etapa pre-lanzamiento se usa un solo ambiente cloud. Todo cambio de
+schema debe quedar expresado como migración versionada y aplicarse con el
+proyecto vinculado verificado. Los scripts que crean datos, simulan o borran se
+niegan a operar contra producción; las tareas operativas no destructivas exigen
+`CONFIRM_SUPABASE_PROJECT_REF`.
 
-Para futuros cambios de schema, evita empujar desde la maquina manualmente. Usa CI/CD con:
-
-- `SUPABASE_ACCESS_TOKEN`
-- `SUPABASE_DB_PASSWORD`
-
-y despliega con `npx supabase db push`.
+Cuando el producto esté completo se separarán ambientes y automatización de
+deploy. Hasta entonces no se crean fixtures ni usuarios sintéticos en la base
+actual.
 
 ## Desarrollo local
 
 El `docker-compose.yml` del repo solo levanta Postgres + PostgREST para DB local.
-No incluye Supabase Auth ni OAuth, por lo que para probar registro, login y Google
-desde `localhost` el frontend debe apuntar al proyecto cloud de Supabase.
+No incluye Supabase Auth ni OAuth. Para probar registro, login y Google desde
+`localhost`, el frontend debe apuntar a un proyecto cloud de Supabase separado
+de producción.
 
 Para preparar usuarios de prueba reutilizables:
+
+Configura el proyecto de pruebas en `.env.local`:
+
+```dotenv
+CONFIRM_SUPABASE_PROJECT_REF=tu_project_ref_de_pruebas
+SUPABASE_E2E_PASSWORD=una_clave_de_pruebas_unica
+```
+
+Luego ejecuta:
 
 ```bash
 npm run setup:test-users
 ```
 
 Ese script crea o actualiza tres usuarios confirmados y deja uno como admin
-para pruebas de torneos.
+para pruebas de torneos. Se bloquea si detecta el proyecto productivo conocido.
 
-## Scheduler en Hobby
+## Respaldo en GitHub y Vercel
 
-El plan Hobby de Vercel no permite un cron `* * * * *`.
-
-Para este repo, el procesamiento frecuente queda resuelto fuera de Vercel con
-[.github/workflows/process-tournaments.yml](/C:/torneos/.github/workflows/process-tournaments.yml:1),
-que ejecuta torneos cada 5 minutos, y
-[.github/workflows/flow-reconcile.yml](/C:/torneos/.github/workflows/flow-reconcile.yml:1),
-que reconcilia Flow cada 10 minutos.
-
-Configura en GitHub:
-
-- repository secret `CRON_SECRET`
-
-El workflow apunta a `https://www.torneosplay.cl`.
+GitHub necesita el repository secret `CRON_SECRET` y apunta al dominio
+canónico `https://www.torneosplay.cl`. No es la fuente principal de cadencia:
+sus ejecuciones programadas pueden comenzar tarde. Vercel mantiene los dos
+crons diarios permitidos por el plan actual.

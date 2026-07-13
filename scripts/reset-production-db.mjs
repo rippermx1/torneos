@@ -9,15 +9,20 @@
  * El schema, funciones, políticas RLS y configuración quedan intactos.
  *
  * Uso:
+ *   CONFIRM_SUPABASE_PROJECT_REF=<project_ref>
+ *   CONFIRM_SUPABASE_RESET=DELETE_ALL_DATA_<project_ref>
  *   node scripts/reset-production-db.mjs
  *
  * Lee las credenciales desde .env.local.
+ * Ambas confirmaciones también pueden definirse allí. Sin coincidencia exacta,
+ * el script termina antes de crear el cliente de Supabase.
  */
 
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import nextEnv from '@next/env'
 import { createClient } from '@supabase/supabase-js'
+import { requireDestructiveReset } from './supabase-safety.mjs'
 
 const { loadEnvConfig } = nextEnv
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -31,6 +36,8 @@ if (!supabaseUrl || !serviceKey) {
   console.error('ERROR: Faltan NEXT_PUBLIC_SUPABASE_URL y SUPABASE_SECRET_KEY.')
   process.exit(1)
 }
+
+const targetProjectRef = requireDestructiveReset(supabaseUrl)
 
 const supabase = createClient(supabaseUrl, serviceKey, {
   auth: { autoRefreshToken: false, persistSession: false },
@@ -48,7 +55,7 @@ async function clearTable(table, pkCol = 'id') {
 }
 
 async function main() {
-  console.log(`\n⚠️  Reset de producción: ${supabaseUrl}\n`)
+  console.log(`\n⚠️  Reset irreversible del proyecto: ${targetProjectRef}\n`)
 
   // ── Paso 1: Tablas de aplicación (orden FK) ──────────────────
   console.log('Paso 1 — Tablas de aplicación')

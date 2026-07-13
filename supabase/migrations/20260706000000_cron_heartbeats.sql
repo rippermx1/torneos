@@ -2,12 +2,12 @@
 -- Watchdog de crons: latidos de cada job programado.
 --
 -- Los schedulers críticos (process-tournaments, flow-reconcile,
--- reconcile-refunds) corren en GitHub Actions, que puede fallar o
--- deshabilitarse en silencio (auto-disable a los 60 días sin actividad).
+-- reconcile-refunds) corren principalmente en Supabase Cron y conservan
+-- GitHub Actions como respaldo independiente.
 -- Si mueren, los premios no se pagan y los reembolsos no salen SIN AVISO.
 --
--- Cada cron registra su latido aquí; un watchdog independiente (Vercel
--- cron diario) revisa la frescura y alerta por email si algo está caído.
+-- Cada cron registra su latido aquí; un watchdog horario, respaldado por
+-- Vercel cron diario, revisa la frescura y alerta si algo está caído.
 -- ============================================================
 
 BEGIN;

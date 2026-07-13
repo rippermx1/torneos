@@ -2,6 +2,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import nextEnv from '@next/env'
 import { createClient } from '@supabase/supabase-js'
+import { requireNonProductionProject } from './supabase-safety.mjs'
 
 const { loadEnvConfig } = nextEnv
 
@@ -22,7 +23,15 @@ if (!supabaseUrl || !supabaseServiceKey) {
   process.exit(1)
 }
 
-const password = process.env.SUPABASE_E2E_PASSWORD ?? 'Torneos2048!Local'
+const targetProjectRef = requireNonProductionProject(
+  supabaseUrl,
+  'Creación de usuarios de prueba'
+)
+const password = process.env.SUPABASE_E2E_PASSWORD
+if (!password) {
+  console.error('Falta SUPABASE_E2E_PASSWORD; no se usan contraseñas de prueba predeterminadas.')
+  process.exit(1)
+}
 const supabase = createClient(supabaseUrl, supabaseServiceKey, {
   auth: {
     autoRefreshToken: false,
@@ -179,6 +188,7 @@ async function ensureBalance(userId, balanceTarget) {
 }
 
 async function main() {
+  console.log(`Proyecto de pruebas confirmado: ${targetProjectRef}`)
   const rows = []
 
   for (const fixture of fixtures) {

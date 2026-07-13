@@ -39,6 +39,18 @@ Usa `.env.local` con:
 
 ### 3. Prepara usuarios de prueba
 
+Usa un proyecto Supabase separado de producción y define explícitamente el
+proyecto y la contraseña de las cuentas sintéticas:
+
+Añade a `.env.local`:
+
+```dotenv
+CONFIRM_SUPABASE_PROJECT_REF=tu_project_ref
+SUPABASE_E2E_PASSWORD=una_clave_de_pruebas_unica
+```
+
+Luego ejecuta:
+
 ```bash
 npm run setup:test-users
 ```
@@ -49,13 +61,9 @@ El script deja listos:
 - `jugador1.local.e2e@example.com`
 - `jugador2.local.e2e@example.com`
 
-Todos usan la misma contraseña. Por defecto:
-
-```txt
-Torneos2048!Local
-```
-
-Puedes cambiarla con `SUPABASE_E2E_PASSWORD`.
+Todos usan la contraseña definida en `SUPABASE_E2E_PASSWORD`. El script no
+incluye una contraseña predeterminada y se niega a ejecutarse contra el
+proyecto productivo conocido.
 
 ### 4. Levanta la app
 
@@ -70,6 +78,9 @@ Para una validación rápida completa:
 ```bash
 npm run smoke:local
 ```
+
+Los smoke tests y simuladores aplican la misma confirmación de proyecto y solo
+aceptan un Supabase no productivo.
 
 ## Pruebas manuales recomendadas
 
@@ -97,4 +108,5 @@ npm run smoke:local
 
 - dominio canónico: [https://www.torneosplay.cl](https://www.torneosplay.cl)
 - deploys: Vercel
+- scheduler principal: Supabase Cron; GitHub Actions y Vercel como respaldo
 - checklist: [docs/production.md](/C:/torneos/docs/production.md:1)

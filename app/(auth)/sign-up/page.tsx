@@ -142,7 +142,7 @@ export default function SignUpPage() {
           </div>
 
           <p className="text-xs text-muted-foreground leading-relaxed">
-            Al crear tu cuenta aceptas nuestros{' '}
+            Después de confirmar tu correo podrás revisar y aceptar nuestros{' '}
             <Link href="/legal/terminos" target="_blank" className="underline underline-offset-2 text-foreground">
               Términos y Condiciones
             </Link>{' '}

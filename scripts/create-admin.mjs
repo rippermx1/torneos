@@ -20,6 +20,8 @@ import nextEnv from '@next/env'
 import { createClient } from '@supabase/supabase-js'
 import { requireExplicitProjectTarget } from './supabase-safety.mjs'
 
+const CURRENT_TERMS_VERSION = '1.1'
+
 const { loadEnvConfig } = nextEnv
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 loadEnvConfig(path.resolve(__dirname, '..'))
@@ -121,6 +123,7 @@ async function main() {
     kyc_status:       'approved',
     kyc_verified_at:  new Date().toISOString(),
     terms_accepted_at: new Date().toISOString(),
+    terms_version: CURRENT_TERMS_VERSION,
   })
   if (profileError) throw profileError
   console.log(`✓ Perfil upserted`)

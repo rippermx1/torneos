@@ -2,6 +2,7 @@ import { Navbar } from '@/components/navbar'
 import { TermsBanner } from '@/components/terms-banner'
 import { createAdminClient } from '@/lib/supabase/server'
 import { requireUserRole } from '@/lib/supabase/auth'
+import { hasAcceptedCurrentTerms } from '@/lib/legal/terms'
 
 export default async function UserLayout({ children }: { children: React.ReactNode }) {
   const access = await requireUserRole()
@@ -12,10 +13,13 @@ export default async function UserLayout({ children }: { children: React.ReactNo
     const supabase = createAdminClient()
     const { data: profile } = await supabase
       .from('profiles')
-      .select('terms_accepted_at')
+      .select('terms_accepted_at, terms_version')
       .eq('id', access.userId)
       .single()
-    showTermsBanner = !profile?.terms_accepted_at
+    showTermsBanner = !hasAcceptedCurrentTerms(
+      profile?.terms_accepted_at,
+      profile?.terms_version
+    )
   } catch {
     // No interrumpir el render si falla la consulta de términos
   }

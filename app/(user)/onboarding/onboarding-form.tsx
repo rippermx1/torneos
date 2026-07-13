@@ -8,13 +8,20 @@ import { isAdult } from '@/lib/identity/verification'
 interface Props {
   defaultUsername: string
   defaultFullName: string
+  defaultBirthDate: string
+  defaultAcceptedTerms: boolean
 }
 
-export function OnboardingForm({ defaultUsername, defaultFullName }: Props) {
+export function OnboardingForm({
+  defaultUsername,
+  defaultFullName,
+  defaultBirthDate,
+  defaultAcceptedTerms,
+}: Props) {
   const [username, setUsername] = useState(defaultUsername.startsWith('user_') ? '' : defaultUsername)
   const [fullName, setFullName] = useState(defaultFullName)
-  const [birthDate, setBirthDate] = useState('')
-  const [acceptedTerms, setAcceptedTerms] = useState(false)
+  const [birthDate, setBirthDate] = useState(defaultBirthDate)
+  const [acceptedTerms, setAcceptedTerms] = useState(defaultAcceptedTerms)
   const [error, setError] = useState('')
   const [isPending, startTransition] = useTransition()
 

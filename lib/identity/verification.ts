@@ -95,6 +95,15 @@ export function getAgeFromBirthDate(
   }
   if (bm < 1 || bm > 12 || bd < 1 || bd > 31) return null
 
+  const calendarDate = new Date(Date.UTC(by, bm - 1, bd))
+  if (
+    calendarDate.getUTCFullYear() !== by ||
+    calendarDate.getUTCMonth() + 1 !== bm ||
+    calendarDate.getUTCDate() !== bd
+  ) {
+    return null
+  }
+
   let age = now.getFullYear() - by
   const nowMonth = now.getMonth() + 1
   const nowDay = now.getDate()

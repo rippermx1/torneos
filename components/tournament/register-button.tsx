@@ -16,6 +16,7 @@ interface Props {
 export function RegisterButton({ tournamentId, entryFeeCents, creditBalanceCents = 0, className }: Props) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [recovery, setRecovery] = useState<{ href: string; label: string } | null>(null)
   const [needsTerms, setNeedsTerms] = useState(false)
   const [acceptingTerms, setAcceptingTerms] = useState(false)
   const router = useRouter()
@@ -25,6 +26,7 @@ export function RegisterButton({ tournamentId, entryFeeCents, creditBalanceCents
   async function doRegister(useCredit = false) {
     setLoading(true)
     setError(null)
+    setRecovery(null)
 
     try {
       if (entryFeeCents > 0) {
@@ -37,6 +39,13 @@ export function RegisterButton({ tournamentId, entryFeeCents, creditBalanceCents
         const data = await res.json()
         if (!res.ok) {
           if (data?.termsRequired) { setNeedsTerms(true); return }
+          if (data?.kycRequired || data?.kycPending) {
+            setRecovery({ href: '/profile/kyc', label: 'Ir a verificación' })
+          } else if (data?.birthDateRequired) {
+            setRecovery({ href: '/onboarding', label: 'Completar registro' })
+          } else if (data?.emailNotConfirmed) {
+            setRecovery({ href: '/verify-email', label: 'Verificar correo' })
+          }
           setError(data?.error ?? 'No se pudo procesar la inscripción')
           return
         }
@@ -51,6 +60,11 @@ export function RegisterButton({ tournamentId, entryFeeCents, creditBalanceCents
 
       if (!res.ok) {
         if (data?.termsRequired) { setNeedsTerms(true); return }
+        if (data?.birthDateRequired) {
+          setRecovery({ href: '/onboarding', label: 'Completar registro' })
+        } else if (data?.emailNotConfirmed) {
+          setRecovery({ href: '/verify-email', label: 'Verificar correo' })
+        }
         setError(data.error ?? 'Error al inscribirse')
         return
       }
@@ -66,6 +80,7 @@ export function RegisterButton({ tournamentId, entryFeeCents, creditBalanceCents
   async function handleAcceptAndRegister() {
     setAcceptingTerms(true)
     setError(null)
+    setRecovery(null)
 
     try {
       const res = await fetch('/api/profile/accept-terms', { method: 'POST' })
@@ -106,6 +121,7 @@ export function RegisterButton({ tournamentId, entryFeeCents, creditBalanceCents
             Leer términos
           </Link>
           <button
+            type="button"
             onClick={handleAcceptAndRegister}
             disabled={acceptingTerms || loading}
             className="flex-1 text-xs bg-foreground text-background rounded-lg px-3 py-2 font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
@@ -121,6 +137,7 @@ export function RegisterButton({ tournamentId, entryFeeCents, creditBalanceCents
     <div className={cn('flex flex-col gap-2', className)}>
       {canUseCredit && (
         <button
+          type="button"
           onClick={() => doRegister(true)}
           disabled={loading}
           className="w-full border-2 border-emerald-500 text-emerald-700 py-3 rounded-xl font-medium hover:bg-emerald-50 transition-colors disabled:opacity-50"
@@ -129,6 +146,7 @@ export function RegisterButton({ tournamentId, entryFeeCents, creditBalanceCents
         </button>
       )}
       <button
+        type="button"
         onClick={() => doRegister(false)}
         disabled={loading}
         className="w-full bg-foreground text-background py-3 rounded-xl font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
@@ -140,6 +158,14 @@ export function RegisterButton({ tournamentId, entryFeeCents, creditBalanceCents
           : `Comprar participación — ${formatCLP(entryFeeCents)}`}
       </button>
       {error && <p className="text-xs text-red-600 text-center">{error}</p>}
+      {recovery && (
+        <Link
+          href={recovery.href}
+          className="text-center text-xs font-medium underline underline-offset-4"
+        >
+          {recovery.label}
+        </Link>
+      )}
     </div>
   )
 }

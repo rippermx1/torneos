@@ -6,6 +6,7 @@ import { checkRateLimit, getRequestIp, rateLimitResponse } from '@/lib/security/
 import { sendTournamentRegistrationEmail } from '@/lib/email/tournament-notifications'
 import { isAdult } from '@/lib/identity/verification'
 import { canRegisterForTier, DEFAULT_SKILL_TIER, SKILL_TIER_LABELS } from '@/lib/tournament/rating'
+import { hasAcceptedCurrentTerms } from '@/lib/legal/terms'
 import type { SkillTier } from '@/types/database'
 
 // ───────────────────────────────────────────────────────────────
@@ -36,7 +37,7 @@ export async function POST(
   const [{ data: profile }, { data: tournament }] = await Promise.all([
     supabase
       .from('profiles')
-      .select('is_banned, birth_date, terms_accepted_at')
+      .select('is_banned, birth_date, terms_accepted_at, terms_version')
       .eq('id', userId)
       .single(),
     supabase
@@ -50,7 +51,7 @@ export async function POST(
     return Response.json({ error: 'Tu cuenta ha sido suspendida.' }, { status: 403 })
   }
 
-  if (!profile?.terms_accepted_at) {
+  if (!hasAcceptedCurrentTerms(profile?.terms_accepted_at, profile?.terms_version)) {
     return Response.json(
       { error: 'Debes aceptar los Términos y Condiciones antes de participar en torneos.', termsRequired: true },
       { status: 403 }
@@ -122,7 +123,8 @@ export async function POST(
     if (rpcError.message.includes('Inscripciones cerradas')) {
       return Response.json({ error: 'Inscripciones cerradas' }, { status: 400 })
     }
-    return Response.json({ error: `Error al inscribirse: ${rpcError.message}` }, { status: 500 })
+    console.error('Error inscribiendo en torneo gratuito:', rpcError)
+    return Response.json({ error: 'No se pudo completar la inscripción.' }, { status: 500 })
   }
 
   after(async () => {

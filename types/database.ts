@@ -47,6 +47,7 @@ export interface Profile {
   is_admin: boolean
   is_banned: boolean
   terms_accepted_at: string | null
+  terms_version: string | null
   created_at: string
 }
 
@@ -314,7 +315,7 @@ export type Database = {
     Tables: {
       profiles: {
         Row: Profile & DbRecord
-        Insert: InsertWithOptional<Profile, 'created_at' | 'full_name' | 'rut' | 'birth_date' | 'phone' | 'city' | 'kyc_status' | 'kyc_verified_at' | 'is_admin' | 'is_banned' | 'terms_accepted_at'>
+        Insert: InsertWithOptional<Profile, 'created_at' | 'full_name' | 'rut' | 'birth_date' | 'phone' | 'city' | 'kyc_status' | 'kyc_verified_at' | 'is_admin' | 'is_banned' | 'terms_accepted_at' | 'terms_version'>
         Update: Partial<Omit<Profile, 'id'>> & DbRecord
         Relationships: []
       }

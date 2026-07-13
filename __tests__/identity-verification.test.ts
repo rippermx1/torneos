@@ -34,6 +34,7 @@ describe('age gate (getAgeFromBirthDate / isAdult)', () => {
     expect(getAgeFromBirthDate(undefined, now)).toBeNull()
     expect(getAgeFromBirthDate('', now)).toBeNull()
     expect(getAgeFromBirthDate('no-es-fecha', now)).toBeNull()
+    expect(getAgeFromBirthDate('2000-02-30', now)).toBeNull()
     expect(isAdult(null, now)).toBe(false)
     expect(isAdult('2008-13-40', now)).toBe(false)
   })

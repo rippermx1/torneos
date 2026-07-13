@@ -12,6 +12,8 @@ import nextEnv from '@next/env'
 import { createClient } from '@supabase/supabase-js'
 import { requireNonProductionProject } from './supabase-safety.mjs'
 
+const CURRENT_TERMS_VERSION = '1.1'
+
 const { loadEnvConfig } = nextEnv
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 loadEnvConfig(rootDir)
@@ -60,6 +62,7 @@ async function ensureUser(i) {
     birth_date: '1994-01-01', is_admin: false, is_banned: false,
     kyc_status: 'approved', kyc_verified_at: new Date().toISOString(),
     terms_accepted_at: new Date().toISOString(),
+    terms_version: CURRENT_TERMS_VERSION,
   })
   await sb.from('profile_roles').upsert(
     [{ profile_id: user.id, role: 'user', granted_by: user.id }],

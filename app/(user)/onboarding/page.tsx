@@ -3,6 +3,8 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import type { Profile } from '@/types/database'
 import { OnboardingForm } from './onboarding-form'
+import { isAdult } from '@/lib/identity/verification'
+import { hasAcceptedCurrentTerms } from '@/lib/legal/terms'
 
 export default async function OnboardingPage() {
   const supabase = await createClient()
@@ -12,14 +14,22 @@ export default async function OnboardingPage() {
   const adminSupabase = createAdminClient()
   const { data } = await adminSupabase
     .from('profiles')
-    .select('username, full_name, city')
+    .select('username, full_name, city, birth_date, terms_accepted_at, terms_version')
     .eq('id', user.id)
     .single()
 
-  const profile = data as Pick<Profile, 'username' | 'full_name' | 'city'> | null
+  const profile = data as Pick<
+    Profile,
+    'username' | 'full_name' | 'city' | 'birth_date' | 'terms_accepted_at' | 'terms_version'
+  > | null
 
-  // Si ya tiene un username real (no auto-generado), saltar onboarding
-  if (profile?.username && !profile.username.startsWith('user_')) {
+  const hasRealUsername = Boolean(profile?.username && !profile.username.startsWith('user_'))
+  const hasCurrentTerms = hasAcceptedCurrentTerms(
+    profile?.terms_accepted_at,
+    profile?.terms_version
+  )
+
+  if (hasRealUsername && isAdult(profile?.birth_date) && hasCurrentTerms) {
     redirect('/tournaments')
   }
 
@@ -35,6 +45,8 @@ export default async function OnboardingPage() {
         <OnboardingForm
           defaultUsername={profile?.username ?? ''}
           defaultFullName={profile?.full_name ?? ''}
+          defaultBirthDate={profile?.birth_date ?? ''}
+          defaultAcceptedTerms={hasCurrentTerms}
         />
       </div>
     </div>

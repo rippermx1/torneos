@@ -9,6 +9,7 @@ import { checkRateLimit, getRequestIp, rateLimitResponse } from '@/lib/security/
 import { isAdult } from '@/lib/identity/verification'
 import { canRegisterForTier, DEFAULT_SKILL_TIER, SKILL_TIER_LABELS } from '@/lib/tournament/rating'
 import { sendTournamentRegistrationEmail } from '@/lib/email/tournament-notifications'
+import { hasAcceptedCurrentTerms } from '@/lib/legal/terms'
 import type { SkillTier } from '@/types/database'
 
 // ───────────────────────────────────────────────────────────────
@@ -58,7 +59,7 @@ export async function POST(
   const [{ data: profile }, { data: tournament }] = await Promise.all([
     admin
       .from('profiles')
-      .select('is_banned, kyc_status, birth_date, terms_accepted_at')
+      .select('is_banned, kyc_status, birth_date, terms_accepted_at, terms_version')
       .eq('id', userId)
       .single(),
     admin
@@ -76,7 +77,7 @@ export async function POST(
     return Response.json({ error: 'Tu cuenta ha sido suspendida.' }, { status: 403 })
   }
 
-  if (!profile?.terms_accepted_at) {
+  if (!hasAcceptedCurrentTerms(profile?.terms_accepted_at, profile?.terms_version)) {
     return Response.json(
       { error: 'Debes aceptar los Términos y Condiciones antes de participar en torneos.', termsRequired: true },
       { status: 403 }
@@ -85,7 +86,10 @@ export async function POST(
 
   if (!profile?.birth_date) {
     return Response.json(
-      { error: 'Debes completar tu perfil (fecha de nacimiento) para participar en torneos de pago.' },
+      {
+        error: 'Debes completar tu perfil (fecha de nacimiento) para participar en torneos de pago.',
+        birthDateRequired: true,
+      },
       { status: 403 }
     )
   }
@@ -320,8 +324,10 @@ export async function POST(
       .update({ status: 'rejected', settled_at: new Date().toISOString() })
       .eq('id', attempt.id)
 
-    const message = err instanceof Error ? err.message : 'Error desconocido'
-    console.error('Error creando pago Flow (torneo):', message)
-    return Response.json({ error: `Error al iniciar pago: ${message}` }, { status: 500 })
+    console.error('Error creando pago Flow (torneo):', err)
+    return Response.json(
+      { error: 'No se pudo iniciar el pago. Intenta nuevamente en unos minutos.' },
+      { status: 500 }
+    )
   }
 }

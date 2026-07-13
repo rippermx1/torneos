@@ -11,6 +11,8 @@ import nextEnv from '@next/env'
 import { createClient } from '@supabase/supabase-js'
 import { requireNonProductionProject } from './supabase-safety.mjs'
 
+const CURRENT_TERMS_VERSION = '1.1'
+
 const { loadEnvConfig } = nextEnv
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 loadEnvConfig(rootDir)
@@ -40,7 +42,7 @@ async function ensureUser(i) {
   const email = `smoke.rakeback.${i}@example.com`
   let user = await findUser(email)
   if (!user) { const { data, error } = await sb.auth.admin.createUser({ email, password: PW, email_confirm: true }); if (error) throw error; user = data.user }
-  await sb.from('profiles').upsert({ id: user.id, username: `smoke_rb_${i}`, full_name: `Smoke RB ${i}`, birth_date: '1994-01-01', kyc_status: 'approved', terms_accepted_at: new Date().toISOString() })
+  await sb.from('profiles').upsert({ id: user.id, username: `smoke_rb_${i}`, full_name: `Smoke RB ${i}`, birth_date: '1994-01-01', kyc_status: 'approved', terms_accepted_at: new Date().toISOString(), terms_version: CURRENT_TERMS_VERSION })
   await sb.from('profile_roles').upsert([{ profile_id: user.id, role: 'user', granted_by: user.id }], { onConflict: 'profile_id,role' })
   return user.id
 }

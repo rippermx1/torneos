@@ -1,9 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/server'
 import { requireAnyRoleForApi } from '@/lib/supabase/auth'
 import { checkRateLimit, getRequestIp, rateLimitResponse } from '@/lib/security/rate-limit'
-
-// Versión actual de los T&C — incrementar cuando cambien las bases legales
-export const TERMS_VERSION = '1.1'
+import { CURRENT_TERMS_VERSION } from '@/lib/legal/terms'
 
 export async function POST(req: Request): Promise<Response> {
   const auth = await requireAnyRoleForApi(['user'])
@@ -17,14 +15,18 @@ export async function POST(req: Request): Promise<Response> {
   if (!rateLimit.ok) return rateLimitResponse(rateLimit)
 
   const supabase = createAdminClient()
+  const acceptedAt = new Date().toISOString()
   const { error } = await supabase
     .from('profiles')
-    .update({ terms_accepted_at: new Date().toISOString() })
+    .update({
+      terms_accepted_at: acceptedAt,
+      terms_version: CURRENT_TERMS_VERSION,
+    })
     .eq('id', auth.access.userId)
 
   if (error) {
     return Response.json({ error: `Error registrando aceptación: ${error.message}` }, { status: 500 })
   }
 
-  return Response.json({ ok: true, version: TERMS_VERSION, acceptedAt: new Date().toISOString() })
+  return Response.json({ ok: true, version: CURRENT_TERMS_VERSION, acceptedAt })
 }

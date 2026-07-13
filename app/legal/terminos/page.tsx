@@ -12,7 +12,9 @@ export default function TerminosPage() {
       <div>
         <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">← Inicio</Link>
         <h1 className="text-3xl font-bold mt-4">Términos y Condiciones</h1>
-        <p className="text-sm text-muted-foreground mt-1">Última actualización: 15 de mayo de 2026</p>
+        <p className="text-sm text-muted-foreground mt-1">
+          Versión 1.1 · Última actualización: 15 de mayo de 2026
+        </p>
       </div>
 
       <Section title="1. Naturaleza del servicio">

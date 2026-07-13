@@ -4,6 +4,8 @@ import nextEnv from '@next/env'
 import { createClient } from '@supabase/supabase-js'
 import { requireNonProductionProject } from './supabase-safety.mjs'
 
+const CURRENT_TERMS_VERSION = '1.1'
+
 const { loadEnvConfig } = nextEnv
 
 const __filename = fileURLToPath(import.meta.url)
@@ -127,6 +129,7 @@ async function ensureProfile(user, fixture) {
     kyc_status: 'approved',
     kyc_verified_at: new Date().toISOString(),
     terms_accepted_at: new Date().toISOString(),
+    terms_version: CURRENT_TERMS_VERSION,
   })
 
   if (error) throw error

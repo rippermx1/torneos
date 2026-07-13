@@ -1,15 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/server'
-import type { Profile } from '@/types/database'
+import type { KycSubmission, Profile } from '@/types/database'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { ProfileEditForm } from './profile-edit-form'
-
-const KYC_INFO: Record<Profile['kyc_status'], { label: string; color: string; hint: string }> = {
-  pending:  { label: 'Pendiente', color: 'text-amber-600', hint: 'Completa tu verificación para habilitar el cobro de premios.' },
-  approved: { label: 'Verificado ✓', color: 'text-green-600', hint: 'Tu identidad está verificada.' },
-  rejected: { label: 'Rechazado', color: 'text-red-600', hint: 'Tu verificación fue rechazada. Vuelve a enviar tus datos.' },
-}
 
 export default async function ProfilePage() {
   const supabase = await createClient()
@@ -17,11 +11,19 @@ export default async function ProfilePage() {
   if (!user) redirect('/sign-in')
 
   const adminSupabase = createAdminClient()
-  const { data } = await adminSupabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
+  const [{ data }, { data: submissionRows }] = await Promise.all([
+    adminSupabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single(),
+    adminSupabase
+      .from('kyc_submissions')
+      .select('status')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(1),
+  ])
 
   const profile = data as Profile | null
 
@@ -34,7 +36,31 @@ export default async function ProfilePage() {
     )
   }
 
-  const kyc = KYC_INFO[profile.kyc_status]
+  const latestSubmission = (submissionRows?.[0] ?? null) as Pick<KycSubmission, 'status'> | null
+  const isPendingReview = profile.kyc_status === 'pending' && latestSubmission?.status === 'pending'
+  const kyc = profile.kyc_status === 'approved'
+    ? {
+        label: 'Verificado ✓',
+        color: 'text-green-600',
+        hint: 'Tu identidad está verificada para torneos pagados y retiros.',
+      }
+    : profile.kyc_status === 'rejected'
+      ? {
+          label: 'Rechazado',
+          color: 'text-red-600',
+          hint: 'Corrige los datos indicados para habilitar pagos y retiros.',
+        }
+      : isPendingReview
+        ? {
+            label: 'En revisión',
+            color: 'text-amber-600',
+            hint: 'Recibimos tus documentos y te avisaremos al terminar la revisión.',
+          }
+        : {
+            label: 'Sin verificar',
+            color: 'text-amber-600',
+            hint: 'Verifica tu identidad antes de pagar inscripciones o retirar premios.',
+          }
 
   return (
     <div className="space-y-6 max-w-lg">
@@ -55,7 +81,7 @@ export default async function ProfilePage() {
             href="/profile/kyc"
             className="shrink-0 text-sm font-medium border px-3 py-1.5 rounded-lg hover:bg-white/80 transition-colors"
           >
-            {profile.kyc_status === 'pending' && (profile.rut || profile.phone)
+            {isPendingReview
               ? 'Ver estado'
               : 'Verificar identidad'}
           </Link>

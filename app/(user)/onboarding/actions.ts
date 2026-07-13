@@ -2,13 +2,14 @@
 
 import { after } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
-import { requireAnyRole } from '@/lib/supabase/auth'
+import { requireUserRole } from '@/lib/supabase/auth'
 import { redirect } from 'next/navigation'
 import { sendWelcomeEmail } from '@/lib/email/account-notifications'
 import { isAdult } from '@/lib/identity/verification'
+import { CURRENT_TERMS_VERSION } from '@/lib/legal/terms'
 
 export async function completeOnboarding(formData: FormData) {
-  const access = await requireAnyRole(['user'])
+  const access = await requireUserRole()
 
   const username = (formData.get('username') as string).trim()
   const fullName = (formData.get('fullName') as string).trim()
@@ -44,6 +45,7 @@ export async function completeOnboarding(formData: FormData) {
         full_name: fullName || null,
         birth_date: birthDate,
         terms_accepted_at: new Date().toISOString(),
+        terms_version: CURRENT_TERMS_VERSION,
       },
       {
         onConflict: 'id',

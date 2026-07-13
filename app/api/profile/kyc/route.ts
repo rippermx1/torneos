@@ -2,6 +2,7 @@ import { after } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { requireAnyRoleForApi } from '@/lib/supabase/auth'
 import {
+  isAdult,
   isKycDocumentType,
   isOwnKycDocumentPath,
   isValidRut,
@@ -12,7 +13,7 @@ import { checkRateLimit, getRequestIp, rateLimitResponse } from '@/lib/security/
 import { sendKycReceivedEmail } from '@/lib/email/kyc-notifications'
 
 export async function POST(req: Request): Promise<Response> {
-  const auth = await requireAnyRoleForApi(['user', 'admin', 'owner'])
+  const auth = await requireAnyRoleForApi(['user'])
   if (!auth.ok) return auth.response
 
   const userId = auth.access.userId
@@ -103,14 +104,7 @@ export async function POST(req: Request): Promise<Response> {
     )
   }
 
-  // Validar mayoría de edad (18 años)
-  const birth = new Date(birth_date)
-  if (Number.isNaN(birth.getTime())) {
-    return Response.json({ error: 'Fecha de nacimiento inválida' }, { status: 400 })
-  }
-  const cutoff = new Date()
-  cutoff.setFullYear(cutoff.getFullYear() - 18)
-  if (birth > cutoff) {
+  if (!isAdult(birth_date)) {
     return Response.json({ error: 'Debes ser mayor de 18 años para participar.' }, { status: 400 })
   }
 
@@ -131,6 +125,26 @@ export async function POST(req: Request): Promise<Response> {
       { error: 'Tu KYC ya está aprobado. Contacta soporte para cambiar datos verificados.' },
       { status: 409 }
     )
+  }
+
+  if (currentProfile.kyc_status === 'pending') {
+    const { count: pendingCount, error: pendingError } = await supabase
+      .from('kyc_submissions')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('status', 'pending')
+
+    if (pendingError) {
+      console.error('Error verificando solicitudes KYC pendientes:', pendingError)
+      return Response.json({ error: 'No se pudo verificar el estado de tu solicitud.' }, { status: 500 })
+    }
+
+    if ((pendingCount ?? 0) > 0) {
+      return Response.json(
+        { error: 'Tu verificación ya está en revisión.', kycPending: true },
+        { status: 409 }
+      )
+    }
   }
 
   const { error } = await supabase
@@ -162,7 +176,8 @@ export async function POST(req: Request): Promise<Response> {
         { status: 409 }
       )
     }
-    return Response.json({ error: `Error guardando datos: ${error.message}` }, { status: 500 })
+    console.error('Error guardando perfil KYC:', error)
+    return Response.json({ error: 'No se pudieron guardar tus datos. Intenta nuevamente.' }, { status: 500 })
   }
 
   const { data: submission, error: submissionError } = await supabase
@@ -185,8 +200,15 @@ export async function POST(req: Request): Promise<Response> {
     .single()
 
   if (submissionError || !submission) {
+    if (submissionError?.code === '23505') {
+      return Response.json(
+        { error: 'Tu verificación ya está en revisión.', kycPending: true },
+        { status: 409 }
+      )
+    }
+    console.error('Error guardando evidencia KYC:', submissionError)
     return Response.json(
-      { error: `Error guardando evidencia KYC: ${submissionError?.message ?? 'sin respuesta'}` },
+      { error: 'No se pudo registrar la evidencia KYC. Intenta nuevamente.' },
       { status: 500 }
     )
   }

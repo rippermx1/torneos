@@ -9,6 +9,11 @@ import { checkPlayWindow, checkRegistrationWindow } from '@/lib/tournament/helpe
 import { calculateTournamentDisplayPayouts, splitEntryFee, selectPrizeTier, type PrizeTier } from '@/lib/tournament/finance'
 import { PrizeLadder } from '@/components/tournament/prize-ladder'
 import { SKILL_TIER_LABELS } from '@/lib/tournament/rating'
+import {
+  getParticipationBlocker,
+  type ParticipationBlocker,
+  type ParticipationProfile,
+} from '@/lib/tournament/readiness'
 
 export async function generateMetadata({
   params,
@@ -75,18 +80,49 @@ export default async function TournamentDetailPage({
   // Verificar si el usuario está inscrito (necesita admin para bypassear RLS)
   let isRegistered = false
   let creditBalanceCents = 0
+  let participationProfile: ParticipationProfile | null = null
+  let hasPendingKycSubmission = false
   if (userId) {
-    const { data: reg } = await admin
-      .from('registrations')
-      .select('id')
-      .eq('tournament_id', id)
-      .eq('user_id', userId)
-      .single()
-    isRegistered = !!reg
+    const [
+      { data: reg },
+      { data: profile },
+      { data: credit },
+      { count: pendingKycCount },
+    ] = await Promise.all([
+      admin
+        .from('registrations')
+        .select('id')
+        .eq('tournament_id', id)
+        .eq('user_id', userId)
+        .maybeSingle(),
+      admin
+        .from('profiles')
+        .select('username, birth_date, kyc_status, is_banned')
+        .eq('id', userId)
+        .maybeSingle(),
+      t.entry_fee_cents > 0
+        ? admin.rpc('wallet_credit_balance', { p_user_id: userId })
+        : Promise.resolve({ data: 0 }),
+      t.entry_fee_cents > 0
+        ? admin
+            .from('kyc_submissions')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', userId)
+            .eq('status', 'pending')
+        : Promise.resolve({ count: 0 }),
+    ])
 
-    if (t.entry_fee_cents > 0) {
-      const { data: credit } = await admin.rpc('wallet_credit_balance', { p_user_id: userId })
-      creditBalanceCents = Number(credit ?? 0)
+    isRegistered = !!reg
+    creditBalanceCents = Number(credit ?? 0)
+    hasPendingKycSubmission = (pendingKycCount ?? 0) > 0
+
+    if (profile) {
+      participationProfile = {
+        username: profile.username,
+        birthDate: profile.birth_date,
+        kycStatus: profile.kyc_status,
+        isBanned: profile.is_banned,
+      }
     }
   }
 
@@ -114,6 +150,14 @@ export default async function TournamentDetailPage({
   const shownP1 = applicableTier ? applicableTier.prize1Cents : payouts.prize1Cents
   const shownP2 = applicableTier ? applicableTier.prize2Cents : payouts.prize2Cents
   const shownP3 = applicableTier ? applicableTier.prize3Cents : payouts.prize3Cents
+  const participationBlocker = userId
+    ? getParticipationBlocker({
+        emailConfirmed: Boolean(user?.email_confirmed_at),
+        profile: participationProfile,
+        entryFeeCents: t.entry_fee_cents,
+        hasPendingKycSubmission,
+      })
+    : null
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-10 space-y-8">
@@ -244,6 +288,8 @@ export default async function TournamentDetailPage({
               </div>
             )}
           </>
+        ) : canRegister && participationBlocker ? (
+          <ParticipationBlockerCard blocker={participationBlocker} />
         ) : canRegister ? (
           <RegisterButton
             tournamentId={id}
@@ -264,6 +310,23 @@ export default async function TournamentDetailPage({
           Ver ranking
         </Link>
       </div>
+    </div>
+  )
+}
+
+function ParticipationBlockerCard({ blocker }: { blocker: ParticipationBlocker }) {
+  return (
+    <div className="flex-1 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+      <p className="font-semibold">{blocker.title}</p>
+      <p className="mt-1 text-xs leading-relaxed text-amber-800">{blocker.detail}</p>
+      {blocker.href && blocker.actionLabel && (
+        <Link
+          href={blocker.href}
+          className="mt-3 inline-flex rounded-lg border border-amber-300 bg-white/70 px-3 py-2 text-xs font-medium hover:bg-white"
+        >
+          {blocker.actionLabel}
+        </Link>
+      )}
     </div>
   )
 }

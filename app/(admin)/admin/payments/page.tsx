@@ -70,10 +70,10 @@ export default async function AdminPaymentsPage({
   return (
     <div className="space-y-6 max-w-5xl">
       <div>
-        <h1 className="text-2xl font-bold">Pagos Flow</h1>
+        <h1 className="text-2xl font-bold">Cobros</h1>
         <p className="text-sm text-muted-foreground mt-0.5">
-          Bitácora de intentos de pago. El cron `flow-reconcile` corre cada 10 minutos;
-          usa &ldquo;Reverificar&rdquo; para forzar la consulta a Flow ahora.
+          Cada intento de cobro procesado por Flow aparece aquí. Un pago pendiente normalmente
+          se confirma solo; usa &ldquo;Reverificar&rdquo; únicamente si lleva más de 10 minutos o existe una alerta.
         </p>
       </div>
 

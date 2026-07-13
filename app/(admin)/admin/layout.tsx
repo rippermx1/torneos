@@ -5,9 +5,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   await requireAdminMfa()
 
   return (
-    <div className="min-h-screen md:flex">
+    <div className="min-h-screen bg-background md:flex">
       <AdminSidebar />
-      <main className="flex-1 p-4 md:p-8 min-w-0">{children}</main>
+      <main className="min-w-0 flex-1 bg-muted/10 p-4 sm:p-6 lg:p-8">{children}</main>
     </div>
   )
 }

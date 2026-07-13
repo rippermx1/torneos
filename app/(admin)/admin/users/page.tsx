@@ -20,9 +20,9 @@ const KYC_LABEL: Record<Profile['kyc_status'], string> = {
 }
 
 const ROLE_LABEL: Record<AppRole, string> = {
-  user: 'User',
-  admin: 'Admin',
-  owner: 'Owner',
+  user: 'Jugador',
+  admin: 'Administrador',
+  owner: 'Propietario',
 }
 
 const ROLE_BADGE: Record<AppRole, string> = {
@@ -98,15 +98,27 @@ export default async function AdminUsersPage() {
     rolesByUser.set(row.profile_id, current)
   }
 
-  const pending  = profiles.filter((p) => p.kyc_status === 'pending')
-  const approved = profiles.filter((p) => p.kyc_status === 'approved')
-  const rejected = profiles.filter((p) => p.kyc_status === 'rejected')
-  const banned   = profiles.filter((p) => p.is_banned)
+  const internalAccounts = profiles.filter((profile) => {
+    const roles = rolesByUser.get(profile.id) ?? []
+    return profile.is_admin || roles.includes('admin') || roles.includes('owner')
+  })
+  const internalIds = new Set(internalAccounts.map((profile) => profile.id))
+  const playerProfiles = profiles.filter((profile) => !internalIds.has(profile.id))
+  const banned = playerProfiles.filter((profile) => profile.is_banned)
+  const activePlayers = playerProfiles.filter((profile) => !profile.is_banned)
+  const pending = activePlayers.filter((profile) => profile.kyc_status === 'pending')
+  const approved = activePlayers.filter((profile) => profile.kyc_status === 'approved')
+  const rejected = activePlayers.filter((profile) => profile.kyc_status === 'rejected')
 
   return (
     <div className="space-y-6 max-w-6xl">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold">Usuarios y KYC</h1>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Jugadores e identidad</h1>
+          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+            Empieza por las identidades pendientes. Aprueba únicamente cuando documento, RUT y datos bancarios coincidan.
+          </p>
+        </div>
         <div className="flex gap-3 text-sm text-muted-foreground">
           <span className="bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">
             {pending.length} pendientes
@@ -121,6 +133,15 @@ export default async function AdminUsersPage() {
           )}
         </div>
       </div>
+
+      {playerProfiles.length === 0 && (
+        <div className="rounded-2xl border border-dashed bg-muted/20 p-8 text-center">
+          <p className="font-semibold">Todavía no hay jugadores registrados</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Las cuentas internas se muestran aparte y no forman parte de las métricas de jugadores.
+          </p>
+        </div>
+      )}
 
       {/* Baneados primero si hay */}
       {banned.length > 0 && (
@@ -159,6 +180,20 @@ export default async function AdminUsersPage() {
             Rechazados ({rejected.length})
           </h2>
           <UserTable profiles={rejected} submissionsByUser={submissionsByUser} rolesByUser={rolesByUser} showActions />
+        </section>
+      )}
+
+      {internalAccounts.length > 0 && (
+        <section className="space-y-2 border-t pt-6">
+          <div>
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              Equipo interno ({internalAccounts.length})
+            </h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Cuentas administrativas. No se consideran jugadores y no requieren revisión KYC desde esta pantalla.
+            </p>
+          </div>
+          <UserTable profiles={internalAccounts} submissionsByUser={submissionsByUser} rolesByUser={rolesByUser} />
         </section>
       )}
     </div>

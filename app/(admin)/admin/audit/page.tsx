@@ -80,9 +80,9 @@ export default async function AdminAuditPage({
   return (
     <div className="space-y-6 max-w-5xl">
       <div>
-        <h1 className="text-2xl font-bold">Bitácora administrativa</h1>
+        <h1 className="text-2xl font-bold">Historial de acciones</h1>
         <p className="text-sm text-muted-foreground mt-0.5">
-          Últimas {actions.length} acciones registradas. Inmutable.
+          Registro inmutable de quién hizo qué y cuándo. Se muestran las últimas {actions.length} acciones.
         </p>
       </div>
 

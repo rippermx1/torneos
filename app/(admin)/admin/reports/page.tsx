@@ -20,11 +20,10 @@ export default async function AdminReportsPage({
     <div className="space-y-6 max-w-6xl">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Contabilidad Modelo A</h1>
+          <h1 className="text-2xl font-bold">Finanzas y conciliación</h1>
           <p className="text-sm text-muted-foreground mt-0.5 max-w-3xl">
-            Contabilidad efectiva de la plataforma: el IVA se reconoce sobre el margen real
-            (cobros por inscripción menos premios pagados a ganadores). El voucher Flow y las
-            columnas F29 quedan como referencia del comprobante, no como base del IVA.
+            Comprueba saldos, cobros, premios, retiros y el resultado de la plataforma por período.
+            El cálculo tributario reconoce el IVA sobre el margen real: inscripciones cobradas menos premios pagados.
           </p>
         </div>
         <div className="flex gap-2">
@@ -32,13 +31,13 @@ export default async function AdminReportsPage({
             href="/api/admin/reports/accounting.csv"
             className="text-sm border rounded-lg px-3 py-2 hover:bg-muted transition-colors"
           >
-            Exportar contabilidad
+            Descargar contabilidad (.csv)
           </a>
           <a
             href="/api/admin/reports/finance.csv"
             className="text-sm border rounded-lg px-3 py-2 hover:bg-muted transition-colors"
           >
-            CSV fee plataforma
+            Descargar fee de plataforma
           </a>
         </div>
       </div>

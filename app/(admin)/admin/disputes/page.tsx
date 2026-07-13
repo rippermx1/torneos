@@ -42,9 +42,9 @@ export default async function AdminDisputesPage() {
   return (
     <div className="space-y-8 max-w-3xl">
       <div>
-        <h1 className="text-2xl font-bold">Disputas</h1>
+        <h1 className="text-2xl font-bold">Casos de soporte</h1>
         <p className="text-sm text-muted-foreground mt-0.5">
-          {open.length} abierta{open.length !== 1 ? 's' : ''}
+          {open.length} abierto{open.length !== 1 ? 's' : ''}. Lee los antecedentes y deja una resolución clara; cada decisión quedará registrada.
         </p>
       </div>
 

@@ -45,9 +45,9 @@ export default async function AdminPayoutsPage() {
   return (
     <div className="space-y-8 max-w-4xl">
       <div>
-        <h1 className="text-2xl font-bold">Retiros</h1>
+        <h1 className="text-2xl font-bold">Retiros de premios</h1>
         <p className="text-sm text-muted-foreground mt-0.5">
-          {pending.length} pendiente{pending.length !== 1 ? 's' : ''}
+          {pending.length} pendiente{pending.length !== 1 ? 's' : ''}. Antes de aprobar, confirma identidad verificada, saldo suficiente y coincidencia de los datos bancarios.
         </p>
       </div>
 

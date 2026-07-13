@@ -124,11 +124,11 @@ export default async function AdminTournamentsPage() {
 
   return (
     <div className="space-y-6 max-w-5xl">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold">Torneos</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Supabase procesa torneos cada 5 minutos y concilia Flow cada 10; los respaldos externos cubren contingencias.
+            Crea competencias y supervisa fechas, cupos, inscripciones y premios. Los cambios de estado se procesan automáticamente cada pocos minutos.
           </p>
         </div>
         <Link

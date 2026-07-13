@@ -78,10 +78,10 @@ export default async function AdminRefundsPage({
   return (
     <div className="space-y-6 max-w-5xl">
       <div>
-        <h1 className="text-2xl font-bold">Reembolsos Flow</h1>
+        <h1 className="text-2xl font-bold">Devoluciones</h1>
         <p className="text-sm text-muted-foreground mt-0.5">
-          Reversas emitidas al cancelar torneos. Usa &ldquo;Reintentar&rdquo; en los fallidos.
-          El cron reconcilia pendientes cada 10 minutos.
+          Cuando se cancela un torneo, el sistema solicita la devolución a Flow. Los pendientes
+          se revisan automáticamente; usa &ldquo;Reintentar&rdquo; solo en devoluciones con error.
         </p>
       </div>
 

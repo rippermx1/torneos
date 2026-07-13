@@ -15,6 +15,7 @@ export interface AdminHealthIssue {
 export interface AdminQueueSummary {
   key: string
   label: string
+  description: string
   count: number | null
   oldestAt: string | null
   href: string
@@ -36,7 +37,7 @@ export interface AdminHealthDashboard {
   issues: AdminHealthIssue[]
   cronJobs: CronJobHealth[]
   metrics: {
-    accounts: number | null
+    playerAccounts: number | null
     registrationsLast7Days: number | null
     activeTournaments: number | null
   }
@@ -74,6 +75,7 @@ function readCount(
 function readQueue(
   key: string,
   label: string,
+  description: string,
   href: string,
   result: QueueResult,
   failures: string[]
@@ -83,6 +85,7 @@ function readQueue(
   return {
     key,
     label,
+    description,
     href,
     count,
     oldestAt: count && count > 0 ? result.data?.[0]?.created_at ?? null : null,
@@ -115,7 +118,7 @@ export async function loadAdminHealthDashboard(): Promise<AdminHealthDashboard> 
     liabilityResult,
     heartbeatsResult,
   ] = await Promise.all([
-    admin.from('profiles').select('*', { count: 'exact', head: true }),
+    admin.from('profiles').select('*', { count: 'exact', head: true }).eq('is_admin', false),
     admin.from('registrations').select('*', { count: 'exact', head: true }).gte('registered_at', sevenDaysAgo),
     admin
       .from('tournaments')
@@ -170,18 +173,67 @@ export async function loadAdminHealthDashboard(): Promise<AdminHealthDashboard> 
 
   const failures: string[] = []
   const metrics = {
-    accounts: readCount(accountsResult, 'cuentas', failures),
+    playerAccounts: readCount(accountsResult, 'cuentas de jugadores', failures),
     registrationsLast7Days: readCount(registrationsResult, 'inscripciones recientes', failures),
     activeTournaments: readCount(tournamentsResult, 'torneos activos', failures),
   }
   const queues = [
-    readQueue('payments', 'Pagos pendientes', '/admin/payments?status=pending', paymentsResult, failures),
-    readQueue('pending-refunds', 'Reembolsos pendientes', '/admin/refunds?status=pending', pendingRefundsResult, failures),
-    readQueue('failed-refunds', 'Reembolsos fallidos', '/admin/refunds?status=rejected', failedRefundsResult, failures),
-    readQueue('withdrawals', 'Retiros por revisar', '/admin/payouts', withdrawalsResult, failures),
-    readQueue('kyc', 'KYC por revisar', '/admin/users', kycResult, failures),
-    readQueue('disputes', 'Disputas abiertas', '/admin/disputes', disputesResult, failures),
-    readQueue('dte', 'Documentos tributarios fallidos', '/admin/reports', dteResult, failures),
+    readQueue(
+      'payments',
+      'Pagos esperando confirmación',
+      'Flow todavía no informa el resultado final. Normalmente se resuelve automáticamente.',
+      '/admin/payments?status=pending',
+      paymentsResult,
+      failures
+    ),
+    readQueue(
+      'pending-refunds',
+      'Reembolsos en proceso',
+      'Flow está procesando la devolución. Solo intervén si aparece una alerta.',
+      '/admin/refunds?status=pending',
+      pendingRefundsResult,
+      failures
+    ),
+    readQueue(
+      'failed-refunds',
+      'Reembolsos con error',
+      'Debes reintentarlos o investigar el rechazo informado por Flow.',
+      '/admin/refunds?status=rejected',
+      failedRefundsResult,
+      failures
+    ),
+    readQueue(
+      'withdrawals',
+      'Retiros que debes aprobar',
+      'Compara identidad, RUT, saldo y cuenta bancaria antes de decidir.',
+      '/admin/payouts',
+      withdrawalsResult,
+      failures
+    ),
+    readQueue(
+      'kyc',
+      'Identidades que debes revisar',
+      'Valida los documentos del jugador antes de aprobar su identidad.',
+      '/admin/users',
+      kycResult,
+      failures
+    ),
+    readQueue(
+      'disputes',
+      'Casos de soporte abiertos',
+      'Revisa los antecedentes y deja una resolución trazable.',
+      '/admin/disputes',
+      disputesResult,
+      failures
+    ),
+    readQueue(
+      'dte',
+      'Documentos tributarios con error',
+      'La emisión electrónica falló y necesita revisión contable.',
+      '/admin/reports',
+      dteResult,
+      failures
+    ),
   ]
 
   if (liabilityResult.error) {
@@ -269,12 +321,20 @@ export async function loadAdminHealthDashboard(): Promise<AdminHealthDashboard> 
     })
   }
 
+  const humanQueueCopy: Record<string, { singular: string; plural: string }> = {
+    withdrawals: { singular: 'retiro pendiente de aprobación', plural: 'retiros pendientes de aprobación' },
+    kyc: { singular: 'identidad pendiente de revisión', plural: 'identidades pendientes de revisión' },
+    disputes: { singular: 'caso de soporte abierto', plural: 'casos de soporte abiertos' },
+  }
+
   for (const queue of queues.filter((item) => ['withdrawals', 'kyc', 'disputes'].includes(item.key))) {
     if ((queue.count ?? 0) > 0) {
+      const count = queue.count ?? 0
+      const queueCopy = humanQueueCopy[queue.key]
       issues.push({
         level: 'attention',
-        title: `${queue.count} ${queue.label.toLocaleLowerCase('es-CL')}`,
-        detail: 'Esta cola requiere revisión del equipo administrativo.',
+        title: `${count} ${count === 1 ? queueCopy.singular : queueCopy.plural}`,
+        detail: queue.description,
         href: queue.href,
       })
     }

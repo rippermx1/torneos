@@ -1,4 +1,4 @@
-export default function WalletLoading() {
+export default function PremiosLoading() {
   return (
     <div className="space-y-6 max-w-lg animate-pulse">
       <div className="flex items-end justify-between">

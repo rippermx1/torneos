@@ -204,7 +204,7 @@ export async function POST(
     const { data: creditBalance } = await admin.rpc('wallet_credit_balance', { p_user_id: userId })
     if (Number(creditBalance ?? 0) < entryFeeCents) {
       return Response.json(
-        { error: 'No tienes crédito suficiente para cubrir la inscripción completa.', insufficientCredit: true },
+        { error: 'Tu recompensa aún no cubre una participación gratis en este torneo.', insufficientCredit: true },
         { status: 400 }
       )
     }
@@ -220,7 +220,7 @@ export async function POST(
       if (msg.includes('Torneo lleno')) return Response.json({ error: 'El torneo está lleno' }, { status: 400 })
       if (msg.includes('Inscripciones cerradas')) return Response.json({ error: 'Inscripciones cerradas' }, { status: 400 })
       if (msg.includes('Crédito insuficiente')) {
-        return Response.json({ error: 'No tienes crédito suficiente para cubrir la inscripción completa.', insufficientCredit: true }, { status: 400 })
+        return Response.json({ error: 'Tu recompensa aún no cubre una participación gratis en este torneo.', insufficientCredit: true }, { status: 400 })
       }
       if (creditError.code === '23505' || msg.includes('unique')) {
         return Response.json({ error: 'Ya estás inscrito en este torneo' }, { status: 409 })

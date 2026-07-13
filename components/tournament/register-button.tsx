@@ -125,7 +125,7 @@ export function RegisterButton({ tournamentId, entryFeeCents, creditBalanceCents
           disabled={loading}
           className="w-full border-2 border-emerald-500 text-emerald-700 py-3 rounded-xl font-medium hover:bg-emerald-50 transition-colors disabled:opacity-50"
         >
-          {loading ? 'Procesando...' : `Inscribirme con crédito — gratis (${formatCLP(entryFeeCents)})`}
+          {loading ? 'Procesando...' : 'Canjear participación gratis'}
         </button>
       )}
       <button
@@ -137,9 +137,7 @@ export function RegisterButton({ tournamentId, entryFeeCents, creditBalanceCents
           ? 'Procesando...'
           : entryFeeCents === 0
           ? 'Inscribirme gratis'
-          : canUseCredit
-          ? `Pagar en efectivo — ${formatCLP(entryFeeCents)}`
-          : `Inscribirme — ${formatCLP(entryFeeCents)}`}
+          : `Comprar participación — ${formatCLP(entryFeeCents)}`}
       </button>
       {error && <p className="text-xs text-red-600 text-center">{error}</p>}
     </div>

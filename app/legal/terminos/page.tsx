@@ -103,30 +103,40 @@ export default function TerminosPage() {
         </p>
       </Section>
 
-      <Section title="5. Premios y saldo retirable">
+      <Section title="5. Premios y recompensas">
         <p>
-          La plataforma no acepta depósitos prepagados ni recargas. Cada inscripción a un torneo se
-          cobra de forma individual al momento de inscribirse.
+          La plataforma <strong>no mantiene cuentas ni saldos de dinero de usuarios</strong>, no
+          acepta depósitos prepagados ni recargas. Cada participación se compra de forma individual
+          y se paga en el checkout al momento de inscribirse.
         </p>
         <p>
-          Los <strong>premios</strong> obtenidos se acreditan automáticamente como saldo retirable
-          asociado a la cuenta del ganador una vez finalizado y verificado el torneo. El saldo
-          retirable se compone de premios ganados, reembolsos de torneos cancelados y devoluciones
-          asociadas a solicitudes de retiro rechazadas, conforme a la política de retiros vigente.
+          Los <strong>premios</strong> obtenidos quedan registrados como{' '}
+          <strong>premios pendientes de pago</strong> a nombre del ganador una vez finalizado y
+          verificado el torneo, y se pagan exclusivamente mediante transferencia bancaria conforme
+          a la sección 6. Los premios no pueden usarse para pagar inscripciones ni convertirse en
+          medios de pago dentro de la plataforma.
         </p>
         <p>
-          Los movimientos asociados a premios, reembolsos y retiros se registran de forma inmutable
-          y el saldo disponible se actualiza en tiempo real.
+          <strong>Recompensas por participación:</strong> la plataforma puede otorgar recompensas
+          promocionales por la compra de participaciones, canjeables únicamente por{' '}
+          <strong>participaciones gratuitas</strong> en torneos. Las recompensas no son dinero, no
+          son transferibles, no son canjeables por efectivo ni reembolsables, caducan a los{' '}
+          <strong>30 días</strong> de otorgadas y el programa puede modificarse o terminarse
+          prospectivamente. Su otorgamiento no altera el precio pagado por la participación.
+        </p>
+        <p>
+          Todos los movimientos de premios, pagos y recompensas se registran de forma inmutable
+          para fines de auditoría.
         </p>
       </Section>
 
-      <Section title="6. Retiros">
+      <Section title="6. Pago de premios">
         <p>
-          Los usuarios con KYC aprobado pueden solicitar el retiro de su saldo retirable, compuesto
-          por premios ganados, reembolsos de torneos cancelados y devoluciones de retiros
-          rechazados, mediante transferencia bancaria a una cuenta a su nombre en un banco chileno.
-          Solo se permite una solicitud pendiente a la vez y el plazo de procesamiento es de hasta
-          3 días hábiles.
+          Los usuarios con KYC aprobado pueden solicitar el <strong>pago de sus premios
+          pendientes</strong> mediante transferencia bancaria a una cuenta a su nombre en un banco
+          chileno, cuyo titular y RUT deben coincidir con la identidad verificada. El pago se
+          realiza por el total adeudado (con el tope por solicitud publicado), se acepta una
+          solicitud pendiente a la vez, y el plazo de procesamiento es de hasta 3 días hábiles.
           Ver{' '}
           <Link href="/legal/reembolso" className="underline underline-offset-2">
             Política de Reembolso

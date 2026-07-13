@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { createFlowRefund, getFlowRefundStatus } from '@/lib/flow/refunds'
 import { getAppUrl } from '@/lib/env'
 import { sendTournamentCancelledEmail } from '@/lib/email/refund-notifications'
+import { rakebackExpiryIso } from '@/lib/wallet/rakeback'
 import type { FlowPaymentAttempt, FlowRefundAttempt, Tournament } from '@/types/database'
 
 // ───────────────────────────────────────────────────────────────
@@ -327,12 +328,13 @@ export async function reconcileCancelledTournamentRefunds(lookbackDays = 3): Pro
   tournamentsChecked: number
   refundsIssued: number
   refundsFailed: number
+  rewardsRestored: number
 }> {
   const supabase = createAdminClient()
   const appUrl = getAppUrl()
   if (!appUrl) {
     console.error('[refund-reconcile] APP_URL no configurado, omitiendo barrido de cancelados')
-    return { tournamentsChecked: 0, refundsIssued: 0, refundsFailed: 0 }
+    return { tournamentsChecked: 0, refundsIssued: 0, refundsFailed: 0, rewardsRestored: 0 }
   }
 
   const cutoff = new Date(Date.now() - lookbackDays * 24 * 60 * 60 * 1000).toISOString()
@@ -346,6 +348,7 @@ export async function reconcileCancelledTournamentRefunds(lookbackDays = 3): Pro
   const tournaments = (cancelled ?? []) as Pick<Tournament, 'id' | 'name' | 'entry_fee_cents'>[]
   let refundsIssued = 0
   let refundsFailed = 0
+  let rewardsRestored = 0
 
   for (const t of tournaments) {
     const refundResults = await issueFlowRefunds(t.id, t.entry_fee_cents, appUrl, t.name)
@@ -353,7 +356,55 @@ export async function reconcileCancelledTournamentRefunds(lookbackDays = 3): Pro
       if (r.error) refundsFailed++
       else refundsIssued++
     }
+    rewardsRestored += await restoreRedeemedRewards(supabase, t.id)
   }
 
-  return { tournamentsChecked: tournaments.length, refundsIssued, refundsFailed }
+  return { tournamentsChecked: tournaments.length, refundsIssued, refundsFailed, rewardsRestored }
+}
+
+// Restituye las recompensas canjeadas en un torneo cancelado: quien usó su
+// participación gratis la recibe de vuelta (con nueva ventana de vencimiento),
+// simétrico a la reversa Flow de quienes pagaron cash. Idempotente por usuario:
+// no restituye si ya existe un 'cancel_restore' para ese torneo.
+async function restoreRedeemedRewards(
+  supabase: ReturnType<typeof createAdminClient>,
+  tournamentId: string
+): Promise<number> {
+  const { data } = await supabase
+    .from('wallet_transactions')
+    .select('user_id, amount_cents, metadata')
+    .eq('type', 'tournament_credit')
+    .eq('reference_id', tournamentId)
+
+  const rows = (data ?? []) as {
+    user_id: string
+    amount_cents: number
+    metadata: Record<string, unknown> | null
+  }[]
+  const kindOf = (m: Record<string, unknown> | null) => (m as { kind?: string } | null)?.kind
+  const redemptions = rows.filter((r) => r.amount_cents < 0 && kindOf(r.metadata) === 'redeem')
+  const alreadyRestored = new Set(
+    rows
+      .filter((r) => r.amount_cents > 0 && kindOf(r.metadata) === 'cancel_restore')
+      .map((r) => r.user_id)
+  )
+
+  let restored = 0
+  for (const redemption of redemptions) {
+    if (alreadyRestored.has(redemption.user_id)) continue
+    const { error } = await supabase.rpc('wallet_insert_transaction', {
+      p_user_id: redemption.user_id,
+      p_type: 'tournament_credit',
+      p_amount_cents: -redemption.amount_cents,
+      p_reference_type: 'rakeback',
+      p_reference_id: tournamentId,
+      p_metadata: { kind: 'cancel_restore', expires_at: rakebackExpiryIso() },
+    })
+    if (error) {
+      console.error(`[refund-reconcile] No se pudo restituir recompensa a ${redemption.user_id}:`, error.message)
+      continue
+    }
+    restored++
+  }
+  return restored
 }

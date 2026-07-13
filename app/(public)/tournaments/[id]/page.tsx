@@ -156,7 +156,7 @@ export default async function TournamentDetailPage({
         <div className="border border-amber-200 bg-amber-50 rounded-xl p-4 text-sm text-amber-800 space-y-1">
           <p className="font-semibold">Garantía de reembolso</p>
           <p>
-            Si al inicio del torneo no se han inscrito al menos {t.min_players} jugadores, el torneo se cancela automáticamente y recibirás el 100% de tu inscripción ({formatCLP(t.entry_fee_cents)}) en tu wallet.
+            Si al inicio del torneo no se han inscrito al menos {t.min_players} jugadores, el torneo se cancela automáticamente y te devolvemos el 100% de tu inscripción ({formatCLP(t.entry_fee_cents)}) al mismo medio de pago que usaste.
           </p>
         </div>
       )}

@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { ProfileEditForm } from './profile-edit-form'
 
 const KYC_INFO: Record<Profile['kyc_status'], { label: string; color: string; hint: string }> = {
-  pending:  { label: 'Pendiente', color: 'text-amber-600', hint: 'Completa tu verificación para habilitar retiros.' },
+  pending:  { label: 'Pendiente', color: 'text-amber-600', hint: 'Completa tu verificación para habilitar el cobro de premios.' },
   approved: { label: 'Verificado ✓', color: 'text-green-600', hint: 'Tu identidad está verificada.' },
   rejected: { label: 'Rechazado', color: 'text-red-600', hint: 'Tu verificación fue rechazada. Vuelve a enviar tus datos.' },
 }
@@ -79,8 +79,8 @@ export default async function ProfilePage() {
       </div>
 
       <div className="flex gap-3">
-        <Link href="/wallet" className="flex-1 text-center border rounded-xl py-2.5 text-sm hover:bg-muted transition-colors">
-          Mi saldo
+        <Link href="/premios" className="flex-1 text-center border rounded-xl py-2.5 text-sm hover:bg-muted transition-colors">
+          Mis premios
         </Link>
         <Link href="/support/dispute" className="flex-1 text-center border rounded-xl py-2.5 text-sm hover:bg-muted transition-colors">
           Mis disputas

@@ -120,6 +120,16 @@ Leyenda: ✅ hecho · 🚧 en progreso · ⬜ pendiente
 - ✅ 3 brechas del reporte corregidas (rama `fix/accounting-report-gaps`): (1) reversas Flow completadas de torneos cancelados ahora SÍ se descuentan del margen (antes margen/IVA sobreestimados); (2) refunds por retiro fallido ya no reducen el margen (ajuste de pasivo); (3) torneos `is_test` excluidos del P&L. Columnas nuevas `reversas_flow` / `efectivo_reembolsos`.
 - Prod verificado limpio pre-lanzamiento: 0 torneos/tx, ledger sin drift, sin datos de prueba.
 
+### Alineación "sin wallet" (2026-07-06, rama `feat/no-wallet-concept`)
+Decisión del dueño: no puede existir concepto de wallet (riesgo fiscalización CMF); el usuario COMPRA una participación. Auditoría: la sustancia ya cumplía (sin depósitos, premios no gastables, reversas al medio de pago); se realineó todo lo demás:
+- ✅ Rakeback re-denominado como **recompensa/participación gratis** (no "$ de crédito"): botón "Canjear participación gratis", errores y textos sin lenguaje monetario.
+- ✅ Ruta `/wallet` → **`/premios`** (redirects): página sin saldo total (muestra "premios por cobrar" + card de recompensas), historial sin saldo corrido; `/premios/cobrar` paga el TOTAL adeudado (sin montos a elección, tope $500k/solicitud).
+- ✅ Navbar/footer/perfil: "Mi saldo" → "Mis premios". `DepositBanner` (muerto) y página deposit eliminados/redirect.
+- ✅ **T&C §5-6 reescritos**: "no mantiene cuentas ni saldos", premios = pendientes de pago por transferencia, cláusula de recompensas promocionales (no dinero, caducan 30d). **Política de reembolso** corregida (reversa Flow al medio de pago — antes afirmaba falsamente "saldo retirable"; secciones "Pago de premios").
+- ✅ Ficha: garantía de reembolso corregida (reversa al medio de pago, no "wallet").
+- ✅ **Fix funcional**: recompensas canjeadas en torneos cancelados ahora se RESTITUYEN (`restoreRedeemedRewards` en la red de seguridad de cancelaciones, idempotente, `cancel_restore`).
+- Interno sin cambios (ledger/RPCs/APIs = contabilidad). Admin sigue viendo el detalle. AML page usa "retiros" (aceptable, sin "saldo"); opcional alinear después.
+
 ### Fase 3
 - ⬜ Insignia semanal · ⬜ Automatización retiros/KYC · ⬜ Anti-cheat v2 · ⬜ Referidos.
 

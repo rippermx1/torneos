@@ -24,6 +24,18 @@ IVA a pagar        = IVA débito − IVA crédito de la factura Flow
 - Régimen vigente: **Modelo A** (`lib/tax/regime.ts`) — el comprobante Flow opera
   como boleta del cobro; no se emite DTE propio.
 
+## 1.b Principio "sin wallet" (alineación CMF, verificado 2026-07-06)
+
+La plataforma opera como **compraventa de participaciones**: no mantiene cuentas
+ni saldos de dinero de usuarios, no acepta depósitos ni recargas. Los premios son
+**deuda por pagar** que se liquida por transferencia bancaria (no un medio de pago
+interno: no se pueden gastar en inscripciones), el cobro es por el total adeudado
+(no montos a elección), y las recompensas del rakeback son **promocionales**: no
+comprables, no transferibles, no canjeables por efectivo, canjeables solo por
+participaciones gratis y caducan a 30 días. El "ledger" interno
+(`wallet_transactions`) es el registro contable de esas deudas y recompensas, no
+una cuenta ofrecida al usuario (la UI y los T&C no exponen concepto de saldo).
+
 ## 2. Mapa: evento del producto → efecto contable
 
 | Evento | Efecto en el P&L | Dónde se ve |
@@ -39,6 +51,7 @@ IVA a pagar        = IVA débito − IVA crédito de la factura Flow
 | Reversa de pago **no asentable** (pagó pero no alcanzó cupo) | **NADA** (ese cobro nunca contó como venta) | — |
 | **Rakeback otorgado** (7% al liquidar) | **NADA en P&L** (sería doble conteo; es pasivo) | `rakeback_otorgado` (informativa) |
 | **Crédito expirado** (30 días FIFO) | NADA (breakage: el cash ya se contó al cobrar; solo baja el pasivo) | ledger |
+| **Recompensa restituida** (canje en torneo luego cancelado) | NADA en P&L (repone el pasivo promocional; la inscripción canjeada sigue fuera de cobros) | `rakeback_otorgado` (informativa) |
 | Retiro de premios aprobado | NADA en P&L (liquidación de pasivo) | `retiros_*` |
 | Comisión Flow (absorbida) | − resultado operativo; su IVA es **crédito fiscal** | `flow_comision_neta_estimada`, `flow_iva_credito_estimado` |
 | Brackets / divisiones | sin efecto contable | — |

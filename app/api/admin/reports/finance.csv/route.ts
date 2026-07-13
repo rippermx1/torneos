@@ -1,5 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/server'
-import { requireAnyRoleForApi } from '@/lib/supabase/auth'
+import { requireAdminMfaForApi } from '@/lib/supabase/admin-mfa'
 
 interface MonthlyRow {
   period: string
@@ -14,7 +14,7 @@ interface MonthlyRow {
 }
 
 export async function GET(): Promise<Response> {
-  const auth = await requireAnyRoleForApi(['admin', 'owner'])
+  const auth = await requireAdminMfaForApi()
   if (!auth.ok) return auth.response
 
   const supabase = createAdminClient()

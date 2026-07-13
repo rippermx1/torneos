@@ -1,7 +1,7 @@
 import { randomUUID } from 'crypto'
 import { after } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
-import { requireAnyRoleForApi } from '@/lib/supabase/auth'
+import { requireAdminMfaForApi } from '@/lib/supabase/admin-mfa'
 import { recordAdminAction } from '@/lib/admin/audit'
 import { createFlowRefund } from '@/lib/flow/refunds'
 import { sendTournamentCancelledEmail } from '@/lib/email/refund-notifications'
@@ -12,7 +12,7 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ): Promise<Response> {
-  const auth = await requireAnyRoleForApi(['admin', 'owner'])
+  const auth = await requireAdminMfaForApi()
   if (!auth.ok) return auth.response
 
   const { id: refundAttemptId } = await params

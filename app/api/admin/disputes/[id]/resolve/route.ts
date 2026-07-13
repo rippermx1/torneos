@@ -1,5 +1,5 @@
 import { createAdminClient } from '@/lib/supabase/server'
-import { requireAnyRoleForApi } from '@/lib/supabase/auth'
+import { requireAdminMfaForApi } from '@/lib/supabase/admin-mfa'
 import { recordAdminAction } from '@/lib/admin/audit'
 
 interface ResolveBody {
@@ -11,7 +11,7 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ): Promise<Response> {
-  const auth = await requireAnyRoleForApi(['admin', 'owner'])
+  const auth = await requireAdminMfaForApi()
   if (!auth.ok) return auth.response
 
   const userId = auth.access.userId

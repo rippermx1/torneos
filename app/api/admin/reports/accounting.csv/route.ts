@@ -1,9 +1,9 @@
 import { accountingReportToCsv, buildModeloAAccountingReport } from '@/lib/accounting/model-a-report'
-import { requireAnyRoleForApi } from '@/lib/supabase/auth'
+import { requireAdminMfaForApi } from '@/lib/supabase/admin-mfa'
 import { createAdminClient } from '@/lib/supabase/server'
 
 export async function GET(): Promise<Response> {
-  const auth = await requireAnyRoleForApi(['admin', 'owner'])
+  const auth = await requireAdminMfaForApi()
   if (!auth.ok) return auth.response
 
   const report = await buildModeloAAccountingReport(createAdminClient())

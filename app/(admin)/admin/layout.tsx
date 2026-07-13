@@ -1,8 +1,8 @@
-import { requireAnyRole } from '@/lib/supabase/auth'
+import { requireAdminMfa } from '@/lib/supabase/admin-mfa'
 import { AdminSidebar } from '@/components/admin/admin-sidebar'
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  await requireAnyRole(['admin', 'owner'])
+  await requireAdminMfa()
 
   return (
     <div className="min-h-screen md:flex">

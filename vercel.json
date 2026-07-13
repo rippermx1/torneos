@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/reconcile-refunds",
       "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron/watchdog",
+      "schedule": "0 13 * * *"
     }
   ]
 }

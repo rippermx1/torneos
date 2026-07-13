@@ -130,8 +130,17 @@ Decisión del dueño: no puede existir concepto de wallet (riesgo fiscalización
 - ✅ **Fix funcional**: recompensas canjeadas en torneos cancelados ahora se RESTITUYEN (`restoreRedeemedRewards` en la red de seguridad de cancelaciones, idempotente, `cancel_restore`).
 - Interno sin cambios (ledger/RPCs/APIs = contabilidad). Admin sigue viendo el detalle. AML page usa "retiros" (aceptable, sin "saldo"); opcional alinear después.
 
+### Blindaje operativo del lanzamiento (2026-07-06, rama `feat/launch-hardening`)
+Lote decidido por el agente como siguiente prioridad (riesgos silenciosos > features de crecimiento sin usuarios):
+- ✅ **Watchdog de crons**: tabla `cron_heartbeats` (migración `20260706000000`); los 3 crons registran latido (fail-open); endpoint `/api/cron/watchdog` (Vercel cron diario 13:00, infraestructura independiente de GitHub Actions) alerta por email si un job está vencido (process-tournaments >30min, resto >60min) o en error; workflows GH con paso `if: failure()` → `/api/cron/report-failure` (alerta inmediata). **Requiere env `ALERT_EMAIL` en Vercel** (sin ella, alertas solo en logs).
+- ✅ **Revisión anti-cheat de ganadores** (`lib/anticheat/winner-review.ts`, puro+tests): tras finalize, revisa pts/mov >210 (zona gris bajo el ban de 350), ritmo promedio <400ms en 30+ movs, ráfagas <120ms, y premios ≥$50.000 → email al operador con link a la partida en admin. NO bloquea el pago del premio; el control efectivo es la aprobación manual del cobro.
+- ✅ **T&C §4**: cláusula de bolsa garantizada escalonada (antes decía "los premios no aumentan por inscritos" — contradecía la mecánica insignia).
+- ✅ **`prize_liability` por tramo vigente** (migración `20260706010000`): el pasivo comprometido/contingente usa el tramo aplicable según inscritos (antes subestimaba); + filtro is_test en unclaimed.
+- ⚠️ **Migraciones `20260706000000` + `20260706010000` PENDIENTES de aplicar a prod** (el permisero exige autorización explícita del dueño para DDL decidido por el agente). Ambas son solo monitoreo (tabla nueva + vista); el código es fail-open si faltan.
+- Siguiente propuesto tras esto: panel "salud del negocio" en admin (D7/D30, jugadores/torneo, % torneos sobre tramo 2) — el tablero que gobierna las fases del roadmap.
+
 ### Fase 3
-- ⬜ Insignia semanal · ⬜ Automatización retiros/KYC · ⬜ Anti-cheat v2 · ⬜ Referidos.
+- ⬜ Insignia semanal · ⬜ Automatización retiros/KYC · ⬜ Anti-cheat v2 (hold & review bloqueante) · ⬜ Referidos.
 
 **Despliegue:** este trabajo es feature nueva → flujo normal (rama → review → merge → deploy Vercel + aplicar migración). NO aplicar migraciones de feature directo a prod (a diferencia del hotfix de reembolsos, que fue autorizado explícitamente).
 

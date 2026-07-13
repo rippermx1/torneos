@@ -54,6 +54,12 @@ export function getAllowedOrigins() {
   )
 }
 
+// Destinatario de alertas operativas (watchdog de crons, anomalías de
+// ganadores). Sin esta variable las alertas solo quedan en logs.
+export function getAlertEmail() {
+  return firstNonEmpty(process.env.ALERT_EMAIL)
+}
+
 export function getFlowApiKey() {
   return firstNonEmpty(process.env.FLOW_API_KEY)
 }

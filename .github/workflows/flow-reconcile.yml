@@ -32,3 +32,12 @@ jobs:
           curl --fail --show-error --silent \
             -H "Authorization: Bearer $CRON_SECRET" \
             "$PRODUCTION_APP_URL/api/cron/flow-reconcile"
+
+      - name: Alert on failure
+        if: failure()
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl --silent -X POST \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            "$PRODUCTION_APP_URL/api/cron/report-failure?job=flow-reconcile" || true

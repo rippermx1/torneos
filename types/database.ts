@@ -301,6 +301,13 @@ export interface PlayerRating {
   updated_at: string
 }
 
+export interface CronHeartbeat {
+  job_name: string
+  last_run_at: string
+  last_status: 'ok' | 'error'
+  detail: string | null
+}
+
 // Tipo Database completo requerido por @supabase/supabase-js v2
 export type Database = {
   public: {
@@ -411,6 +418,12 @@ export type Database = {
         Row: PlayerRating & DbRecord
         Insert: InsertWithOptional<PlayerRating, 'rating' | 'games_rated' | 'tier' | 'updated_at'>
         Update: Partial<Omit<PlayerRating, 'profile_id'>> & DbRecord
+        Relationships: []
+      }
+      cron_heartbeats: {
+        Row: CronHeartbeat & DbRecord
+        Insert: InsertWithOptional<CronHeartbeat, 'last_run_at' | 'last_status' | 'detail'>
+        Update: Partial<Omit<CronHeartbeat, 'job_name'>> & DbRecord
         Relationships: []
       }
     }

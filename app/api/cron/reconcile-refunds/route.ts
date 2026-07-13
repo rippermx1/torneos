@@ -4,6 +4,7 @@ import {
   reconcileCancelledTournamentRefunds,
 } from '@/lib/tournament/refunds'
 import { expireStaleCredits } from '@/lib/wallet/credit-expiry'
+import { recordHeartbeat } from '@/lib/ops/heartbeat'
 
 // Programado vía GitHub Actions (.github/workflows/reconcile-refunds.yml) cada
 // 10 min, con respaldo diario en Vercel (vercel.json) por si Actions se deshabilita.
@@ -40,6 +41,8 @@ export async function GET(req: Request): Promise<Response> {
       autoRetryRejectedRefunds(3),
     ])
 
+    await recordHeartbeat('reconcile-refunds', 'ok')
+
     return Response.json({
       ok: true,
       processedAt: new Date().toISOString(),
@@ -52,6 +55,7 @@ export async function GET(req: Request): Promise<Response> {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
     console.error('[cron/reconcile-refunds] Error fatal:', message)
+    await recordHeartbeat('reconcile-refunds', 'error', message)
     return Response.json({ ok: false, error: message }, { status: 500 })
   }
 }

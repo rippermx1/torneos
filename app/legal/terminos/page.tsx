@@ -67,9 +67,15 @@ export default function TerminosPage() {
         <p>
           En torneos pagados, la cuota de inscripción es el precio del derecho a participar e
           incluye IVA. La ficha del torneo informa antes del pago la cuota, cupos, mínimo de
-          participantes, reglas y <strong>premios fijos publicados</strong>. Los premios no aumentan
-          por la cantidad final de inscritos, salvo que la plataforma publique expresamente una
-          promoción separada antes de abrir inscripciones.
+          participantes, reglas y <strong>premios fijos publicados</strong>.
+        </p>
+        <p>
+          La ficha puede publicar una <strong>bolsa garantizada escalonada</strong>: tramos de
+          premio fijos y garantizados según la convocatoria confirmada, informados íntegramente{' '}
+          <strong>antes de la inscripción</strong>. Al cierre de inscripciones se aplica el tramo
+          alcanzado según el número de participantes inscritos, y la bolsa pagada nunca es inferior
+          al tramo base garantizado. Los montos de cada tramo son fijos: no dependen del azar ni de
+          un porcentaje variable de la recaudación.
         </p>
         <p>
           En cada inscripción, un <strong>70%</strong> se orienta al premio del torneo y un

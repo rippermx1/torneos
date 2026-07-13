@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/server'
 import { settleFlowPayment } from '@/lib/flow/settlement'
+import { recordHeartbeat } from '@/lib/ops/heartbeat'
 
 // ───────────────────────────────────────────────────────────────
 // Cron: reconcilia flow_payment_attempts en estado 'pending'.
@@ -83,6 +84,13 @@ export async function GET(req: Request): Promise<Response> {
   for (const e of expired ?? []) {
     results.push({ commerceOrder: e.commerce_order as string, action: 'expired' })
   }
+
+  const errorCount = results.filter((r) => r.action === 'error').length
+  await recordHeartbeat(
+    'flow-reconcile',
+    errorCount > 0 ? 'error' : 'ok',
+    errorCount > 0 ? `${errorCount} attempts con error` : undefined
+  )
 
   return Response.json({
     ok: true,

@@ -3,7 +3,9 @@ import type { Tournament, TournamentResult } from '@/types/database'
 import { issueFlowRefunds } from '@/lib/tournament/refunds'
 import { getAppUrl } from '@/lib/env'
 import { sendTournamentPrizeEmail } from '@/lib/email/tournament-notifications'
+import { sendOpsAlertEmail } from '@/lib/email/ops-notifications'
 import { updateRating } from '@/lib/tournament/rating'
+import { reviewWinnerStats, computeIntervalStats } from '@/lib/anticheat/winner-review'
 
 export interface TransitionResult {
   tournamentId: string
@@ -153,6 +155,7 @@ async function processSingleTournament(
 
       void notifyPrizeWinners(supabase, tournament.id, tournament.name)
       void updatePlayerRatings(supabase, tournament.id)
+      void reviewPrizeWinners(supabase, tournament.id, tournament.name)
 
       return { ...base, action: 'finalized', detail: data as Record<string, unknown> }
     }
@@ -260,6 +263,81 @@ async function notifyPrizeWinners(
     }
   } catch (e) {
     console.error(`[lifecycle] Error notificando ganadores del torneo ${tournamentId}:`, e)
+  }
+}
+
+// Umbral de premio que gatilla revisión informativa aunque no haya señales
+// anómalas ($50.000): con la escalera, las bolsas grandes merecen un vistazo.
+const BIG_PRIZE_REVIEW_CENTS = 5000000
+
+// Revisa a los ganadores premiados en busca de señales de automatización y
+// alerta al operador por email (no bloquea el pago del premio). Es la capa
+// "gris" del anti-cheat: el detector en vivo banea lo flagrante; esto expone
+// consistencias sobrehumanas para revisión manual en el admin.
+async function reviewPrizeWinners(
+  supabase: ReturnType<typeof createAdminClient>,
+  tournamentId: string,
+  tournamentName: string,
+): Promise<void> {
+  try {
+    const { data: results } = await supabase
+      .from('tournament_results')
+      .select('user_id, rank, prize_awarded_cents, final_score')
+      .eq('tournament_id', tournamentId)
+      .gt('prize_awarded_cents', 0)
+      .order('rank', { ascending: true })
+
+    const winners = (results ?? []) as TournamentResult[]
+    if (winners.length === 0) return
+
+    const appUrl = getAppUrl() ?? 'https://www.torneosplay.cl'
+    const alertLines: string[] = []
+
+    for (const winner of winners) {
+      const { data: game } = await supabase
+        .from('games')
+        .select('id, move_count, final_score')
+        .eq('tournament_id', tournamentId)
+        .eq('user_id', winner.user_id)
+        .single()
+      if (!game) continue
+
+      const { data: moves } = await supabase
+        .from('game_moves')
+        .select('server_timestamp')
+        .eq('game_id', game.id)
+        .order('move_number', { ascending: true })
+
+      const timestamps = (moves ?? []).map((m) => Date.parse(m.server_timestamp as string))
+      const intervals = computeIntervalStats(timestamps)
+      const flags = reviewWinnerStats({
+        moveCount: Number(game.move_count),
+        finalScore: Number(game.final_score),
+        ...intervals,
+      })
+
+      const bigPrize = winner.prize_awarded_cents >= BIG_PRIZE_REVIEW_CENTS
+      if (flags.length === 0 && !bigPrize) continue
+
+      alertLines.push(
+        `Rank ${winner.rank} · premio $${Math.round(winner.prize_awarded_cents / 100).toLocaleString('es-CL')} · score ${Number(game.final_score).toLocaleString('es-CL')} en ${game.move_count} movs.`
+      )
+      for (const flag of flags) alertLines.push(`  → ${flag.code}: ${flag.detail}`)
+      alertLines.push(`  Partida: ${appUrl}/admin/tournaments/${tournamentId}/games/${game.id}`)
+    }
+
+    if (alertLines.length > 0) {
+      await sendOpsAlertEmail({
+        subject: `Revisar ganadores de "${tournamentName}"`,
+        lines: [
+          `El torneo "${tournamentName}" finalizó con ganadores que ameritan revisión:`,
+          ...alertLines,
+          'Los premios ya fueron acreditados; el control efectivo es la aprobación manual del pago (cobro de premios).',
+        ],
+      })
+    }
+  } catch (e) {
+    console.error(`[lifecycle] Error revisando ganadores del torneo ${tournamentId}:`, e)
   }
 }
 

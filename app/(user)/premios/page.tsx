@@ -4,6 +4,7 @@ import type { WalletTransaction } from '@/types/database'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { MIN_WITHDRAWAL_CENTS } from '@/lib/wallet/limits'
+import { maskBankAccount } from '@/lib/payouts/receipt'
 
 // Página de premios y recompensas. Deliberadamente NO existe un "saldo":
 // la plataforma no mantiene cuentas de dinero de usuarios. Lo que se muestra es
@@ -37,7 +38,13 @@ export default async function PremiosPage() {
   if (!user) redirect('/sign-in')
 
   const adminSupabase = createAdminClient()
-  const [{ data }, { data: withdrawableData }, { data: creditData }, { data: pendingPayout }] = await Promise.all([
+  const [
+    { data },
+    { data: withdrawableData },
+    { data: creditData },
+    { data: pendingPayout },
+    { data: paidPayouts },
+  ] = await Promise.all([
     adminSupabase
       .from('wallet_transactions')
       .select('*')
@@ -48,10 +55,17 @@ export default async function PremiosPage() {
     adminSupabase.rpc('wallet_credit_balance', { p_user_id: user.id }),
     adminSupabase
       .from('withdrawal_requests')
-      .select('id, amount_cents, created_at')
+      .select('id, amount_cents, status, created_at')
       .eq('user_id', user.id)
-      .eq('status', 'pending')
+      .in('status', ['pending', 'approved'])
       .maybeSingle(),
+    adminSupabase
+      .from('withdrawal_requests')
+      .select('id, amount_cents, bank_name, bank_account, paid_at, receipt_number')
+      .eq('user_id', user.id)
+      .eq('status', 'paid')
+      .order('paid_at', { ascending: false })
+      .limit(10),
   ])
 
   const transactions = (data ?? []) as WalletTransaction[]
@@ -78,7 +92,8 @@ export default async function PremiosPage() {
             <div className="text-right">
               <p className="text-sm font-medium">Pago en proceso</p>
               <p className="text-xs text-muted-foreground">
-                {formatCLP(pendingPayout.amount_cents)} · 1–3 días hábiles
+                {formatCLP(pendingPayout.amount_cents)} ·{' '}
+                {pendingPayout.status === 'approved' ? 'transferencia autorizada' : 'en revisión'}
               </p>
             </div>
           ) : pendingPrizes >= MIN_WITHDRAWAL_CENTS ? (
@@ -109,6 +124,36 @@ export default async function PremiosPage() {
           </p>
         </div>
       )}
+
+      {(paidPayouts?.length ?? 0) > 0 ? (
+        <section className="space-y-2">
+          <h2 className="font-semibold">Comprobantes de pago</h2>
+          <div className="border rounded-xl divide-y">
+            {paidPayouts?.map((payout) => (
+              <div key={payout.id} className="px-4 py-3 flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm font-medium">{payout.receipt_number ?? 'Pago de premio'}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {payout.bank_name} · {maskBankAccount(payout.bank_account)} ·{' '}
+                    {payout.paid_at ? formatDateTimeCL(payout.paid_at) : 'Fecha pendiente'}
+                  </p>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="text-sm font-semibold">{formatCLP(payout.amount_cents)}</p>
+                  <a
+                    href={`/api/payouts/${payout.id}/receipt`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs underline"
+                  >
+                    Ver comprobante
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <div className="space-y-2">
         <h2 className="font-semibold">Historial</h2>

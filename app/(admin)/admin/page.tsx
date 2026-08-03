@@ -445,7 +445,7 @@ export default async function AdminIndexPage() {
           {[
             { href: '/admin/tournaments/new', label: 'Crear un torneo', detail: 'Define fechas, cupos, precio y premios.', icon: Trophy },
             { href: '/admin/users', label: 'Revisar identidades', detail: 'Aprueba o rechaza documentos KYC.', icon: UserRound },
-            { href: '/admin/payouts', label: 'Aprobar retiros', detail: 'Valida saldo e información bancaria.', icon: WalletCards },
+            { href: '/admin/payouts', label: 'Procesar premios', detail: 'Autoriza y respalda cada transferencia bancaria.', icon: WalletCards },
             { href: '/admin/reports', label: 'Abrir finanzas', detail: 'Consulta conciliación y exporta reportes.', icon: CircleDollarSign },
           ].map((action) => {
             const Icon = action.icon

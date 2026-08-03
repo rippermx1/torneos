@@ -23,10 +23,11 @@ export default async function AdminReportsPage({
           <h1 className="text-2xl font-bold">Finanzas y conciliación</h1>
           <p className="text-sm text-muted-foreground mt-0.5 max-w-3xl">
             Comprueba saldos, cobros, premios, retiros y el resultado de la plataforma por período.
-            El cálculo tributario reconoce el IVA sobre el margen real: inscripciones cobradas menos premios pagados.
+            Distingue premios adjudicados, pagos autorizados y transferencias bancarias efectivas.
+            El criterio tributario mostrado es interno y debe conciliarse con el contador.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <a
             href="/api/admin/reports/accounting.csv"
             className="text-sm border rounded-lg px-3 py-2 hover:bg-muted transition-colors"
@@ -38,6 +39,12 @@ export default async function AdminReportsPage({
             className="text-sm border rounded-lg px-3 py-2 hover:bg-muted transition-colors"
           >
             Descargar fee de plataforma
+          </a>
+          <a
+            href="/api/admin/reports/payouts.csv"
+            className="text-sm border rounded-lg px-3 py-2 hover:bg-muted transition-colors"
+          >
+            Descargar ledger de pagos
           </a>
         </div>
       </div>
@@ -97,7 +104,7 @@ export default async function AdminReportsPage({
             <div className="space-y-4">
               <section className="space-y-2">
                 <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                  Contabilidad efectiva · IVA = 19/119 × (cobros − premios)
+                  Resultado devengado · cobros menos premios adjudicados
                 </h2>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <Card
@@ -106,9 +113,9 @@ export default async function AdminReportsPage({
                     sub={`${selected.registrationsCount} inscripciones`}
                   />
                   <Card
-                    label="Premios pagados"
+                    label="Premios adjudicados"
                     value={formatCLP(selected.prizeCreditsCents)}
-                    sub="a quienes ganan"
+                    sub="gasto devengado y pasivo creado"
                   />
                   <Card
                     label="IVA débito efectivo"
@@ -160,10 +167,11 @@ export default async function AdminReportsPage({
                 <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                   Wallet y retiros
                 </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   <MetricBlock label="Saldo wallet cierre" value={formatCLP(selected.closingWalletLiabilityCents)} />
                   <MetricBlock label="Retiros pendientes cierre" value={formatCLP(selected.closingPendingWithdrawalsCents)} />
-                  <MetricBlock label="Retiros aprobados" value={formatCLP(selected.withdrawalApprovedCents)} />
+                  <MetricBlock label="Pagos autorizados" value={formatCLP(selected.withdrawalApprovedCents)} />
+                  <MetricBlock label="Transferencias pagadas" value={formatCLP(selected.withdrawalPaidCents)} />
                 </div>
               </section>
             </div>
@@ -179,7 +187,8 @@ export default async function AdminReportsPage({
                   <tr>
                     <Th>Periodo</Th>
                     <Th align="right">Cobros</Th>
-                    <Th align="right">Premios</Th>
+                    <Th align="right">Premios devengados</Th>
+                    <Th align="right">Transferido</Th>
                     <Th align="right">Margen afecto</Th>
                     <Th align="right">IVA efectivo</Th>
                     <Th align="right">Wallet cierre</Th>
@@ -192,6 +201,7 @@ export default async function AdminReportsPage({
                       <Td>{row.period}</Td>
                       <Td align="right">{formatCLP(row.effectiveEntriesCollectedCents)}</Td>
                       <Td align="right">{formatCLP(row.prizeCreditsCents)}</Td>
+                      <Td align="right">{formatCLP(row.withdrawalPaidCents)}</Td>
                       <Td align="right">{formatCLP(row.effectiveTaxableMarginCents)}</Td>
                       <Td align="right">{formatCLP(row.effectiveIvaDebitCents)}</Td>
                       <Td align="right">{formatCLP(row.closingWalletLiabilityCents)}</Td>
@@ -245,6 +255,11 @@ function ReconciliationBanner({ reconciliation }: { reconciliation: Reconciliati
       label: 'Usuarios con drift en wallet ledger',
       count: reconciliation.walletLedgerDrift.count,
       samples: reconciliation.walletLedgerDrift.sampleUserIds,
+    },
+    {
+      label: 'Pagos marcados como pagados sin traza completa',
+      count: reconciliation.paidPayoutMissingTrace.count,
+      samples: reconciliation.paidPayoutMissingTrace.sampleIds,
     },
   ].filter((flag) => flag.count > 0)
 

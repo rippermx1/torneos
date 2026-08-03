@@ -29,7 +29,7 @@ export async function POST(
     return Response.json({ error: 'Solicitud no encontrada' }, { status: 404 })
   }
 
-  if (request.status !== 'pending') {
+  if (!['pending', 'approved'].includes(request.status)) {
     return Response.json({ error: 'La solicitud ya fue procesada' }, { status: 409 })
   }
 

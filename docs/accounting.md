@@ -42,6 +42,7 @@ Muestra:
 - premios acreditados,
 - saldo wallet de cierre,
 - retiros pendientes,
+- transferencias de premios efectivamente pagadas,
 - resultado operativo devengado estimado.
 
 ### CSV contable principal
@@ -63,6 +64,8 @@ Columnas clave:
 - `premios_acreditados_clp`: premios fijos registrados en wallet.
 - `saldo_wallet_cierre_clp`: obligación con usuarios al cierre del mes.
 - `retiros_pendientes_cierre_clp`: solicitudes pendientes al cierre del mes.
+- `retiros_pagados_clp`: transferencias bancarias registradas en el período; no
+  vuelve a descontarse como gasto porque el premio se devengó al adjudicarse.
 - `resultado_operativo_devengado_est_clp`: referencia de gestión, no sustituto
   de la declaración tributaria.
 
@@ -80,6 +83,18 @@ Ruta:
 Este CSV conserva el desglose interno de `entry_pool`. Es útil para medir
 rentabilidad por comisiones de plataforma, pero no reemplaza el CSV contable
 Modelo A.
+
+### Ledger de pagos de premios
+
+Ruta:
+
+```text
+/api/admin/reports/payouts.csv
+```
+
+Incluye solicitud, autorización, transferencia, folio, referencia bancaria,
+vínculo al movimiento de ledger y existencia de evidencia. Su acceso exige rol
+administrativo y MFA. Debe cuadrarse mensualmente con la cartola bancaria.
 
 ## Checklist mensual F29
 

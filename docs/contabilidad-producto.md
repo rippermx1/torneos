@@ -2,27 +2,25 @@
 
 > Qué contabilidad lleva TorneosPlay, cómo la determina el código, y qué revisar
 > en cada cierre mensual. Verificada contra `lib/accounting/model-a-report.ts`
-> el 2026-07-06 (post escalera de premios + brackets + rakeback).
+> el 2026-08-03 (incluye trazabilidad bancaria de pagos de premios).
 > Complementa `docs/roadmap-retencion-rentabilidad.md` (estrategia) y
 > `docs/sii-setup-modelo-a.md` (configuración SII).
 
-## 1. El criterio único (contabilidad efectiva, base cash)
+## 1. Dos vistas que no deben mezclarse
 
-Todo el modelo se reduce a una fórmula sobre **flujos reales de dinero**:
+El sistema separa devengo y caja. La transferencia no vuelve a crear un gasto:
 
 ```
-margen afecto      = cobros cash por inscripción − premios pagados − reembolsos
-IVA débito         = 19/119 × margen afecto
-resultado neto     = margen afecto − IVA débito
-resultado operativo= resultado neto − comisión Flow neta (la plataforma la absorbe)
-IVA a pagar        = IVA débito − IVA crédito de la factura Flow
+resultado devengado = cobros − premios adjudicados − reembolsos − costos
+caja operativa      = cobros bancarios − transferencias − reversas − costos pagados
 ```
 
-- No depende del split contable 70/30 por inscripción (queda como referencia).
-- El margen puede ser **negativo** en un mes (premios de torneos cobrados el mes
-  anterior, freerolls): el IVA débito negativo es remanente a favor y se arrastra.
-- Régimen vigente: **Modelo A** (`lib/tax/regime.ts`) — el comprobante Flow opera
-  como boleta del cobro; no se emite DTE propio.
+- `prize_credit` reconoce el premio adjudicado y el pasivo con el ganador.
+- `withdrawal_requests.status = approved` sólo autoriza el pago.
+- `withdrawal_requests.status = paid` registra la salida bancaria, referencia,
+  evidencia y folio. Esa transferencia liquida el pasivo.
+- El IVA y la forma de documentar la venta siguen siendo criterios que debe
+  confirmar el contador; el reporte interno no reemplaza F29/F22.
 
 ## 1.b Principio "sin wallet" (alineación CMF, verificado 2026-07-06)
 
@@ -42,9 +40,9 @@ una cuenta ofrecida al usuario (la UI y los T&C no exponen concepto de saldo).
 |---|---|---|
 | Inscripción pagada por Flow (cash) | + cobros efectivos | `efectivo_cobros_inscripcion` |
 | Inscripción pagada con **crédito rakeback** | **NADA** (excluida de cobros: no entró cash; el costo del programa es este ingreso no percibido) | `credito_redimido` (informativa) |
-| Premio pagado (escalera: **tramo alcanzado**) | − premios pagados | `efectivo_premios_pagados` |
+| Premio adjudicado (escalera: **tramo alcanzado**) | − gasto y + pasivo | `premios_acreditados`, `premios_devengados` |
 | Premios no adjudicados (<3 finalistas) | quedan en el margen automáticamente (no se pagan) | `unclaimed` en snapshot |
-| Premio de freeroll | − premios sin cobro asociado → margen negativo = **costo de marketing** (reduce IVA) | `efectivo_premios_pagados` |
+| Premio de freeroll | − gasto promocional, sujeto a validación contable | `premios_devengados` |
 | Torneo cancelado → **reversa Flow completada** | − reembolsos (en el período en que se completó) | `reversas_flow` |
 | Refund de wallet ligado a torneo (legado) | − reembolsos | `efectivo_reembolsos` |
 | Refund por retiro fallido | **NADA en P&L** (ajuste de pasivo, no reversa de venta) | `reembolsos_wallet` (informativa) |
@@ -52,20 +50,21 @@ una cuenta ofrecida al usuario (la UI y los T&C no exponen concepto de saldo).
 | **Rakeback otorgado** (7% al liquidar) | **NADA en P&L** (sería doble conteo; es pasivo) | `rakeback_otorgado` (informativa) |
 | **Crédito expirado** (30 días FIFO) | NADA (breakage: el cash ya se contó al cobrar; solo baja el pasivo) | ledger |
 | **Recompensa restituida** (canje en torneo luego cancelado) | NADA en P&L (repone el pasivo promocional; la inscripción canjeada sigue fuera de cobros) | `rakeback_otorgado` (informativa) |
-| Retiro de premios aprobado | NADA en P&L (liquidación de pasivo) | `retiros_*` |
+| Pago autorizado | NADA en P&L; todavía no salió del banco | `retiros_aprobados` |
+| Transferencia confirmada | NADA adicional en P&L; liquida pasivo y reduce caja | `retiros_pagados` + ledger de pagos |
 | Comisión Flow (absorbida) | − resultado operativo; su IVA es **crédito fiscal** | `flow_comision_neta_estimada`, `flow_iva_credito_estimado` |
 | Brackets / divisiones | sin efecto contable | — |
-| Torneos `is_test` | **excluidos del P&L** (sí cuentan en el pasivo de wallet, que refleja el ledger real) | — |
+| Torneos `is_test` | **excluidos del P&L y del monto cobrable**; sus movimientos permanecen en el ledger sólo para pruebas | — |
 
 ## 3. Ejemplo de un mes (números redondos)
 
 Supuestos: 30 inscripciones cash × $3.000 (incluye 3 de un torneo que luego se
 canceló y reembolsó vía Flow el mismo mes); 2 inscripciones adicionales pagadas
-con crédito; premios pagados $31.500 (bolsa del tramo 15); rakeback otorgado 7%.
+con crédito; premios adjudicados $31.500 (bolsa del tramo 15); rakeback otorgado 7%.
 
 ```
 cobros cash            = 30 × 3.000            =  $90.000   (las 2 con crédito NO suman)
-premios pagados        =                          $31.500
+premios adjudicados    =                          $31.500
 reversas Flow          = 3 × 3.000             =   $9.000
 margen afecto          = 90.000 − 31.500 − 9.000 = $49.500
 IVA débito             = 19/119 × 49.500       ≈   $7.903
@@ -79,23 +78,33 @@ rakeback otorgado      = 7% × 90.000           =   $6.300   (pasivo, no gasto)
 ## 4. Cierre mensual — checklist
 
 1. Abrir `/admin/reports` (o descargar `/api/admin/reports/accounting.csv`).
-2. Verificar que la **conciliación** esté OK (4 invariantes automáticos):
+2. Verificar que la **conciliación** esté OK (5 invariantes automáticos):
    montos internos Flow · fee = neto + IVA por inscripción · todo pago `paid`
-   tiene inscripción · cadena de saldos del wallet sin drift.
-3. **F29**: usar `efectivo_iva_debito` como débito e IVA crédito de la **factura
-   real de Flow** (la columna es estimación) → `efectivo_iva_a_pagar`.
+   tiene inscripción · cadena de saldos sin drift · todo premio transferido tiene
+   referencia bancaria, folio, vínculo al ledger y evidencia.
+3. Entregar el CSV al contador y conciliar F29 con documentos reales. No declarar
+   automáticamente desde la estimación interna sin el criterio profesional.
 4. Revisar **pasivos**: `saldo_wallet_cierre` (incluye créditos rakeback),
    `retiros_pendientes_cierre`, y crédito rakeback vivo (otorgado − redimido −
    expirado). El crédito vence a 30 días, así que está acotado.
-5. Guardar el CSV como respaldo del período.
+5. Descargar también `/api/admin/reports/payouts.csv` y cuadrar `retiros_pagados`
+   con las cartolas de la cuenta bancaria de la SpA.
+
+## 4.b Expediente de cada pago
+
+- El comprobante bancario se guarda en el bucket privado `payout-proofs`, separado
+  de `kyc-documents`.
+- El ganador y el administrador pueden abrir el comprobante interno por folio;
+  sólo administradores con MFA acceden a la evidencia bancaria original.
+- El comprobante interno acredita el registro de pago, pero no es DTE ni reemplaza
+  el documento emitido por el banco.
 
 ## 5. Pasivos que el sistema mantiene
 
 - **Wallet** (premios por retirar + créditos): `saldo_wallet_cierre`. Los créditos
   NO son retirables (`wallet_withdrawable_balance` los excluye).
-- **Premios comprometidos** (`prize_liability`): vista de solvencia. ⚠️ Pendiente
-  conocido: usa el tramo BASE de la escalera → **subestima** el comprometido en
-  torneos que cruzaron tramos (afecta monitoreo, no pagos).
+- **Premios comprometidos** (`prize_liability`): vista de solvencia calculada con
+  el tramo vigente de la escalera y excluyendo torneos de prueba.
 - **Créditos rakeback**: expiración FIFO 30 días vía cron (`expireStaleCredits`).
 - Solvencia de la escalera: cada tramo se paga solo si inscritos ≥ su umbral y
   fondo ≤ 70% × entry × umbral → siempre cubierto por la recaudación. Nota: una
@@ -113,6 +122,8 @@ rakeback otorgado      = 7% × 90.000           =   $6.300   (pasivo, no gasto)
 3. **Confirmar el criterio cash-accurate del rakeback** (grant = pasivo sin
    asiento de gasto; costo = ingreso no percibido al redimir).
 4. Tributación de premios para ganadores (mención F22 ya existente en las notas).
+5. Confirmar conservación mínima de comprobantes bancarios y si corresponde una
+   declaración jurada o certificado anual de premios.
 
 ## 7. Historial de decisiones
 
@@ -125,3 +136,5 @@ rakeback otorgado      = 7% × 90.000           =   $6.300   (pasivo, no gasto)
 - 2026-07-06: reembolsos efectivos = refunds de torneo + **reversas Flow
   completadas** (antes las reversas no se descontaban → margen sobreestimado);
   refunds por retiro fallido fuera del margen; torneos `is_test` fuera del P&L.
+- 2026-08-03: autorización y transferencia pasan a ser estados separados; cada
+  pago nuevo exige evidencia bancaria y genera folio de comprobante interno.

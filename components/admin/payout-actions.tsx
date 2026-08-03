@@ -42,7 +42,7 @@ export function PayoutActions({ requestId }: Props) {
       <textarea
         value={notes}
         onChange={(e) => setNotes(e.target.value)}
-        placeholder="Notas (obligatorio al rechazar, opcional al aprobar)"
+        placeholder="Notas (obligatorio al rechazar, opcional al autorizar)"
         rows={2}
         className="w-full border rounded-lg px-3 py-2 text-xs resize-none focus:outline-none focus:ring-2 focus:ring-foreground/20"
       />
@@ -53,7 +53,7 @@ export function PayoutActions({ requestId }: Props) {
           disabled={!!loading}
           className="flex-1 bg-green-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-green-700 transition-colors disabled:opacity-50"
         >
-          {loading === 'approve' ? 'Aprobando...' : '✓ Aprobar'}
+          {loading === 'approve' ? 'Autorizando...' : '✓ Autorizar pago'}
         </button>
         <button
           onClick={() => handle('reject')}

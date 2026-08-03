@@ -1,6 +1,6 @@
 export type KycStatus = 'pending' | 'approved' | 'rejected'
 export type KycDocumentType = 'cedula_chilena' | 'passport' | 'other'
-export type WithdrawalStatus = 'pending' | 'approved' | 'rejected'
+export type WithdrawalStatus = 'pending' | 'approved' | 'paid' | 'rejected'
 export type DisputeType = 'payment' | 'tournament_result' | 'technical' | 'other'
 export type DisputeStatus = 'open' | 'resolved' | 'rejected'
 export type AppRole = 'user' | 'admin' | 'owner'
@@ -163,6 +163,13 @@ export interface WithdrawalRequest {
   admin_notes: string | null
   reviewed_by: string | null
   reviewed_at: string | null
+  wallet_transaction_id: string | null
+  paid_by: string | null
+  paid_at: string | null
+  bank_transfer_reference: string | null
+  proof_storage_path: string | null
+  receipt_number: string | null
+  payment_notes: string | null
   created_at: string
 }
 
@@ -363,7 +370,7 @@ export type Database = {
       }
       withdrawal_requests: {
         Row: WithdrawalRequest & DbRecord
-        Insert: InsertWithOptional<WithdrawalRequest, 'id' | 'created_at' | 'status' | 'admin_notes' | 'reviewed_by' | 'reviewed_at'>
+        Insert: InsertWithOptional<WithdrawalRequest, 'id' | 'created_at' | 'status' | 'admin_notes' | 'reviewed_by' | 'reviewed_at' | 'wallet_transaction_id' | 'paid_by' | 'paid_at' | 'bank_transfer_reference' | 'proof_storage_path' | 'receipt_number' | 'payment_notes'>
         Update: Partial<Omit<WithdrawalRequest, 'id' | 'created_at'>> & DbRecord
         Relationships: []
       }
@@ -546,6 +553,16 @@ export type Database = {
           p_notes?: string | null
         } & DbRecord
         Returns: undefined
+      }
+      complete_withdrawal: {
+        Args: {
+          p_request_id: string
+          p_admin_id: string
+          p_bank_transfer_reference: string
+          p_proof_storage_path: string
+          p_notes?: string | null
+        } & DbRecord
+        Returns: string
       }
       record_admin_action: {
         Args: {

@@ -19,9 +19,9 @@ export default async function CobrarPremiosPage() {
     admin.rpc('wallet_withdrawable_balance', { p_user_id: user.id }),
     admin
       .from('withdrawal_requests')
-      .select('id, amount_cents')
+      .select('id, amount_cents, status')
       .eq('user_id', user.id)
-      .eq('status', 'pending')
+      .in('status', ['pending', 'approved'])
       .maybeSingle(),
   ])
 
@@ -34,8 +34,10 @@ export default async function CobrarPremiosPage() {
         <div className="border rounded-xl p-6 text-center space-y-3">
           <h2 className="text-lg font-semibold">Ya tienes un pago en proceso</h2>
           <p className="text-sm text-muted-foreground">
-            Estamos procesando el pago de {formatCLP(pendingPayout.amount_cents)}. Se acredita en tu
-            cuenta bancaria en 1–3 días hábiles.
+            Estamos procesando el pago de {formatCLP(pendingPayout.amount_cents)}.{' '}
+            {pendingPayout.status === 'approved'
+              ? 'La transferencia ya fue autorizada y está pendiente de confirmación bancaria.'
+              : 'Se acreditará en tu cuenta bancaria después de la revisión.'}
           </p>
         </div>
         <Link

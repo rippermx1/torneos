@@ -61,8 +61,8 @@ const NAV_GROUPS: NavGroup[] = [
       },
       {
         href: '/admin/payouts',
-        label: 'Retiros de premios',
-        description: 'Aprueba pagos a jugadores',
+        label: 'Pagos de premios',
+        description: 'Autoriza, respalda y concilia transferencias',
         icon: Landmark,
       },
       {

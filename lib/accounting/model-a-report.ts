@@ -77,15 +77,17 @@ export interface AccountingPeriodRow {
   withdrawalTransactionsCents: number
   withdrawalRequestedCents: number
   withdrawalApprovedCents: number
+  withdrawalPaidCents: number
   withdrawalRejectedCents: number
   closingWalletLiabilityCents: number
   closingPendingWithdrawalsCents: number
   // Contabilidad efectiva de la plataforma (criterio acordado):
-  // el IVA se reconoce sobre lo que la plataforma EFECTIVAMENTE retiene,
-  // es decir cobros por inscripción menos pagos a quienes ganan (y menos
-  // reembolsos por torneos cancelados). No depende del split contable
-  // 70/30 por inscripción: usa los flujos reales.
-  //   margen afecto (IVA incl.) = cobros_inscripcion − premios_pagados − reembolsos
+  // el IVA se reconoce sobre el margen devengado del producto según el criterio
+  // interno vigente: cobros por inscripción menos premios adjudicados (y menos
+  // reembolsos por torneos cancelados). La transferencia bancaria se reporta
+  // aparte porque liquida el pasivo, no vuelve a crear el gasto.
+  // No depende del split gerencial 70/30 por inscripción.
+  //   margen interno (IVA incl.) = cobros_inscripcion − premios_adjudicados − reembolsos
   //   IVA débito efectivo       = margen × 19/119
   //   resultado neto efectivo   = margen − IVA
   effectiveEntriesCollectedCents: number
@@ -123,6 +125,7 @@ export interface ReconciliationCheck {
   registrationFeeMismatch: { count: number; sampleIds: string[] }
   paidAttemptWithoutRegistration: { count: number; sampleIds: string[] }
   walletLedgerDrift: { count: number; sampleUserIds: string[] }
+  paidPayoutMissingTrace: { count: number; sampleIds: string[] }
   ok: boolean
 }
 
@@ -135,7 +138,7 @@ export interface AccountingReport {
   reconciliation: ReconciliationCheck
 }
 
-function emptyPeriod(period: string): AccountingPeriodRow {
+export function createEmptyAccountingPeriod(period: string): AccountingPeriodRow {
   return {
     period,
     flowPaidCount: 0,
@@ -168,6 +171,7 @@ function emptyPeriod(period: string): AccountingPeriodRow {
     withdrawalTransactionsCents: 0,
     withdrawalRequestedCents: 0,
     withdrawalApprovedCents: 0,
+    withdrawalPaidCents: 0,
     withdrawalRejectedCents: 0,
     closingWalletLiabilityCents: 0,
     closingPendingWithdrawalsCents: 0,
@@ -274,7 +278,7 @@ function getOrCreatePeriod(map: Map<string, AccountingPeriodRow>, period: string
   const existing = map.get(period)
   if (existing) return existing
 
-  const created = emptyPeriod(period)
+  const created = createEmptyAccountingPeriod(period)
   map.set(period, created)
   return created
 }
@@ -385,13 +389,26 @@ function addWalletTransaction(
   }
 }
 
-function addWithdrawal(row: AccountingPeriodRow, withdrawal: WithdrawalRequest) {
-  row.withdrawalRequestedCents += withdrawal.amount_cents
+function addWithdrawal(
+  periods: Map<string, AccountingPeriodRow>,
+  withdrawal: WithdrawalRequest
+) {
+  getOrCreatePeriod(periods, periodKey(withdrawal.created_at)).withdrawalRequestedCents +=
+    withdrawal.amount_cents
 
-  if (withdrawal.status === 'approved') {
-    row.withdrawalApprovedCents += withdrawal.amount_cents
-  } else if (withdrawal.status === 'rejected') {
-    row.withdrawalRejectedCents += withdrawal.amount_cents
+  if (withdrawal.reviewed_at && ['approved', 'paid'].includes(withdrawal.status)) {
+    getOrCreatePeriod(periods, periodKey(withdrawal.reviewed_at)).withdrawalApprovedCents +=
+      withdrawal.amount_cents
+  }
+
+  if (withdrawal.status === 'paid' && withdrawal.paid_at) {
+    getOrCreatePeriod(periods, periodKey(withdrawal.paid_at)).withdrawalPaidCents +=
+      withdrawal.amount_cents
+  }
+
+  if (withdrawal.status === 'rejected') {
+    getOrCreatePeriod(periods, periodKey(withdrawal.reviewed_at ?? withdrawal.created_at)).withdrawalRejectedCents +=
+      withdrawal.amount_cents
   }
 }
 
@@ -440,16 +457,17 @@ function finalizePeriod(
     .filter((withdrawal) => {
       const createdMs = new Date(withdrawal.created_at).getTime()
       if (createdMs >= endMs) return false
-      if (withdrawal.status === 'pending') return true
-      if (!withdrawal.reviewed_at) return false
-      return new Date(withdrawal.reviewed_at).getTime() >= endMs
+      if (withdrawal.status === 'pending' || withdrawal.status === 'approved') return true
+      const terminalAt = withdrawal.status === 'paid' ? withdrawal.paid_at : withdrawal.reviewed_at
+      if (!terminalAt) return true
+      return new Date(terminalAt).getTime() >= endMs
     })
     .reduce((total, withdrawal) => total + withdrawal.amount_cents, 0)
 
   // ── Contabilidad efectiva (criterio de la plataforma) ──────────────
-  // Lado ventas: el IVA débito se reconoce sobre el margen que la plataforma
-  // retiene = cobros por inscripción − premios pagados − reembolsos. Equivale a
-  // "IVA(cobros) − IVA(premios)" porque comparten tasa: 19/119 × margen.
+  // Criterio GERENCIAL vigente: estima sobre cobros menos premios adjudicados y
+  // reembolsos. La forma de declarar IVA debe validarla el contador; no se deriva
+  // automáticamente de este reporte.
   const effectiveTax = calculateEffectivePeriodTax({
     entriesCollectedCents: row.effectiveEntriesCollectedCents,
     prizesPaidCents: row.prizeCreditsCents,
@@ -494,12 +512,14 @@ const SAMPLE_LIMIT = 10
 function runReconciliation(
   flowAttempts: FlowPaymentAttempt[],
   registrations: Registration[],
-  walletTransactions: WalletTransaction[]
+  walletTransactions: WalletTransaction[],
+  withdrawals: WithdrawalRequest[]
 ): ReconciliationCheck {
   const flowAttemptInternalMismatch = { count: 0, sampleIds: [] as string[] }
   const registrationFeeMismatch = { count: 0, sampleIds: [] as string[] }
   const paidAttemptWithoutRegistration = { count: 0, sampleIds: [] as string[] }
   const walletLedgerDrift = { count: 0, sampleUserIds: [] as string[] }
+  const paidPayoutMissingTrace = { count: 0, sampleIds: [] as string[] }
 
   for (const attempt of flowAttempts) {
     if (attempt.charged_amount_cents !== attempt.net_amount_cents + attempt.user_fee_cents) {
@@ -569,6 +589,22 @@ function runReconciliation(
     }
   }
 
+  for (const payout of withdrawals) {
+    if (payout.status !== 'paid') continue
+    if (
+      payout.paid_at &&
+      payout.bank_transfer_reference &&
+      payout.receipt_number &&
+      payout.proof_storage_path &&
+      payout.wallet_transaction_id
+    ) continue
+
+    paidPayoutMissingTrace.count += 1
+    if (paidPayoutMissingTrace.sampleIds.length < SAMPLE_LIMIT) {
+      paidPayoutMissingTrace.sampleIds.push(payout.id)
+    }
+  }
+
   return {
     flowAttemptInternalMismatch,
     registrationFeeMismatch,
@@ -578,7 +614,9 @@ function runReconciliation(
       flowAttemptInternalMismatch.count === 0 &&
       registrationFeeMismatch.count === 0 &&
       paidAttemptWithoutRegistration.count === 0 &&
-      walletLedgerDrift.count === 0,
+      walletLedgerDrift.count === 0 &&
+      paidPayoutMissingTrace.count === 0,
+    paidPayoutMissingTrace,
   }
 }
 
@@ -612,7 +650,7 @@ export async function buildModeloAAccountingReport(
     fetchAll<WithdrawalRequest>(
       supabase,
       'withdrawal_requests',
-      'id, user_id, amount_cents, status, bank_name, bank_account, account_rut, account_holder, admin_notes, reviewed_by, reviewed_at, created_at'
+      'id, user_id, amount_cents, status, bank_name, bank_account, account_rut, account_holder, admin_notes, reviewed_by, reviewed_at, wallet_transaction_id, paid_by, paid_at, bank_transfer_reference, proof_storage_path, receipt_number, payment_notes, created_at'
     ),
     supabase.from('prize_liability').select('*').maybeSingle(),
     fetchAll<{ id: string }>(supabase, 'tournaments', 'id, is_test').then((rows) =>
@@ -684,8 +722,7 @@ export async function buildModeloAAccountingReport(
   }
 
   for (const withdrawal of withdrawals) {
-    const period = periodKey(withdrawal.created_at)
-    addWithdrawal(getOrCreatePeriod(periods, period), withdrawal)
+    addWithdrawal(periods, withdrawal)
   }
 
   for (const [period, row] of periods) {
@@ -703,8 +740,10 @@ export async function buildModeloAAccountingReport(
   }
 
   const prizeLiability = (prizeLiabilityResult.data ?? {}) as Partial<PrizeLiabilityRow>
-  const pendingWithdrawals = withdrawals.filter((withdrawal) => withdrawal.status === 'pending')
-  const reconciliation = runReconciliation(flowAttempts, registrations, walletTransactions)
+  const pendingWithdrawals = withdrawals.filter((withdrawal) =>
+    withdrawal.status === 'pending' || withdrawal.status === 'approved'
+  )
+  const reconciliation = runReconciliation(flowAttempts, registrations, walletTransactions, withdrawals)
   const generatedAt = new Date().toISOString()
 
   return {
@@ -712,10 +751,10 @@ export async function buildModeloAAccountingReport(
     model: 'Modelo A',
     reconciliation,
     notes: [
-      'Contabilidad efectiva: el IVA de la plataforma se reconoce sobre el margen real = cobros por inscripcion menos premios pagados a ganadores (menos reembolsos). IVA debito efectivo = 19/119 del margen. No depende del split contable 70/30 por inscripcion.',
-      'Por que es no ambiguo: como cobros y premios comparten la tasa 19%, IVA(cobros) - IVA(premios) = 19/119 x (cobros - premios). El antiguo dilema (IVA sobre el 30% del fee vs sobre el 100% de la entrada) queda resuelto por un unico criterio sobre flujos reales.',
+      'P&L devengado: el premio se reconoce al adjudicarse y crea un pasivo. La transferencia bancaria sólo liquida ese pasivo y se informa aparte como retiros_pagados; no se descuenta por segunda vez del resultado.',
+      'Criterio gerencial interno: la estimación de margen usa cobros menos premios adjudicados y reembolsos. No debe copiarse al F29 sin confirmación del contador sobre base imponible, documentación y momento de reconocimiento.',
       'La plataforma ABSORBE la comision Flow: el checkout cobra solo el entry_fee (sin recargo al usuario). Por eso su costo neto se resta del resultado operativo devengado y su IVA (19%, facturado por Flow) se toma como credito, reduciendo el IVA a pagar (columna efectivo_iva_a_pagar). Las columnas f29_* quedan como referencia del comprobante/voucher.',
-      'Punto formal unico para el contador: definir si la boleta electronica se emite por el total de la inscripcion o por el margen. El calculo interno efectivo ya es univoco; falta el criterio de emision ante SII.',
+      'Puntos formales para el contador: definir si la boleta se emite por el total de la inscripcion o por el margen, el tratamiento tributario del premio y cualquier certificado o declaración jurada aplicable.',
       'F22/gestion: premios y retiros se reportan aparte; los premios del torneo son fijos y publicados antes del pago.',
       'Rakeback: el credito otorgado (rakeback_otorgado) es informativo del pasivo generado. El costo del programa se refleja como ingreso NO percibido: las inscripciones pagadas con credito NO suman a cobros efectivos (reducen el margen afecto). No se asienta el grant como gasto aparte, para evitar doble conteo. Nota: una inscripcion con credito ocupa un cupo premiable sin ingreso cash de ese torneo; la solvencia se mantiene en agregado (el credito provino de cash de inscripciones previas), no necesariamente por torneo.',
       'Reembolsos del margen efectivo (efectivo_reembolsos): refunds de wallet ligados a torneos + reversas Flow COMPLETADAS de pagos asentados (torneos cancelados), en el periodo en que se completaron. Los refunds por retiro fallido (reference_type=withdrawal) son ajuste de pasivo y NO reducen el margen. Las reversas de pagos no asentables tampoco (ese cobro nunca conto como venta).',
@@ -781,11 +820,12 @@ export function accountingReportToCsv(report: AccountingReport): string {
     'retiros_wallet_clp',
     'retiros_solicitados_clp',
     'retiros_aprobados_clp',
+    'retiros_pagados_clp',
     'retiros_rechazados_clp',
     'saldo_wallet_cierre_clp',
     'retiros_pendientes_cierre_clp',
     'efectivo_cobros_inscripcion_clp',
-    'efectivo_premios_pagados_clp',
+    'premios_devengados_clp',
     'efectivo_margen_afecto_clp',
     'efectivo_iva_debito_clp',
     'efectivo_resultado_neto_clp',
@@ -829,6 +869,7 @@ export function accountingReportToCsv(report: AccountingReport): string {
         centsToPesos(row.withdrawalTransactionsCents),
         centsToPesos(row.withdrawalRequestedCents),
         centsToPesos(row.withdrawalApprovedCents),
+        centsToPesos(row.withdrawalPaidCents),
         centsToPesos(row.withdrawalRejectedCents),
         centsToPesos(row.closingWalletLiabilityCents),
         centsToPesos(row.closingPendingWithdrawalsCents),

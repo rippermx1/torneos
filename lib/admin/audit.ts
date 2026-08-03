@@ -3,6 +3,7 @@ import type { Database } from '@/types/database'
 
 export type AdminActionName =
   | 'payout.approve'
+  | 'payout.complete'
   | 'payout.reject'
   | 'kyc.approve'
   | 'kyc.reject'

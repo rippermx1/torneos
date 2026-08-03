@@ -54,6 +54,8 @@ const supabaseServerKey = requireOne(
 )
 requireOne('Flow API key', 'FLOW_API_KEY', 'FLOW_APÏ_KEY')
 requireOne('Flow API secret', 'FLOW_API_SECRET')
+requireOne('Razon social para comprobantes', 'COMPANY_LEGAL_NAME')
+requireOne('RUT empresa para comprobantes', 'COMPANY_RUT')
 const flowApiBase = firstNonEmpty('FLOW_API_BASE')
 const cronSecret = requireOne('CRON_SECRET', 'CRON_SECRET')
 

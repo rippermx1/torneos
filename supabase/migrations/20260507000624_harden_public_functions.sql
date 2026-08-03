@@ -101,8 +101,16 @@ REVOKE EXECUTE ON FUNCTION public.refresh_profile_admin_flag(uuid)
   FROM PUBLIC, anon, authenticated;
 REVOKE EXECUTE ON FUNCTION public.refresh_profile_admin_flag_trigger()
   FROM PUBLIC, anon, authenticated;
-REVOKE EXECUTE ON FUNCTION public.rls_auto_enable()
-  FROM PUBLIC, anon, authenticated;
+-- rls_auto_enable es un helper opcional de algunos proyectos Supabase. Una
+-- instalación local limpia puede no incluirlo, por lo que el hardening debe ser
+-- tolerante sin impedir reconstruir toda la base desde cero.
+DO $$
+BEGIN
+  IF to_regprocedure('public.rls_auto_enable()') IS NOT NULL THEN
+    EXECUTE 'REVOKE EXECUTE ON FUNCTION public.rls_auto_enable() FROM PUBLIC, anon, authenticated';
+  END IF;
+END;
+$$;
 
 REVOKE EXECUTE ON FUNCTION public.user_has_accepted_terms(uuid)
   FROM PUBLIC, anon, authenticated;

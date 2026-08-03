@@ -2,15 +2,18 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { formatCLP, formatDateTimeCL } from '@/lib/utils'
 import type { WithdrawalRequest } from '@/types/database'
 import { PayoutActions } from '@/components/admin/payout-actions'
+import { PayoutCompletionForm } from '@/components/admin/payout-completion-form'
 
 const STATUS_STYLE: Record<WithdrawalRequest['status'], string> = {
   pending: 'bg-amber-100 text-amber-700',
-  approved: 'bg-green-100 text-green-700',
+  approved: 'bg-blue-100 text-blue-700',
+  paid: 'bg-green-100 text-green-700',
   rejected: 'bg-red-100 text-red-700',
 }
 const STATUS_LABEL: Record<WithdrawalRequest['status'], string> = {
   pending: 'Pendiente',
-  approved: 'Aprobado',
+  approved: 'Autorizado',
+  paid: 'Pagado',
   rejected: 'Rechazado',
 }
 
@@ -40,14 +43,15 @@ export default async function AdminPayoutsPage() {
   )
 
   const pending = requests.filter((r) => r.status === 'pending')
-  const rest = requests.filter((r) => r.status !== 'pending')
+  const authorized = requests.filter((r) => r.status === 'approved')
+  const rest = requests.filter((r) => r.status === 'paid' || r.status === 'rejected')
 
   return (
-    <div className="space-y-8 max-w-4xl">
+    <div className="space-y-8 max-w-5xl">
       <div>
-        <h1 className="text-2xl font-bold">Retiros de premios</h1>
+        <h1 className="text-2xl font-bold">Pagos de premios</h1>
         <p className="text-sm text-muted-foreground mt-0.5">
-          {pending.length} pendiente{pending.length !== 1 ? 's' : ''}. Antes de aprobar, confirma identidad verificada, saldo suficiente y coincidencia de los datos bancarios.
+          {pending.length} por revisar · {authorized.length} autorizada{authorized.length !== 1 ? 's' : ''} por transferir. La autorización y la salida bancaria se registran por separado.
         </p>
       </div>
 
@@ -91,6 +95,34 @@ export default async function AdminPayoutsPage() {
         </section>
       )}
 
+      {authorized.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            Autorizados · pendientes de transferencia
+          </h2>
+          {authorized.map((r) => {
+            const profile = profileMap[r.user_id] as { username: string } | undefined
+            return (
+              <div key={r.id} className="border border-blue-200 rounded-xl p-4 space-y-3 bg-blue-50/30">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="font-semibold">{profile?.username ?? r.account_holder}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {r.account_holder} · {r.account_rut} · {r.bank_name} · {r.bank_account}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Autorizado: {r.reviewed_at ? formatDateTimeCL(r.reviewed_at) : '—'}
+                    </p>
+                  </div>
+                  <p className="text-xl font-bold shrink-0">{formatCLP(r.amount_cents)}</p>
+                </div>
+                <PayoutCompletionForm requestId={r.id} />
+              </div>
+            )
+          })}
+        </section>
+      )}
+
       {rest.length > 0 && (
         <section className="space-y-2">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Historial</h2>
@@ -98,7 +130,7 @@ export default async function AdminPayoutsPage() {
             {rest.map((r) => {
               const profile = profileMap[r.user_id] as { username: string } | undefined
               return (
-                <div key={r.id} className="px-4 py-3 flex items-center gap-4 text-sm">
+                <div key={r.id} className="px-4 py-3 flex flex-wrap items-center gap-3 text-sm">
                   <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${STATUS_STYLE[r.status]}`}>
                     {STATUS_LABEL[r.status]}
                   </span>
@@ -107,8 +139,22 @@ export default async function AdminPayoutsPage() {
                   </span>
                   <span className="font-semibold shrink-0">{formatCLP(r.amount_cents)}</span>
                   <span className="text-xs text-muted-foreground shrink-0 hidden sm:block">
-                    {formatDateTimeCL(r.created_at)}
+                    {formatDateTimeCL(r.paid_at ?? r.reviewed_at ?? r.created_at)}
                   </span>
+                  {r.status === 'paid' && (
+                    <span className="flex gap-2 text-xs">
+                      <a href={`/api/payouts/${r.id}/receipt`} target="_blank" rel="noreferrer" className="underline">
+                        {r.receipt_number ?? 'Comprobante'}
+                      </a>
+                      {r.proof_storage_path ? (
+                        <a href={`/api/admin/payouts/${r.id}/proof`} target="_blank" rel="noreferrer" className="underline">
+                          Evidencia bancaria
+                        </a>
+                      ) : (
+                        <span className="text-amber-700">Sin evidencia (legado)</span>
+                      )}
+                    </span>
+                  )}
                 </div>
               )
             })}

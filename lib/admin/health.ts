@@ -146,7 +146,7 @@ export async function loadAdminHealthDashboard(): Promise<AdminHealthDashboard> 
     admin
       .from('withdrawal_requests')
       .select('created_at', { count: 'exact' })
-      .eq('status', 'pending')
+      .in('status', ['pending', 'approved'])
       .order('created_at', { ascending: true })
       .limit(1),
     admin
@@ -204,8 +204,8 @@ export async function loadAdminHealthDashboard(): Promise<AdminHealthDashboard> 
     ),
     readQueue(
       'withdrawals',
-      'Retiros que debes aprobar',
-      'Compara identidad, RUT, saldo y cuenta bancaria antes de decidir.',
+      'Pagos de premios en proceso',
+      'Revisa los pendientes y registra con evidencia las transferencias ya autorizadas.',
       '/admin/payouts',
       withdrawalsResult,
       failures
@@ -322,7 +322,7 @@ export async function loadAdminHealthDashboard(): Promise<AdminHealthDashboard> 
   }
 
   const humanQueueCopy: Record<string, { singular: string; plural: string }> = {
-    withdrawals: { singular: 'retiro pendiente de aprobación', plural: 'retiros pendientes de aprobación' },
+    withdrawals: { singular: 'pago de premio en proceso', plural: 'pagos de premios en proceso' },
     kyc: { singular: 'identidad pendiente de revisión', plural: 'identidades pendientes de revisión' },
     disputes: { singular: 'caso de soporte abierto', plural: 'casos de soporte abiertos' },
   }

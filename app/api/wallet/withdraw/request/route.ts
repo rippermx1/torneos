@@ -101,7 +101,7 @@ export async function POST(req: Request): Promise<Response> {
     .from('withdrawal_requests')
     .select('id')
     .eq('user_id', userId)
-    .eq('status', 'pending')
+    .in('status', ['pending', 'approved'])
     .limit(1)
     .maybeSingle()
 
@@ -182,6 +182,7 @@ export async function POST(req: Request): Promise<Response> {
 
   // 3. Debitar inmediatamente para evitar doble gasto.
   // Si la inserción de la solicitud falla, devolvemos crédito compensatorio.
+  const requestId = crypto.randomUUID()
   let transactionId: string | null = null
   try {
     const tx = await insertTransaction({
@@ -189,7 +190,8 @@ export async function POST(req: Request): Promise<Response> {
       type: 'withdrawal',
       amountCents: -amountCents,
       referenceType: 'withdrawal_request',
-      metadata: { status: 'pending' },
+      referenceId: requestId,
+      metadata: { status: 'pending', withdrawal_request_id: requestId },
     })
     transactionId = (tx as { id: string }).id
   } catch (err) {
@@ -200,12 +202,14 @@ export async function POST(req: Request): Promise<Response> {
   const { data, error } = await supabase
     .from('withdrawal_requests')
     .insert({
+      id: requestId,
       user_id: userId,
       amount_cents: amountCents,
       bank_name: bankName.trim(),
       bank_account: bankAccount.trim(),
       account_rut: accountRut.trim(),
       account_holder: accountHolder.trim(),
+      wallet_transaction_id: transactionId,
     })
     .select('id')
     .single()

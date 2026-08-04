@@ -15,10 +15,9 @@ import type { SkillTier } from '@/types/database'
 // ───────────────────────────────────────────────────────────────
 // Checkout Flow para inscripcion a torneo (Ruta 1).
 //
-// Cada inscripcion paga es un cobro Flow individual. El voucher
-// Flow refleja el monto total pagado; la boleta electronica para
-// el SII se emite por separado solo por el platform_fee_gross via
-// LibreDTE (despues del webhook).
+// Cada inscripcion paga es un cobro Flow individual. El voucher Flow refleja y
+// documenta el monto total pagado cuando el comercio tiene habilitado ante SII
+// el modelo de emision mediante voucher. No se encola una segunda boleta.
 //
 // Flujo:
 //  1. Validar pre-condiciones (KYC, edad, T&C, ventana, capacidad)
@@ -258,8 +257,9 @@ export async function POST(
     return Response.json({ registered: true, viaCredit: true, registrationId })
   }
 
-  // El usuario paga exactamente el entry_fee. La plataforma absorbe el costo
-  // de Flow y su IVA desde el margen operacional del 30%.
+  // El usuario paga exactamente el precio final entry_fee, IVA incluido. La
+  // empresa absorbe la comision Flow; el presupuesto interno de premios no
+  // reduce el IVA de la venta.
   const entryFeePesos = Math.ceil(entryFeeCents / 100)
   const requestOrigin = new URL(req.url).origin
   const appUrl = getAppUrl(requestOrigin) ?? requestOrigin

@@ -52,6 +52,10 @@ const supabaseServerKey = requireOne(
   'SUPABASE_SECRET_KEY',
   'SUPABASE_SERVICE_ROLE_KEY'
 )
+const productionSupabaseProjectRef = requireOne(
+  'Supabase project ref protegido',
+  'PRODUCTION_SUPABASE_PROJECT_REF'
+)
 requireOne('Flow API key', 'FLOW_API_KEY', 'FLOW_APÏ_KEY')
 requireOne('Flow API secret', 'FLOW_API_SECRET')
 requireOne('Razon social para comprobantes', 'COMPANY_LEGAL_NAME')
@@ -75,6 +79,20 @@ if (appUrl) {
 
 if (supabaseUrl && isLocalUrl(supabaseUrl)) {
   issues.push('NEXT_PUBLIC_SUPABASE_URL sigue apuntando a localhost')
+}
+
+if (supabaseUrl && productionSupabaseProjectRef) {
+  try {
+    const hostname = new URL(supabaseUrl).hostname
+    const actualProjectRef = hostname.match(/^([a-z0-9]+)\.supabase\.co$/i)?.[1]
+    if (!actualProjectRef || actualProjectRef !== productionSupabaseProjectRef) {
+      issues.push(
+        'PRODUCTION_SUPABASE_PROJECT_REF no coincide con NEXT_PUBLIC_SUPABASE_URL'
+      )
+    }
+  } catch {
+    // La URL inválida ya se reporta mediante las demás validaciones.
+  }
 }
 
 if (appUrl?.includes('vercel.app')) {

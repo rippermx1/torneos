@@ -206,6 +206,7 @@ export interface KycAuditEvent {
 
 export type FlowAttemptStatus = 'pending' | 'paid' | 'credited' | 'rejected' | 'cancelled' | 'expired'
 export type FlowRefundStatus = 'pending' | 'completed' | 'rejected' | 'cancelled'
+export type RefundTaxDocumentStatus = 'not_required' | 'required' | 'issued'
 
 export interface FlowRefundAttempt {
   id: string
@@ -220,6 +221,10 @@ export interface FlowRefundAttempt {
   receiver_email: string
   status: FlowRefundStatus
   error_message: string | null
+  tax_document_status: RefundTaxDocumentStatus
+  tax_document_number: string | null
+  tax_document_issued_at: string | null
+  tax_document_notes: string | null
   created_at: string
   settled_at: string | null
 }
@@ -314,6 +319,54 @@ export interface CronHeartbeat {
   last_run_at: string
   last_status: 'ok' | 'error'
   detail: string | null
+}
+
+export interface PlatformBusinessRule {
+  version: number
+  effective_from: string
+  vat_bps: number
+  prize_budget_bps: number
+  max_total_prize_cents: number
+  max_first_prize_cents: number
+  rewards_enabled: boolean
+  flow_fee_net_bps: number
+  flow_refund_fee_net_cents: number
+  notes: string
+  created_at: string
+}
+
+export interface AccountingAccount {
+  code: string
+  name: string
+  category: 'asset' | 'liability' | 'equity' | 'revenue' | 'expense'
+  normal_balance: 'debit' | 'credit'
+  is_active: boolean
+  created_at: string
+}
+
+export interface AccountingJournalEntry {
+  id: number
+  event_key: string
+  event_type: string
+  source_table: string
+  source_id: string | null
+  tournament_id: string | null
+  user_id: string | null
+  occurred_at: string
+  period: string
+  description: string
+  is_estimate: boolean
+  metadata: Record<string, unknown>
+  created_at: string
+}
+
+export interface AccountingPosting {
+  id: number
+  journal_entry_id: number
+  account_code: string
+  debit_cents: number
+  credit_cents: number
+  created_at: string
 }
 
 // Tipo Database completo requerido por @supabase/supabase-js v2
@@ -412,7 +465,7 @@ export type Database = {
       }
       flow_refund_attempts: {
         Row: FlowRefundAttempt & DbRecord
-        Insert: InsertWithOptional<FlowRefundAttempt, 'id' | 'created_at' | 'flow_refund_token' | 'flow_refund_order' | 'error_message' | 'settled_at'>
+        Insert: InsertWithOptional<FlowRefundAttempt, 'id' | 'created_at' | 'flow_refund_token' | 'flow_refund_order' | 'error_message' | 'settled_at' | 'tax_document_status' | 'tax_document_number' | 'tax_document_issued_at' | 'tax_document_notes'>
         Update: Partial<Omit<FlowRefundAttempt, 'id' | 'created_at'>> & DbRecord
         Relationships: []
       }
@@ -432,6 +485,30 @@ export type Database = {
         Row: CronHeartbeat & DbRecord
         Insert: InsertWithOptional<CronHeartbeat, 'last_run_at' | 'last_status' | 'detail'>
         Update: Partial<Omit<CronHeartbeat, 'job_name'>> & DbRecord
+        Relationships: []
+      }
+      platform_business_rules: {
+        Row: PlatformBusinessRule & DbRecord
+        Insert: InsertWithOptional<PlatformBusinessRule, 'created_at'>
+        Update: Partial<Omit<PlatformBusinessRule, 'version' | 'created_at'>> & DbRecord
+        Relationships: []
+      }
+      accounting_accounts: {
+        Row: AccountingAccount & DbRecord
+        Insert: InsertWithOptional<AccountingAccount, 'created_at' | 'is_active'>
+        Update: Partial<Omit<AccountingAccount, 'code' | 'created_at'>> & DbRecord
+        Relationships: []
+      }
+      accounting_journal_entries: {
+        Row: AccountingJournalEntry & DbRecord
+        Insert: InsertWithOptional<AccountingJournalEntry, 'id' | 'created_at' | 'source_id' | 'tournament_id' | 'user_id' | 'is_estimate' | 'metadata'>
+        Update: never
+        Relationships: []
+      }
+      accounting_postings: {
+        Row: AccountingPosting & DbRecord
+        Insert: InsertWithOptional<AccountingPosting, 'id' | 'created_at' | 'debit_cents' | 'credit_cents'>
+        Update: never
         Relationships: []
       }
     }
@@ -461,6 +538,41 @@ export type Database = {
           platform_fee_gross_cents: number
           platform_fee_net_cents: number
           platform_fee_iva_cents: number
+        } & DbRecord
+        Relationships: []
+      }
+      accounting_trial_balance: {
+        Row: {
+          period: string
+          is_estimate: boolean
+          account_code: string
+          account_name: string
+          category: AccountingAccount['category']
+          normal_balance: AccountingAccount['normal_balance']
+          debit_cents: number
+          credit_cents: number
+          balance_cents: number
+        } & DbRecord
+        Relationships: []
+      }
+      accounting_journal_lines: {
+        Row: {
+          journal_entry_id: number
+          event_key: string
+          event_type: string
+          source_table: string
+          source_id: string | null
+          tournament_id: string | null
+          user_id: string | null
+          occurred_at: string
+          period: string
+          description: string
+          is_estimate: boolean
+          posting_id: number
+          account_code: string
+          account_name: string
+          debit_cents: number
+          credit_cents: number
         } & DbRecord
         Relationships: []
       }

@@ -1,4 +1,4 @@
-export const CURRENT_TERMS_VERSION = '1.1'
+export const CURRENT_TERMS_VERSION = '1.2'
 
 export function hasAcceptedCurrentTerms(
   acceptedAt: string | null | undefined,

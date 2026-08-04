@@ -39,6 +39,7 @@ const tournamentPrefixes = [
   'Standard pago al maximo ',
   'Freeroll al maximo ',
   'Smoke Local ',
+  'QA Flow Sandbox ',
   'Debug Sim ',
   'Behavioral ',
 ]
@@ -124,7 +125,19 @@ async function cleanupTournaments() {
 
   const gameIds = (games ?? []).map((game) => game.id)
 
+  const { data: paymentAttempts, error: paymentAttemptsError } = await supabase
+    .from('flow_payment_attempts')
+    .select('id')
+    .in('tournament_id', tournamentIds)
+
+  if (paymentAttemptsError) throw paymentAttemptsError
+
+  const paymentAttemptIds = (paymentAttempts ?? []).map((attempt) => attempt.id)
+
   await deleteInBatches('game_moves', 'game_id', gameIds)
+  await deleteInBatches('dte_documents', 'flow_payment_attempt_id', paymentAttemptIds)
+  await deleteInBatches('flow_refund_attempts', 'tournament_id', tournamentIds)
+  await deleteInBatches('flow_payment_attempts', 'id', paymentAttemptIds)
   await deleteInBatches('tournament_results', 'tournament_id', tournamentIds)
   await deleteInBatches('games', 'tournament_id', tournamentIds)
   await deleteInBatches('registrations', 'tournament_id', tournamentIds)

@@ -4,6 +4,7 @@ import nextEnv from '@next/env'
 import { createClient } from '@supabase/supabase-js'
 import { createServerClient } from '@supabase/ssr'
 import { requireNonProductionProject } from './supabase-safety.mjs'
+import { generateTotpCode } from './e2e-totp.mjs'
 
 const { loadEnvConfig } = nextEnv
 
@@ -116,11 +117,19 @@ async function fetchWithJar(cookieJar, url, init = {}) {
     headers.set('cookie', cookieHeader)
   }
 
-  const response = await fetch(url, {
-    ...init,
-    headers,
-    redirect: 'manual',
-  })
+  let response
+  try {
+    response = await fetch(url, {
+      ...init,
+      headers,
+      redirect: 'manual',
+      signal: init.signal ?? AbortSignal.timeout(30_000),
+    })
+  } catch (error) {
+    const method = init.method ?? 'GET'
+    const detail = error instanceof Error ? error.message : String(error)
+    throw new Error(`${method} ${url} no respondió correctamente: ${detail}`)
+  }
 
   updateJarFromResponse(cookieJar, response)
   return response
@@ -190,6 +199,48 @@ async function signIn(email, password) {
   return { cookieJar, authClient, user: data.user }
 }
 
+async function enrollAdminMfa(authClient) {
+  const { data: factors, error: factorsError } = await authClient.auth.mfa.listFactors()
+  if (factorsError || !factors) {
+    throw factorsError ?? new Error('No se pudieron consultar los factores MFA del admin.')
+  }
+
+  const verifiedFactor = factors.all.find(
+    (factor) => factor.factor_type === 'totp' && factor.status === 'verified'
+  )
+  assert(
+    !verifiedFactor,
+    'El admin E2E ya tiene MFA verificado. Ejecuta npm run setup:test-users antes del smoke.'
+  )
+
+  for (const factor of factors.all.filter(
+    (candidate) => candidate.factor_type === 'totp' && candidate.status === 'unverified'
+  )) {
+    const { error } = await authClient.auth.mfa.unenroll({ factorId: factor.id })
+    if (error) throw error
+  }
+
+  const { data: enrollment, error: enrollmentError } = await authClient.auth.mfa.enroll({
+    factorType: 'totp',
+    friendlyName: 'TorneosPlay Admin E2E',
+  })
+  if (enrollmentError || !enrollment || enrollment.type !== 'totp') {
+    throw enrollmentError ?? new Error('No se pudo enrolar el MFA del admin E2E.')
+  }
+
+  const { error: verificationError } = await authClient.auth.mfa.challengeAndVerify({
+    factorId: enrollment.id,
+    code: generateTotpCode(enrollment.totp.secret),
+  })
+  if (verificationError) throw verificationError
+
+  const { data: assurance, error: assuranceError } =
+    await authClient.auth.mfa.getAuthenticatorAssuranceLevel()
+  if (assuranceError || assurance?.currentLevel !== 'aal2') {
+    throw assuranceError ?? new Error('La sesión del admin E2E no alcanzó AAL2.')
+  }
+}
+
 async function callJson(url, init = {}, cookieJar) {
   const headers = new Headers(init.headers ?? {})
   if (!headers.has('content-type') && init.body) {
@@ -241,6 +292,7 @@ async function createTournamentAsAdmin(cookieJar) {
 
   const tournamentName = `Smoke Local ${Date.now()}`
   formData.append('tournament_type', 'freeroll')
+  formData.append('is_test', '1')
   formData.append('name', tournamentName)
   formData.append('description', 'Smoke test local end-to-end')
   formData.append('entry_fee', '0')
@@ -418,11 +470,11 @@ async function main() {
   assert(syncedProfile?.id === signUpData.user.id, 'La confirmación no creó el perfil en public.profiles.')
 
   const smokeSession = await signIn(smokeEmail, smokePassword)
-  const walletPage = await expectPage(`${baseUrl}/wallet`, {
+  const prizesPage = await expectPage(`${baseUrl}/wallet`, {
     cookieJar: smokeSession.cookieJar,
-    text: 'Mi billetera',
+    text: 'Mis premios',
   })
-  assert(walletPage.response.status === 200, 'La sesión normal no pudo entrar a /wallet.')
+  assert(prizesPage.response.status === 200, 'La sesión normal no pudo entrar a /premios.')
 
   const nonAdminResponse = await fetchWithJar(smokeSession.cookieJar, `${baseUrl}/admin/tournaments/new`)
   assert(
@@ -430,7 +482,10 @@ async function main() {
     `Un usuario normal no debería entrar a admin, obtuve ${nonAdminResponse.status}`
   )
 
+  console.log('Preparando sesión administrativa con MFA…')
   const adminSession = await signIn('admin.local.e2e@example.com', fixturePassword)
+  await enrollAdminMfa(adminSession.authClient)
+  console.log('MFA administrativo OK')
   await expectPage(`${baseUrl}/admin/tournaments`, {
     cookieJar: adminSession.cookieJar,
     text: 'Torneos',
@@ -492,14 +547,6 @@ async function main() {
     })
     .eq('id', tournamentId)
   assert(!closeWindowError, `No se pudo cerrar ventana de juego: ${closeWindowError?.message}`)
-
-  const finalizingTournament = await runCron()
-  assert(
-    finalizingTournament.results.some(
-      (result) => result.tournamentId === tournamentId && result.action === 'set_finalizing'
-    ),
-    'El cron no pasó el torneo a finalizing.'
-  )
 
   const finalizedTournament = await runCron()
   assert(

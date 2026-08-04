@@ -157,6 +157,23 @@ async function ensureProfile(user, fixture) {
   if (rolesError) throw rolesError
 }
 
+async function resetTestAdminMfa(user, fixture) {
+  if (!fixture.isAdmin) return
+
+  const { data, error } = await supabase.auth.admin.mfa.listFactors({
+    userId: user.id,
+  })
+  if (error) throw error
+
+  for (const factor of data.factors) {
+    const { error: deleteError } = await supabase.auth.admin.mfa.deleteFactor({
+      userId: user.id,
+      id: factor.id,
+    })
+    if (deleteError) throw deleteError
+  }
+}
+
 async function ensureBalance(userId, balanceTarget) {
   const { data, error } = await supabase
     .from('wallet_transactions')
@@ -196,12 +213,12 @@ async function main() {
 
   for (const fixture of fixtures) {
     const user = await ensureUser(fixture)
+    await resetTestAdminMfa(user, fixture)
     await ensureProfile(user, fixture)
     const balance = await ensureBalance(user.id, fixture.balanceTarget)
 
     rows.push({
       email: fixture.email,
-      password,
       username: fixture.username,
       role: fixture.isAdmin ? 'admin' : 'player',
       balance_cents: balance,

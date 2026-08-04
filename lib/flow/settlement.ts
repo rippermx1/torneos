@@ -3,10 +3,9 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { getFlowPaymentStatus, type FlowPaymentStatus } from '@/lib/flow/payments'
 import { createFlowRefund } from '@/lib/flow/refunds'
 import { getAppUrl } from '@/lib/env'
-import { calculateIvaIncludedBreakdown, splitEntryFee } from '@/lib/tournament/finance'
-import { isModeloB } from '@/lib/tax/regime'
 import { sendTournamentRegistrationEmail } from '@/lib/email/tournament-notifications'
 import { computeRakebackCents, rakebackExpiryIso } from '@/lib/wallet/rakeback'
+import { rewardsAreEnabled } from '@/lib/business/rules'
 
 export interface FlowSettlement {
   status: FlowPaymentStatus
@@ -20,8 +19,8 @@ export interface FlowSettlement {
 //
 // Tras el webhook, consultamos getStatus a Flow y según el intent
 // del flow_payment_attempts ramificamos:
-//  - tournament_registration → settle_tournament_registration RPC
-//    + crear dte_documents pendiente para emisión async vía LibreDTE.
+//  - tournament_registration → settle_tournament_registration RPC.
+//    El voucher Flow documenta la venta completa según la configuración SII.
 //  - wallet_deposit (legado) → ya no soportado en Ruta 1; rechazamos.
 // ───────────────────────────────────────────────────────────────
 export async function settleFlowPayment(token: string): Promise<FlowSettlement> {
@@ -91,33 +90,27 @@ export async function settleFlowPayment(token: string): Promise<FlowSettlement> 
     if (!settlement.idempotent) {
       // Rakeback: crédito de torneo (no retirable) por la inscripción, para subir
       // frecuencia y retención. No bloquea el settlement si falla.
-      try {
-        const rakebackCents = computeRakebackCents(attempt.net_amount_cents)
-        if (rakebackCents > 0) {
-          const { error: rakebackError } = await admin.rpc('wallet_insert_transaction', {
-            p_user_id: attempt.user_id,
-            p_type: 'tournament_credit',
-            p_amount_cents: rakebackCents,
-            p_reference_type: 'rakeback',
-            p_reference_id: attempt.tournament_id,
-            p_metadata: {
-              kind: 'rakeback_grant',
-              entry_cents: attempt.net_amount_cents,
-              expires_at: rakebackExpiryIso(),
-            },
-          })
-          if (rakebackError) console.error('[settlement] Rakeback grant falló:', rakebackError.message)
+      if (rewardsAreEnabled()) {
+        try {
+          const rakebackCents = computeRakebackCents(attempt.net_amount_cents)
+          if (rakebackCents > 0) {
+            const { error: rakebackError } = await admin.rpc('wallet_insert_transaction', {
+              p_user_id: attempt.user_id,
+              p_type: 'tournament_credit',
+              p_amount_cents: rakebackCents,
+              p_reference_type: 'rakeback',
+              p_reference_id: attempt.tournament_id,
+              p_metadata: {
+                kind: 'rakeback_grant',
+                entry_cents: attempt.net_amount_cents,
+                expires_at: rakebackExpiryIso(),
+              },
+            })
+            if (rakebackError) console.error('[settlement] Rakeback grant falló:', rakebackError.message)
+          }
+        } catch (e) {
+          console.error('[settlement] Rakeback grant excepción:', e)
         }
-      } catch (e) {
-        console.error('[settlement] Rakeback grant excepción:', e)
-      }
-
-      // Encolar boleta DTE solo en Modelo B.
-      if (isModeloB()) {
-        await enqueueRegistrationBoleta({
-          registrationId: settlement.registration_id,
-          flowAttemptId: settlement.attempt_id,
-        })
       }
 
       // Email de confirmación de inscripción (no bloquea el webhook)
@@ -275,73 +268,6 @@ async function refundUnsettleablePayment(input: {
       console.error('[settlement] No se pudo registrar reversa rechazada:', insertErr)
     }
     console.error(`[settlement] Falló reversa de inscripción no asentable ${input.commerceOrder}:`, message)
-  }
-}
-
-// ───────────────────────────────────────────────────────────────
-// Crea el registro pendiente en dte_documents para que el cron
-// de emisión LibreDTE lo procese de forma asíncrona.
-// El monto del DTE es el platform_fee_gross_cents (servicio
-// con IVA incluido). El resto del cobro Flow es custodia.
-// ───────────────────────────────────────────────────────────────
-async function enqueueRegistrationBoleta(input: {
-  registrationId: string
-  flowAttemptId: string
-}): Promise<void> {
-  const admin = createAdminClient()
-
-  const { data: registration, error } = await admin
-    .from('registrations')
-    .select('id, entry_fee_cents, platform_fee_gross_cents, platform_fee_net_cents, platform_fee_iva_cents')
-    .eq('id', input.registrationId)
-    .single()
-
-  if (error || !registration) {
-    console.error('No se pudo cargar registration para encolar boleta:', error)
-    return
-  }
-
-  const platformFeeGross = registration.platform_fee_gross_cents
-  if (!platformFeeGross || platformFeeGross <= 0) {
-    // Freeroll u otro caso sin servicio facturable; no se emite boleta.
-    return
-  }
-
-  // Si la inscripción no trae el desglose persistido (caso defensivo),
-  // recalculamos con la lógica oficial.
-  const net = registration.platform_fee_net_cents
-  const iva = registration.platform_fee_iva_cents
-  let netCents = net
-  let ivaCents = iva
-  if (netCents == null || ivaCents == null) {
-    const recomputed = calculateIvaIncludedBreakdown(platformFeeGross)
-    netCents = recomputed.netCents
-    ivaCents = recomputed.ivaCents
-  }
-
-  const { error: insertError } = await admin.from('dte_documents').insert({
-    registration_id: registration.id,
-    flow_payment_attempt_id: input.flowAttemptId,
-    document_type: 'boleta_electronica',
-    total_cents: platformFeeGross,
-    net_cents: netCents,
-    iva_cents: ivaCents,
-    status: 'pending',
-  })
-
-  if (insertError) {
-    console.error('Error encolando dte_documents:', insertError)
-  }
-}
-
-// Helper utilizado solo en testing/scripts para anticipar el split.
-// No se invoca en runtime de webhook.
-export function previewBoletaForEntry(entryFeeCents: number, prizeFundBps?: number) {
-  const split = splitEntryFee(entryFeeCents, prizeFundBps)
-  return {
-    totalCents: split.platformFeeGrossCents,
-    netCents: split.platformFeeNetCents,
-    ivaCents: split.platformFeeIvaCents,
   }
 }
 

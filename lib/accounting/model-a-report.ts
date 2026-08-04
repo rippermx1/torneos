@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { parseDateTimeLocalToIso } from '@/lib/utils'
 import { calculateIvaIncludedBreakdown } from '@/lib/tournament/finance'
+import { PILOT_BUSINESS_RULES } from '@/lib/business/rules'
 import type {
   Database,
   FlowPaymentAttempt,
@@ -17,7 +18,7 @@ const CHILE_TIME_ZONE = 'America/Santiago'
 // es IVA-incluida, por eso usamos calculateIvaIncludedBreakdown para
 // extraer net y IVA con la misma rounding rule que el resto del reporte.
 // Ver lib/flow/fees.ts para el modelo completo de gross-up al usuario.
-const FLOW_CARD_NEXT_DAY_FEE_NET_BPS = 319
+const FLOW_CARD_NEXT_DAY_FEE_NET_BPS = PILOT_BUSINESS_RULES.flowFeeNetBps
 const IVA_MULTIPLIER_BPS = 11900 // 1 + 0.19 escalado por 10000
 const BPS = 10000
 
@@ -42,12 +43,18 @@ export interface AccountingPeriodRow {
   flowPendingCount: number
   flowRejectedCount: number
   flowCancelledExpiredCount: number
+  f29VoucherCount: number
   flowChargedGrossCents: number
   flowEntryNetCents: number
   flowUserFeeCents: number
   f29GrossSalesCents: number
   f29NetSalesCents: number
   f29IvaDebitCents: number
+  f29CreditNoteGrossCents: number
+  f29CreditNoteNetCents: number
+  f29CreditNoteIvaCents: number
+  f29NetIvaDebitCents: number
+  f29IvaPayableBeforeOtherCreditsCents: number
   estimatedFlowFeeNetCents: number
   estimatedFlowFeeIvaCreditCents: number
   estimatedFlowFeeGrossCents: number
@@ -63,15 +70,16 @@ export interface AccountingPeriodRow {
   // Reversas Flow COMPLETADAS de pagos asentados (torneos cancelados): devuelven
   // cash al medio de pago original, así que se descuentan del margen efectivo.
   flowRefundsCents: number
-  // Base de "reembolsos" del IVA efectivo: refunds de wallet ligados a torneos
-  // (reference_type='tournament') + reversas Flow completadas. Excluye los refunds
-  // por retiro fallido (ajuste de pasivo, no reversa de venta).
-  effectiveRefundsCents: number
+  flowRefundCompletedCount: number
+  documentedFlowRefundsCents: number
+  undocumentedFlowRefundsCents: number
+  // Reembolsos historicos del subledger de premios. No rebajan el F29 sin su
+  // documento tributario; se mantienen solo para conciliacion de legado.
+  legacyTournamentRefundsCents: number
   adjustmentsCents: number
   // Rakeback: crédito otorgado (informativo — indica el pasivo generado) y crédito
-  // redimido (inscripciones pagadas con crédito). El costo del programa se refleja
-  // como ingreso NO percibido: las inscripciones con crédito NO suman a cobros
-  // efectivos (ver effectiveEntriesCollectedCents), evitando doble conteo.
+  // redimido (inscripciones pagadas con credito). Se conserva por obligaciones
+  // historicas; la politica vigente no crea nuevos grants.
   rakebackGrantedCents: number
   creditRedeemedCents: number
   withdrawalTransactionsCents: number
@@ -81,31 +89,17 @@ export interface AccountingPeriodRow {
   withdrawalRejectedCents: number
   closingWalletLiabilityCents: number
   closingPendingWithdrawalsCents: number
-  // Contabilidad efectiva de la plataforma (criterio acordado):
-  // el IVA se reconoce sobre el margen devengado del producto según el criterio
-  // interno vigente: cobros por inscripción menos premios adjudicados (y menos
-  // reembolsos por torneos cancelados). La transferencia bancaria se reporta
-  // aparte porque liquida el pasivo, no vuelve a crear el gasto.
-  // No depende del split gerencial 70/30 por inscripción.
-  //   margen interno (IVA incl.) = cobros_inscripcion − premios_adjudicados − reembolsos
-  //   IVA débito efectivo       = margen × 19/119
-  //   resultado neto efectivo   = margen − IVA
-  effectiveEntriesCollectedCents: number
-  effectiveTaxableMarginCents: number
-  effectiveIvaDebitCents: number
-  effectiveNetResultCents: number
-  // La plataforma absorbe la comisión Flow (el checkout cobra solo el entry_fee),
-  // así que su costo neto reduce el resultado operativo y su IVA es crédito fiscal.
-  //   IVA a pagar efectivo   = IVA débito del margen − IVA crédito comisión Flow
-  //   resultado operativo    = resultado neto efectivo − comisión Flow neta
-  effectiveIvaPayableCents: number
-  accruedOperatingResultCents: number
+  estimatedRefundFeeNetCents: number
+  estimatedRefundFeeIvaCreditCents: number
+  estimatedRefundFeeGrossCents: number
+  netSalesAfterRefundsCents: number
+  accruedContributionCents: number
 }
 
 export interface AccountingSnapshot {
   generatedAt: string
-  walletLiabilityCents: number
-  usersWithWalletBalance: number
+  prizeSubledgerLiabilityCents: number
+  usersWithPrizeMovements: number
   pendingWithdrawalsCount: number
   pendingWithdrawalsCents: number
   prizeLiabilityCommittedCents: number
@@ -126,6 +120,7 @@ export interface ReconciliationCheck {
   paidAttemptWithoutRegistration: { count: number; sampleIds: string[] }
   walletLedgerDrift: { count: number; sampleUserIds: string[] }
   paidPayoutMissingTrace: { count: number; sampleIds: string[] }
+  completedRefundMissingCreditNote: { count: number; sampleIds: string[] }
   ok: boolean
 }
 
@@ -145,12 +140,18 @@ export function createEmptyAccountingPeriod(period: string): AccountingPeriodRow
     flowPendingCount: 0,
     flowRejectedCount: 0,
     flowCancelledExpiredCount: 0,
+    f29VoucherCount: 0,
     flowChargedGrossCents: 0,
     flowEntryNetCents: 0,
     flowUserFeeCents: 0,
     f29GrossSalesCents: 0,
     f29NetSalesCents: 0,
     f29IvaDebitCents: 0,
+    f29CreditNoteGrossCents: 0,
+    f29CreditNoteNetCents: 0,
+    f29CreditNoteIvaCents: 0,
+    f29NetIvaDebitCents: 0,
+    f29IvaPayableBeforeOtherCreditsCents: 0,
     estimatedFlowFeeNetCents: 0,
     estimatedFlowFeeIvaCreditCents: 0,
     estimatedFlowFeeGrossCents: 0,
@@ -164,7 +165,10 @@ export function createEmptyAccountingPeriod(period: string): AccountingPeriodRow
     prizeCreditsCents: 0,
     refundsCents: 0,
     flowRefundsCents: 0,
-    effectiveRefundsCents: 0,
+    flowRefundCompletedCount: 0,
+    documentedFlowRefundsCents: 0,
+    undocumentedFlowRefundsCents: 0,
+    legacyTournamentRefundsCents: 0,
     adjustmentsCents: 0,
     rakebackGrantedCents: 0,
     creditRedeemedCents: 0,
@@ -175,77 +179,58 @@ export function createEmptyAccountingPeriod(period: string): AccountingPeriodRow
     withdrawalRejectedCents: 0,
     closingWalletLiabilityCents: 0,
     closingPendingWithdrawalsCents: 0,
-    effectiveEntriesCollectedCents: 0,
-    effectiveTaxableMarginCents: 0,
-    effectiveIvaDebitCents: 0,
-    effectiveNetResultCents: 0,
-    effectiveIvaPayableCents: 0,
-    accruedOperatingResultCents: 0,
+    estimatedRefundFeeNetCents: 0,
+    estimatedRefundFeeIvaCreditCents: 0,
+    estimatedRefundFeeGrossCents: 0,
+    netSalesAfterRefundsCents: 0,
+    accruedContributionCents: 0,
   }
 }
 
-// IVA incluido con signo: el margen efectivo de un periodo puede ser
-// negativo en el borde de mes (premios pagados de torneos cuya inscripción
-// se cobró el mes anterior). En ese caso el IVA débito es negativo
-// (remanente a favor) y debe arrastrarse, no truncarse a cero.
-function ivaIncludedSigned(grossCents: number): { netCents: number; ivaCents: number } {
-  if (grossCents >= 0) {
-    const breakdown = calculateIvaIncludedBreakdown(grossCents)
-    return { netCents: breakdown.netCents, ivaCents: breakdown.ivaCents }
-  }
-  const breakdown = calculateIvaIncludedBreakdown(-grossCents)
-  return { netCents: -breakdown.netCents, ivaCents: -breakdown.ivaCents }
-}
-
-export interface EffectivePeriodTax {
-  /** cobros − premios − reembolsos (IVA incluido) */
-  taxableMarginCents: number
-  /** 19/119 del margen (negativo = remanente a favor) */
+export interface CanonicalPeriodAccounting {
+  grossSalesCents: number
+  netSalesCents: number
   ivaDebitCents: number
-  /** margen − IVA */
-  netResultCents: number
+  creditNoteGrossCents: number
+  creditNoteNetCents: number
+  creditNoteIvaCents: number
+  netIvaDebitCents: number
+  netSalesAfterRefundsCents: number
+  accruedContributionCents: number
 }
 
-// Núcleo del modelo de IVA efectivo de la plataforma. Función pura: el IVA se
-// reconoce sobre lo que la plataforma EFECTIVAMENTE retiene (cobros por
-// inscripción menos premios pagados a ganadores menos reembolsos). No usa el
-// split contable 70/30. Como cobros y premios comparten la tasa 19%,
-// IVA(cobros) − IVA(premios) = 19/119 × (cobros − premios − reembolsos).
-export function calculateEffectivePeriodTax(input: {
-  entriesCollectedCents: number
-  prizesPaidCents: number
-  refundsCents: number
-}): EffectivePeriodTax {
-  const taxableMarginCents =
-    input.entriesCollectedCents - input.prizesPaidCents - input.refundsCents
-  const breakdown = ivaIncludedSigned(taxableMarginCents)
-  return {
-    taxableMarginCents,
-    ivaDebitCents: breakdown.ivaCents,
-    netResultCents: taxableMarginCents - breakdown.ivaCents,
-  }
-}
-
-export interface EffectiveOperatingResult {
-  /** IVA a pagar tras crédito de la comisión Flow (débito del margen − crédito Flow). */
-  ivaPayableCents: number
-  /** Resultado operativo tras absorber el costo neto de la comisión Flow. */
-  operatingResultCents: number
-}
-
-// Ajuste por absorción de la comisión Flow. El checkout cobra exactamente el
-// entry_fee (user_fee=0), así que la plataforma ABSORBE la comisión Flow: es un
-// costo real que reduce el resultado operativo, y su IVA (19%, facturado por Flow)
-// es crédito fiscal que reduce el IVA a pagar. Función pura para testeo.
-export function applyAbsorbedFlowCost(input: {
-  effectiveNetResultCents: number
-  effectiveIvaDebitCents: number
+/**
+ * Cierre canonico: el premio es gasto y nunca reduce el IVA de la venta.
+ * Las notas de credito rebajan el debito fiscal; las devoluciones economicas
+ * reducen resultado aunque su nota de credito aun este pendiente.
+ */
+export function calculateCanonicalPeriodAccounting(input: {
+  grossSalesCents: number
+  creditNoteGrossCents: number
+  economicRefundGrossCents: number
+  prizesAccruedCents: number
   flowFeeNetCents: number
-  flowFeeIvaCreditCents: number
-}): EffectiveOperatingResult {
+  refundFeeNetCents: number
+}): CanonicalPeriodAccounting {
+  const sales = calculateIvaIncludedBreakdown(input.grossSalesCents)
+  const creditNotes = calculateIvaIncludedBreakdown(input.creditNoteGrossCents)
+  const economicRefunds = calculateIvaIncludedBreakdown(input.economicRefundGrossCents)
+  const netSalesAfterRefundsCents = sales.netCents - economicRefunds.netCents
+
   return {
-    ivaPayableCents: input.effectiveIvaDebitCents - input.flowFeeIvaCreditCents,
-    operatingResultCents: input.effectiveNetResultCents - input.flowFeeNetCents,
+    grossSalesCents: sales.grossCents,
+    netSalesCents: sales.netCents,
+    ivaDebitCents: sales.ivaCents,
+    creditNoteGrossCents: creditNotes.grossCents,
+    creditNoteNetCents: creditNotes.netCents,
+    creditNoteIvaCents: creditNotes.ivaCents,
+    netIvaDebitCents: sales.ivaCents - creditNotes.ivaCents,
+    netSalesAfterRefundsCents,
+    accruedContributionCents:
+      netSalesAfterRefundsCents -
+      input.prizesAccruedCents -
+      input.flowFeeNetCents -
+      input.refundFeeNetCents,
   }
 }
 
@@ -308,13 +293,22 @@ async function fetchAll<T>(
 
 function addFlowAttempt(row: AccountingPeriodRow, attempt: FlowPaymentAttempt) {
   if (attempt.payment_method === 'simulation') return
+  const confirmedSale =
+    attempt.flow_status_code === 2 &&
+    attempt.intent === 'tournament_registration' &&
+    (attempt.status === 'paid' || attempt.status === 'cancelled')
+
+  if (confirmedSale) {
+    row.f29VoucherCount += 1
+    row.flowChargedGrossCents += attempt.charged_amount_cents
+    row.flowEntryNetCents += attempt.net_amount_cents
+    row.flowUserFeeCents += attempt.user_fee_cents
+    row.f29GrossSalesCents += attempt.charged_amount_cents
+  }
+
   switch (attempt.status) {
     case 'paid':
       row.flowPaidCount += 1
-      row.flowChargedGrossCents += attempt.charged_amount_cents
-      row.flowEntryNetCents += attempt.net_amount_cents
-      row.flowUserFeeCents += attempt.user_fee_cents
-      row.f29GrossSalesCents += attempt.charged_amount_cents
       break
     case 'pending':
       row.flowPendingCount += 1
@@ -333,19 +327,12 @@ function addRegistration(
   row: AccountingPeriodRow,
   registration: Registration,
   periodUsers: Map<string, Set<string>>,
-  periodTournaments: Map<string, Set<string>>,
-  creditFundedKeys: Set<string>
+  periodTournaments: Map<string, Set<string>>
 ) {
   row.registrationsCount += 1
-  // Cobro efectivo de la inscripción (cash). Las inscripciones pagadas con crédito
-  // de rakeback NO ingresan cash, así que se EXCLUYEN de los cobros efectivos: su
-  // costo es el ingreso no percibido (criterio cash, sin doble contar el grant).
-  const creditFunded = creditFundedKeys.has(`${registration.tournament_id}::${registration.user_id}`)
-  if (!creditFunded) {
-    row.effectiveEntriesCollectedCents += registration.entry_fee_cents ?? 0
-  }
-  // Split contable referencial (70/30). Ya NO es la base del IVA: se conserva
-  // solo como referencia y para la conciliación fee_gross = net + iva.
+  // El F29 se construye desde vouchers Flow confirmados, nunca desde
+  // registrations. Este split historico se conserva solo para conciliacion
+  // gerencial y para comprobar fee_gross = net + iva.
   row.prizeFundCents += registration.prize_fund_contribution_cents ?? 0
   row.platformFeeGrossCents += registration.platform_fee_gross_cents ?? 0
   row.platformFeeNetCents += registration.platform_fee_net_cents ?? 0
@@ -375,7 +362,7 @@ function addWalletTransaction(
     // Solo los refunds ligados a torneos reales reversan una venta. Los de
     // reference_type='withdrawal' compensan un retiro fallido (pasivo, no venta).
     if (tx.reference_type === 'tournament' && !fromTestTournament) {
-      row.effectiveRefundsCents += tx.amount_cents
+      row.legacyTournamentRefundsCents += tx.amount_cents
     }
   }
   if (tx.type === 'adjustment') row.adjustmentsCents += tx.amount_cents
@@ -417,10 +404,6 @@ function finalizePeriod(
   allWalletTransactions: WalletTransaction[],
   allWithdrawals: WithdrawalRequest[]
 ) {
-  const salesBreakdown = calculateIvaIncludedBreakdown(row.f29GrossSalesCents)
-  row.f29NetSalesCents = salesBreakdown.netCents
-  row.f29IvaDebitCents = salesBreakdown.ivaCents
-
   // A4: Calcular el bruto Flow (IVA-incluido) en una sola pasada y luego
   // extraer net/IVA con calculateIvaIncludedBreakdown para garantizar
   // que net + iva = gross exactamente (sin drift por rondeo en cascada).
@@ -434,6 +417,32 @@ function finalizePeriod(
   row.estimatedFlowFeeGrossCents = flowFeeBreakdown.grossCents
   row.estimatedFlowFeeNetCents = flowFeeBreakdown.netCents
   row.estimatedFlowFeeIvaCreditCents = flowFeeBreakdown.ivaCents
+
+  const refundFeeNetCents =
+    row.flowRefundCompletedCount * PILOT_BUSINESS_RULES.flowRefundFeeNetCents
+  const refundFeeIvaCents = Math.round((refundFeeNetCents * 1900) / BPS)
+  row.estimatedRefundFeeNetCents = refundFeeNetCents
+  row.estimatedRefundFeeIvaCreditCents = refundFeeIvaCents
+  row.estimatedRefundFeeGrossCents = refundFeeNetCents + refundFeeIvaCents
+
+  const canonical = calculateCanonicalPeriodAccounting({
+    grossSalesCents: row.f29GrossSalesCents,
+    creditNoteGrossCents: row.f29CreditNoteGrossCents,
+    economicRefundGrossCents: row.flowRefundsCents + row.legacyTournamentRefundsCents,
+    prizesAccruedCents: row.prizeCreditsCents,
+    flowFeeNetCents: row.estimatedFlowFeeNetCents,
+    refundFeeNetCents: row.estimatedRefundFeeNetCents,
+  })
+  row.f29NetSalesCents = canonical.netSalesCents
+  row.f29IvaDebitCents = canonical.ivaDebitCents
+  row.f29CreditNoteNetCents = canonical.creditNoteNetCents
+  row.f29CreditNoteIvaCents = canonical.creditNoteIvaCents
+  row.f29NetIvaDebitCents = canonical.netIvaDebitCents
+  // El IVA de las facturas Flow y de otros proveedores se concilia contra el
+  // RCV. Las estimaciones de tarifa NO se descuentan automaticamente del F29.
+  row.f29IvaPayableBeforeOtherCreditsCents = canonical.netIvaDebitCents
+  row.netSalesAfterRefundsCents = canonical.netSalesAfterRefundsCents
+  row.accruedContributionCents = canonical.accruedContributionCents
 
   const endMs = periodEndMs(row.period)
   const latestBalanceByUser = new Map<string, WalletTransaction>()
@@ -464,33 +473,6 @@ function finalizePeriod(
     })
     .reduce((total, withdrawal) => total + withdrawal.amount_cents, 0)
 
-  // ── Contabilidad efectiva (criterio de la plataforma) ──────────────
-  // Criterio GERENCIAL vigente: estima sobre cobros menos premios adjudicados y
-  // reembolsos. La forma de declarar IVA debe validarla el contador; no se deriva
-  // automáticamente de este reporte.
-  const effectiveTax = calculateEffectivePeriodTax({
-    entriesCollectedCents: row.effectiveEntriesCollectedCents,
-    prizesPaidCents: row.prizeCreditsCents,
-    // Reembolsos que reversan ventas: refunds de wallet ligados a torneos +
-    // reversas Flow completadas de pagos asentados (torneos cancelados).
-    refundsCents: row.effectiveRefundsCents + row.flowRefundsCents,
-  })
-  row.effectiveTaxableMarginCents = effectiveTax.taxableMarginCents
-  row.effectiveIvaDebitCents = effectiveTax.ivaDebitCents
-  row.effectiveNetResultCents = effectiveTax.netResultCents
-
-  // Absorción de la comisión Flow: el checkout cobra solo el entry_fee, así que
-  // la plataforma asume el costo Flow. Se resta del resultado operativo y su IVA
-  // se toma como crédito, reduciendo el IVA a pagar. (Antes se asumía gross-up,
-  // lo que sobreestimaba utilidad e IVA.)
-  const operating = applyAbsorbedFlowCost({
-    effectiveNetResultCents: effectiveTax.netResultCents,
-    effectiveIvaDebitCents: effectiveTax.ivaDebitCents,
-    flowFeeNetCents: row.estimatedFlowFeeNetCents,
-    flowFeeIvaCreditCents: row.estimatedFlowFeeIvaCreditCents,
-  })
-  row.effectiveIvaPayableCents = operating.ivaPayableCents
-  row.accruedOperatingResultCents = operating.operatingResultCents
 }
 
 // A5: invariantes contables. Estas verificaciones son baratas y cubren
@@ -513,13 +495,15 @@ function runReconciliation(
   flowAttempts: FlowPaymentAttempt[],
   registrations: Registration[],
   walletTransactions: WalletTransaction[],
-  withdrawals: WithdrawalRequest[]
+  withdrawals: WithdrawalRequest[],
+  flowRefunds: FlowRefundAttempt[]
 ): ReconciliationCheck {
   const flowAttemptInternalMismatch = { count: 0, sampleIds: [] as string[] }
   const registrationFeeMismatch = { count: 0, sampleIds: [] as string[] }
   const paidAttemptWithoutRegistration = { count: 0, sampleIds: [] as string[] }
   const walletLedgerDrift = { count: 0, sampleUserIds: [] as string[] }
   const paidPayoutMissingTrace = { count: 0, sampleIds: [] as string[] }
+  const completedRefundMissingCreditNote = { count: 0, sampleIds: [] as string[] }
 
   for (const attempt of flowAttempts) {
     if (attempt.charged_amount_cents !== attempt.net_amount_cents + attempt.user_fee_cents) {
@@ -605,6 +589,14 @@ function runReconciliation(
     }
   }
 
+  for (const refund of flowRefunds) {
+    if (refund.status !== 'completed' || refund.tax_document_status === 'issued') continue
+    completedRefundMissingCreditNote.count += 1
+    if (completedRefundMissingCreditNote.sampleIds.length < SAMPLE_LIMIT) {
+      completedRefundMissingCreditNote.sampleIds.push(refund.id)
+    }
+  }
+
   return {
     flowAttemptInternalMismatch,
     registrationFeeMismatch,
@@ -615,8 +607,10 @@ function runReconciliation(
       registrationFeeMismatch.count === 0 &&
       paidAttemptWithoutRegistration.count === 0 &&
       walletLedgerDrift.count === 0 &&
-      paidPayoutMissingTrace.count === 0,
+      paidPayoutMissingTrace.count === 0 &&
+      completedRefundMissingCreditNote.count === 0,
     paidPayoutMissingTrace,
+    completedRefundMissingCreditNote,
   }
 }
 
@@ -659,7 +653,7 @@ export async function buildModeloAAccountingReport(
     fetchAll<FlowRefundAttempt>(
       supabase,
       'flow_refund_attempts',
-      'id, flow_payment_attempt_id, amount_cents, status, created_at, settled_at'
+      'id, tournament_id, user_id, flow_payment_attempt_id, refund_commerce_order, flow_refund_token, flow_refund_order, amount_cents, amount_pesos, receiver_email, status, error_message, tax_document_status, tax_document_number, tax_document_issued_at, tax_document_notes, created_at, settled_at'
     ),
   ])
 
@@ -673,21 +667,6 @@ export async function buildModeloAAccountingReport(
   const periodUsers = new Map<string, Set<string>>()
   const periodTournaments = new Map<string, Set<string>>()
 
-  // Claves (torneo::usuario) de inscripciones pagadas con crédito de rakeback:
-  // tienen una redención (tournament_credit negativo, kind='redeem') que referencia
-  // el torneo. Se usan para excluirlas de los cobros efectivos (cash).
-  const creditFundedKeys = new Set<string>()
-  for (const tx of walletTransactions) {
-    if (
-      tx.type === 'tournament_credit' &&
-      tx.amount_cents < 0 &&
-      (tx.metadata as { kind?: string })?.kind === 'redeem' &&
-      tx.reference_id
-    ) {
-      creditFundedKeys.add(`${tx.reference_id}::${tx.user_id}`)
-    }
-  }
-
   for (const attempt of flowAttempts) {
     const period = periodKey(attempt.settled_at ?? attempt.created_at)
     addFlowAttempt(getOrCreatePeriod(periods, period), attempt)
@@ -697,7 +676,7 @@ export async function buildModeloAAccountingReport(
     // Torneos de prueba no entran al P&L.
     if (isTestTournamentIds.has(registration.tournament_id)) continue
     const period = periodKey(registration.registered_at)
-    addRegistration(getOrCreatePeriod(periods, period), registration, periodUsers, periodTournaments, creditFundedKeys)
+    addRegistration(getOrCreatePeriod(periods, period), registration, periodUsers, periodTournaments)
   }
 
   for (const tx of walletTransactions) {
@@ -705,20 +684,27 @@ export async function buildModeloAAccountingReport(
     addWalletTransaction(getOrCreatePeriod(periods, period), tx, isTestTournamentIds)
   }
 
-  // Reversas Flow completadas de pagos que SÍ asentaron inscripción (torneos
-  // cancelados). Devuelven cash: se descuentan del margen efectivo en el período
-  // en que se completaron. Las reversas de pagos no asentables (attempt terminó
-  // 'cancelled', nunca contó como cobro) se excluyen para no descontar dos veces.
-  const attemptStatusById = new Map(flowAttempts.map((a) => [a.id, a.status]))
+  // La devolucion economica se reconoce cuando Flow la completa. La rebaja del
+  // IVA se reconoce en la fecha de la nota de credito, que puede caer en otro mes.
   const refundedAttemptIds = new Set<string>()
   for (const refund of flowRefunds) {
     if (refund.status !== 'completed') continue
     if (!refund.flow_payment_attempt_id) continue
     if (refundedAttemptIds.has(refund.flow_payment_attempt_id)) continue
-    if (attemptStatusById.get(refund.flow_payment_attempt_id) !== 'paid') continue
     refundedAttemptIds.add(refund.flow_payment_attempt_id)
-    const period = periodKey(refund.settled_at ?? refund.created_at)
-    getOrCreatePeriod(periods, period).flowRefundsCents += refund.amount_cents
+    const refundPeriod = periodKey(refund.settled_at ?? refund.created_at)
+    const refundRow = getOrCreatePeriod(periods, refundPeriod)
+    refundRow.flowRefundsCents += refund.amount_cents
+    refundRow.flowRefundCompletedCount += 1
+
+    if (refund.tax_document_status === 'issued' && refund.tax_document_issued_at) {
+      const taxPeriod = periodKey(refund.tax_document_issued_at)
+      const taxRow = getOrCreatePeriod(periods, taxPeriod)
+      taxRow.f29CreditNoteGrossCents += refund.amount_cents
+      taxRow.documentedFlowRefundsCents += refund.amount_cents
+    } else {
+      refundRow.undocumentedFlowRefundsCents += refund.amount_cents
+    }
   }
 
   for (const withdrawal of withdrawals) {
@@ -743,7 +729,13 @@ export async function buildModeloAAccountingReport(
   const pendingWithdrawals = withdrawals.filter((withdrawal) =>
     withdrawal.status === 'pending' || withdrawal.status === 'approved'
   )
-  const reconciliation = runReconciliation(flowAttempts, registrations, walletTransactions, withdrawals)
+  const reconciliation = runReconciliation(
+    flowAttempts,
+    registrations,
+    walletTransactions,
+    withdrawals,
+    flowRefunds
+  )
   const generatedAt = new Date().toISOString()
 
   return {
@@ -751,23 +743,21 @@ export async function buildModeloAAccountingReport(
     model: 'Modelo A',
     reconciliation,
     notes: [
-      'P&L devengado: el premio se reconoce al adjudicarse y crea un pasivo. La transferencia bancaria sólo liquida ese pasivo y se informa aparte como retiros_pagados; no se descuenta por segunda vez del resultado.',
-      'Criterio gerencial interno: la estimación de margen usa cobros menos premios adjudicados y reembolsos. No debe copiarse al F29 sin confirmación del contador sobre base imponible, documentación y momento de reconocimiento.',
-      'La plataforma ABSORBE la comision Flow: el checkout cobra solo el entry_fee (sin recargo al usuario). Por eso su costo neto se resta del resultado operativo devengado y su IVA (19%, facturado por Flow) se toma como credito, reduciendo el IVA a pagar (columna efectivo_iva_a_pagar). Las columnas f29_* quedan como referencia del comprobante/voucher.',
-      'Puntos formales para el contador: definir si la boleta se emite por el total de la inscripcion o por el margen, el tratamiento tributario del premio y cualquier certificado o declaración jurada aplicable.',
-      'F22/gestion: premios y retiros se reportan aparte; los premios del torneo son fijos y publicados antes del pago.',
-      'Rakeback: el credito otorgado (rakeback_otorgado) es informativo del pasivo generado. El costo del programa se refleja como ingreso NO percibido: las inscripciones pagadas con credito NO suman a cobros efectivos (reducen el margen afecto). No se asienta el grant como gasto aparte, para evitar doble conteo. Nota: una inscripcion con credito ocupa un cupo premiable sin ingreso cash de ese torneo; la solvencia se mantiene en agregado (el credito provino de cash de inscripciones previas), no necesariamente por torneo.',
-      'Reembolsos del margen efectivo (efectivo_reembolsos): refunds de wallet ligados a torneos + reversas Flow COMPLETADAS de pagos asentados (torneos cancelados), en el periodo en que se completaron. Los refunds por retiro fallido (reference_type=withdrawal) son ajuste de pasivo y NO reducen el margen. Las reversas de pagos no asentables tampoco (ese cobro nunca conto como venta).',
-      'Torneos is_test quedan excluidos del P&L (inscripciones, premios y creditos). El pasivo de wallet al cierre si refleja el ledger completo.',
+      'F29: el total de cada voucher Flow confirmado es venta afecta con precio final IVA incluido. El premio es gasto y no rebaja el debito fiscal.',
+      'Una devolucion reduce el resultado cuando Flow la completa, pero solo reduce el IVA en el periodo de la nota de credito registrada.',
+      'La comision Flow y su IVA son estimaciones de gestion. El credito fiscal se incorpora al F29 unicamente al conciliar la factura real contra el RCV.',
+      'P&L devengado: el premio se reconoce al adjudicarse y crea un pasivo. La transferencia bancaria solo liquida ese pasivo; no vuelve a crear gasto.',
+      'Las recompensas acumulables estan desactivadas para el piloto. Los movimientos historicos se conservan para respetar obligaciones ya otorgadas.',
+      'Torneos is_test y pagos simulation quedan fuera del P&L y del F29 interno.',
     ],
     rows: [...periods.values()].sort((left, right) => right.period.localeCompare(left.period)),
     snapshot: {
       generatedAt,
-      walletLiabilityCents: [...latestBalanceByUser.values()].reduce(
+      prizeSubledgerLiabilityCents: [...latestBalanceByUser.values()].reduce(
         (total, tx) => total + tx.balance_after_cents,
         0
       ),
-      usersWithWalletBalance: latestBalanceByUser.size,
+      usersWithPrizeMovements: latestBalanceByUser.size,
       pendingWithdrawalsCount: pendingWithdrawals.length,
       pendingWithdrawalsCents: pendingWithdrawals.reduce(
         (total, withdrawal) => total + withdrawal.amount_cents,
@@ -794,15 +784,23 @@ export function accountingReportToCsv(report: AccountingReport): string {
     'flow_pagos_pendientes',
     'flow_pagos_rechazados',
     'flow_pagos_anulados_expirados',
+    'f29_vouchers_confirmados',
     'flow_cobrado_bruto_clp',
     'flow_monto_inscripcion_clp',
     'flow_fee_usuario_clp',
     'f29_venta_afecta_bruta_clp',
     'f29_base_neta_clp',
     'f29_iva_debito_clp',
+    'f29_notas_credito_bruto_clp',
+    'f29_notas_credito_neto_clp',
+    'f29_notas_credito_iva_clp',
+    'f29_iva_debito_neto_clp',
+    'f29_iva_antes_otros_creditos_rcv_clp',
     'flow_comision_neta_estimada_clp',
     'flow_iva_credito_estimado_clp',
     'flow_comision_total_estimada_clp',
+    'flow_tarifa_reembolsos_neta_estimada_clp',
+    'flow_tarifa_reembolsos_iva_estimada_clp',
     'inscripciones',
     'usuarios_unicos',
     'torneos_con_ingreso',
@@ -811,26 +809,23 @@ export function accountingReportToCsv(report: AccountingReport): string {
     'fee_plataforma_neto_clp',
     'fee_plataforma_iva_clp',
     'premios_acreditados_clp',
-    'reembolsos_wallet_clp',
+    'premios_devengados_clp',
+    'reembolsos_subledger_legado_clp',
     'reversas_flow_clp',
-    'efectivo_reembolsos_clp',
-    'ajustes_wallet_clp',
+    'reversas_flow_con_nota_credito_clp',
+    'reversas_flow_sin_nota_credito_clp',
+    'ajustes_subledger_clp',
     'rakeback_otorgado_clp',
     'credito_redimido_clp',
-    'retiros_wallet_clp',
+    'solicitudes_pago_subledger_clp',
     'retiros_solicitados_clp',
     'retiros_aprobados_clp',
     'retiros_pagados_clp',
     'retiros_rechazados_clp',
-    'saldo_wallet_cierre_clp',
+    'pasivo_subledger_premios_cierre_clp',
     'retiros_pendientes_cierre_clp',
-    'efectivo_cobros_inscripcion_clp',
-    'premios_devengados_clp',
-    'efectivo_margen_afecto_clp',
-    'efectivo_iva_debito_clp',
-    'efectivo_resultado_neto_clp',
-    'efectivo_iva_a_pagar_clp',
-    'resultado_operativo_devengado_est_clp',
+    'ventas_netas_despues_reembolsos_clp',
+    'contribucion_devengada_estimada_clp',
   ]
 
   const lines = [headers.join(',')]
@@ -843,15 +838,23 @@ export function accountingReportToCsv(report: AccountingReport): string {
         row.flowPendingCount,
         row.flowRejectedCount,
         row.flowCancelledExpiredCount,
+        row.f29VoucherCount,
         centsToPesos(row.flowChargedGrossCents),
         centsToPesos(row.flowEntryNetCents),
         centsToPesos(row.flowUserFeeCents),
         centsToPesos(row.f29GrossSalesCents),
         centsToPesos(row.f29NetSalesCents),
         centsToPesos(row.f29IvaDebitCents),
+        centsToPesos(row.f29CreditNoteGrossCents),
+        centsToPesos(row.f29CreditNoteNetCents),
+        centsToPesos(row.f29CreditNoteIvaCents),
+        centsToPesos(row.f29NetIvaDebitCents),
+        centsToPesos(row.f29IvaPayableBeforeOtherCreditsCents),
         centsToPesos(row.estimatedFlowFeeNetCents),
         centsToPesos(row.estimatedFlowFeeIvaCreditCents),
         centsToPesos(row.estimatedFlowFeeGrossCents),
+        centsToPesos(row.estimatedRefundFeeNetCents),
+        centsToPesos(row.estimatedRefundFeeIvaCreditCents),
         row.registrationsCount,
         row.uniqueUsers,
         row.tournamentsWithRevenue,
@@ -860,9 +863,11 @@ export function accountingReportToCsv(report: AccountingReport): string {
         centsToPesos(row.platformFeeNetCents),
         centsToPesos(row.platformFeeIvaCents),
         centsToPesos(row.prizeCreditsCents),
+        centsToPesos(row.prizeCreditsCents),
         centsToPesos(row.refundsCents),
         centsToPesos(row.flowRefundsCents),
-        centsToPesos(row.effectiveRefundsCents + row.flowRefundsCents),
+        centsToPesos(row.documentedFlowRefundsCents),
+        centsToPesos(row.undocumentedFlowRefundsCents),
         centsToPesos(row.adjustmentsCents),
         centsToPesos(row.rakebackGrantedCents),
         centsToPesos(row.creditRedeemedCents),
@@ -873,13 +878,8 @@ export function accountingReportToCsv(report: AccountingReport): string {
         centsToPesos(row.withdrawalRejectedCents),
         centsToPesos(row.closingWalletLiabilityCents),
         centsToPesos(row.closingPendingWithdrawalsCents),
-        centsToPesos(row.effectiveEntriesCollectedCents),
-        centsToPesos(row.prizeCreditsCents),
-        centsToPesos(row.effectiveTaxableMarginCents),
-        centsToPesos(row.effectiveIvaDebitCents),
-        centsToPesos(row.effectiveNetResultCents),
-        centsToPesos(row.effectiveIvaPayableCents),
-        centsToPesos(row.accruedOperatingResultCents),
+        centsToPesos(row.netSalesAfterRefundsCents),
+        centsToPesos(row.accruedContributionCents),
       ].join(',')
     )
   }

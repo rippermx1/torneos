@@ -34,10 +34,10 @@ export async function GET(): Promise<Response> {
     'usuarios_unicos',
     'torneos',
     'recaudado_bruto_clp',
-    'fondo_premios_clp',
-    'fee_bruto_clp',
-    'fee_neto_clp',
-    'iva_debito_clp',
+    'presupuesto_premios_interno_clp',
+    'remanente_bruto_interno_clp',
+    'remanente_neto_historico_clp',
+    'iva_split_historico_no_f29_clp',
   ]
 
   const lines = [headers.join(',')]

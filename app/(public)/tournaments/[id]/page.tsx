@@ -186,11 +186,11 @@ export default async function TournamentDetailPage({
         <div className="border rounded-xl p-5 space-y-2 text-sm">
           <h2 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground">¿Cómo se usa tu inscripción?</h2>
           <div className="flex justify-between gap-4">
-            <span className="text-muted-foreground">Fondo de premios del torneo</span>
+            <span className="text-muted-foreground">Presupuesto máximo para premios</span>
             <span className="font-medium">{formatCLP(split.prizeFundContributionCents)}</span>
           </div>
           <div className="flex justify-between gap-4">
-            <span className="text-muted-foreground">Operación de la plataforma (IVA y procesamiento incluidos)</span>
+            <span className="text-muted-foreground">IVA, procesamiento y operación</span>
             <span className="font-medium">{formatCLP(split.platformFeeGrossCents)}</span>
           </div>
         </div>

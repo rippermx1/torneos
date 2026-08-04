@@ -13,7 +13,7 @@ export default function TerminosPage() {
         <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">← Inicio</Link>
         <h1 className="text-3xl font-bold mt-4">Términos y Condiciones</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Versión 1.1 · Última actualización: 15 de mayo de 2026
+          Versión 1.2 · Última actualización: 4 de agosto de 2026
         </p>
       </div>
 
@@ -80,13 +80,16 @@ export default function TerminosPage() {
           un porcentaje variable de la recaudación.
         </p>
         <p>
-          En cada inscripción, un <strong>70%</strong> se orienta al premio del torneo y un
-          {' '}<strong>30%</strong> corresponde al fee bruto de la plataforma, ambos con IVA incluido.
+          Para gobernar la solvencia del piloto, la empresa puede presupuestar hasta un{' '}
+          <strong>65% de la recaudación bruta</strong> para financiar los premios publicados.
+          Es una regla interna de presupuesto: no crea un pozo, custodia ni propiedad del
+          participante sobre ese porcentaje. El remanente cubre el IVA de la venta completa,
+          procesamiento, operación y margen de la plataforma.
         </p>
         <p>
           El cobro de la inscripción se realiza directamente a través de Flow.cl al momento de
-          inscribirse. El checkout puede incluir un cargo de procesamiento visible antes del pago,
-          destinado a cubrir costos de pasarela. El comprobante de pago electrónico emitido por Flow
+          inscribirse. El usuario paga el precio final informado, con IVA incluido. El comprobante
+          de pago electrónico emitido por Flow
           opera como boleta electrónica del servicio para efectos del Servicio de Impuestos Internos
           (SII), cuando dicha modalidad se encuentre correctamente habilitada para el comercio.
         </p>

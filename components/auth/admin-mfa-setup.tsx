@@ -7,16 +7,12 @@ import { useState } from 'react'
 import { Check, Copy, KeyRound, LoaderCircle, ShieldCheck, Smartphone } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { ADMIN_MFA_CHALLENGE_PATH } from '@/lib/supabase/admin-mfa-policy'
+import { getAdminMfaQrSource } from '@/lib/supabase/admin-mfa-qr'
 
 interface Enrollment {
   factorId: string
   qrCode: string
   secret: string
-}
-
-function qrCodeSource(qrCode: string): string {
-  if (qrCode.startsWith('data:')) return qrCode
-  return `data:image/svg+xml;utf-8,${encodeURIComponent(qrCode)}`
 }
 
 export function AdminMfaSetup() {
@@ -150,7 +146,7 @@ export function AdminMfaSetup() {
               <p className="text-sm font-semibold">1. Escanea este código con tu app</p>
               <div className="mx-auto w-fit rounded-xl border bg-white p-3">
                 <Image
-                  src={qrCodeSource(enrollment.qrCode)}
+                  src={getAdminMfaQrSource(enrollment.qrCode)}
                   alt="Código QR para vincular la aplicación de autenticación"
                   width={208}
                   height={208}

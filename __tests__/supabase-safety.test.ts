@@ -26,10 +26,28 @@ describe('Supabase script safety', () => {
     ).toBe('stagingproject123')
   })
 
-  it('never permits test data in the known production project', () => {
+  it('permits test data in an explicitly confirmed development project', () => {
+    expect(
+      requireNonProductionProject(productionUrl, 'Simulación', {
+        CONFIRM_SUPABASE_PROJECT_REF: 'baeylvoipmazcthnwxmz',
+      })
+    ).toBe('baeylvoipmazcthnwxmz')
+  })
+
+  it('never permits test data in a project marked as production', () => {
     expect(() =>
       requireNonProductionProject(productionUrl, 'Simulación', {
         CONFIRM_SUPABASE_PROJECT_REF: 'baeylvoipmazcthnwxmz',
+        PRODUCTION_SUPABASE_PROJECT_REF: 'baeylvoipmazcthnwxmz',
+      })
+    ).toThrow('es un proyecto productivo')
+  })
+
+  it('supports protecting more than one project', () => {
+    expect(() =>
+      requireNonProductionProject(stagingUrl, 'Simulación', {
+        CONFIRM_SUPABASE_PROJECT_REF: 'stagingproject123',
+        PROTECTED_SUPABASE_PROJECT_REFS: 'anotherproject, stagingproject123',
       })
     ).toThrow('es un proyecto productivo')
   })

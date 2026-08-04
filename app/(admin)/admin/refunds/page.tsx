@@ -2,6 +2,7 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { formatCLP, formatDateTimeCL } from '@/lib/utils'
 import Link from 'next/link'
 import { RefundRetryButton } from '@/components/admin/refund-retry-button'
+import { RefundCreditNoteForm } from '@/components/admin/refund-credit-note-form'
 import type { FlowRefundAttempt, FlowRefundStatus } from '@/types/database'
 
 export const revalidate = 0
@@ -74,6 +75,9 @@ export default async function AdminRefundsPage({
 
   const pendingCount = counts.pending
   const rejectedCount = counts.rejected
+  const pendingCreditNotes = attempts.filter(
+    (attempt) => attempt.status === 'completed' && attempt.tax_document_status === 'required'
+  ).length
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -97,6 +101,13 @@ export default async function AdminRefundsPage({
               {pendingCount} pendiente{pendingCount !== 1 ? 's' : ''} — esperando confirmación de Flow
             </div>
           )}
+        </div>
+      )}
+
+      {pendingCreditNotes > 0 && (
+        <div className="text-sm px-4 py-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-900">
+          {pendingCreditNotes} devolución{pendingCreditNotes !== 1 ? 'es' : ''} completada{pendingCreditNotes !== 1 ? 's' : ''}{' '}
+          aún no puede{pendingCreditNotes !== 1 ? 'n' : ''} rebajar el IVA: registra su nota de crédito.
         </div>
       )}
 
@@ -156,6 +167,15 @@ export default async function AdminRefundsPage({
                   <p className="text-xs text-red-600 font-mono truncate max-w-md" title={a.error_message}>
                     {a.error_message}
                   </p>
+                )}
+                {a.tax_document_status === 'issued' && (
+                  <p className="text-xs text-emerald-700">
+                    Nota de crédito {a.tax_document_number} ·{' '}
+                    {a.tax_document_issued_at ? formatDateTimeCL(a.tax_document_issued_at) : 'fecha registrada'}
+                  </p>
+                )}
+                {a.status === 'completed' && a.tax_document_status === 'required' && (
+                  <RefundCreditNoteForm refundId={a.id} />
                 )}
               </div>
 

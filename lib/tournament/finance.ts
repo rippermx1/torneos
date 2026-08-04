@@ -1,16 +1,17 @@
 import type { TournamentType } from '@/types/database'
+import { PILOT_BUSINESS_RULES } from '@/lib/business/rules'
 
 const BPS = 10000
 
 export const IVA_BPS = 1900
 export const DEFAULT_PRIZE_MODEL = 'entry_pool' as const
-export const DEFAULT_PRIZE_FUND_BPS = 7000
+export const DEFAULT_PRIZE_FUND_BPS = PILOT_BUSINESS_RULES.prizeBudgetBps
 export const DEFAULT_PRIZE_POOL_BPS = DEFAULT_PRIZE_FUND_BPS
 export const DEFAULT_PLATFORM_FEE_BPS = BPS - DEFAULT_PRIZE_FUND_BPS
 export const DEFAULT_PRIZE_1ST_BPS = 7000
 export const DEFAULT_PRIZE_2ND_BPS = 2000
 export const DEFAULT_PRIZE_3RD_BPS = BPS - DEFAULT_PRIZE_1ST_BPS - DEFAULT_PRIZE_2ND_BPS
-export const MIN_TARGET_PLATFORM_NET_MARGIN_BPS = 1000
+export const MIN_TARGET_PLATFORM_NET_MARGIN_BPS = 1500
 export const MIN_TARGET_MARGIN_BPS = MIN_TARGET_PLATFORM_NET_MARGIN_BPS
 
 // Premio de 1er lugar por defecto para freerolls de adquisición. Un freeroll
@@ -18,9 +19,11 @@ export const MIN_TARGET_MARGIN_BPS = MIN_TARGET_PLATFORM_NET_MARGIN_BPS
 // costo de marketing puro (sin cuota que lo financie) y configurable por torneo.
 export const DEFAULT_FREEROLL_PRIZE_CENTS = 500000
 // Tope de sanidad para evitar premios de freeroll por error de tipeo.
-export const MAX_FREEROLL_PRIZE_CENTS = 50000000
+export const MAX_FREEROLL_PRIZE_CENTS = PILOT_BUSINESS_RULES.maxFirstPrizeCents
+export const MAX_PILOT_TOTAL_PRIZE_CENTS = PILOT_BUSINESS_RULES.maxTotalPrizeCents
+export const MAX_PILOT_FIRST_PRIZE_CENTS = PILOT_BUSINESS_RULES.maxFirstPrizeCents
 
-export const FLOW_NEXT_DAY_FEE_BPS = 319
+export const FLOW_NEXT_DAY_FEE_BPS = PILOT_BUSINESS_RULES.flowFeeNetBps
 const IVA_MULTIPLIER_BPS = BPS + IVA_BPS
 const FLOW_EFFECTIVE_COST_BPS = Math.ceil((FLOW_NEXT_DAY_FEE_BPS * IVA_MULTIPLIER_BPS) / BPS)
 const FLOW_NET_BPS = BPS - FLOW_EFFECTIVE_COST_BPS
@@ -117,8 +120,8 @@ export const TOURNAMENT_PRESETS = [
     description: 'Entrada baja, premio fijo y rotación diaria.',
     entryFeePesos: 1000,
     minPlayers: 8,
-    targetPlayers: 30,
-    maxPlayers: 120,
+    targetPlayers: 20,
+    maxPlayers: 40,
     durationMinutes: 8,
     windowHours: 2,
     strategy: 'daily',
@@ -130,8 +133,8 @@ export const TOURNAMENT_PRESETS = [
     description: 'Punto medio entre Express y Estándar. Mayor premio con menor barrera.',
     entryFeePesos: 1500,
     minPlayers: 6,
-    targetPlayers: 25,
-    maxPlayers: 80,
+    targetPlayers: 15,
+    maxPlayers: 30,
     durationMinutes: 8,
     windowHours: 6,
     strategy: 'growth',
@@ -143,8 +146,8 @@ export const TOURNAMENT_PRESETS = [
     description: 'Premio fijo atractivo con margen de plataforma sano.',
     entryFeePesos: 3000,
     minPlayers: 6,
-    targetPlayers: 30,
-    maxPlayers: 100,
+    targetPlayers: 15,
+    maxPlayers: 30,
     durationMinutes: 10,
     windowHours: 24,
     strategy: 'balanced',
@@ -156,8 +159,8 @@ export const TOURNAMENT_PRESETS = [
     description: 'Premio de alto impacto para competidores regulares exigentes.',
     entryFeePesos: 5000,
     minPlayers: 4,
-    targetPlayers: 15,
-    maxPlayers: 30,
+    targetPlayers: 10,
+    maxPlayers: 20,
     durationMinutes: 12,
     windowHours: 24,
     strategy: 'premium',
@@ -169,8 +172,8 @@ export const TOURNAMENT_PRESETS = [
     description: 'Ticket alto, cupos limitados y premio publicado antes de inscribir.',
     entryFeePesos: 10000,
     minPlayers: 4,
-    targetPlayers: 20,
-    maxPlayers: 50,
+    targetPlayers: 10,
+    maxPlayers: 10,
     durationMinutes: 15,
     windowHours: 48,
     strategy: 'premium',
@@ -226,7 +229,7 @@ export function calculateIvaIncludedBreakdown(grossCents: number) {
 
 export function splitEntryFee(
   entryFeeCents: number,
-  prizeFundBps = DEFAULT_PRIZE_FUND_BPS
+  prizeFundBps: number = DEFAULT_PRIZE_FUND_BPS
 ): EntryFeeSplit {
   if (!Number.isInteger(entryFeeCents) || entryFeeCents < 0) {
     throw new Error(`entryFeeCents inválido: ${entryFeeCents}`)
@@ -237,14 +240,16 @@ export function splitEntryFee(
 
   const prizeFundContributionCents = Math.round((entryFeeCents * prizeFundBps) / BPS)
   const platformFeeGrossCents = entryFeeCents - prizeFundContributionCents
-  const platformTax = calculateIvaIncludedBreakdown(platformFeeGrossCents)
+  // La empresa vende la inscripcion completa. Por eso el IVA se extrae del
+  // precio total, no solamente del remanente presupuestado para plataforma.
+  const saleTax = calculateIvaIncludedBreakdown(entryFeeCents)
 
   return {
     entryFeeCents,
     prizeFundContributionCents,
     platformFeeGrossCents,
-    platformFeeNetCents: platformTax.netCents,
-    platformFeeIvaCents: platformTax.ivaCents,
+    platformFeeNetCents: platformFeeGrossCents - saleTax.ivaCents,
+    platformFeeIvaCents: saleTax.ivaCents,
     prizeFundBps,
     platformFeeBps: BPS - prizeFundBps,
   }
@@ -285,7 +290,8 @@ export function calculatePrizeFundPayouts(input: {
 
 // ── Escalera de premios ("bolsa garantizada escalonada") ──────────────
 // Premios fijos y publicados por tramos que suben con la convocatoria. Cada
-// tramo mantiene ~30% de margen (RTP ~70% en su umbral), evitando que el
+// tramo reserva 65% del bruto y deja una contribucion estimada de ~15,8% luego
+// de IVA de la venta y comision Flow neta, evitando que el
 // retorno al jugador colapse al llenarse el torneo. Ver
 // docs/roadmap-retencion-rentabilidad.md.
 
@@ -345,8 +351,11 @@ export function buildPrizeLadder(input: {
     const t = Math.round(m * minPlayers)
     if (t >= minPlayers && t <= maxPlayers) thresholds.add(t)
   }
+  // La capacidad maxima tambien es una promesa economica. Se publica como
+  // tramo final para evitar que el premio quede congelado al llenarse.
+  if (Number.isFinite(maxPlayers)) thresholds.add(maxPlayers)
 
-  return [...thresholds]
+  const tiers = [...thresholds]
     .sort((a, b) => a - b)
     .map((threshold) => {
       const fund = Math.round((entryFeeCents * threshold * prizeFundBps) / BPS)
@@ -355,6 +364,20 @@ export function buildPrizeLadder(input: {
       const prize3Cents = fund - prize1Cents - prize2Cents
       return { thresholdPlayers: threshold, fundCents: fund, prize1Cents, prize2Cents, prize3Cents }
     })
+
+  const exceedsPilotCaps = tiers.some(
+    (tier) =>
+      tier.fundCents > MAX_PILOT_TOTAL_PRIZE_CENTS ||
+      tier.prize1Cents > MAX_PILOT_FIRST_PRIZE_CENTS
+  )
+
+  if (exceedsPilotCaps) {
+    throw new Error(
+      'La capacidad o un tramo supera los topes de premios vigentes para el piloto'
+    )
+  }
+
+  return tiers
 }
 
 /**
@@ -430,14 +453,19 @@ export function calculateEntryPoolFinancials(input: {
   const minRevenueCents = input.entryFeeCents * input.minPlayers
   const targetRevenueCents = input.entryFeeCents * targetPlayers
   const maxRevenueCents = input.entryFeeCents * maxPlayers
-  const minPlatformFeeGrossCents = split.platformFeeGrossCents * input.minPlayers
-  const targetPlatformFeeGrossCents = split.platformFeeGrossCents * targetPlayers
-  const maxPlatformFeeGrossCents = split.platformFeeGrossCents * maxPlayers
-  const minTax = calculateIvaIncludedBreakdown(minPlatformFeeGrossCents)
-  const targetTax = calculateIvaIncludedBreakdown(targetPlatformFeeGrossCents)
-  const maxTax = calculateIvaIncludedBreakdown(maxPlatformFeeGrossCents)
+  const minPlatformFeeGrossCents = minRevenueCents - minPayouts.prizeFundCents
+  const targetPlatformFeeGrossCents = targetRevenueCents - targetPayouts.prizeFundCents
+  const maxPlatformFeeGrossCents = maxRevenueCents - maxPayouts.prizeFundCents
+  const minTax = calculateIvaIncludedBreakdown(minRevenueCents)
+  const targetTax = calculateIvaIncludedBreakdown(targetRevenueCents)
+  const maxTax = calculateIvaIncludedBreakdown(maxRevenueCents)
+  const minFlowFeeNetCents = Math.round((minRevenueCents * FLOW_NEXT_DAY_FEE_BPS) / BPS)
+  const targetFlowFeeNetCents = Math.round((targetRevenueCents * FLOW_NEXT_DAY_FEE_BPS) / BPS)
+  const maxFlowFeeNetCents = Math.round((maxRevenueCents * FLOW_NEXT_DAY_FEE_BPS) / BPS)
+  const contributionPerEntryCents =
+    split.platformFeeNetCents - Math.round((input.entryFeeCents * FLOW_NEXT_DAY_FEE_BPS) / BPS)
   const platformNetMarginBps = input.entryFeeCents > 0
-    ? Math.round((split.platformFeeNetCents * BPS) / input.entryFeeCents)
+    ? Math.round((contributionPerEntryCents * BPS) / input.entryFeeCents)
     : 0
 
   return {
@@ -451,9 +479,12 @@ export function calculateEntryPoolFinancials(input: {
     minPlatformFeeGrossCents,
     targetPlatformFeeGrossCents,
     maxPlatformFeeGrossCents,
-    minPlatformFeeNetCents: minTax.netCents,
-    targetPlatformFeeNetCents: targetTax.netCents,
-    maxPlatformFeeNetCents: maxTax.netCents,
+    minPlatformFeeNetCents:
+      minPlatformFeeGrossCents - minTax.ivaCents - minFlowFeeNetCents,
+    targetPlatformFeeNetCents:
+      targetPlatformFeeGrossCents - targetTax.ivaCents - targetFlowFeeNetCents,
+    maxPlatformFeeNetCents:
+      maxPlatformFeeGrossCents - maxTax.ivaCents - maxFlowFeeNetCents,
     minPlatformFeeIvaCents: minTax.ivaCents,
     targetPlatformFeeIvaCents: targetTax.ivaCents,
     maxPlatformFeeIvaCents: maxTax.ivaCents,

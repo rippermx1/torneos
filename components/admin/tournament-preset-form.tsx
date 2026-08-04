@@ -8,6 +8,8 @@ import {
   calculateEntryPoolFinancials,
   centsToPesos,
   DEFAULT_FREEROLL_PRIZE_CENTS,
+  MAX_PILOT_FIRST_PRIZE_CENTS,
+  MAX_PILOT_TOTAL_PRIZE_CENTS,
   TOURNAMENT_PRESETS,
   LATENCY_PRESET,
   pesosToCents,
@@ -50,7 +52,7 @@ export function TournamentPresetForm({
   const [skillTier, setSkillTier] = useState('')
   const [name, setName] = useState('Torneo Estándar')
   const [description, setDescription] = useState('Premios fijos publicados antes de la inscripción.')
-  const [values, setValues] = useState(() => valuesFromPreset(TOURNAMENT_PRESETS[1]))
+  const [values, setValues] = useState(() => valuesFromPreset(TOURNAMENT_PRESETS[2]))
   const [dates, setDates] = useState({
     registrationOpensAt,
     playWindowStart,
@@ -96,7 +98,7 @@ export function TournamentPresetForm({
   }
 
   const paidTournament = values.entryFeePesos > 0
-  // En pagados el premio se deriva del 70% al mínimo; en freerolls es el premio
+  // En pagados el premio se deriva del 65% al mínimo; en freerolls es el premio
   // de adquisición configurable (costo de marketing, sin cuota que lo financie).
   const publishedPrizeCents = paidTournament
     ? financials.minPrizeFundCents
@@ -121,7 +123,18 @@ export function TournamentPresetForm({
   const paidPlayersValid = !paidTournament || values.minPlayers >= 2
   // Un freeroll sin premio no capta usuarios: exige premio de adquisición > 0.
   const freerollPrizeValid = paidTournament || values.freerollPrizePesos > 0
-  const canLaunch = datesValid && capacityValid && economicsValid && paidPlayersValid && freerollPrizeValid
+  const prizeCapsValid =
+    financials.maxPrizeFundCents <= MAX_PILOT_TOTAL_PRIZE_CENTS &&
+    (paidTournament
+      ? financials.maxPayouts.prize1Cents <= MAX_PILOT_FIRST_PRIZE_CENTS
+      : publishedPrizeCents <= MAX_PILOT_FIRST_PRIZE_CENTS)
+  const canLaunch =
+    datesValid &&
+    capacityValid &&
+    economicsValid &&
+    paidPlayersValid &&
+    freerollPrizeValid &&
+    prizeCapsValid
 
   return (
     <div className="space-y-6">
@@ -164,7 +177,7 @@ export function TournamentPresetForm({
                   <Metric label="Entrada" value={formatPesos(preset.entryFeePesos)} />
                   <Metric label="Premio" value={formatCents(preset.entryFeePesos > 0 ? presetFinancials.minPrizeFundCents : DEFAULT_FREEROLL_PRIZE_CENTS)} />
                   <Metric label="Mínimo" value={`${preset.minPlayers} jugadores`} />
-                  <Metric label="Fee neto" value={preset.entryFeePesos > 0 ? formatBps(presetFinancials.platformNetMarginBps) : 'Costo promo'} />
+                  <Metric label="Contribución" value={preset.entryFeePesos > 0 ? formatBps(presetFinancials.platformNetMarginBps) : 'Costo promo'} />
                 </div>
               </button>
             )
@@ -255,10 +268,10 @@ export function TournamentPresetForm({
               <MetricRow label={paidTournament ? 'Premio fijo publicado' : 'Premio adquisición'} value={formatCents(publishedPrizeCents)} />
               <MetricRow label="Recaudación objetivo" value={formatCents(financials.targetRevenueCents)} />
               <MetricRow label="Recaudación máxima" value={formatCents(financials.maxRevenueCents)} />
-              <MetricRow label="Fee plataforma bruto" value={formatCents(financials.targetPlatformFeeGrossCents)} />
-              <MetricRow label="IVA fee objetivo" value={formatCents(financials.targetPlatformFeeIvaCents)} />
-              <MetricRow label="Ingreso neto objetivo" value={formatCents(financials.targetPlatformFeeNetCents)} tone="green" />
-              <MetricRow label="Margen neto por entrada" value={paidTournament ? formatBps(financials.platformNetMarginBps) : 'Freeroll'} tone={financials.isTargetHealthy ? 'green' : 'red'} />
+              <MetricRow label="Remanente bruto interno" value={formatCents(financials.targetPlatformFeeGrossCents)} />
+              <MetricRow label="IVA venta completa" value={formatCents(financials.targetPlatformFeeIvaCents)} />
+              <MetricRow label="Contribución objetivo" value={formatCents(financials.targetPlatformFeeNetCents)} tone="green" />
+              <MetricRow label="Margen de contribución" value={paidTournament ? formatBps(financials.platformNetMarginBps) : 'Freeroll'} tone={financials.isTargetHealthy ? 'green' : 'red'} />
             </div>
             {!canLaunch && (
               <p className="text-xs text-red-700">
@@ -267,12 +280,17 @@ export function TournamentPresetForm({
             )}
             {paidTournament && !paidPlayersValid && (
               <p className="text-xs text-red-700">
-                Los torneos pagados requieren al menos 3 jugadores.
+                Los torneos pagados requieren al menos 2 jugadores.
+              </p>
+            )}
+            {!prizeCapsValid && (
+              <p className="text-xs text-red-700">
+                El piloto limita el premio total a $70.000 y el primer lugar a $49.000.
               </p>
             )}
             {paidTournament && !financials.isTargetHealthy && (
               <p className="text-xs text-amber-700">
-                El fee neto queda estrecho. Úsalo sólo como adquisición.
+                La contribución estimada queda bajo 15%. No publiques este formato.
               </p>
             )}
             {!paidTournament && !freerollPrizeValid && (

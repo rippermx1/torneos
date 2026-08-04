@@ -1,5 +1,11 @@
 # Roadmap: retención + rentabilidad ("máquina de dinero")
 
+> **Documento histórico, no usar como política vigente.** Desde el 4 de agosto
+> de 2026 rigen [`politica-negocio-torneos.md`](./politica-negocio-torneos.md) y
+> [`contabilidad-producto.md`](./contabilidad-producto.md): presupuesto de premios
+> 65%, recompensas nuevas desactivadas e IVA sobre la inscripción completa. Las
+> cifras 70%, rakeback 7% y proyecciones de este roadmap quedan como antecedentes.
+
 > **Propósito de este archivo.** Es la fuente de verdad y handoff de la iniciativa
 > de rediseño económico de TorneosPlay. Si la ventana de contexto del modelo se
 > satura, **empezar por aquí**: contiene la estrategia, los parámetros decididos,

@@ -19,6 +19,7 @@ Variables solo de runtime del servidor:
 - `FLOW_API_SECRET`
 - `FLOW_API_BASE`
 - `CRON_SECRET`
+- `PRODUCTION_SUPABASE_PROJECT_REF` cuando el proyecto pase a producción real
 - `RESEND_API_KEY`
 
 `ALERT_EMAIL` es opcional. Si no está definido, las alertas operativas se
@@ -123,15 +124,19 @@ docker run --rm -p 3000:3000 ^
 
 ## Base de datos
 
-Durante la etapa pre-lanzamiento se usa un solo ambiente cloud. Todo cambio de
-schema debe quedar expresado como migración versionada y aplicarse con el
-proyecto vinculado verificado. Los scripts que crean datos, simulan o borran se
-niegan a operar contra producción; las tareas operativas no destructivas exigen
-`CONFIRM_SUPABASE_PROJECT_REF`.
+Durante la etapa pre-lanzamiento se usa un solo ambiente cloud como desarrollo.
+Todo cambio de schema debe quedar expresado como migración versionada y aplicarse
+con el proyecto vinculado verificado. Los scripts que crean datos, simulan o
+borran exigen `CONFIRM_SUPABASE_PROJECT_REF` con la referencia exacta del destino.
+
+Cuando exista el ambiente definitivo, define allí
+`PRODUCTION_SUPABASE_PROJECT_REF` (y, si corresponde,
+`PROTECTED_SUPABASE_PROJECT_REFS`). Desde ese momento los scripts de simulación y
+limpieza se negarán a operar sobre esas referencias aunque exista confirmación.
 
 Cuando el producto esté completo se separarán ambientes y automatización de
-deploy. Hasta entonces no se crean fixtures ni usuarios sintéticos en la base
-actual.
+deploy. Hasta entonces los fixtures pueden existir en la base actual, siempre
+marcando los torneos con `is_test` y limpiándolos después de cada ciclo de QA.
 
 ## Desarrollo local
 
@@ -156,7 +161,8 @@ npm run setup:test-users
 ```
 
 Ese script crea o actualiza tres usuarios confirmados y deja uno como admin
-para pruebas de torneos. Se bloquea si detecta el proyecto productivo conocido.
+para pruebas de torneos. Se bloquea si la referencia aparece en
+`PRODUCTION_SUPABASE_PROJECT_REF` o `PROTECTED_SUPABASE_PROJECT_REFS`.
 
 ## Respaldo en GitHub y Vercel
 

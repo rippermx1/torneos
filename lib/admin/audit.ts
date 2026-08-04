@@ -15,6 +15,7 @@ export type AdminActionName =
   | 'tournament.cancel'
   | 'flow.reverify'
   | 'refund.retry'
+  | 'refund.credit_note.record'
 
 export type AdminActionTargetType =
   | 'withdrawal_request'

@@ -1,7 +1,3 @@
-const KNOWN_PRODUCTION_PROJECT_REFS = new Set([
-  'baeylvoipmazcthnwxmz',
-])
-
 export function getSupabaseProjectRef(supabaseUrl) {
   let url
 
@@ -27,10 +23,17 @@ export function getSupabaseProjectRef(supabaseUrl) {
 
 /** @param {Record<string, string | undefined>} env */
 function protectedProjectRefs(env) {
-  const refs = new Set(KNOWN_PRODUCTION_PROJECT_REFS)
+  const refs = new Set()
+
   if (env.PRODUCTION_SUPABASE_PROJECT_REF) {
     refs.add(env.PRODUCTION_SUPABASE_PROJECT_REF)
   }
+
+  for (const projectRef of (env.PROTECTED_SUPABASE_PROJECT_REFS ?? '').split(',')) {
+    const normalizedRef = projectRef.trim()
+    if (normalizedRef) refs.add(normalizedRef)
+  }
+
   return refs
 }
 

@@ -7,7 +7,7 @@ import { createClient } from '@supabase/supabase-js'
 import { createServerClient } from '@supabase/ssr'
 import { requireNonProductionProject } from './supabase-safety.mjs'
 
-const CURRENT_TERMS_VERSION = '1.1'
+const CURRENT_TERMS_VERSION = '1.3'
 
 const { loadEnvConfig } = nextEnv
 

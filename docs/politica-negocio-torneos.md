@@ -10,20 +10,37 @@ empresa organiza la competencia, define reglas, cobra el precio final, adjudica
 los premios y los paga desde su cuenta bancaria. No hay depósito, custodia, pozo
 de terceros ni saldo monetario reutilizable.
 
+## Canal y operación
+
+La inscripción se comercializa directamente entre la empresa y el participante.
+No existen intermediarios comerciales con permisos para crear torneos, registrar
+participantes, cobrar inscripciones, administrar premios o recibir una parte de
+la venta. Los torneos sólo pueden ser creados y gestionados por cuentas internas
+`admin`/`owner` o por procesos controlados de la plataforma.
+
+La adquisición de usuarios se mide como gasto comercial o de marketing de la
+empresa y no altera la venta, el IVA, el presupuesto de premios ni el ledger del
+torneo. Un proveedor externo eventual debe operar mediante un servicio contratado
+fuera del producto, sin acceso administrativo ni participación automática en los
+ingresos.
+
 ## Reglas económicas
 
 | Regla | Piloto |
 |---|---:|
 | IVA incluido en precio final | 19% |
-| Presupuesto máximo de premios | 65% de la recaudación bruta al umbral |
-| Distribución estándar top 3 | 70% / 20% / 10% del premio publicado |
+| Inscripción pagada mínima | $2.000 CLP |
+| Presupuesto máximo de premios | 55% de la recaudación bruta mínima |
+| Distribución estándar top 2 | 75% / 25% del premio publicado |
+| Capacidad máxima | 1,25 veces el mínimo de jugadores |
 | Premio total máximo por torneo | $70.000 CLP |
 | Primer premio máximo | $49.000 CLP |
-| Margen de contribución mínimo objetivo | 15% del bruto |
+| Margen de contribución mínimo objetivo | 25% del bruto al mínimo |
 | Rakeback/recompensas nuevas | Desactivadas |
 
-Con $1.000 brutos, 65% de premio y comisión Flow neta estimada de 3,19%,
-la contribución estimada es $158,44 (15,84%) antes de costos fijos y renta. El
+Por cada $2.000 brutos vendidos al mínimo, el presupuesto fijo equivalente de
+premio es $1.100. Después del IVA incluido y una comisión Flow neta estimada de
+3,19%, la contribución estimada es $516,87 (25,84%) antes de costos fijos y renta. El
 tope de $70.000 limita exposición operacional y antifraude durante la validación;
 no es una afirmación de exención tributaria o legal.
 
@@ -35,24 +52,21 @@ Los topes sólo pueden aumentarse tras demostrar durante al menos tres cierres:
 - revisión antifraude y jurídica aprobada;
 - ninguna devolución o premio sin expediente completo.
 
-### Presets iniciales
+### Formatos iniciales
 
-| Formato | Entrada | Mínimo | Objetivo | Máximo | Premio máximo al llenarse |
+| Formato | Entrada | Mínimo | Máximo | Premio fijo | Distribución |
 |---|---:|---:|---:|---:|---:|
-| Express | $1.000 | 8 | 20 | 40 | $26.000 |
-| Challenger | $1.500 | 6 | 15 | 30 | $29.250 |
-| Estándar | $3.000 | 6 | 15 | 30 | $58.500 |
-| Pro | $5.000 | 4 | 10 | 20 | $65.000 |
-| Elite | $10.000 | 4 | 10 | 10 | $65.000 |
+| Piloto pagado | $2.000 | 8 | 10 | $8.800 | $6.600 / $2.200 |
+| Freeroll controlado | $0 | 2 | 10 | $5.000 | $5.000 al 1° |
 
-Objetivo y capacidad son tramos publicados. El creador no puede aumentar cupos
-si el fondo de 65% a capacidad excede los topes del piloto; el sistema rechaza
-esa configuración en vez de congelar silenciosamente el premio.
+El premio se calcula una sola vez al publicar y nunca cambia con la convocatoria.
+El sistema rechaza tickets bajo el mínimo, capacidades superiores a 1,25 veces
+el mínimo y premios que excedan 55% de la recaudación mínima.
 
 ## Condiciones de competencia
 
 Cada torneo debe publicar antes de cobrar: precio final, horarios, juego, reglas,
-criterio de ranking, desempate, premios por tramo, mínimo/máximo de participantes,
+criterio de ranking, desempate, premios fijos, mínimo/máximo de participantes,
 causales de cancelación, devolución y descalificación.
 
 La clasificación como competencia de habilidad depende de la sustancia, no del
@@ -80,7 +94,7 @@ en el libro. El administrador nunca paga desde una cuenta personal ni a un terce
 
 ## Métricas para gobernar cada formato
 
-- inscritos y ocupación por tramo;
+- inscritos y ocupación del cupo;
 - venta bruta y neta;
 - IVA débito y N/C;
 - premios adjudicados/venta bruta;

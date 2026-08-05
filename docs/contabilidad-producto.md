@@ -31,9 +31,9 @@ Si el precio publicado y cobrado es $1.000 CLP, esos $1.000 ya contienen IVA:
 | Precio final cobrado | $1.000,00 |
 | Venta neta (`1.000 / 1,19`) | $840,34 |
 | IVA débito incluido | $159,66 |
-| Presupuesto máximo de premios (65% del bruto) | $650,00 |
+| Presupuesto máximo de premios (55% del bruto mínimo) | $550,00 |
 | Comisión Flow neta estimada (3,19%) | $31,90 |
-| Contribución devengada estimada | $158,44 |
+| Contribución devengada estimada | $258,44 |
 
 La contribución corresponde a `venta neta - premio - comisión Flow neta`. No
 incluye costos fijos, marketing, contador, software ni impuesto a la renta.

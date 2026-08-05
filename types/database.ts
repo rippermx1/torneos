@@ -13,7 +13,7 @@ export type WalletTransactionType =
   | 'adjustment'
   | 'tournament_credit'
 export type TournamentType = 'standard' | 'express' | 'elite' | 'freeroll' | 'challenger' | 'pro'
-export type PrizeModel = 'entry_pool'
+export type PrizeModel = 'fixed'
 export type SkillTier = 'novato' | 'intermedio' | 'pro'
 export type TournamentStatus =
   | 'scheduled'
@@ -94,6 +94,7 @@ export interface Tournament {
   status: TournamentStatus
   max_game_duration_seconds: number
   is_test: boolean
+  business_rule_version: number
   created_by: string | null
   skill_tier: SkillTier | null
   created_at: string
@@ -229,17 +230,6 @@ export interface FlowRefundAttempt {
   settled_at: string | null
 }
 
-export interface TournamentPrizeTier {
-  id: string
-  tournament_id: string
-  min_players_threshold: number
-  prize_fund_cents: number
-  prize_1st_cents: number
-  prize_2nd_cents: number
-  prize_3rd_cents: number
-  created_at: string
-}
-
 export interface AdminAction {
   id: string
   admin_id: string
@@ -326,6 +316,9 @@ export interface PlatformBusinessRule {
   effective_from: string
   vat_bps: number
   prize_budget_bps: number
+  min_paid_entry_fee_cents: number
+  max_capacity_ratio_bps: number
+  min_contribution_margin_bps: number
   max_total_prize_cents: number
   max_first_prize_cents: number
   rewards_enabled: boolean
@@ -393,7 +386,7 @@ export type Database = {
       }
       tournaments: {
         Row: Tournament & DbRecord
-        Insert: InsertWithOptional<Tournament, 'id' | 'created_at' | 'description' | 'game_type' | 'tournament_type' | 'prize_model' | 'prize_2nd_cents' | 'prize_3rd_cents' | 'prize_fund_bps' | 'platform_fee_bps' | 'prize_1st_bps' | 'prize_2nd_bps' | 'prize_3rd_bps' | 'min_players' | 'max_players' | 'status' | 'max_game_duration_seconds' | 'is_test' | 'created_by' | 'skill_tier'>
+        Insert: InsertWithOptional<Tournament, 'id' | 'created_at' | 'description' | 'game_type' | 'tournament_type' | 'prize_model' | 'prize_2nd_cents' | 'prize_3rd_cents' | 'prize_fund_bps' | 'platform_fee_bps' | 'prize_1st_bps' | 'prize_2nd_bps' | 'prize_3rd_bps' | 'min_players' | 'max_players' | 'status' | 'max_game_duration_seconds' | 'is_test' | 'business_rule_version' | 'created_by' | 'skill_tier'>
         Update: Partial<Omit<Tournament, 'id'>> & DbRecord
         Relationships: []
       }
@@ -469,12 +462,6 @@ export type Database = {
         Update: Partial<Omit<FlowRefundAttempt, 'id' | 'created_at'>> & DbRecord
         Relationships: []
       }
-      tournament_prize_tiers: {
-        Row: TournamentPrizeTier & DbRecord
-        Insert: InsertWithOptional<TournamentPrizeTier, 'id' | 'created_at' | 'prize_2nd_cents' | 'prize_3rd_cents'>
-        Update: Partial<Omit<TournamentPrizeTier, 'id' | 'created_at'>> & DbRecord
-        Relationships: []
-      }
       player_ratings: {
         Row: PlayerRating & DbRecord
         Insert: InsertWithOptional<PlayerRating, 'rating' | 'games_rated' | 'tier' | 'updated_at'>
@@ -522,8 +509,12 @@ export type Database = {
           platform_fee_gross_cents: number
           platform_fee_net_cents: number
           platform_fee_iva_cents: number
+          sale_net_cents: number
+          flow_fee_net_cents: number
+          contribution_cents: number
           active_count: number
           pending_count: number
+          unclaimed_prize_cents_total: number
         } & DbRecord
         Relationships: []
       }

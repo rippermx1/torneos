@@ -6,8 +6,7 @@ import { RegisterButton } from '@/components/tournament/register-button'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { checkPlayWindow, checkRegistrationWindow } from '@/lib/tournament/helpers'
-import { calculateTournamentDisplayPayouts, splitEntryFee, selectPrizeTier, type PrizeTier } from '@/lib/tournament/finance'
-import { PrizeLadder } from '@/components/tournament/prize-ladder'
+import { calculateTournamentDisplayPayouts } from '@/lib/tournament/finance'
 import { SKILL_TIER_LABELS } from '@/lib/tournament/rating'
 import {
   getParticipationBlocker,
@@ -61,17 +60,12 @@ export default async function TournamentDetailPage({
   const { data: { user } } = await supabase.auth.getUser()
   const userId = user?.id ?? null
 
-  const [{ data: tData }, { count: playerCount }, { data: tierRows }] = await Promise.all([
+  const [{ data: tData }, { count: playerCount }] = await Promise.all([
     supabase.from('tournaments').select('*').eq('id', id).single(),
     admin
       .from('registrations')
       .select('*', { count: 'exact', head: true })
       .eq('tournament_id', id),
-    supabase
-      .from('tournament_prize_tiers')
-      .select('min_players_threshold, prize_fund_cents, prize_1st_cents, prize_2nd_cents, prize_3rd_cents')
-      .eq('tournament_id', id)
-      .order('min_players_threshold', { ascending: true }),
   ])
 
   if (!tData) notFound()
@@ -134,22 +128,6 @@ export default async function TournamentDetailPage({
   const hasMinimumPlayers = currentPlayerCount >= t.min_players
 
   const payouts = calculateTournamentDisplayPayouts(t, currentPlayerCount)
-  const split = splitEntryFee(t.entry_fee_cents, t.prize_fund_bps)
-
-  // Escalera de premios: bolsa garantizada que sube por tramos con la convocatoria.
-  const tiers: PrizeTier[] = (tierRows ?? []).map((r) => ({
-    thresholdPlayers: r.min_players_threshold,
-    fundCents: r.prize_fund_cents,
-    prize1Cents: r.prize_1st_cents,
-    prize2Cents: r.prize_2nd_cents,
-    prize3Cents: r.prize_3rd_cents,
-  }))
-  const applicableTier = tiers.length > 0 ? selectPrizeTier(tiers, currentPlayerCount) : null
-  const hasLadder = tiers.length > 1
-  const shownFundCents = applicableTier ? applicableTier.fundCents : payouts.prizeFundCents
-  const shownP1 = applicableTier ? applicableTier.prize1Cents : payouts.prize1Cents
-  const shownP2 = applicableTier ? applicableTier.prize2Cents : payouts.prize2Cents
-  const shownP3 = applicableTier ? applicableTier.prize3Cents : payouts.prize3Cents
   const participationBlocker = userId
     ? getParticipationBlocker({
         emailConfirmed: Boolean(user?.email_confirmed_at),
@@ -174,25 +152,17 @@ export default async function TournamentDetailPage({
       {/* Info principal */}
       <div className="grid grid-cols-2 gap-4">
         <InfoCard label="Inscripción" value={formatCLP(t.entry_fee_cents)} highlight />
-        <InfoCard
-          label={hasLadder ? 'Bolsa actual' : 'Premio fijo'}
-          value={formatCLP(shownFundCents)}
-        />
+        <InfoCard label="Premio fijo" value={formatCLP(payouts.prizeFundCents)} />
         <InfoCard label="Jugadores" value={`${currentPlayerCount} / ${t.max_players}`} />
         <InfoCard label="Mínimo para jugar" value={`${t.min_players} jugadores`} />
       </div>
 
       {t.entry_fee_cents > 0 && (
         <div className="border rounded-xl p-5 space-y-2 text-sm">
-          <h2 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground">¿Cómo se usa tu inscripción?</h2>
-          <div className="flex justify-between gap-4">
-            <span className="text-muted-foreground">Presupuesto máximo para premios</span>
-            <span className="font-medium">{formatCLP(split.prizeFundContributionCents)}</span>
-          </div>
-          <div className="flex justify-between gap-4">
-            <span className="text-muted-foreground">IVA, procesamiento y operación</span>
-            <span className="font-medium">{formatCLP(split.platformFeeGrossCents)}</span>
-          </div>
+          <h2 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground">Precio y premio transparentes</h2>
+          <p className="text-muted-foreground">
+            La inscripción es el precio final e incluye IVA. El premio ya está fijado y no aumenta ni disminuye según la cantidad de inscritos.
+          </p>
         </div>
       )}
 
@@ -208,18 +178,16 @@ export default async function TournamentDetailPage({
       {/* Premios */}
       <div className="border rounded-xl p-5 space-y-3">
         <h2 className="font-semibold text-sm uppercase tracking-wide text-muted-foreground">
-          {hasLadder ? 'Premios del tramo actual' : 'Premios'}
+          Premios
         </h2>
         <p className="text-xs text-muted-foreground">
-          {hasLadder
-            ? 'Reparto de la bolsa alcanzada según los inscritos actuales. La bolsa sube con la convocatoria (ver escalera).'
-            : 'Los montos de premio son fijos y están publicados antes de la inscripción.'}
+          Los montos son fijos, están publicados antes de la inscripción y no dependen de la recaudación final.
         </p>
         <div className="space-y-2">
           {[
-            { place: '🥇 1° lugar', amount: shownP1 },
-            { place: '🥈 2° lugar', amount: shownP2 },
-            { place: '🥉 3° lugar', amount: shownP3 },
+            { place: '🥇 1° lugar', amount: payouts.prize1Cents },
+            { place: '🥈 2° lugar', amount: payouts.prize2Cents },
+            { place: '🥉 3° lugar', amount: payouts.prize3Cents },
           ]
             .filter((p) => p.amount > 0)
             .map(({ place, amount }) => (
@@ -230,8 +198,6 @@ export default async function TournamentDetailPage({
             ))}
         </div>
       </div>
-
-      <PrizeLadder tiers={tiers} currentPlayerCount={currentPlayerCount} registrationOpen={canRegister} />
 
       {/* Fechas */}
       <div className="border rounded-xl p-5 space-y-3">

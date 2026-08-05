@@ -5,15 +5,19 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import type { TournamentType, SkillTier } from '@/types/database'
 import {
+  DEFAULT_PRIZE_MODEL,
   DEFAULT_FREEROLL_PRIZE_CENTS,
   DEFAULT_PLATFORM_FEE_BPS,
   DEFAULT_PRIZE_1ST_BPS,
   DEFAULT_PRIZE_2ND_BPS,
   DEFAULT_PRIZE_3RD_BPS,
-  DEFAULT_PRIZE_FUND_BPS,
+  FIXED_PRIZE_BUDGET_BPS,
+  MIN_PAID_ENTRY_FEE_CENTS,
   MAX_FREEROLL_PRIZE_CENTS,
-  buildPrizeLadder,
+  buildFixedPrize,
+  maxPlayersForMinimum,
 } from '@/lib/tournament/finance'
+import { PILOT_BUSINESS_RULES } from '@/lib/business/rules'
 import { TournamentPresetForm } from '@/components/admin/tournament-preset-form'
 
 async function createTournament(formData: FormData) {
@@ -25,11 +29,7 @@ async function createTournament(formData: FormData) {
   const description      = (formData.get('description') as string) || null
   const rawTournamentType = formData.get('tournament_type')
   const tournamentType: TournamentType =
-    rawTournamentType === 'express' ||
-    rawTournamentType === 'elite' ||
-    rawTournamentType === 'freeroll' ||
-    rawTournamentType === 'challenger' ||
-    rawTournamentType === 'pro'
+    rawTournamentType === 'freeroll'
       ? rawTournamentType
       : 'standard'
   const isTest           = formData.get('is_test') === '1'
@@ -45,7 +45,6 @@ async function createTournament(formData: FormData) {
     ? Math.round(freerollPrizeInput * 100)
     : DEFAULT_FREEROLL_PRIZE_CENTS
   const minPlayers       = Number.parseInt(String(formData.get('min_players') ?? ''), 10)
-  const targetPlayers    = Number.parseInt(String(formData.get('target_players') ?? minPlayers), 10)
   const maxPlayers       = Number.parseInt(String(formData.get('max_players') ?? ''), 10)
   const registrationOpens = parseDateTimeLocalToIso(formData.get('registration_opens_at') as string)
   const playStart        = parseDateTimeLocalToIso(formData.get('play_window_start') as string)
@@ -62,14 +61,11 @@ async function createTournament(formData: FormData) {
     !name ||
     !Number.isFinite(entryFee) ||
     !Number.isInteger(minPlayers) ||
-    !Number.isInteger(targetPlayers) ||
     !Number.isInteger(maxPlayers) ||
     !Number.isInteger(maxDurationMinutes) ||
     entryFee < 0 ||
     minPlayers < (isTest ? 1 : 2) ||
-    targetPlayers < minPlayers ||
     maxPlayers < minPlayers ||
-    targetPlayers > maxPlayers ||
     maxDuration <= 0 ||
     maxDuration > playWindowSeconds ||
     registrationOpensMs >= playStartMs ||
@@ -82,26 +78,31 @@ async function createTournament(formData: FormData) {
     throw new Error('Los torneos pagados requieren al menos 2 jugadores.')
   }
 
+  if (!isTest && entryFee > 0 && entryFee < MIN_PAID_ENTRY_FEE_CENTS) {
+    throw new Error('La inscripción mínima para torneos pagados es $2.000.')
+  }
+
+  if (!isTest && entryFee > 0 && maxPlayers > maxPlayersForMinimum(minPlayers)) {
+    throw new Error('El cupo máximo no puede superar 1,25 veces el mínimo de jugadores.')
+  }
+
   if (isTest && entryFee > 0) {
     throw new Error('Los torneos de prueba deben ser gratuitos.')
   }
 
   if (entryFee === 0 && (freerollPrizeCents <= 0 || freerollPrizeCents > MAX_FREEROLL_PRIZE_CENTS)) {
-    throw new Error('El premio del freeroll debe ser mayor a 0 y hasta $500.000.')
+    throw new Error('El premio del freeroll debe ser mayor a 0 y hasta $49.000.')
   }
 
-  // Escalera de premios publicada. Torneos pagados: bolsa garantizada escalonada
-  // que sube por tramos con la convocatoria (buildPrizeLadder). Freerolls: un
-  // único tramo con el premio fijo de marketing. El tramo base define las
-  // columnas prize_*_cents del torneo (compatibilidad y fallback de finalize).
-  const prizeLadder =
+  // El premio se calcula una sola vez al publicar y queda inmutable. El número
+  // final de inscritos nunca modifica estos montos.
+  const fixedPrize =
     entryFee > 0
-      ? buildPrizeLadder({ entryFeeCents: entryFee, minPlayers, maxPlayers })
-      : [{ thresholdPlayers: minPlayers, fundCents: freerollPrizeCents, prize1Cents: freerollPrizeCents, prize2Cents: 0, prize3Cents: 0 }]
-  const baseTier = prizeLadder[0]!
-  const prize1 = baseTier.prize1Cents
-  const prize2 = baseTier.prize2Cents
-  const prize3 = baseTier.prize3Cents
+      ? buildFixedPrize({ entryFeeCents: entryFee, minPlayers, maxPlayers })
+      : { fundCents: freerollPrizeCents, prize1Cents: freerollPrizeCents, prize2Cents: 0, prize3Cents: 0 }
+  const prize1 = fixedPrize.prize1Cents
+  const prize2 = fixedPrize.prize2Cents
+  const prize3 = fixedPrize.prize3Cents
 
   // C6 guard: para torneos pagados, los premios fijos no pueden superar la
   // recaudacion bruta al minimo de jugadores. Este chequeo replica el CHECK
@@ -136,12 +137,12 @@ async function createTournament(formData: FormData) {
       description,
       game_type: '2048_score',
       tournament_type: tournamentType,
-      prize_model: 'entry_pool',
+      prize_model: DEFAULT_PRIZE_MODEL,
       entry_fee_cents: entryFee,
       prize_1st_cents: prize1,
       prize_2nd_cents: prize2,
       prize_3rd_cents: prize3,
-      prize_fund_bps: DEFAULT_PRIZE_FUND_BPS,
+      prize_fund_bps: FIXED_PRIZE_BUDGET_BPS,
       platform_fee_bps: DEFAULT_PLATFORM_FEE_BPS,
       prize_1st_bps: DEFAULT_PRIZE_1ST_BPS,
       prize_2nd_bps: DEFAULT_PRIZE_2ND_BPS,
@@ -154,6 +155,7 @@ async function createTournament(formData: FormData) {
       max_game_duration_seconds: maxDuration,
       status: 'scheduled',
       is_test: isTest,
+      business_rule_version: PILOT_BUSINESS_RULES.policyVersion,
       skill_tier: skillTier,
       created_by: userId,
     })
@@ -161,24 +163,6 @@ async function createTournament(formData: FormData) {
     .single()
 
   if (error) throw new Error(`Error creando torneo: ${error.message}`)
-
-  // Publicar la escalera de premios. Si falla, revertir el torneo para no dejar
-  // torneos huérfanos sin escalera (finalize caería al fallback, pero la ficha
-  // no mostraría los tramos publicados).
-  const { error: tiersError } = await supabase.from('tournament_prize_tiers').insert(
-    prizeLadder.map((tier) => ({
-      tournament_id: data.id,
-      min_players_threshold: tier.thresholdPlayers,
-      prize_fund_cents: tier.fundCents,
-      prize_1st_cents: tier.prize1Cents,
-      prize_2nd_cents: tier.prize2Cents,
-      prize_3rd_cents: tier.prize3Cents,
-    }))
-  )
-  if (tiersError) {
-    await supabase.from('tournaments').delete().eq('id', data.id)
-    throw new Error(`Error publicando la escalera de premios: ${tiersError.message}`)
-  }
 
   redirect(`/tournaments/${data.id}`)
 }

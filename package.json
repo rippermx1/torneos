@@ -14,7 +14,7 @@
     "cleanup:simulation": "node scripts/cleanup-simulation-data.mjs",
     "smoke:local": "node scripts/smoke-local-e2e.mjs",
     "smoke:flow": "node scripts/test-flow-tournament-checkout.mjs",
-    "smoke:ladder": "node scripts/smoke-prize-ladder.mjs",
+    "smoke:fixed-prize": "node scripts/smoke-fixed-prize.mjs",
     "smoke:rakeback": "node scripts/smoke-rakeback-redeem.mjs",
     "analyze:business": "node scripts/analyze-business-model.mjs",
     "simulate:tournaments": "node scripts/simulate-tournaments.mjs",

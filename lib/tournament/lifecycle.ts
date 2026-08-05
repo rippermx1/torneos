@@ -389,7 +389,7 @@ async function notifyPrizeWinners(
 }
 
 // Umbral de premio que gatilla revisión informativa aunque no haya señales
-// anómalas ($50.000): con la escalera, las bolsas grandes merecen un vistazo.
+// anómalas ($50.000): los premios grandes merecen una revisión adicional.
 const BIG_PRIZE_REVIEW_CENTS = 5000000
 
 // Revisa a los ganadores premiados en busca de señales de automatización y

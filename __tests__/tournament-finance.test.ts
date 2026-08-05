@@ -1,80 +1,71 @@
 import { describe, expect, it } from 'vitest'
 import {
-  calculateEntryPoolFinancials,
+  buildFixedPrize,
+  calculateFixedPrizeFinancials,
   calculateIvaIncludedBreakdown,
   calculatePresetFinancials,
-  calculatePrizeFundPayouts,
   calculateRequiredRevenueCents,
   calculateTournamentDisplayPayouts,
   calculateTournamentFinancials,
-  splitEntryFee,
-  TOURNAMENT_PRESETS,
   pesosToCents,
+  TOURNAMENT_PRESETS,
 } from '@/lib/tournament/finance'
 
 describe('tournament finance', () => {
-  it('requires revenue above prize fund adjusted for IVA and Flow cost', () => {
+  it('requires revenue above the fixed prize after IVA and Flow cost', () => {
     const required = calculateRequiredRevenueCents(pesosToCents(27000))
 
     expect(required).toBeGreaterThan(pesosToCents(27000))
     expect(required).toBeGreaterThanOrEqual(pesosToCents(33300))
   })
 
-  // Política piloto: 65% máximo para premios. El IVA se extrae de la venta
-  // completa; el 35% restante es sólo una métrica de contribución interna.
-  it('presupuesta 65% para premios y aplica IVA a la inscripción completa', () => {
-    const split = splitEntryFee(pesosToCents(1000))
+  it('aplica IVA a la inscripción completa', () => {
+    const sale = calculateIvaIncludedBreakdown(pesosToCents(2000))
 
-    expect(split.prizeFundContributionCents).toBe(pesosToCents(650))
-    expect(split.platformFeeGrossCents).toBe(pesosToCents(350))
-    expect(split.platformFeeIvaCents).toBe(calculateIvaIncludedBreakdown(pesosToCents(1000)).ivaCents)
-    expect(split.platformFeeNetCents).toBe(split.platformFeeGrossCents - split.platformFeeIvaCents)
+    expect(sale.netCents + sale.ivaCents).toBe(pesosToCents(2000))
+    expect(sale.ivaCents).toBe(31933)
   })
 
-  it('calcula reserva de premios (fondo 65%) con distribución 70/20/10', () => {
-    const payouts = calculatePrizeFundPayouts({
-      entryFeeCents: pesosToCents(1000),
-      playerCount: 10,
+  it('calcula margen fijo al mínimo y al máximo', () => {
+    const prize = buildFixedPrize({
+      entryFeeCents: pesosToCents(2000),
+      minPlayers: 8,
+      maxPlayers: 10,
+    })
+    const financials = calculateFixedPrizeFinancials({
+      entryFeeCents: pesosToCents(2000),
+      prize1Cents: prize.prize1Cents,
+      prize2Cents: prize.prize2Cents,
+      prize3Cents: prize.prize3Cents,
+      minPlayers: 8,
+      maxPlayers: 10,
     })
 
-    expect(payouts.prizeFundCents).toBe(pesosToCents(6500))
-    expect(payouts.prize1Cents).toBe(pesosToCents(4550))
-    expect(payouts.prize2Cents).toBe(pesosToCents(1300))
-    expect(payouts.prize3Cents).toBe(pesosToCents(650))
+    expect(financials.min.contributionCents).toBe(413498)
+    expect(financials.min.contributionMarginBps).toBe(2584)
+    expect(financials.max.contributionCents).toBe(736872)
+    expect(financials.max.contributionMarginBps).toBe(3684)
+    expect(financials.min.fixedPrizeCents).toBe(financials.max.fixedPrizeCents)
+    expect(financials.isMinHealthy).toBe(true)
   })
 
-  it('muestra el premio fijo publicado en torneos pagados', () => {
+  it('muestra exactamente el premio publicado', () => {
     const payouts = calculateTournamentDisplayPayouts({
-      entry_fee_cents: pesosToCents(3000),
-      prize_1st_cents: pesosToCents(9000),
-      prize_2nd_cents: pesosToCents(3000),
-      prize_3rd_cents: pesosToCents(1000),
-      min_players: 6,
-    }, 2)
+      prize_1st_cents: pesosToCents(6600),
+      prize_2nd_cents: pesosToCents(2200),
+      prize_3rd_cents: 0,
+    }, 10)
 
-    expect(payouts.playerCount).toBe(2)
-    expect(payouts.prizeFundCents).toBe(pesosToCents(13000))
+    expect(payouts.prizeFundCents).toBe(pesosToCents(8800))
+    expect(payouts.prize1Cents).toBe(pesosToCents(6600))
+    expect(payouts.prize3Cents).toBe(0)
   })
 
-  it('marks all paid presets as healthy under entry-pool model', () => {
-    for (const preset of TOURNAMENT_PRESETS) {
+  it('marca sanos todos los presets pagados', () => {
+    for (const preset of TOURNAMENT_PRESETS.filter((item) => item.entryFeePesos > 0)) {
       const financials = calculatePresetFinancials(preset)
-
-      expect(financials.isTargetHealthy, preset.label).toBe(true)
+      expect(financials.isMinHealthy, preset.label).toBe(true)
     }
-  })
-
-  it('calcula ingreso neto de plataforma para el objetivo', () => {
-    const financials = calculateEntryPoolFinancials({
-      entryFeeCents: pesosToCents(3000),
-      minPlayers: 6,
-      targetPlayers: 30,
-      maxPlayers: 100,
-    })
-
-    expect(financials.targetPlatformFeeGrossCents).toBe(pesosToCents(31500))
-    expect(financials.targetPlatformFeeNetCents).toBe(1425925)
-    expect(financials.platformNetMarginBps).toBeGreaterThanOrEqual(1500)
   })
 
   it('computes the required minimum players for an unsafe tournament', () => {

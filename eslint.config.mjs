@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "coverage/**",
+    // Archivos generados al levantar Supabase CLI localmente.
+    "supabase/.temp/**",
     "next-env.d.ts",
   ]),
 ]);

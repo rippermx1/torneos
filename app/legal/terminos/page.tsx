@@ -13,7 +13,7 @@ export default function TerminosPage() {
         <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">← Inicio</Link>
         <h1 className="text-3xl font-bold mt-4">Términos y Condiciones</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Versión 1.2 · Última actualización: 4 de agosto de 2026
+          Versión 1.3 · Última actualización: 5 de agosto de 2026
         </p>
       </div>
 
@@ -72,16 +72,14 @@ export default function TerminosPage() {
           participantes, reglas y <strong>premios fijos publicados</strong>.
         </p>
         <p>
-          La ficha puede publicar una <strong>bolsa garantizada escalonada</strong>: tramos de
-          premio fijos y garantizados según la convocatoria confirmada, informados íntegramente{' '}
-          <strong>antes de la inscripción</strong>. Al cierre de inscripciones se aplica el tramo
-          alcanzado según el número de participantes inscritos, y la bolsa pagada nunca es inferior
-          al tramo base garantizado. Los montos de cada tramo son fijos: no dependen del azar ni de
-          un porcentaje variable de la recaudación.
+          El premio total y su distribución por posición quedan fijados al publicar el torneo.
+          No aumentan ni disminuyen según la cantidad final de participantes o la recaudación.
+          Si no se alcanza el mínimo informado, el torneo se cancela y las inscripciones se
+          reembolsan.
         </p>
         <p>
           Para gobernar la solvencia del piloto, la empresa puede presupuestar hasta un{' '}
-          <strong>65% de la recaudación bruta</strong> para financiar los premios publicados.
+          <strong>55% de la recaudación bruta mínima</strong> para financiar los premios publicados.
           Es una regla interna de presupuesto: no crea un pozo, custodia ni propiedad del
           participante sobre ese porcentaje. El remanente cubre el IVA de la venta completa,
           procesamiento, operación y margen de la plataforma.
@@ -108,9 +106,8 @@ export default function TerminosPage() {
         <p>
           Si el torneo no alcanza el número mínimo de participantes inscritos al momento del
           cierre de inscripciones, será cancelado y <strong>todas las cuotas de inscripción serán
-          reembolsadas</strong>. Por defecto, el reembolso se acredita como saldo retirable asociado
-          a la cuenta del jugador; si Flow u otro proveedor permite una reversa operacional al medio
-          de pago original, la plataforma podrá usar esa vía en lugar del crédito interno.
+          reembolsadas</strong> al medio de pago original mediante Flow. La plataforma no convierte
+          esa devolución en saldo interno ni en crédito para otro torneo.
         </p>
       </Section>
 

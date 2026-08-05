@@ -7,9 +7,12 @@
  * politica y no debe alterar premios de torneos ya publicados.
  */
 export const PILOT_BUSINESS_RULES = {
-  policyVersion: 1,
+  policyVersion: 2,
   vatBps: 1900,
-  prizeBudgetBps: 6500,
+  prizeBudgetBps: 5500,
+  minPaidEntryFeeCents: 200_000,
+  maxCapacityRatioBps: 12_500,
+  minContributionMarginBps: 2500,
   maxTotalPrizeCents: 7_000_000,
   maxFirstPrizeCents: 4_900_000,
   rewardsEnabled: false,

@@ -58,7 +58,7 @@ Solicitar al contador confirmación escrita de:
 - régimen de renta y respaldo deducible de premios;
 - tratamiento de premios para ganadores y eventuales obligaciones informativas.
 
-No existe en el producto un "Modelo B" activable por configuración. Tratar sólo
-la comisión como venta requeriría que un tercero distinto fuese realmente el
-organizador/vendedor y que existiera mandato, contratos, documentos y flujos de
-pago coherentes. Ese no es el negocio implementado.
+No existe en el producto un "Modelo B" activable por configuración. La empresa
+organiza, cobra, documenta y paga, por lo que el precio completo corresponde al
+modelo de venta implementado. Tratar sólo un porcentaje como venta exigiría un
+negocio jurídico y operativo distinto, que no corresponde a esta plataforma.

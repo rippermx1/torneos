@@ -20,7 +20,7 @@ import nextEnv from '@next/env'
 import { createClient } from '@supabase/supabase-js'
 import { requireExplicitProjectTarget } from './supabase-safety.mjs'
 
-const CURRENT_TERMS_VERSION = '1.1'
+const CURRENT_TERMS_VERSION = '1.3'
 
 const { loadEnvConfig } = nextEnv
 const __dirname = path.dirname(fileURLToPath(import.meta.url))

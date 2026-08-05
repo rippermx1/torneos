@@ -3,7 +3,7 @@ import { formatCLP, formatDateTimeCL } from '@/lib/utils'
 import Link from 'next/link'
 import type { Tournament } from '@/types/database'
 import { TournamentActions } from '@/components/tournament/tournament-actions'
-import { calculateFixedPrizeFinancials } from '@/lib/tournament/finance'
+import { calculateFixedPrizeFinancials, getTournamentPreset } from '@/lib/tournament/finance'
 
 export const revalidate = 0
 
@@ -183,10 +183,11 @@ export default async function AdminTournamentsPage() {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 border-t pt-3 text-sm">
           <div>
-            <p className="text-xs text-muted-foreground">Ingreso neto mínimo</p>
+            <p className="text-xs text-muted-foreground">Contribución mínima</p>
             <p className={`font-semibold ${expectedMinProfit >= 0 ? 'text-green-700' : 'text-red-700'}`}>
               {formatCLP(expectedMinProfit)}
             </p>
+            <p className="text-xs text-muted-foreground">Antes de CAC y costos fijos</p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Margen mínimo promedio</p>
@@ -216,6 +217,7 @@ export default async function AdminTournamentsPage() {
       <div className="space-y-3">
         {tournaments.map((t) => {
           const playerCount = counts[t.id] ?? 0
+          const preset = getTournamentPreset(t.preset_key)
           const canFinalize = t.status === 'live' || t.status === 'finalizing'
           const canCancel   = t.status === 'scheduled' || t.status === 'open'
           const paidTournament = t.entry_fee_cents > 0
@@ -229,6 +231,9 @@ export default async function AdminTournamentsPage() {
                     <span className={`w-2 h-2 rounded-full shrink-0 ${STATUS_DOT[t.status]}`} />
                     <h2 className="font-semibold">{t.name}</h2>
                     <span className="text-xs text-muted-foreground">{STATUS_LABEL[t.status]}</span>
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
+                      {preset?.shortLabel ?? (t.is_test ? 'Prueba histórica' : 'Formato histórico')}
+                    </span>
                   </div>
                   <p className="text-xs text-muted-foreground pl-4">
                     Inicio: {formatDateTimeCL(t.play_window_start)} ·

@@ -1,29 +1,32 @@
-import type { TournamentType } from '@/types/database'
-import { PILOT_BUSINESS_RULES } from '@/lib/business/rules'
+import type { TournamentPresetKey, TournamentType } from '@/types/database'
+import { PLATFORM_BUSINESS_RULES } from '@/lib/business/rules'
 
 const BPS = 10000
 
-export const IVA_BPS = PILOT_BUSINESS_RULES.vatBps
+export const IVA_BPS = PLATFORM_BUSINESS_RULES.vatBps
 export const DEFAULT_PRIZE_MODEL = 'fixed' as const
-export const FIXED_PRIZE_BUDGET_BPS = PILOT_BUSINESS_RULES.prizeBudgetBps
+export const FIXED_PRIZE_BUDGET_BPS = PLATFORM_BUSINESS_RULES.prizeBudgetBps
 export const DEFAULT_PLATFORM_FEE_BPS = BPS - FIXED_PRIZE_BUDGET_BPS
 export const DEFAULT_PRIZE_1ST_BPS = 7500
 export const DEFAULT_PRIZE_2ND_BPS = BPS - DEFAULT_PRIZE_1ST_BPS
 export const DEFAULT_PRIZE_3RD_BPS = 0
-export const MIN_PAID_ENTRY_FEE_CENTS = PILOT_BUSINESS_RULES.minPaidEntryFeeCents
-export const MAX_PAID_CAPACITY_RATIO_BPS = PILOT_BUSINESS_RULES.maxCapacityRatioBps
-export const MIN_TARGET_MARGIN_BPS = PILOT_BUSINESS_RULES.minContributionMarginBps
+export const MIN_PAID_ENTRY_FEE_CENTS = PLATFORM_BUSINESS_RULES.minPaidEntryFeeCents
+export const MAX_PAID_CAPACITY_RATIO_BPS = PLATFORM_BUSINESS_RULES.maxCapacityRatioBps
+export const MIN_TARGET_MARGIN_BPS = PLATFORM_BUSINESS_RULES.minContributionMarginBps
+export const MONTHLY_FIXED_COST_TARGET_CENTS = PLATFORM_BUSINESS_RULES.monthlyFixedCostTargetCents
 
 export const DEFAULT_FREEROLL_PRIZE_CENTS = 500000
-export const MAX_FREEROLL_PRIZE_CENTS = PILOT_BUSINESS_RULES.maxFirstPrizeCents
-export const MAX_PILOT_TOTAL_PRIZE_CENTS = PILOT_BUSINESS_RULES.maxTotalPrizeCents
-export const MAX_PILOT_FIRST_PRIZE_CENTS = PILOT_BUSINESS_RULES.maxFirstPrizeCents
+export const MAX_FREEROLL_PRIZE_CENTS = PLATFORM_BUSINESS_RULES.maxFirstPrizeCents
+export const MAX_PILOT_TOTAL_PRIZE_CENTS = PLATFORM_BUSINESS_RULES.maxTotalPrizeCents
+export const MAX_PILOT_FIRST_PRIZE_CENTS = PLATFORM_BUSINESS_RULES.maxFirstPrizeCents
 
-export const FLOW_NEXT_DAY_FEE_BPS = PILOT_BUSINESS_RULES.flowFeeNetBps
+export const FLOW_NEXT_DAY_FEE_BPS = PLATFORM_BUSINESS_RULES.flowFeeNetBps
 const IVA_MULTIPLIER_BPS = BPS + IVA_BPS
 
 export interface TournamentPreset {
-  key: TournamentType
+  key: Exclude<TournamentPresetKey, 'legacy_v2'>
+  tournamentType: TournamentType
+  isTest: boolean
   label: string
   shortLabel: string
   description: string
@@ -80,22 +83,26 @@ export interface PrizeFundPayouts extends FixedPrize {
 
 export const TOURNAMENT_PRESETS = [
   {
-    key: 'standard',
-    label: 'Piloto fijo',
-    shortLabel: 'Piloto',
-    description: 'Un solo formato pagado: cupos limitados y premio fijo desde la publicación.',
-    entryFeePesos: 2000,
-    prize1Pesos: 6600,
-    prize2Pesos: 2200,
+    key: 'commercial_v1',
+    tournamentType: 'standard',
+    isTest: false,
+    label: 'Comercial fijo',
+    shortLabel: 'Comercial',
+    description: 'Formato pagado gobernado para cubrir operación con menos volumen y premio fijo.',
+    entryFeePesos: 5000,
+    prize1Pesos: 24750,
+    prize2Pesos: 8250,
     prize3Pesos: 0,
-    minPlayers: 8,
-    maxPlayers: 10,
+    minPlayers: 12,
+    maxPlayers: 15,
     durationMinutes: 10,
     windowHours: 24,
     strategy: 'balanced',
   },
   {
-    key: 'freeroll',
+    key: 'freeroll_v1',
+    tournamentType: 'freeroll',
+    isTest: false,
     label: 'Freeroll controlado',
     shortLabel: 'Freeroll',
     description: 'Torneo gratuito excepcional tratado como gasto de marketing.',
@@ -109,15 +116,26 @@ export const TOURNAMENT_PRESETS = [
     windowHours: 24,
     strategy: 'acquisition',
   },
+  {
+    key: 'internal_test_v1',
+    tournamentType: 'freeroll',
+    isTest: true,
+    label: 'Prueba interna',
+    shortLabel: 'Latencia',
+    description: 'Prueba gratuita de un jugador, excluida de la contabilidad comercial.',
+    entryFeePesos: 0,
+    prize1Pesos: 1,
+    prize2Pesos: 0,
+    prize3Pesos: 0,
+    minPlayers: 1,
+    maxPlayers: 1,
+    durationMinutes: 5,
+    windowHours: 1,
+    strategy: 'acquisition',
+  },
 ] as const satisfies readonly TournamentPreset[]
 
-export const LATENCY_PRESET = {
-  entryFeePesos: 0,
-  minPlayers: 1,
-  maxPlayers: 1,
-  durationMinutes: 5,
-  tournamentType: 'freeroll' as TournamentType,
-} as const
+export const DEFAULT_TOURNAMENT_PRESET_KEY: TournamentPreset['key'] = 'commercial_v1'
 
 export function pesosToCents(pesos: number) {
   return Math.round(pesos * 100)
@@ -127,8 +145,16 @@ export function centsToPesos(cents: number) {
   return Math.round(cents / 100)
 }
 
-export function getPresetByType(type: TournamentType) {
-  return TOURNAMENT_PRESETS.find((preset) => preset.key === type) ?? TOURNAMENT_PRESETS[0]
+export function getTournamentPreset(key: string): TournamentPreset | null {
+  return TOURNAMENT_PRESETS.find((preset) => preset.key === key) ?? null
+}
+
+export function tournamentsNeededForMonthlyTarget(
+  contributionCents: number,
+  targetCents = MONTHLY_FIXED_COST_TARGET_CENTS
+) {
+  if (contributionCents <= 0) return Number.POSITIVE_INFINITY
+  return Math.ceil(targetCents / contributionCents)
 }
 
 export function calculateIvaIncludedBreakdown(grossCents: number) {

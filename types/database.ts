@@ -13,6 +13,11 @@ export type WalletTransactionType =
   | 'adjustment'
   | 'tournament_credit'
 export type TournamentType = 'standard' | 'express' | 'elite' | 'freeroll' | 'challenger' | 'pro'
+export type TournamentPresetKey =
+  | 'legacy_v2'
+  | 'commercial_v1'
+  | 'freeroll_v1'
+  | 'internal_test_v1'
 export type PrizeModel = 'fixed'
 export type SkillTier = 'novato' | 'intermedio' | 'pro'
 export type TournamentStatus =
@@ -95,6 +100,7 @@ export interface Tournament {
   max_game_duration_seconds: number
   is_test: boolean
   business_rule_version: number
+  preset_key: TournamentPresetKey
   created_by: string | null
   skill_tier: SkillTier | null
   created_at: string
@@ -324,6 +330,7 @@ export interface PlatformBusinessRule {
   rewards_enabled: boolean
   flow_fee_net_bps: number
   flow_refund_fee_net_cents: number
+  monthly_fixed_cost_target_cents: number
   notes: string
   created_at: string
 }
@@ -386,7 +393,7 @@ export type Database = {
       }
       tournaments: {
         Row: Tournament & DbRecord
-        Insert: InsertWithOptional<Tournament, 'id' | 'created_at' | 'description' | 'game_type' | 'tournament_type' | 'prize_model' | 'prize_2nd_cents' | 'prize_3rd_cents' | 'prize_fund_bps' | 'platform_fee_bps' | 'prize_1st_bps' | 'prize_2nd_bps' | 'prize_3rd_bps' | 'min_players' | 'max_players' | 'status' | 'max_game_duration_seconds' | 'is_test' | 'business_rule_version' | 'created_by' | 'skill_tier'>
+        Insert: InsertWithOptional<Tournament, 'id' | 'created_at' | 'description' | 'game_type' | 'tournament_type' | 'prize_model' | 'prize_2nd_cents' | 'prize_3rd_cents' | 'prize_fund_bps' | 'platform_fee_bps' | 'prize_1st_bps' | 'prize_2nd_bps' | 'prize_3rd_bps' | 'min_players' | 'max_players' | 'status' | 'max_game_duration_seconds' | 'is_test' | 'business_rule_version' | 'preset_key' | 'created_by' | 'skill_tier'>
         Update: Partial<Omit<Tournament, 'id'>> & DbRecord
         Relationships: []
       }

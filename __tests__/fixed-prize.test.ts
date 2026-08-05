@@ -9,26 +9,26 @@ import {
 describe('fixed prize policy', () => {
   it('publica una sola promesa fija equivalente al 55% del bruto mínimo', () => {
     const prize = buildFixedPrize({
-      entryFeeCents: pesosToCents(2000),
-      minPlayers: 8,
-      maxPlayers: 10,
+      entryFeeCents: pesosToCents(5000),
+      minPlayers: 12,
+      maxPlayers: 15,
     })
 
     expect(FIXED_PRIZE_BUDGET_BPS).toBe(5500)
-    expect(prize.fundCents).toBe(pesosToCents(8800))
-    expect(prize.prize1Cents).toBe(pesosToCents(6600))
-    expect(prize.prize2Cents).toBe(pesosToCents(2200))
+    expect(prize.fundCents).toBe(pesosToCents(33000))
+    expect(prize.prize1Cents).toBe(pesosToCents(24750))
+    expect(prize.prize2Cents).toBe(pesosToCents(8250))
     expect(prize.prize3Cents).toBe(0)
   })
 
   it('el premio no recibe el número final de inscritos como entrada', () => {
     const atPublication = buildFixedPrize({
-      entryFeeCents: pesosToCents(2000),
-      minPlayers: 8,
-      maxPlayers: 10,
+      entryFeeCents: pesosToCents(5000),
+      minPlayers: 12,
+      maxPlayers: 15,
     })
 
-    expect(atPublication.fundCents).toBe(pesosToCents(8800))
+    expect(atPublication.fundCents).toBe(pesosToCents(33000))
   })
 
   it('mantiene el tercer premio en cero aunque el fondo tenga remanente por redondeo', () => {

@@ -24,12 +24,13 @@ if (!url || !key || !password) {
 const targetProjectRef = requireNonProductionProject(url, 'Smoke test de premio fijo')
 const sb = createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } })
 
-const ENTRY = 200000
-const MIN = 8
-const MAX = 10
-const PRIZE_1 = 660000
-const PRIZE_2 = 220000
+const ENTRY = 500000
+const MIN = 12
+const MAX = 15
+const PRIZE_1 = 2475000
+const PRIZE_2 = 825000
 const TOTAL_PRIZE = PRIZE_1 + PRIZE_2
+const createdUserIds = []
 
 async function findUser(email) {
   for (let page = 1; ; page++) {
@@ -52,6 +53,7 @@ async function ensureUser(index) {
     })
     if (error) throw error
     user = data.user
+    createdUserIds.push(user.id)
   }
 
   const { error: profileError } = await sb.from('profiles').upsert({
@@ -93,7 +95,8 @@ async function main() {
   const { data: tournament, error: tournamentError } = await sb.from('tournaments').insert({
     name: `SMOKE premio fijo ${now}`,
     prize_model: 'fixed',
-    business_rule_version: 2,
+    business_rule_version: 3,
+    preset_key: 'commercial_v1',
     entry_fee_cents: ENTRY,
     prize_1st_cents: PRIZE_1,
     prize_2nd_cents: PRIZE_2,
@@ -164,13 +167,23 @@ async function main() {
 }
 
 async function cleanup() {
-  if (!tournamentId) return
-  await sb.from('wallet_transactions').delete().eq('reference_id', tournamentId)
-  await sb.from('tournament_results').delete().eq('tournament_id', tournamentId)
-  await sb.from('games').delete().eq('tournament_id', tournamentId)
-  await sb.from('registrations').delete().eq('tournament_id', tournamentId)
-  await sb.from('tournaments').delete().eq('id', tournamentId)
-  console.log('Limpieza OK (torneo de prueba eliminado).')
+  if (tournamentId) {
+    await sb.from('wallet_transactions').delete().eq('reference_id', tournamentId)
+    await sb.from('tournament_results').delete().eq('tournament_id', tournamentId)
+    await sb.from('games').delete().eq('tournament_id', tournamentId)
+    await sb.from('registrations').delete().eq('tournament_id', tournamentId)
+    await sb.from('tournaments').delete().eq('id', tournamentId)
+  }
+
+  for (const userId of createdUserIds.reverse()) {
+    const { error: profileError } = await sb.from('profiles').delete().eq('id', userId)
+    if (profileError) throw new Error(`cleanup profile ${userId}: ${profileError.message}`)
+
+    const { error } = await sb.auth.admin.deleteUser(userId)
+    if (error) throw new Error(`cleanup auth user ${userId}: ${error.message}`)
+  }
+
+  console.log('Limpieza OK (torneo y usuarios temporales eliminados).')
 }
 
 main()

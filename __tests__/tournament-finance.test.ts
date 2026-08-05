@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import {
-  buildFixedPrize,
-  calculateFixedPrizeFinancials,
   calculateIvaIncludedBreakdown,
   calculatePresetFinancials,
   calculateRequiredRevenueCents,
   calculateTournamentDisplayPayouts,
   calculateTournamentFinancials,
+  getTournamentPreset,
   pesosToCents,
   TOURNAMENT_PRESETS,
+  tournamentsNeededForMonthlyTarget,
 } from '@/lib/tournament/finance'
 
 describe('tournament finance', () => {
@@ -27,23 +27,12 @@ describe('tournament finance', () => {
   })
 
   it('calcula margen fijo al mínimo y al máximo', () => {
-    const prize = buildFixedPrize({
-      entryFeeCents: pesosToCents(2000),
-      minPlayers: 8,
-      maxPlayers: 10,
-    })
-    const financials = calculateFixedPrizeFinancials({
-      entryFeeCents: pesosToCents(2000),
-      prize1Cents: prize.prize1Cents,
-      prize2Cents: prize.prize2Cents,
-      prize3Cents: prize.prize3Cents,
-      minPlayers: 8,
-      maxPlayers: 10,
-    })
+    const preset = getTournamentPreset('commercial_v1')!
+    const financials = calculatePresetFinancials(preset)
 
-    expect(financials.min.contributionCents).toBe(413498)
+    expect(financials.min.contributionCents).toBe(1550617)
     expect(financials.min.contributionMarginBps).toBe(2584)
-    expect(financials.max.contributionCents).toBe(736872)
+    expect(financials.max.contributionCents).toBe(2763271)
     expect(financials.max.contributionMarginBps).toBe(3684)
     expect(financials.min.fixedPrizeCents).toBe(financials.max.fixedPrizeCents)
     expect(financials.isMinHealthy).toBe(true)
@@ -51,13 +40,13 @@ describe('tournament finance', () => {
 
   it('muestra exactamente el premio publicado', () => {
     const payouts = calculateTournamentDisplayPayouts({
-      prize_1st_cents: pesosToCents(6600),
-      prize_2nd_cents: pesosToCents(2200),
+      prize_1st_cents: pesosToCents(24750),
+      prize_2nd_cents: pesosToCents(8250),
       prize_3rd_cents: 0,
-    }, 10)
+    }, 15)
 
-    expect(payouts.prizeFundCents).toBe(pesosToCents(8800))
-    expect(payouts.prize1Cents).toBe(pesosToCents(6600))
+    expect(payouts.prizeFundCents).toBe(pesosToCents(33000))
+    expect(payouts.prize1Cents).toBe(pesosToCents(24750))
     expect(payouts.prize3Cents).toBe(0)
   })
 
@@ -66,6 +55,18 @@ describe('tournament finance', () => {
       const financials = calculatePresetFinancials(preset)
       expect(financials.isMinHealthy, preset.label).toBe(true)
     }
+  })
+
+  it('gobierna formatos por clave y calcula el volumen para cubrir costos fijos', () => {
+    const preset = getTournamentPreset('commercial_v1')!
+    const financials = calculatePresetFinancials(preset)
+
+    expect(preset.entryFeePesos).toBe(5000)
+    expect(preset.minPlayers).toBe(12)
+    expect(preset.maxPlayers).toBe(15)
+    expect(getTournamentPreset('formato_inventado')).toBeNull()
+    expect(tournamentsNeededForMonthlyTarget(financials.min.contributionCents)).toBe(17)
+    expect(tournamentsNeededForMonthlyTarget(financials.max.contributionCents)).toBe(10)
   })
 
   it('computes the required minimum players for an unsafe tournament', () => {

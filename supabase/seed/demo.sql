@@ -43,7 +43,7 @@ insert into tournaments (
   entry_fee_cents, prize_1st_cents, prize_2nd_cents, prize_3rd_cents,
   min_players, max_players,
   registration_opens_at, play_window_start, play_window_end,
-  max_game_duration_seconds, status, is_test, created_by
+  max_game_duration_seconds, status, is_test, business_rule_version, preset_key, created_by
 ) values (
   '00000000-0000-0000-0000-000000000001',
   'Torneo Estándar #1',
@@ -54,7 +54,7 @@ insert into tournaments (
   now() - interval '8 days',
   now() - interval '7 days',
   now() - interval '6 days',
-  600, 'completed', true,
+  600, 'completed', true, 2, 'legacy_v2',
   (select id from profiles where is_admin = true limit 1)
 ) on conflict (id) do nothing;
 
@@ -97,7 +97,7 @@ insert into tournaments (
   entry_fee_cents, prize_1st_cents, prize_2nd_cents, prize_3rd_cents,
   min_players, max_players,
   registration_opens_at, play_window_start, play_window_end,
-  max_game_duration_seconds, status, is_test, created_by
+  max_game_duration_seconds, status, is_test, business_rule_version, preset_key, created_by
 ) values (
   '00000000-0000-0000-0000-000000000002',
   'Torneo Estándar #2',
@@ -108,7 +108,7 @@ insert into tournaments (
   now() - interval '2 hours',
   now() - interval '1 hour',
   now() + interval '23 hours',
-  600, 'live', true,
+  600, 'live', true, 2, 'legacy_v2',
   (select id from profiles where is_admin = true limit 1)
 ) on conflict (id) do nothing;
 
@@ -136,7 +136,7 @@ insert into tournaments (
   entry_fee_cents, prize_1st_cents, prize_2nd_cents, prize_3rd_cents,
   min_players, max_players,
   registration_opens_at, play_window_start, play_window_end,
-  max_game_duration_seconds, status, is_test, created_by
+  max_game_duration_seconds, status, is_test, business_rule_version, preset_key, created_by
 ) values (
   '00000000-0000-0000-0000-000000000003',
   'Flash Express #1',
@@ -147,7 +147,7 @@ insert into tournaments (
   now() - interval '30 minutes',
   now() + interval '1 hour',
   now() + interval '3 hours',
-  480, 'open', true,
+  480, 'open', true, 2, 'legacy_v2',
   (select id from profiles where is_admin = true limit 1)
 ) on conflict (id) do nothing;
 
@@ -164,7 +164,7 @@ insert into tournaments (
   entry_fee_cents, prize_1st_cents, prize_2nd_cents, prize_3rd_cents,
   min_players, max_players,
   registration_opens_at, play_window_start, play_window_end,
-  max_game_duration_seconds, status, is_test, created_by
+  max_game_duration_seconds, status, is_test, business_rule_version, preset_key, created_by
 ) values (
   '00000000-0000-0000-0000-000000000004',
   'Gran Premio Élite',
@@ -175,7 +175,7 @@ insert into tournaments (
   now() + interval '2 days',
   now() + interval '3 days',
   now() + interval '5 days',
-  900, 'scheduled', true,
+  900, 'scheduled', true, 2, 'legacy_v2',
   (select id from profiles where is_admin = true limit 1)
 ) on conflict (id) do nothing;
 
@@ -186,7 +186,7 @@ insert into tournaments (
   entry_fee_cents, prize_1st_cents, prize_2nd_cents, prize_3rd_cents,
   min_players, max_players,
   registration_opens_at, play_window_start, play_window_end,
-  max_game_duration_seconds, status, is_test, created_by
+  max_game_duration_seconds, status, is_test, business_rule_version, preset_key, created_by
 ) values (
   '00000000-0000-0000-0000-000000000005',
   'Freeroll Bienvenida',
@@ -197,7 +197,7 @@ insert into tournaments (
   now() - interval '1 day',
   now() - interval '12 hours',
   now() + interval '36 hours',
-  600, 'live', true,
+  600, 'live', true, 2, 'legacy_v2',
   (select id from profiles where is_admin = true limit 1)
 ) on conflict (id) do nothing;
 

@@ -20,7 +20,7 @@ filas históricas se conservan únicamente como archivo privado de auditoría.
 
 ## Secuencia de validación
 
-1. Operar un solo formato pagado: $2.000, mínimo 8, máximo 10 y premio fijo $8.800.
+1. Operar un solo formato pagado: $5.000, mínimo 12, máximo 15 y premio fijo $33.000.
 2. Medir llenado, contribución real, cancelaciones, recompra y retención D7/D30.
 3. No abrir un segundo formato hasta llenar consistentemente el primero.
 4. No aumentar premios o cupos antes de tres cierres mensuales conciliados.

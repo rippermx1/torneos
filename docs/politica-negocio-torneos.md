@@ -1,6 +1,6 @@
-# Política de negocio para torneos — piloto
+# Política de negocio para torneos — formatos gobernados
 
-Vigente desde el 4 de agosto de 2026. Estas reglas gobiernan torneos nuevos; las
+Vigente desde el 5 de agosto de 2026. Estas reglas gobiernan torneos nuevos; las
 obligaciones ya publicadas se conservan.
 
 ## Producto
@@ -38,9 +38,9 @@ ingresos.
 | Margen de contribución mínimo objetivo | 25% del bruto al mínimo |
 | Rakeback/recompensas nuevas | Desactivadas |
 
-Por cada $2.000 brutos vendidos al mínimo, el presupuesto fijo equivalente de
-premio es $1.100. Después del IVA incluido y una comisión Flow neta estimada de
-3,19%, la contribución estimada es $516,87 (25,84%) antes de costos fijos y renta. El
+Por cada $5.000 brutos vendidos al mínimo, el presupuesto fijo equivalente de
+premio es $2.750. Después del IVA incluido y una comisión Flow neta estimada de
+3,19%, la contribución estimada es $1.292,18 (25,84%) antes de costos fijos y renta. El
 tope de $70.000 limita exposición operacional y antifraude durante la validación;
 no es una afirmación de exención tributaria o legal.
 
@@ -56,12 +56,14 @@ Los topes sólo pueden aumentarse tras demostrar durante al menos tres cierres:
 
 | Formato | Entrada | Mínimo | Máximo | Premio fijo | Distribución |
 |---|---:|---:|---:|---:|---:|
-| Piloto pagado | $2.000 | 8 | 10 | $8.800 | $6.600 / $2.200 |
+| Comercial fijo | $5.000 | 12 | 15 | $33.000 | $24.750 / $8.250 |
 | Freeroll controlado | $0 | 2 | 10 | $5.000 | $5.000 al 1° |
+| Prueba interna | $0 | 1 | 1 | $1 simbólico | $1 al 1° |
 
 El premio se calcula una sola vez al publicar y nunca cambia con la convocatoria.
-El sistema rechaza tickets bajo el mínimo, capacidades superiores a 1,25 veces
-el mínimo y premios que excedan 55% de la recaudación mínima.
+El panel no permite editar la economía: sólo acepta estos formatos. El servidor
+deriva todos los montos desde la clave seleccionada y la base de datos rechaza
+cualquier combinación comercial distinta, aunque se intente omitir el panel.
 
 ## Condiciones de competencia
 

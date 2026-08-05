@@ -3,129 +3,104 @@ import { requireAdmin } from '@/lib/supabase/auth'
 import { formatDateTimeLocalInput, parseDateTimeLocalToIso } from '@/lib/utils'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import type { TournamentType, SkillTier } from '@/types/database'
+import type { SkillTier } from '@/types/database'
 import {
-  DEFAULT_PRIZE_MODEL,
-  DEFAULT_FREEROLL_PRIZE_CENTS,
   DEFAULT_PLATFORM_FEE_BPS,
   DEFAULT_PRIZE_1ST_BPS,
   DEFAULT_PRIZE_2ND_BPS,
   DEFAULT_PRIZE_3RD_BPS,
+  DEFAULT_PRIZE_MODEL,
   FIXED_PRIZE_BUDGET_BPS,
-  MIN_PAID_ENTRY_FEE_CENTS,
-  MAX_FREEROLL_PRIZE_CENTS,
   buildFixedPrize,
-  maxPlayersForMinimum,
+  getTournamentPreset,
+  pesosToCents,
 } from '@/lib/tournament/finance'
-import { PILOT_BUSINESS_RULES } from '@/lib/business/rules'
+import { PLATFORM_BUSINESS_RULES } from '@/lib/business/rules'
 import { TournamentPresetForm } from '@/components/admin/tournament-preset-form'
 
 async function createTournament(formData: FormData) {
   'use server'
 
   const userId = await requireAdmin()
+  const presetKey = String(formData.get('preset_key') ?? '')
+  const preset = getTournamentPreset(presetKey)
 
-  const name             = String(formData.get('name') ?? '').trim()
-  const description      = (formData.get('description') as string) || null
-  const rawTournamentType = formData.get('tournament_type')
-  const tournamentType: TournamentType =
-    rawTournamentType === 'freeroll'
-      ? rawTournamentType
-      : 'standard'
-  const isTest           = formData.get('is_test') === '1'
-  const rawSkillTier     = formData.get('skill_tier')
+  if (!preset) {
+    throw new Error('El formato seleccionado no está autorizado.')
+  }
+
+  const name = String(formData.get('name') ?? '').trim()
+  const rawDescription = String(formData.get('description') ?? '').trim()
+  const description = rawDescription || null
+  const rawSkillTier = formData.get('skill_tier')
   const skillTier: SkillTier | null =
     rawSkillTier === 'novato' || rawSkillTier === 'intermedio' || rawSkillTier === 'pro'
       ? rawSkillTier
       : null
-  const entryFeePesos    = Number.parseFloat(String(formData.get('entry_fee') ?? ''))
-  const entryFee         = Math.round(entryFeePesos * 100)
-  const freerollPrizeInput = Number.parseFloat(String(formData.get('freeroll_prize') ?? ''))
-  const freerollPrizeCents = Number.isFinite(freerollPrizeInput) && freerollPrizeInput > 0
-    ? Math.round(freerollPrizeInput * 100)
-    : DEFAULT_FREEROLL_PRIZE_CENTS
-  const minPlayers       = Number.parseInt(String(formData.get('min_players') ?? ''), 10)
-  const maxPlayers       = Number.parseInt(String(formData.get('max_players') ?? ''), 10)
-  const registrationOpens = parseDateTimeLocalToIso(formData.get('registration_opens_at') as string)
-  const playStart        = parseDateTimeLocalToIso(formData.get('play_window_start') as string)
-  const playEnd          = parseDateTimeLocalToIso(formData.get('play_window_end') as string)
-  const maxDurationMinutes = Number.parseInt(String(formData.get('max_game_duration_minutes') ?? ''), 10)
-  const maxDuration      = maxDurationMinutes * 60
-
+  const registrationOpens = parseDateTimeLocalToIso(
+    String(formData.get('registration_opens_at') ?? '')
+  )
+  const playStart = parseDateTimeLocalToIso(String(formData.get('play_window_start') ?? ''))
+  const playEnd = parseDateTimeLocalToIso(String(formData.get('play_window_end') ?? ''))
   const registrationOpensMs = Date.parse(registrationOpens)
   const playStartMs = Date.parse(playStart)
   const playEndMs = Date.parse(playEnd)
+  const maxDuration = preset.durationMinutes * 60
   const playWindowSeconds = (playEndMs - playStartMs) / 1000
 
   if (
     !name ||
-    !Number.isFinite(entryFee) ||
-    !Number.isInteger(minPlayers) ||
-    !Number.isInteger(maxPlayers) ||
-    !Number.isInteger(maxDurationMinutes) ||
-    entryFee < 0 ||
-    minPlayers < (isTest ? 1 : 2) ||
-    maxPlayers < minPlayers ||
-    maxDuration <= 0 ||
-    maxDuration > playWindowSeconds ||
+    name.length > 120 ||
+    !Number.isFinite(registrationOpensMs) ||
+    !Number.isFinite(playStartMs) ||
+    !Number.isFinite(playEndMs) ||
     registrationOpensMs >= playStartMs ||
-    playStartMs >= playEndMs
+    playStartMs >= playEndMs ||
+    maxDuration > playWindowSeconds
   ) {
-    throw new Error('Datos del torneo inválidos')
+    throw new Error('Revisa el nombre y las fechas del torneo.')
   }
 
-  if (!isTest && entryFee > 0 && minPlayers < 2) {
-    throw new Error('Los torneos pagados requieren al menos 2 jugadores.')
+  const entryFee = pesosToCents(preset.entryFeePesos)
+  const configuredPrize = {
+    fundCents: pesosToCents(preset.prize1Pesos + preset.prize2Pesos + preset.prize3Pesos),
+    prize1Cents: pesosToCents(preset.prize1Pesos),
+    prize2Cents: pesosToCents(preset.prize2Pesos),
+    prize3Cents: pesosToCents(preset.prize3Pesos),
   }
 
-  if (!isTest && entryFee > 0 && entryFee < MIN_PAID_ENTRY_FEE_CENTS) {
-    throw new Error('La inscripción mínima para torneos pagados es $2.000.')
+  // En el formato comercial, el premio debe coincidir exactamente con la
+  // regla económica. El navegador nunca decide precios, cupos ni premios.
+  if (entryFee > 0) {
+    const calculatedPrize = buildFixedPrize({
+      entryFeeCents: entryFee,
+      minPlayers: preset.minPlayers,
+      maxPlayers: preset.maxPlayers,
+    })
+    if (
+      calculatedPrize.fundCents !== configuredPrize.fundCents ||
+      calculatedPrize.prize1Cents !== configuredPrize.prize1Cents ||
+      calculatedPrize.prize2Cents !== configuredPrize.prize2Cents ||
+      calculatedPrize.prize3Cents !== configuredPrize.prize3Cents
+    ) {
+      throw new Error('El formato comercial no coincide con la política económica vigente.')
+    }
   }
 
-  if (!isTest && entryFee > 0 && maxPlayers > maxPlayersForMinimum(minPlayers)) {
-    throw new Error('El cupo máximo no puede superar 1,25 veces el mínimo de jugadores.')
-  }
-
-  if (isTest && entryFee > 0) {
-    throw new Error('Los torneos de prueba deben ser gratuitos.')
-  }
-
-  if (entryFee === 0 && (freerollPrizeCents <= 0 || freerollPrizeCents > MAX_FREEROLL_PRIZE_CENTS)) {
-    throw new Error('El premio del freeroll debe ser mayor a 0 y hasta $49.000.')
-  }
-
-  // El premio se calcula una sola vez al publicar y queda inmutable. El número
-  // final de inscritos nunca modifica estos montos.
-  const fixedPrize =
-    entryFee > 0
-      ? buildFixedPrize({ entryFeeCents: entryFee, minPlayers, maxPlayers })
-      : { fundCents: freerollPrizeCents, prize1Cents: freerollPrizeCents, prize2Cents: 0, prize3Cents: 0 }
-  const prize1 = fixedPrize.prize1Cents
-  const prize2 = fixedPrize.prize2Cents
-  const prize3 = fixedPrize.prize3Cents
-
-  // C6 guard: para torneos pagados, los premios fijos no pueden superar la
-  // recaudacion bruta al minimo de jugadores. Este chequeo replica el CHECK
-  // de DB pero da un error amigable antes de impactar la transaccion.
-  const totalPrizeCents = prize1 + prize2 + prize3
-  if (entryFee > 0 && totalPrizeCents > entryFee * minPlayers) {
-    throw new Error(
-      `Los premios publicados (${totalPrizeCents} centavos) exceden la recaudacion minima (${entryFee * minPlayers} centavos al minimo de ${minPlayers} jugadores). Reduce los premios o aumenta el minimo.`
-    )
-  }
-
-  // Freerolls: máximo 1 por semana activo (scheduled/open/live). Los de prueba están exentos.
-  if (tournamentType === 'freeroll' && !isTest) {
+  // Los freerolls comerciales son una inversión promocional controlada.
+  if (preset.key === 'freeroll_v1') {
     const supabaseCheck = createAdminClient()
     const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
-    const { count } = await supabaseCheck
+    const { count, error: countError } = await supabaseCheck
       .from('tournaments')
       .select('*', { count: 'exact', head: true })
-      .eq('tournament_type', 'freeroll')
+      .eq('preset_key', 'freeroll_v1')
       .in('status', ['scheduled', 'open', 'live'])
       .gte('created_at', oneWeekAgo)
+
+    if (countError) throw new Error(`No se pudo comprobar el límite de freerolls: ${countError.message}`)
     if ((count ?? 0) >= 1) {
-      throw new Error('Ya existe un freeroll activo en los últimos 7 días. Solo se permite uno por semana.')
+      throw new Error('Ya existe un freeroll activo creado durante los últimos 7 días.')
     }
   }
 
@@ -136,26 +111,27 @@ async function createTournament(formData: FormData) {
       name,
       description,
       game_type: '2048_score',
-      tournament_type: tournamentType,
+      tournament_type: preset.tournamentType,
       prize_model: DEFAULT_PRIZE_MODEL,
       entry_fee_cents: entryFee,
-      prize_1st_cents: prize1,
-      prize_2nd_cents: prize2,
-      prize_3rd_cents: prize3,
+      prize_1st_cents: configuredPrize.prize1Cents,
+      prize_2nd_cents: configuredPrize.prize2Cents,
+      prize_3rd_cents: configuredPrize.prize3Cents,
       prize_fund_bps: FIXED_PRIZE_BUDGET_BPS,
       platform_fee_bps: DEFAULT_PLATFORM_FEE_BPS,
       prize_1st_bps: DEFAULT_PRIZE_1ST_BPS,
       prize_2nd_bps: DEFAULT_PRIZE_2ND_BPS,
       prize_3rd_bps: DEFAULT_PRIZE_3RD_BPS,
-      min_players: minPlayers,
-      max_players: maxPlayers,
+      min_players: preset.minPlayers,
+      max_players: preset.maxPlayers,
       registration_opens_at: registrationOpens,
       play_window_start: playStart,
       play_window_end: playEnd,
       max_game_duration_seconds: maxDuration,
       status: 'scheduled',
-      is_test: isTest,
-      business_rule_version: PILOT_BUSINESS_RULES.policyVersion,
+      is_test: preset.isTest,
+      business_rule_version: PLATFORM_BUSINESS_RULES.policyVersion,
+      preset_key: preset.key,
       skill_tier: skillTier,
       created_by: userId,
     })
@@ -170,8 +146,7 @@ async function createTournament(formData: FormData) {
 export default function NewTournamentPage() {
   const registrationOpens = new Date()
   registrationOpens.setMinutes(registrationOpens.getMinutes() + 5, 0, 0)
-  const now = new Date(registrationOpens)
-  const start = new Date(now)
+  const start = new Date(registrationOpens)
   start.setHours(start.getHours() + 1)
   const end = new Date(start)
   end.setHours(end.getHours() + 24)
@@ -179,7 +154,9 @@ export default function NewTournamentPage() {
   return (
     <div className="max-w-6xl space-y-6">
       <div className="flex items-center gap-4">
-        <Link href="/admin/tournaments" className="text-sm text-muted-foreground hover:text-foreground">← Torneos</Link>
+        <Link href="/admin/tournaments" className="text-sm text-muted-foreground hover:text-foreground">
+          ← Torneos
+        </Link>
         <h1 className="text-2xl font-bold">Crear torneo</h1>
       </div>
       <TournamentPresetForm

@@ -2,15 +2,18 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getUser } from '@/lib/supabase/auth'
 import { ResendVerificationButton } from '@/components/auth/resend-verification-button'
+import { getOnboardingPath, getOnboardingReturnPath, withAuthDestination } from '@/lib/auth/redirect'
 
-export default async function VerifyEmailPage() {
+export default async function VerifyEmailPage({ searchParams }: { searchParams: Promise<{ next?: string | string[] }> }) {
+  const destination = getOnboardingReturnPath((await searchParams).next)
+  const signInHref = withAuthDestination('/sign-in', getOnboardingPath(destination))
   const user = await getUser()
 
   // Sin sesión → al login
-  if (!user) redirect('/sign-in')
+  if (!user) redirect(signInHref)
 
   // Ya verificado → al inicio (no debería llegar aquí)
-  if (user.email_confirmed_at) redirect('/')
+  if (user.email_confirmed_at) redirect(destination)
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
@@ -35,17 +38,17 @@ export default async function VerifyEmailPage() {
           </ul>
         </div>
 
-        <ResendVerificationButton />
+        <ResendVerificationButton returnTo={destination} />
 
         <div className="flex flex-col gap-1.5 items-center pt-2">
           <Link
-            href="/sign-in"
+            href={signInHref}
             className="text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             Ya confirmé → Iniciar sesión
           </Link>
           <Link
-            href="/sign-in"
+            href={signInHref}
             className="text-xs text-muted-foreground hover:text-foreground transition-colors"
           >
             Usar otro email

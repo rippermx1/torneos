@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 
-export function ResendVerificationButton() {
+export function ResendVerificationButton({ returnTo = '/tournaments' }: { returnTo?: string }) {
   const [status, setStatus] = useState<'idle' | 'loading' | 'sent' | 'error'>('idle')
   const [errorMsg, setErrorMsg] = useState('')
   const [cooldown, setCooldown] = useState(0)
@@ -11,7 +11,11 @@ export function ResendVerificationButton() {
     setStatus('loading')
     setErrorMsg('')
 
-    const res = await fetch('/api/auth/resend-confirmation', { method: 'POST' })
+    const res = await fetch('/api/auth/resend-confirmation', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ next: returnTo }),
+    })
     const data = await res.json()
 
     if (!res.ok) {

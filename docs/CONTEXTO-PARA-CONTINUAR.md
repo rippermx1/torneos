@@ -3,13 +3,21 @@
 Fecha: 2026-09-30. Este documento resume decisiones y entrega local; al retomar,
 verifica Git, procesos y configuración antes de asumir que siguen iguales.
 
+Continuidad posterior: el incremento de web pública se implementó en
+`codex/tournament-discovery`, creada desde `db49046` y con la migración completa
+en su historial. Consultar `SIGUIENTE-INCREMENTO-WEB.md`, `STATUS.md` y
+`WEB-DISCOVERY-EVIDENCE.json` para la entrega y pruebas actuales. Los apartados
+de migración siguientes conservan el contexto original. Continuar desde esta
+rama local; `main` todavía no contiene estos incrementos.
+
 ## Dónde continuar
 
 Abrir un chat nuevo dentro del proyecto **torneos**, en la carpeta local existente
 `C:/torneos`. Este chat de origen estaba asociado a `C:/play-games`; el cambio de
 producto y de carpeta ya está resuelto y no requiere volver a migrar los archivos.
 
-- Rama de trabajo: `codex/unity-games-migration`.
+- Rama de trabajo actual: `codex/tournament-discovery` (derivada de
+  `codex/unity-games-migration` en `db49046`).
 - Commit de la entrega de juegos: `df6d463`.
 - `main` sigue en `6308515`; la migración todavía no está integrada en `main`.
 - El árbol estaba limpio antes de añadir este documento.
@@ -87,9 +95,10 @@ humana, validación legal ni autorización de publicación.
 Retomar el enfoque de la **web pública como producto**. Revisar primero lo que ya
 existe y el backlog disponible, evitando duplicar capacidades de TorneosPlay.
 
-1. Mejorar el recorrido público de descubrimiento e inscripción: catálogo,
-   disponibilidad, reglas, coste/premio y conexión entre torneo, juego y ranking.
-   Elegir un incremento pequeño y observable a partir del recorrido actual.
+1. Revisar con usuarios el recorrido público implementado en
+   `codex/tournament-discovery` y completar su E2E de cuenta/retorno en staging.
+   El catálogo/ficha ya muestran disponibilidad, reglas, coste/premio y retorno
+   desde práctica, registro, confirmación y onboarding. No duplicar este trabajo.
 2. Validar 2048 Unity con cuentas y DB de staging: acceso, inicio, movimientos,
    recuperación de sesión, duración y ranking. Solo después decidir si sustituye
    al cliente competitivo predeterminado. No usar producción para esta prueba.
@@ -146,9 +155,11 @@ tiene procedencia en `games/2048/ART-PROVENANCE.json`.
 ## Mensaje sugerido para el nuevo chat
 
 > Continúa en C:/torneos usando la copia local y la rama actual
-> codex/unity-games-migration. Lee AGENTS.md, README.md, docs/STATUS.md y
+> codex/tournament-discovery. Lee AGENTS.md, README.md, docs/STATUS.md y
 > docs/CONTEXTO-PARA-CONTINUAR.md. TorneosPlay es el producto comercial y los juegos
 > son herramientas para participar en torneos. La migración local de Alien Run y
 > 2048 Unity ya está entregada; retoma el enfoque de negocio de la web pública,
-> revisa lo que existe y determina el siguiente incremento útil sin duplicar
-> funciones implementadas. Conserva los límites y distingue lo probado de lo pendiente.
+> el recorrido público de catálogo/ficha y retorno desde práctica/cuenta ya está
+> implementado localmente. Lee docs/SIGUIENTE-INCREMENTO-WEB.md y la evidencia;
+> continúa con la validación autenticada en staging o un incremento útil posterior
+> sin duplicar funciones. Conserva los límites y distingue lo probado de lo pendiente.

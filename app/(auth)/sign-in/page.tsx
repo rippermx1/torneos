@@ -5,12 +5,13 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { GoogleButton } from '@/components/auth/google-button'
-import { getSafeAuthRedirectPath } from '@/lib/auth/redirect'
+import { getSafeAuthRedirectPath, getOnboardingReturnPath, getTournamentReturnPath, withAuthDestination } from '@/lib/auth/redirect'
 
 function SignInForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const destination = getSafeAuthRedirectPath(searchParams.get('next'), '/')
+  const tournamentHref = getTournamentReturnPath(getOnboardingReturnPath(destination))
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const initialError = searchParams.get('error')
@@ -49,6 +50,7 @@ function SignInForm() {
         <div className="text-center space-y-1">
           <h1 className="text-2xl font-bold">Iniciar sesión</h1>
           <p className="text-sm text-muted-foreground">Ingresa a tu cuenta de TorneosPlay</p>
+          {tournamentHref && <p className="pt-2 text-sm text-muted-foreground">Continuarás con el torneo elegido. <Link href={tournamentHref} className="underline">Ver torneo</Link></p>}
         </div>
 
         <GoogleButton redirectTo={destination} />
@@ -109,7 +111,7 @@ function SignInForm() {
 
         <p className="text-center text-sm text-muted-foreground">
           ¿No tienes cuenta?{' '}
-          <Link href="/sign-up" className="font-medium text-foreground hover:underline">
+          <Link href={withAuthDestination('/sign-up', destination)} className="font-medium text-foreground hover:underline">
             Crear cuenta
           </Link>
         </p>

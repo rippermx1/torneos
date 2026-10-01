@@ -28,7 +28,8 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  redirectTo.pathname = '/sign-in'
-  redirectTo.searchParams.set('error', 'auth_confirm')
-  return NextResponse.redirect(redirectTo)
+  const signInUrl = new URL('/sign-in', request.url)
+  signInUrl.searchParams.set('error', 'auth_confirm')
+  signInUrl.searchParams.set('next', next)
+  return NextResponse.redirect(signInUrl)
 }

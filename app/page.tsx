@@ -1,39 +1,18 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { formatCLP } from '@/lib/utils'
-import type { Tournament } from '@/types/database'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
+import { getPublicTournaments } from '@/lib/tournament/public-catalog'
+import { TournamentCard } from '@/components/tournament/tournament-card'
+import { CatalogFeedback } from '@/components/tournament/catalog-feedback'
 
 export default async function HomePage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   const isSignedIn = !!user
 
-  // Torneos destacados: próximos abiertos o programados
-  const { data } = await supabase
-    .from('tournaments')
-    .select('*')
-    .in('status', ['live', 'open', 'scheduled'])
-    .eq('is_test', false)
-    .order('play_window_start', { ascending: true })
-    .limit(3)
-
-  const tournaments = (data ?? []) as Pick<
-    Tournament,
-    'id' | 'name' | 'entry_fee_cents' | 'prize_1st_cents' | 'prize_2nd_cents' | 'prize_3rd_cents' | 'prize_model' | 'status' | 'play_window_start'
-  >[]
-
-  const STATUS_BADGE: Record<string, string> = {
-    live:      'En curso',
-    open:      'Inscripciones abiertas',
-    scheduled: 'Próximamente',
-  }
-  const STATUS_COLOR: Record<string, string> = {
-    live:      'bg-amber-100 text-amber-700',
-    open:      'bg-green-100 text-green-700',
-    scheduled: 'bg-yellow-100 text-yellow-700',
-  }
+  const catalog = await getPublicTournaments()
+  const tournaments = catalog.tournaments.slice(0, 3)
 
   return (
     <>
@@ -101,48 +80,12 @@ export default async function HomePage() {
               </Link>
             </div>
 
-            {tournaments.length === 0 ? (
-              <div className="border rounded-2xl p-10 text-center text-muted-foreground">
-                <p className="text-4xl mb-3">🏆</p>
-                <p className="font-medium">No hay torneos activos por ahora.</p>
-                <p className="text-sm mt-1">Vuelve pronto o practica mientras tanto.</p>
-                <Link
-                  href="/play"
-                  className="mt-4 inline-block bg-foreground text-background px-5 py-2.5 rounded-xl text-sm font-medium hover:opacity-90 transition-opacity"
-                >
-                  Modo práctica
-                </Link>
-              </div>
+            <p className="text-xs text-muted-foreground">Horarios de Chile (Santiago). Los cupos se confirman al inscribirte.</p>
+            {catalog.error || tournaments.length === 0 ? (
+              <CatalogFeedback error={catalog.error} retryHref="/" />
             ) : (
-              <div className="space-y-3">
-                {tournaments.map((t) => {
-                  const totalPrize = t.prize_1st_cents + t.prize_2nd_cents + t.prize_3rd_cents
-                  return (
-                    <Link
-                      key={t.id}
-                      href={`/tournaments/${t.id}`}
-                      className="flex items-center justify-between border rounded-2xl p-5 hover:bg-muted/50 transition-colors gap-4"
-                    >
-                      <div className="space-y-1 min-w-0">
-                        <p className="font-semibold truncate">{t.name}</p>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLOR[t.status]}`}>
-                            {STATUS_BADGE[t.status]}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            Inscripción {formatCLP(t.entry_fee_cents)}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <p className="font-bold text-lg">{formatCLP(totalPrize)}</p>
-                        <p className="text-xs text-muted-foreground">
-                          premio fijo
-                        </p>
-                      </div>
-                    </Link>
-                  )
-                })}
+              <div className="grid gap-4 sm:grid-cols-2">
+                {tournaments.map((t) => <TournamentCard key={t.id} tournament={t} now={catalog.asOf} />)}
               </div>
             )}
           </div>

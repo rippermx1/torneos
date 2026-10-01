@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { getSafeAuthRedirectPath } from '@/lib/auth/redirect'
 
 interface Props {
   redirectTo?: string
@@ -16,7 +17,7 @@ export function GoogleButton({ redirectTo = '/onboarding' }: Props) {
     setError(null)
     const supabase = createClient()
     const callbackUrl = new URL('/auth/callback', window.location.origin)
-    callbackUrl.searchParams.set('next', redirectTo)
+    callbackUrl.searchParams.set('next', getSafeAuthRedirectPath(redirectTo))
 
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider: 'google',

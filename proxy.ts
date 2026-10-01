@@ -159,6 +159,8 @@ export async function proxy(req: NextRequest) {
   if (!isPublicPath(req.nextUrl.pathname) && !user) {
     const url = req.nextUrl.clone()
     url.pathname = '/sign-in'
+    url.search = ''
+    url.searchParams.set('next', req.nextUrl.pathname + req.nextUrl.search)
     return withCors(NextResponse.redirect(url), req)
   }
 

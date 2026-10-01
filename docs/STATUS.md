@@ -1,6 +1,7 @@
 # Estado — TorneosPlay
 
-Actualizado: 2026-09-30. Rama local de trabajo: `codex/unity-games-migration`.
+Actualizado: 2026-09-30. Rama local de trabajo: `codex/tournament-discovery`,
+derivada de `codex/unity-games-migration` en `db49046`. `main` sigue en `6308515`.
 
 El propietario eligió TorneosPlay como base comercial y autorizó trasladar Alien Run
 desde `C:/play-games`, además de crear 2048 en Unity con arte 2D generado con GPT.
@@ -44,18 +45,37 @@ origen, usa el script de transferencia y revisa conflictos antes de adoptarlo.
 
 1. Validar 2048 Unity con cuentas, reconexión, duración y ranking en un Supabase de
    staging; luego decidir su adopción como cliente competitivo predeterminado.
-2. Preparar una experiencia de descubrimiento de torneos: catálogo, reglas claras,
-   coste/premio, disponibilidad, inscripción y retorno al ranking desde cada juego.
+2. Revisar con usuarios el recorrido público implementado localmente: catálogo,
+   reglas, coste/premio, disponibilidad y retorno al torneo después de práctica o
+   cuenta. Validar el flujo autenticado en staging; no se afirma aceptación humana.
 3. Habilitar más juegos por una estrategia servidor y datos de partida por juego.
    Alien Run permanece como práctica; no acepta puntuaciones del cliente para premios.
 
 Compilación y pruebas técnicas no equivalen a aceptación del propietario/usuarios,
 validación legal, integración de dinero ni autorización de publicación.
 
+## Incremento de web pública
+
+Implementado en `codex/tournament-discovery`: tarjetas compartidas entre portada
+y catálogo, cupos agregados sólo en servidor, disponibilidad por horario/capacidad,
+ficha con reglas/requisitos y acciones coherentes, retorno contextual desde ambas
+prácticas de 2048 y conservación de destino en cuenta/confirmación/onboarding.
+Errores de carga y conteo ya no se presentan como cero torneos o cero inscritos.
+No se modificaron migraciones, economía ni clientes de juego.
+
+Pruebas de esta entrega: **295/295 en 39 archivos**, TypeScript, lint afectado y
+compilación Next webpack/standalone exit 0. Navegador con fixtures locales y Auth
+simulada: estados, errores, destinos y render en escritorio/móvil. Evidencia en
+`docs/WEB-DISCOVERY-EVIDENCE.json`; detalle/reproducción en
+`docs/SIGUIENTE-INCREMENTO-WEB.md`; capturas/logs en `artifacts/tournament-discovery`.
+E2E con cuentas de staging, teléfono físico y aceptación humana permanecen pendientes.
+La política de equivalencia competitiva previa a captar participantes pagados
+continúa abierta; esta entrega no autoriza lanzamiento pagado.
+
 ## Continuidad del trabajo
 
 Para el próximo chat, usar el proyecto **torneos** y la copia local `C:/torneos` en
-`codex/unity-games-migration`. La entrega `df6d463` aún no está integrada en `main`;
+`codex/tournament-discovery`. La entrega `df6d463` aún no está integrada en `main`;
 las builds y assets locales ignorados también deben conservarse. Decisiones,
 evidencia, límites y mensaje para retomar en
 [CONTEXTO-PARA-CONTINUAR.md](CONTEXTO-PARA-CONTINUAR.md).

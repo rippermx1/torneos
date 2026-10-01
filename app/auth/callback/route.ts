@@ -25,5 +25,8 @@ export async function GET(req: NextRequest) {
   }
 
   // Si falla, mandar al sign-in con mensaje de error
-  return NextResponse.redirect(`${origin}/sign-in?error=oauth`)
+  const signInUrl = new URL('/sign-in', origin)
+  signInUrl.searchParams.set('error', 'oauth')
+  signInUrl.searchParams.set('next', next)
+  return NextResponse.redirect(signInUrl)
 }

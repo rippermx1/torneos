@@ -10,6 +10,15 @@ interna de premios/reembolsos y despliegue en Vercel.
 - Flow
 - Vercel
 
+## Workspace y contenedor de aplicación
+
+El trabajo activo de plataforma, 2048 y Alien Run continúa en `C:/torneos`.
+`C:/play-games` se conserva como respaldo histórico. `compose.app.yaml` ejecuta
+un contenedor de Torneos para la web, APIs y ambos WebGL, separado de Orbit.
+Configuración, auditoría del origen y evidencia en
+[docs/WORKSPACE-Y-CONTENEDOR.md](docs/WORKSPACE-Y-CONTENEDOR.md).
+Alien Run permanece como práctica gratuita; su empaquetado no habilita premios.
+
 ## Desarrollo local
 
 ### 1. Instala dependencias

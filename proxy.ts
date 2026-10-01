@@ -1,7 +1,8 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { getAllowedOrigins, getSupabaseBrowserKey, getSupabaseUrl } from '@/lib/env'
+import { getAllowedOrigins, getAppUrl, getSupabaseBrowserKey, getSupabaseUrl } from '@/lib/env'
+import { buildAppCsp } from '@/lib/security/csp'
 
 // ── CORS ────────────────────────────────────────────────────
 const ALLOWED_ORIGINS = getAllowedOrigins()
@@ -15,32 +16,14 @@ const ALLOWED_ORIGINS = getAllowedOrigins()
 // connect-src: incluye Supabase (HTTPS y WSS para Realtime). Flow se accede
 // solo desde el server (lib/flow/payments.ts), no desde el browser, por eso
 // no esta listado.
-// img-src: Supabase Storage emite URLs en *.supabase.co. data:/blob: para
+// img-src: permite el origen configurado de Supabase Storage. data:/blob: para
 // avatars, screenshots locales, capturas KYC.
 // frame-ancestors 'none': impide que la app sea embebida (clickjacking).
 function buildCsp(nonce: string): string {
-  const isDev = process.env.NODE_ENV === 'development'
-  const supabase = getSupabaseUrl() ?? ''
-  const supabaseHttps = supabase ? supabase.replace(/^http/, 'http').replace(/^http:/, 'https:') : ''
-  const supabaseWss = supabase ? supabase.replace(/^http/, 'ws') : ''
-
-  const csp = [
-    `default-src 'self'`,
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ''}`,
-    // Tailwind/Geist generan algunos estilos inline en runtime; en dev usamos
-    // 'unsafe-inline' para no romper HMR. En prod confiamos en el nonce.
-    `style-src 'self' ${isDev ? "'unsafe-inline'" : `'nonce-${nonce}' 'unsafe-inline'`}`,
-    `img-src 'self' blob: data: ${supabaseHttps}`.trim(),
-    `font-src 'self' data:`,
-    `connect-src 'self' ${supabaseHttps} ${supabaseWss}`.trim(),
-    `object-src 'none'`,
-    `base-uri 'self'`,
-    `form-action 'self'`,
-    `frame-ancestors 'none'`,
-    `upgrade-insecure-requests`,
-  ]
-
-  return csp.join('; ')
+  return buildAppCsp(nonce, {
+    development: process.env.NODE_ENV === 'development',
+    appUrl: getAppUrl(), supabaseUrl: getSupabaseUrl(),
+  })
 }
 
 const CORS_HEADERS = {

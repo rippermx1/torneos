@@ -1,0 +1,84 @@
+{
+  "verified_on": "2026-10-01",
+  "branch": "codex/torneos-container-workspace",
+  "base_commit": "8bc1312",
+  "active_workspace": "C:/torneos",
+  "historical_source_preserved": "C:/play-games",
+  "initial_transfer_audit": {
+    "identical_sha256_files": 4437,
+    "pending": 0,
+    "conflicts": 0,
+    "published_alien_runtime_files_identical": 4
+  },
+  "workspace_changes": {
+    "authoring_and_test_files_updated": 8,
+    "legacy_fixed_paths_replaced": 15,
+    "local_catalog_files_copied_and_hashed": 2,
+    "final_transfer_audit": {
+      "identical_sha256_files": 4429,
+      "expected_destination_conflicts": 8,
+      "pending_source_changes": 0,
+      "baseline_rewritten": false
+    }
+  },
+  "runtime": {
+    "compose_project": "torneos",
+    "compose_file": "compose.app.yaml",
+    "app_service_count": 1,
+    "container": "torneos-app-1",
+    "image": "torneos-app:local",
+    "image_id": "sha256:09358beffb2fbed15b3e746a227a5385d5c63d60f2c04a1cb6fffcc48bcc466b",
+    "url": "http://127.0.0.1:3081",
+    "health": "healthy",
+    "uid": 1001,
+    "game_builds": { "2048": "unity-2048-002", "alien-run": "level-030" },
+    "environment": "local_preview_placeholders_and_read_only_fixtures",
+    "external_production_auth_payments_db_validated": false,
+    "unity_sources_caches_secrets_in_image": false
+  },
+  "technical_validation": {
+    "docker_next_webpack_standalone_build": "PASS",
+    "typescript": "PASS",
+    "affected_lint": "PASS",
+    "platform_tests": { "passed": 305, "total": 305, "files": 40 },
+    "transfer_and_packaging_tests": { "passed": 4, "total": 4 },
+    "alien_run_editor_tests": { "passed": 8, "total": 8 },
+    "http_checks": { "passed": 14, "game_files_sha256": 10 },
+    "browser": {
+      "2048_real_direction_events_and_practice_score": 16,
+      "alien_run_real_ready_handshake": "level-030/practice-v10",
+      "alien_run_practice_started": true,
+      "expanded_view_enter_exit": "PASS",
+      "mobile_viewport": "390x844",
+      "horizontal_overflow": false,
+      "csp_violations_after_fix": 0,
+      "2048_captures_reviewed": true
+    }
+  },
+  "preservation": {
+    "orbit_container_ids_images_mounts_networks_unchanged": true,
+    "orbit_source_git_status_unchanged": true,
+    "orbit_postgres_volume": "orbit-arcade_postgres_data",
+    "orbit_data_counts_before_and_after": { "players": 12, "runs": 63, "login_sessions": 12 },
+    "source_deleted_or_moved": false,
+    "orbit_services_stopped": false,
+    "db_flow_or_external_deployment_changed": false,
+    "licensed_sources_published": false
+  },
+  "limits": {
+    "supabase_staging_authenticated_e2e": "NOT_RUN",
+    "alien_competitive_server_integration": "NOT_IMPLEMENTED",
+    "webgl_rebuild": "NOT_RUN_existing_builds_used",
+    "unity_playmode_this_increment": "NOT_RUN",
+    "alien_run_finish_in_new_container": "NOT_RUN",
+    "physical_phone": "NOT_RUN",
+    "human_acceptance": "PENDING",
+    "paid_public_release": "NOT_APPROVED",
+    "runtime_dependency_audit": { "moderate": 1, "high": 3, "critical": 1, "total": 5, "resolved_this_increment": false }
+  },
+  "local_evidence_directory": "artifacts/container-workspace",
+  "local_catalog_inputs": [
+    "artifacts/alien-run/kaykit-prefab-catalog.json",
+    "games/alien-run/docs/KAYKIT-PREFABS.csv"
+  ]
+}

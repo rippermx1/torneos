@@ -1,7 +1,8 @@
 import { applyLocalPracticeMove, createLocalPracticeGame, type LocalPracticeState } from './local-practice'
 import type { Direction } from './engine'
+import runtimeBuilds from './runtime-builds.json'
 
-export const UNITY_2048_BUILD = 'unity-2048-002'
+export const UNITY_2048_BUILD = runtimeBuilds['2048']
 export const UNITY_2048_CHANNEL = 'torneos.2048'
 export interface Unity2048State {
   cells: number[]; score: number; move_number: number; game_over: boolean

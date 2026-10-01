@@ -155,7 +155,7 @@ namespace Orbit.AlienRun.Editor
             EditorSceneManager.MarkSceneDirty(scene);
             if(!EditorSceneManager.SaveScene(scene,ScenePath)) throw new IOException("No se pudo guardar V8.");
             AssetDatabase.SaveAssets();
-            File.WriteAllText("C:/play-games/evidence/level-v8-content.json",
+            File.WriteAllText(WorkspacePaths.Evidence("level-v8-content.json"),
                 JsonUtility.ToJson(new Content{coins=coins.Count(c=>!c.isStar),stars=coins.Count(c=>c.isStar),ids=coins.Select(c=>c.collectibleId).ToArray()},true));
             Debug.Log("V8 saved, coins="+coins.Count(c=>!c.isStar)+", stars=3");
         }
@@ -189,7 +189,7 @@ namespace Orbit.AlienRun.Editor
                 var rt=new RenderTexture(1280,720,24);camera.targetTexture=rt;camera.Render();RenderTexture.active=rt;
                 var image=new Texture2D(1280,720,TextureFormat.RGB24,false);
                 image.ReadPixels(new Rect(0,0,1280,720),0,0);image.Apply();
-                File.WriteAllBytes("C:/play-games/evidence/level-v8-sector-"+x+".png",image.EncodeToPNG());
+                File.WriteAllBytes(WorkspacePaths.Evidence("level-v8-sector-"+x+".png"),image.EncodeToPNG());
                 camera.targetTexture=null;RenderTexture.active=null;
                 UnityEngine.Object.DestroyImmediate(rt);UnityEngine.Object.DestroyImmediate(image);
             }

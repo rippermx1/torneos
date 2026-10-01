@@ -1,10 +1,31 @@
-.next
-node_modules
-.git
-.gitignore
-*.md
-.env*
-!.env.example
-docker
-docker-compose*.yml
-Dockerfile*
+# Only application inputs and published WebGL builds enter the build context.
+# Unity projects, licensed source assets, archives and secrets stay outside.
+**
+!package.json
+!package-lock.json
+!next.config.ts
+!next-env.d.ts
+!tsconfig.json
+!postcss.config.mjs
+!proxy.ts
+!app/
+!app/**
+!components/
+!components/**
+!lib/
+!lib/**
+!types/
+!types/**
+!public/
+!public/**
+!scripts/
+!scripts/check-game-builds.mjs
+
+# Superseded build; never remove its local copy.
+public/games/2048/unity-2048-001/
+**/.env*
+**/node_modules/
+**/.git/
+**/Library/
+**/LocalArt/
+**/KayKit*/

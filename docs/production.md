@@ -100,6 +100,10 @@ de modo que un resultado con errores no aparezca como exitoso.
 
 ## Docker
 
+Para la aplicación integrada con juegos usa `compose.app.yaml`; el procedimiento
+actual y su validación local están en `WORKSPACE-Y-CONTENEDOR.md`.
+La imagen exige las builds activas publicadas y excluye fuentes/caches Unity y secretos.
+
 Con `output: "standalone"`, la imagen debe construirse con las variables publicas correctas:
 
 ```bash

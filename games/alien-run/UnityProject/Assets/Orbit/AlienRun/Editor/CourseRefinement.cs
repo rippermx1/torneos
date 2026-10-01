@@ -18,7 +18,7 @@ namespace Orbit.AlienRun.Editor
             var runner=session.runner;runner.name="Player_Runner";var linkedSession=runner.session;runner.session=null;
             PrefabUtility.SaveAsPrefabAsset(runner.gameObject,GameplayKitBuilder.Library+"/AR_Player.prefab");runner.session=linkedSession;
             EditorSceneManager.MarkSceneDirty(scene);EditorSceneManager.SaveScene(scene);
-            var catalogPath="C:/play-games/evidence/kaykit-prefab-catalog.json";var catalog=JsonUtility.FromJson<GameplayKitBuilder.Catalog>(File.ReadAllText(catalogPath));
+            var catalogPath=WorkspacePaths.Evidence("kaykit-prefab-catalog.json");var catalog=JsonUtility.FromJson<GameplayKitBuilder.Catalog>(File.ReadAllText(catalogPath));
             foreach(var row in catalog.prefabs){var root=PrefabUtility.LoadPrefabContents(row.copy);var e=root.GetComponent<GameElement>();if(root.GetComponentInChildren<Animator>()!=null){e.role="CharacterVisual";PrefabUtility.SaveAsPrefabAsset(root,row.copy);}row.role=e.role;PrefabUtility.UnloadPrefabContents(root);}
             File.WriteAllText(catalogPath,JsonUtility.ToJson(catalog,true));AssetDatabase.SaveAssets();CompleteLevelBuilder.Capture();
         }
@@ -72,7 +72,7 @@ namespace Orbit.AlienRun.Editor
                 root.transform.Find("Visual").localPosition+=Vector3.down*low;data.slopeRise=rise;data.nativeSize=GameplayKitBuilder.BoundsOf(root).size;
                 PrefabUtility.SaveAsPrefabAsset(root,path);PrefabUtility.UnloadPrefabContents(root);
             }
-            var catalogPath="C:/play-games/evidence/kaykit-prefab-catalog.json";
+            var catalogPath=WorkspacePaths.Evidence("kaykit-prefab-catalog.json");
             var catalog=JsonUtility.FromJson<GameplayKitBuilder.Catalog>(File.ReadAllText(catalogPath));
             foreach(var row in catalog.prefabs){var e=AssetDatabase.LoadAssetAtPath<GameObject>(row.copy).GetComponent<GameElement>();row.size=e.nativeSize;row.yaw=e.facingYaw;row.rise=e.slopeRise;}
             File.WriteAllText(catalogPath,JsonUtility.ToJson(catalog,true));

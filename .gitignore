@@ -34,6 +34,7 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 !.env.production.example
+!.env.docker.example
 
 # vercel
 .vercel
@@ -57,6 +58,7 @@ next-env.d.ts
 games/alien-run/UnityProject/Assets/Orbit/AlienRun/LocalArt/
 games/alien-run/UnityProject/Assets/Orbit/AlienRun/LocalArt.meta
 public/games/*/*/
+games/alien-run/docs/KAYKIT-PREFABS.csv
 
 .vercel
 .playwright-mcp

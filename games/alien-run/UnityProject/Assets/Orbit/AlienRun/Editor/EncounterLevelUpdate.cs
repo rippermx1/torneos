@@ -181,7 +181,7 @@ namespace Orbit.AlienRun.Editor
                 traps=Object.FindObjectsByType<SpikeTrap>(FindObjectsSortMode.None).Length,
                 movingHazards=Object.FindObjectsByType<MovingHazard>(FindObjectsSortMode.None).Length,
                 enemies=actors.Select(p=>new ActorData{name=p.name,left=p.leftX,right=p.rightX,speed=p.speed}).ToArray()};
-            File.WriteAllText("C:/play-games/evidence/encounters-level-content.json",JsonUtility.ToJson(data,true));
+            File.WriteAllText(WorkspacePaths.Evidence("encounters-level-content.json"),JsonUtility.ToJson(data,true));
             Capture();Debug.Log("V8 encounter update: "+actors.Length+" enemies, "+data.traps+" spike traps");
         }
         [Serializable]class Audit{public int enemyCount,throwers,melee,traps,movingHazards;public ActorData[] enemies;}
@@ -192,7 +192,7 @@ namespace Orbit.AlienRun.Editor
             foreach(var x in new[]{12,49,65,101,124,146,185,202,215,236}){
                 camera.GetComponent<FollowCamera>().SnapTo(new Vector3(x,1,0));Object.FindFirstObjectByType<SkyBackdrop>().Refresh();var rt=new RenderTexture(1280,720,24);
                 camera.targetTexture=rt;camera.Render();RenderTexture.active=rt;var image=new Texture2D(1280,720,TextureFormat.RGB24,false);
-                image.ReadPixels(new Rect(0,0,1280,720),0,0);image.Apply();File.WriteAllBytes("C:/play-games/evidence/encounters-sector-"+x+".png",image.EncodeToPNG());
+                image.ReadPixels(new Rect(0,0,1280,720),0,0);image.Apply();File.WriteAllBytes(WorkspacePaths.Evidence("encounters-sector-"+x+".png"),image.EncodeToPNG());
                 camera.targetTexture=null;RenderTexture.active=null;Object.DestroyImmediate(rt);Object.DestroyImmediate(image);
             }
         }

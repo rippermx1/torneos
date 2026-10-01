@@ -76,7 +76,7 @@ namespace Orbit.AlienRun.Editor
             session.laterGuidedJumps=session.laterGuidedJumps.Where(x=>x!=39f && x!=24.8f).Concat(new[]{14f,64.5f,77f,84f}).Distinct().ToArray();
             Physics.SyncTransforms();EditorSceneManager.MarkSceneDirty(scene);EditorSceneManager.SaveScene(scene);AssetDatabase.SaveAssets();
             var ids=session.collectibles.Select(c=>c.collectibleId).OrderBy(x=>x,StringComparer.Ordinal).ToArray();
-            File.WriteAllText("C:/play-games/evidence/v8-interaction-content.json",JsonUtility.ToJson(new Content{ids=ids,stars=session.collectibles.Where(c=>c.isStar).Select(c=>c.collectibleId).OrderBy(x=>x).ToArray(),coins=session.CollectibleCount,springs=UnityEngine.Object.FindObjectsByType<BouncePad>(FindObjectsSortMode.None).Length,barbarians=UnityEngine.Object.FindObjectsByType<EnemyAxeThrower>(FindObjectsSortMode.None).Length},true));
+            File.WriteAllText(WorkspacePaths.Evidence("v8-interaction-content.json"),JsonUtility.ToJson(new Content{ids=ids,stars=session.collectibles.Where(c=>c.isStar).Select(c=>c.collectibleId).OrderBy(x=>x).ToArray(),coins=session.CollectibleCount,springs=UnityEngine.Object.FindObjectsByType<BouncePad>(FindObjectsSortMode.None).Length,barbarians=UnityEngine.Object.FindObjectsByType<EnemyAxeThrower>(FindObjectsSortMode.None).Length},true));
             Debug.Log("Updated V8 in place: "+session.CollectibleCount+" coins, "+session.StarTotal+" stars");
         }
         [Serializable]class Content{public string[] ids,stars;public int coins,springs,barbarians;}
@@ -87,7 +87,7 @@ namespace Orbit.AlienRun.Editor
                 c.GetComponent<FollowCamera>().SnapTo(new Vector3(p.x,p.y,0));
                 var rt=new RenderTexture(1280,720,24);c.targetTexture=rt;c.Render();RenderTexture.active=rt;
                 var image=new Texture2D(1280,720,TextureFormat.RGB24,false);image.ReadPixels(new Rect(0,0,1280,720),0,0);image.Apply();
-                File.WriteAllBytes("C:/play-games/evidence/v8-update-view-"+p.x+".png",image.EncodeToPNG());
+                File.WriteAllBytes(WorkspacePaths.Evidence("v8-update-view-"+p.x+".png"),image.EncodeToPNG());
                 c.targetTexture=null;RenderTexture.active=null;UnityEngine.Object.DestroyImmediate(rt);UnityEngine.Object.DestroyImmediate(image);
             }
         }

@@ -95,11 +95,11 @@ namespace Orbit.AlienRun.Editor
                 entry.rise=role=="Slope"?measured.size.y*.5f:0;entries.Add(entry);Paths[original.name]=copy;
             }
             AssetDatabase.SaveAssets();
-            File.WriteAllText("C:/play-games/evidence/kaykit-prefab-catalog.json",JsonUtility.ToJson(new Catalog{prefabs=entries.ToArray(),count=entries.Count},true));
+            File.WriteAllText(WorkspacePaths.Evidence("kaykit-prefab-catalog.json"),JsonUtility.ToJson(new Catalog{prefabs=entries.ToArray(),count=entries.Count},true));
             var csv="source,source_guid,copy,copy_guid,family,role,width,height,depth,yaw,rise,physics\n";
             string Q(string s)=>"\""+s.Replace("\"","\"\"")+"\"";
             foreach(var e in entries)csv+=string.Join(",",new[]{Q(e.source),e.sourceGuid,Q(e.copy),e.copyGuid,e.family,e.role,e.size.x.ToString(System.Globalization.CultureInfo.InvariantCulture),e.size.y.ToString(System.Globalization.CultureInfo.InvariantCulture),e.size.z.ToString(System.Globalization.CultureInfo.InvariantCulture),e.yaw.ToString(),e.rise.ToString(System.Globalization.CultureInfo.InvariantCulture),Q(e.physics)})+"\n";
-            File.WriteAllText("C:/play-games/docs/KAYKIT-PREFABS.csv",csv);
+            File.WriteAllText(WorkspacePaths.Documentation("KAYKIT-PREFABS.csv"),csv);
             Debug.Log("Gameplay kit catalogued: "+entries.Count+" own prefabs");
         }
         public static GameObject Load(string name)

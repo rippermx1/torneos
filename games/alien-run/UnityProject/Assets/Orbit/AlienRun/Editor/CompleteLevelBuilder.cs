@@ -172,7 +172,7 @@ namespace Orbit.AlienRun.Editor
             navigator.jumps=new[]{6.8f,24.4f,33.6f,67.3f,112.3f,116.8f,129.6f,134.3f,149.6f,177.1f,223.5f,228.7f};
             var c=Camera.main;var follow=c.GetComponent<FollowCamera>();c.orthographicSize=4.8f;follow.baseFocusY=3.25f;follow.offset=new Vector3(0,3,-18);follow.verticalFollow=.65f;follow.maxVerticalLift=5;follow.stableFraming=true;follow.minFocusX=2;follow.maxFocusX=240;follow.SnapTo(session.spawn);
             Physics.SyncTransforms();EditorSceneManager.MarkSceneDirty(scene);EditorSceneManager.SaveScene(scene);AssetDatabase.SaveAssets();
-            File.WriteAllText("C:/play-games/evidence/complete-level-content.json",JsonUtility.ToJson(new Content{ids=items.Select(x=>x.collectibleId).ToArray(),stars=items.Where(x=>x.isStar).Select(x=>x.collectibleId).ToArray(),coins=coinId,required=24,length=240},true));
+            File.WriteAllText(WorkspacePaths.Evidence("complete-level-content.json"),JsonUtility.ToJson(new Content{ids=items.Select(x=>x.collectibleId).ToArray(),stars=items.Where(x=>x.isStar).Select(x=>x.collectibleId).ToArray(),coins=coinId,required=24,length=240},true));
             Debug.Log($"Complete V8: {coinId} coins, {starId} stars; 240m course");
         }
         [Serializable]class Content{public string[] ids,stars;public int coins,required,length;}
@@ -183,7 +183,7 @@ namespace Orbit.AlienRun.Editor
             {
                 c.GetComponent<FollowCamera>().SnapTo(new Vector3(x,1,0));var rt=new RenderTexture(1280,720,24);c.targetTexture=rt;c.Render();RenderTexture.active=rt;
                 var image=new Texture2D(1280,720,TextureFormat.RGB24,false);image.ReadPixels(new Rect(0,0,1280,720),0,0);image.Apply();
-                File.WriteAllBytes("C:/play-games/evidence/complete-level-"+x+".png",image.EncodeToPNG());c.targetTexture=null;RenderTexture.active=null;UnityEngine.Object.DestroyImmediate(rt);UnityEngine.Object.DestroyImmediate(image);
+                File.WriteAllBytes(WorkspacePaths.Evidence("complete-level-"+x+".png"),image.EncodeToPNG());c.targetTexture=null;RenderTexture.active=null;UnityEngine.Object.DestroyImmediate(rt);UnityEngine.Object.DestroyImmediate(image);
             }
         }
         public static void CreateAndCapture(){Create();Capture();}

@@ -46,7 +46,7 @@ namespace Orbit.AlienRun.Tests
         {
             var c=Camera.main;var rt=new RenderTexture(1280,720,24);c.targetTexture=rt;c.Render();RenderTexture.active=rt;
             var image=new Texture2D(1280,720,TextureFormat.RGB24,false);image.ReadPixels(new Rect(0,0,1280,720),0,0);image.Apply();
-            File.WriteAllBytes("C:/play-games/evidence/"+name.Replace("complete-course","encounters-course")+".png",image.EncodeToPNG());c.targetTexture=null;RenderTexture.active=null;Object.Destroy(rt);Object.Destroy(image);
+            File.WriteAllBytes(WorkspacePaths.Evidence(name.Replace("complete-course","encounters-course")+".png"),image.EncodeToPNG());c.targetTexture=null;RenderTexture.active=null;Object.Destroy(rt);Object.Destroy(image);
         }
         [UnityTest]public IEnumerator JumpEnvelopeIsStableAtTwentyAndSixtyStepsPerSecond()
         {

@@ -1,4 +1,5 @@
-export const ALIEN_RUN_BUILD = 'level-030'
+import runtimeBuilds from './runtime-builds.json'
+export const ALIEN_RUN_BUILD = runtimeBuilds['alien-run']
 export const ALIEN_RUN_RULES = 'practice-v10'
 export interface AlienPracticeResult { build_id:string;ruleset_version:string;duration_ms:number;collected_ids:string[];deaths:number;finished:boolean }
 export function parseAlienResult(data:unknown,runId:string):AlienPracticeResult|null {

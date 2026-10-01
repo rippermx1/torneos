@@ -1,7 +1,26 @@
 # Estado — TorneosPlay
 
-Actualizado: 2026-09-30. Rama local de trabajo: `codex/tournament-discovery`,
-derivada de `codex/unity-games-migration` en `db49046`. `main` sigue en `6308515`.
+Actualizado: 2026-10-01. Rama local de trabajo: `codex/torneos-container-workspace`,
+desde `codex/tournament-discovery` en `8bc1312`. `main` sigue en `6308515`.
+
+## Workspace y contenedor de aplicación
+
+`C:/torneos` es el workspace activo. La auditoría inicial confirmó 4437 archivos
+Alien Run idénticos al origen y cero deltas. Se corrigieron ocho herramientas/pruebas
+Unity con rutas fijas al origen y se preservó aquí el catálogo local que utilizan.
+`C:/play-games`, su WIP y el volumen PostgreSQL de Orbit permanecen intactos.
+
+`compose.app.yaml` sirve web/APIs/2048/Alien Run en un contenedor independiente
+`torneos-app-1`, healthy en `127.0.0.1:3081`, con placeholders de validación local.
+Registro compartido de builds activas y verificación previa al empaquetado.
+Fuentes Unity, assets licenciados, caches y secretos quedan fuera de Docker.
+
+Validación: Docker webpack/standalone, 305/305 pruebas de plataforma, 4/4 scripts,
+TypeScript/lint PASS, Unity 8/8 EditMode, 14 comprobaciones HTTP y navegador con
+movimientos 2048/inicio Alien Run. No se afirma E2E competitivo ni aceptación humana.
+Detalle: `WORKSPACE-Y-CONTENEDOR.md` y `CONTAINER-WORKSPACE-EVIDENCE.json`.
+Orbit sigue disponible como referencia; retirarlo requiere preservar su historia
+y datos. Hay avisos de dependencias existentes que resolver antes de publicar.
 
 El propietario eligió TorneosPlay como base comercial y autorizó trasladar Alien Run
 desde `C:/play-games`, además de crear 2048 en Unity con arte 2D generado con GPT.
@@ -75,7 +94,7 @@ continúa abierta; esta entrega no autoriza lanzamiento pagado.
 ## Continuidad del trabajo
 
 Para el próximo chat, usar el proyecto **torneos** y la copia local `C:/torneos` en
-`codex/tournament-discovery`. La entrega `df6d463` aún no está integrada en `main`;
+`codex/torneos-container-workspace`. Los incrementos desde `df6d463` aún no están integrados en `main`;
 las builds y assets locales ignorados también deben conservarse. Decisiones,
 evidencia, límites y mensaje para retomar en
 [CONTEXTO-PARA-CONTINUAR.md](CONTEXTO-PARA-CONTINUAR.md).

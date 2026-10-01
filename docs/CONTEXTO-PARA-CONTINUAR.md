@@ -1,7 +1,14 @@
 # Contexto para continuar — TorneosPlay
 
-Fecha: 2026-09-30. Este documento resume decisiones y entrega local; al retomar,
+Fecha: 2026-10-01. Este documento resume decisiones y entrega local; al retomar,
 verifica Git, procesos y configuración antes de asumir que siguen iguales.
+
+Continuidad actual: usar **C:/torneos** en `codex/torneos-container-workspace`,
+desde `8bc1312`. El contenedor independiente de Torneos sirve la web y ambos juegos
+en `127.0.0.1:3081`, con entorno local de placeholders. Las herramientas de Alien Run
+ya no escriben ni leen en el origen; su catálogo local está trasladado. El origen,
+WIP y datos de Orbit se conservan. Consultar `WORKSPACE-Y-CONTENEDOR.md` y
+`CONTAINER-WORKSPACE-EVIDENCE.json`. Las ramas descritas abajo son historia previa.
 
 Continuidad posterior: el incremento de web pública se implementó en
 `codex/tournament-discovery`, creada desde `db49046` y con la migración completa
@@ -16,8 +23,8 @@ Abrir un chat nuevo dentro del proyecto **torneos**, en la carpeta local existen
 `C:/torneos`. Este chat de origen estaba asociado a `C:/play-games`; el cambio de
 producto y de carpeta ya está resuelto y no requiere volver a migrar los archivos.
 
-- Rama de trabajo actual: `codex/tournament-discovery` (derivada de
-  `codex/unity-games-migration` en `db49046`).
+- Rama de trabajo actual: `codex/torneos-container-workspace` (desde
+  `codex/tournament-discovery` en `8bc1312`).
 - Commit de la entrega de juegos: `df6d463`.
 - `main` sigue en `6308515`; la migración todavía no está integrada en `main`.
 - El árbol estaba limpio antes de añadir este documento.
@@ -155,11 +162,14 @@ tiene procedencia en `games/2048/ART-PROVENANCE.json`.
 ## Mensaje sugerido para el nuevo chat
 
 > Continúa en C:/torneos usando la copia local y la rama actual
-> codex/tournament-discovery. Lee AGENTS.md, README.md, docs/STATUS.md y
+> codex/torneos-container-workspace. Lee AGENTS.md, README.md, docs/STATUS.md y
 > docs/CONTEXTO-PARA-CONTINUAR.md. TorneosPlay es el producto comercial y los juegos
 > son herramientas para participar en torneos. La migración local de Alien Run y
 > 2048 Unity ya está entregada; retoma el enfoque de negocio de la web pública,
 > el recorrido público de catálogo/ficha y retorno desde práctica/cuenta ya está
-> implementado localmente. Lee docs/SIGUIENTE-INCREMENTO-WEB.md y la evidencia;
+> implementado localmente. La web y ambos juegos se sirven en el contenedor
+> torneos-app-1; las herramientas Unity trabajan solo desde este workspace.
+> C:/play-games y sus datos quedan preservados como historia.
+> Lee docs/WORKSPACE-Y-CONTENEDOR.md y la evidencia;
 > continúa con la validación autenticada en staging o un incremento útil posterior
 > sin duplicar funciones. Conserva los límites y distingue lo probado de lo pendiente.

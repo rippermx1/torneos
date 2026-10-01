@@ -105,7 +105,7 @@ namespace Orbit.AlienRun.Tests
                 camera.Render();RenderTexture.active=rt;
                 image=new Texture2D(1280,720,TextureFormat.RGB24,false);
                 image.ReadPixels(new Rect(0,0,1280,720),0,0);image.Apply();
-                File.WriteAllBytes("C:/play-games/evidence/"+name+".png",image.EncodeToPNG());
+                File.WriteAllBytes(WorkspacePaths.Evidence(name+".png"),image.EncodeToPNG());
             } finally {
                 camera.targetTexture=previousTarget;RenderTexture.active=previousActive;
                 Object.Destroy(rt);if(image!=null)Object.Destroy(image);
@@ -115,7 +115,7 @@ namespace Orbit.AlienRun.Tests
         {
             var camera=Camera.main;var rt=new RenderTexture(1280,720,24);camera.targetTexture=rt;camera.Render();RenderTexture.active=rt;
             var image=new Texture2D(1280,720,TextureFormat.RGB24,false);image.ReadPixels(new Rect(0,0,1280,720),0,0);image.Apply();
-            File.WriteAllBytes("C:/play-games/evidence/"+name+".png",image.EncodeToPNG());camera.targetTexture=null;RenderTexture.active=null;Object.Destroy(rt);Object.Destroy(image);
+            File.WriteAllBytes(WorkspacePaths.Evidence(name+".png"),image.EncodeToPNG());camera.targetTexture=null;RenderTexture.active=null;Object.Destroy(rt);Object.Destroy(image);
         }
     }
 }

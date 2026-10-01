@@ -4,6 +4,7 @@ const fixture = vi.hoisted(() => ({
   game: {} as Record<string, unknown>, tournament: {} as Record<string, unknown>,
   update: {} as { data: unknown; error: unknown }, recovery: {} as { data: unknown; error: unknown },
   queries: [] as { table: string; write: boolean; filters: [string, unknown][] }[],
+  inserting: false,
   authenticated: true, registered: true,
 }))
 vi.mock('@/lib/supabase/auth', () => ({ requireAnyRoleForApi: async () => fixture.authenticated
@@ -12,10 +13,11 @@ vi.mock('@/lib/supabase/auth', () => ({ requireAnyRoleForApi: async () => fixtur
 vi.mock('@/lib/security/rate-limit', () => ({ checkRateLimit: async () => ({ ok: true }),
   getRequestIp: () => '127.0.0.1', rateLimitResponse: () => new Response('', { status: 429 }) }))
 vi.mock('next/server', () => ({ after: vi.fn() }))
-vi.mock('@/lib/supabase/server', () => ({ createAdminClient: () => ({ from: (table: string) => {
+vi.mock('@/lib/supabase/server', () => ({ createAdminClient: () => ({ rpc: vi.fn(async () => ({ data: null, error: null })), from: (table: string) => {
   const query = { table, write: false, filters: [] as [string, unknown][] }
   const run = async (recovery: boolean) => {
     fixture.queries.push(query)
+    if (fixture.inserting && table === 'games' && query.write) return { data: { id: 'new-clock-game' }, error: null }
     if (query.write) return fixture.update
     if (recovery) return fixture.recovery
     const owner = query.filters.find(([key]) => key === 'user_id')?.[1]
@@ -24,6 +26,7 @@ vi.mock('@/lib/supabase/server', () => ({ createAdminClient: () => ({ from: (tab
         : fixture.registered ? { id: 'registration' } : null, error: null }
   }
   const q = { select: () => q, update: () => { query.write = true; return q },
+    insert: () => { fixture.inserting = true; query.write = true; return q },
     eq: (key: string, value: unknown) => { query.filters.push([key, value]); return q },
     single: () => run(false), maybeSingle: () => run(true) }
   return q
@@ -35,7 +38,7 @@ import { POST as move } from '@/app/api/tournaments/[id]/game/move/route'
 let sequence = 0
 beforeEach(() => {
   vi.useFakeTimers(); vi.setSystemTime(new Date('2026-10-01T16:00:00Z'))
-  fixture.queries = []; fixture.authenticated = true; fixture.registered = true
+  fixture.queries = []; fixture.authenticated = true; fixture.registered = true; fixture.inserting = false
   fixture.game = { id: 'closure-game', user_id: 'closure-user', status: 'active', final_score: 4,
     move_count: 2, current_board: [[2,2,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]], seed: 'test-seed',
     started_at: '2026-10-01T15:58:00Z', end_reason: null }
@@ -119,7 +122,45 @@ it('does not update a game when server time has not reached the deadline', async
   const response = await timeout(request(), params()), data = await response.json()
   expect(response.status).toBe(200); expect(data.timedOut).toBe(false)
   expect(data.deadlineAt).toBe('2026-10-01T16:00:45.000Z')
+  expect(data.serverNow).toBe('2026-10-01T16:00:00.000Z')
   expect(fixture.queries.filter(q => q.write)).toHaveLength(0)
+})
+
+describe('authoritative clock contract compatible with existing clients', () => {
+  it('includes a clock sample when creating a game, retaining board, RNG and move fields', async () => {
+    fixture.game.user_id = 'no-existing-game'
+    const response = await start(request(), params()), data = await response.json()
+    expect(response.status).toBe(200)
+    expect(data).toMatchObject({ gameId: 'new-clock-game', resuming: false, score: 0, moveNumber: 2,
+      serverNow: '2026-10-01T16:00:00.000Z', deadlineAt: '2026-10-01T16:01:00.000Z' })
+    expect(data.board.flat().filter((value: number) => value > 0)).toHaveLength(2)
+    expect(data.nextRngStates.length).toBeGreaterThan(0)
+  })
+  it('includes a clock sample when recovering a game without resetting its deadline', async () => {
+    fixture.game.started_at = '2026-10-01T15:59:45Z'
+    const response = await start(request(), params()), data = await response.json()
+    expect(response.status).toBe(200)
+    expect(data).toMatchObject({ gameId: 'closure-game', resuming: true, score: 4, moveNumber: 4,
+      serverNow: '2026-10-01T16:00:00.000Z', deadlineAt: '2026-10-01T16:00:45.000Z' })
+    expect(data.board).toEqual(fixture.game.current_board)
+    expect(fixture.queries.filter(q => q.write)).toHaveLength(0)
+  })
+  it.each([true, false])('includes a clock sample for a move (moved=%s)', async moved => {
+    fixture.game.started_at = '2026-10-01T15:59:45Z'
+    if (!moved) fixture.game.current_board = [[4,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]]
+    const response = await move(request(), params()), data = await response.json()
+    expect(response.status).toBe(200)
+    expect(data).toMatchObject({ moved, serverNow: '2026-10-01T16:00:00.000Z', deadlineAt: '2026-10-01T16:00:45.000Z' })
+    expect(data.score).toBe(moved ? 8 : 4)
+    if (moved) expect(data.moveNumber).toBe(5)
+    else expect(data.moveNumber).toBeUndefined()
+  })
+  it('uses the tournament window as the shorter authoritative deadline', async () => {
+    fixture.game.started_at = '2026-10-01T15:59:45Z'; fixture.tournament.play_window_end = '2026-10-01T16:00:10Z'
+    const response = await timeout(request(), params()), data = await response.json()
+    expect(data).toMatchObject({ timedOut: false, serverNow: '2026-10-01T16:00:00.000Z', deadlineAt: '2026-10-01T16:00:10.000Z' })
+    expect(fixture.queries.filter(q => q.write)).toHaveLength(0)
+  })
 })
 it('is idempotent for an already persisted timeout without writing again', async () => {
   fixture.game.status = 'completed'; fixture.game.end_reason = 'timeout'; fixture.game.final_score = 512

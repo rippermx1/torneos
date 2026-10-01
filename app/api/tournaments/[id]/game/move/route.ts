@@ -4,7 +4,7 @@ import { requireAnyRoleForApi } from '@/lib/supabase/auth'
 import { Game2048 } from '@/lib/game/engine'
 import { DeterministicRNG, computeRngStates, RNG_PREVIEW_SIZE } from '@/lib/game/rng'
 import { checkPlayWindow } from '@/lib/tournament/helpers'
-import { isPastGameDeadline } from '@/lib/tournament/game-deadline'
+import { calculateGameDeadline, isPastGameDeadline } from '@/lib/tournament/game-deadline'
 import { closeExpiredGame } from '@/lib/tournament/close-expired-game'
 import { analyzeMove } from '@/lib/anticheat/detector'
 import { checkRateLimit, getRequestIp, rateLimitResponse } from '@/lib/security/rate-limit'
@@ -174,9 +174,12 @@ export async function POST(
   const engine = new Game2048(board as number[][], Number(game.final_score))
   const rng = new DeterministicRNG(game.seed, moveNumber)
   const result = engine.applyMove(direction as Direction, rng)
+  const deadlineAt = game.started_at ? calculateGameDeadline(game.started_at,
+    tournament.play_window_end, tournament.max_game_duration_seconds) : tournament.play_window_end
 
   if (!result.moved) {
-    return Response.json({ moved: false, board: engine.board, score: engine.score })
+    return Response.json({ moved: false, board: engine.board, score: engine.score,
+      deadlineAt, serverNow: new Date().toISOString() })
   }
 
   const gameOver = !engine.canMove()
@@ -259,5 +262,7 @@ export async function POST(
     nextRngStates,
     nextRngStatesFrom: nextRngStatesStart,
     gameOver,
+    deadlineAt,
+    serverNow: new Date().toISOString(),
   })
 }

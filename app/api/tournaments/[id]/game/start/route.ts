@@ -147,6 +147,7 @@ export async function POST(
           )
         : tournamentState.play_window_end,
       resuming: true,
+      serverNow: new Date().toISOString(),
     })
   }
 
@@ -191,5 +192,6 @@ export async function POST(
       tournamentState.max_game_duration_seconds
     ),
     resuming: false,
+    serverNow: new Date().toISOString(),
   })
 }

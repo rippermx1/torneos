@@ -58,7 +58,11 @@ export function Unity2048({ tournament }: { tournament?: TournamentUnityConfig }
     }
     window.addEventListener('message', receive)
     const clock = setInterval(() => void current.tick(), 1000)
-    return () => { alive = false; current.destroy(); session.current = null; clearTimeout(timer); clearInterval(clock); window.removeEventListener('message',receive) }
+    const resume = () => { if (document.visibilityState === 'visible') void current.resynchronizeTime() }
+    const restore = (event: PageTransitionEvent) => { if (event.persisted) resume() }
+    document.addEventListener('visibilitychange', resume)
+    window.addEventListener('pageshow', restore)
+    return () => { alive = false; current.destroy(); session.current = null; clearTimeout(timer); clearInterval(clock); window.removeEventListener('message',receive); document.removeEventListener('visibilitychange',resume); window.removeEventListener('pageshow',restore) }
   }, [generation,startUrl,moveUrl,timeoutUrl])
   return <section className="space-y-3" aria-label="2048 en Unity">
     <div className="flex items-center justify-between gap-3 text-sm">

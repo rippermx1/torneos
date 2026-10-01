@@ -33,7 +33,7 @@ describe('Unity 2048 platform session',()=>{
     expect(request).toHaveBeenCalledTimes(2);expect(s.snapshot().locked).toBe(true);expect(s.snapshot().message).toContain('Recarga')
   })
   it('does not retry an uncertain timeout and accepts only server-confirmed closure',async()=>{
-    vi.useFakeTimers();vi.setSystemTime(new Date('2026-09-30T00:00:00Z'))
+    vi.useFakeTimers({toFake:['Date','performance','setTimeout','clearTimeout','setInterval','clearInterval']});vi.setSystemTime(new Date('2026-09-30T00:00:00Z'))
     const request=vi.fn().mockResolvedValueOnce({...initial,deadlineAt:'2026-09-30T00:00:01Z'}).mockRejectedValueOnce(new Error('unknown'))
     const s=new Unity2048Session(vi.fn(),request,config);await s.start();vi.advanceTimersByTime(2000);await s.tick();await s.tick()
     expect(request).toHaveBeenCalledTimes(2);expect(s.snapshot().game_over).toBe(false);expect(s.snapshot().locked).toBe(true)
@@ -44,16 +44,19 @@ describe('Unity 2048 platform session',()=>{
     const starting=s.start();s.destroy();publish.mockClear();resolve(initial);await starting;expect(publish).not.toHaveBeenCalled()
   })
   it('records a timeout only when the server confirms it',async()=>{
-    vi.useFakeTimers();vi.setSystemTime(new Date('2026-09-30T00:00:00Z'))
+    vi.useFakeTimers({toFake:['Date','performance','setTimeout','clearTimeout','setInterval','clearInterval']});vi.setSystemTime(new Date('2026-09-30T00:00:00Z'))
     const request=vi.fn().mockResolvedValueOnce({...initial,deadlineAt:'2026-09-30T00:00:01Z'}).mockResolvedValueOnce({timedOut:true,score:16})
     const s=new Unity2048Session(vi.fn(),request,config);await s.start();vi.advanceTimersByTime(2000);await s.tick()
     expect(s.snapshot().game_over).toBe(true);expect(s.snapshot().score).toBe(16);await s.move('left');expect(request).toHaveBeenCalledTimes(2)
   })
-  it('waits for server time when the browser clock reaches the deadline early',async()=>{
-    vi.useFakeTimers();vi.setSystemTime(new Date('2026-09-30T00:00:00Z'))
-    const request=vi.fn().mockResolvedValueOnce({...initial,deadlineAt:'2026-09-30T00:00:01Z'}).mockResolvedValueOnce({timedOut:false,score:0,deadlineAt:'2026-09-30T00:00:01Z'})
+  it('unlocks when the server rejects an early expiration with 45 seconds left',async()=>{
+    vi.useFakeTimers({toFake:['Date','performance','setTimeout','clearTimeout','setInterval','clearInterval']});vi.setSystemTime(new Date('2026-09-30T00:00:00Z'))
+    const request=vi.fn().mockResolvedValueOnce({...initial,deadlineAt:'2026-09-30T00:00:01Z'})
+      .mockResolvedValueOnce({timedOut:false,score:0,deadlineAt:'2026-09-30T00:00:46Z',serverNow:'2026-09-30T00:00:01Z'})
+      .mockResolvedValueOnce({moved:false})
     const s=new Unity2048Session(vi.fn(),request,config);await s.start();vi.advanceTimersByTime(2000);await s.tick();await s.tick()
-    expect(s.snapshot().game_over).toBe(false);expect(s.snapshot().locked).toBe(true);expect(request).toHaveBeenCalledTimes(2)
+    expect(s.snapshot().game_over).toBe(false);expect(s.snapshot().locked).toBe(false);expect(s.snapshot().time_left_seconds).toBe(45)
+    await s.move('left');expect(request).toHaveBeenCalledTimes(3)
   })
   it('rejects malformed state and protocol/build mismatches',async()=>{
     const request=vi.fn().mockResolvedValue({...initial,board:[[2]]}),s=new Unity2048Session(vi.fn(),request,config)

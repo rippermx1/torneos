@@ -1,6 +1,7 @@
 import { applyLocalPracticeMove, createLocalPracticeGame, type LocalPracticeState } from './local-practice'
 import type { Direction } from './engine'
 import runtimeBuilds from './runtime-builds.json'
+import { ServerGameClock } from './server-game-clock'
 
 export const UNITY_2048_BUILD = runtimeBuilds['2048']
 export const UNITY_2048_CHANNEL = 'torneos.2048'
@@ -33,20 +34,40 @@ function checkedBoard(value: unknown): number[] {
 export class Unity2048Session {
   private local?: LocalPracticeState
   private gameId?: string
-  private deadline?: number
+  private clock: ServerGameClock
   private busy = false
   private stopped = false
   private timeoutUncertain = false
+  private moveUncertain = false
+  private closurePending = false
+  private resyncPending = false
+  private timeSyncInFlight = false
   private nextTimeoutCheck = 0
   private state: Unity2048State
   constructor(private publish: (state: Unity2048State) => void,
-    private request: JsonRequest, private config?: TournamentUnityConfig) {
+    private request: JsonRequest, private config?: TournamentUnityConfig,
+    private monotonicNow: () => number = () => performance.now()) {
+    this.clock = new ServerGameClock(monotonicNow)
     this.state = { cells: Array(16).fill(0), score: 0, move_number: 2, game_over: false,
       locked: true, can_restart: !config, mode: config ? 'tournament' : 'practice',
       message: config ? 'Pulsa Iniciar partida cuando estés listo.' : 'Práctica gratuita · sin premios', time_left_seconds: -1, started: false }
   }
   snapshot() { return { ...this.state, cells: [...this.state.cells] } }
   private emit() { this.publish(this.snapshot()) }
+  private updateClock() {
+    this.state.time_left_seconds = this.clock.remainingSeconds()
+    this.closurePending = this.state.time_left_seconds === 0
+  }
+  private async finishRequest() {
+    this.busy = false
+    this.state.locked = !this.state.started || this.state.game_over || this.moveUncertain || this.timeoutUncertain || this.closurePending
+    if (this.stopped) return
+    this.emit()
+    if (this.resyncPending) {
+      this.resyncPending = false
+      await this.resynchronizeTime()
+    }
+  }
   async start(seed?: string) {
     if (this.busy || this.stopped || (this.config && this.gameId)) return
     if (!this.config) {
@@ -60,13 +81,12 @@ export class Unity2048Session {
       const data = await this.request(this.config.startUrl)
       if (this.stopped) return
       if (typeof data.gameId !== 'string' || typeof data.deadlineAt !== 'string') throw new Error('Respuesta de partida incompleta.')
-      const deadline = Date.parse(data.deadlineAt)
-      if (!Number.isFinite(deadline)) throw new Error('Duración de partida inválida.')
+      this.clock.synchronize(data)
       this.acceptServerState(data)
-      this.gameId = data.gameId; this.deadline = deadline; this.state.started = true
+      this.gameId = data.gameId; this.state.started = true; this.updateClock()
       this.state.message = data.resuming ? 'Partida recuperada' : 'Partida competitiva · una oportunidad'
     } catch (error) { this.state.message = error instanceof Error ? error.message : 'No se pudo iniciar la partida.'; this.state.locked = true }
-    finally { this.busy = false; if (!this.stopped) this.emit() }
+    finally { await this.finishRequest() }
   }
   private acceptServerState(data: Record<string, unknown>) {
     const cells = checkedBoard(data.board)
@@ -85,7 +105,8 @@ export class Unity2048Session {
       this.emit(); return
     }
     if (!this.config || !this.gameId) return
-    if (this.deadline && Date.now() >= this.deadline) { await this.tick(); return }
+    this.updateClock()
+    if (this.closurePending) { await this.tick(); return }
     this.busy = true; this.state.locked = true; this.emit()
     try {
       const data = await this.request(this.config.moveUrl, { gameId: this.gameId,
@@ -94,29 +115,39 @@ export class Unity2048Session {
       // A legal no-op does not include moveNumber in the existing API.
       if (data.moved === false) this.state.locked = false
       else this.acceptServerState(data)
+      if (data.serverNow !== undefined) this.clock.synchronize(data)
+      this.updateClock()
       this.state.message = this.state.game_over ? 'Partida registrada · consulta el ranking' : 'Partida competitiva · puntuación del servidor'
     } catch {
       // An unknown response could have recorded the move. Never repeat it blindly.
-      this.state.locked = true; this.state.message = 'No se confirmó el movimiento. Recarga para recuperar el estado del servidor.'
-    } finally { this.busy = false; if (!this.stopped) this.emit() }
+      this.moveUncertain = true; this.state.locked = true; this.state.message = 'No se confirmó el movimiento. Recarga para recuperar el estado del servidor.'
+    } finally { await this.finishRequest() }
   }
   async tick() {
-    if (this.stopped || !this.deadline || !this.config || !this.gameId || this.state.game_over || this.timeoutUncertain) return
-    this.state.time_left_seconds = Math.max(0, Math.ceil((this.deadline - Date.now()) / 1000))
-    if (this.state.time_left_seconds > 0 || this.busy || Date.now() < this.nextTimeoutCheck) { this.emit(); return }
-    this.busy = true; this.state.locked = true; this.emit()
+    if (this.stopped || !this.config || !this.gameId || this.state.game_over || this.timeoutUncertain) return
+    this.updateClock()
+    if (!this.closurePending || this.busy || this.monotonicNow() < this.nextTimeoutCheck) { this.emit(); return }
+    await this.resynchronizeTime()
+  }
+  async resynchronizeTime() {
+    if (this.stopped || !this.config || this.state.game_over || this.timeoutUncertain) return
+    // Coalesce returns from background; never overlap or replay an in-flight move.
+    if (this.busy) { if (!this.timeSyncInFlight) this.resyncPending = true; return }
+    if (!this.gameId) return
+    this.busy = true; this.timeSyncInFlight = true; this.state.locked = true; this.emit()
     try {
       const data = await this.request(this.config.timeoutUrl, { gameId: this.gameId })
       if (this.stopped) return
       if (data.timedOut === true) {
         if (Number.isSafeInteger(data.score) && Number(data.score) >= 0) this.state.score = Number(data.score)
-        this.state.game_over = true; this.state.message = 'Tiempo terminado · consulta el ranking'
-      } else if (data.timedOut === false && typeof data.deadlineAt === 'string' && Number.isFinite(Date.parse(data.deadlineAt))) {
-        this.deadline = Date.parse(data.deadlineAt); this.nextTimeoutCheck = Date.now() + 5000
-        this.state.message = 'Esperando confirmación del tiempo del servidor…'
+        this.state.game_over = true; this.state.time_left_seconds = 0; this.state.message = 'Tiempo terminado · consulta el ranking'
+      } else if (data.timedOut === false && typeof data.deadlineAt === 'string') {
+        this.clock.synchronize(data); this.updateClock(); this.nextTimeoutCheck = this.monotonicNow() + 5000
+        if (!this.moveUncertain) this.state.message = this.closurePending
+          ? 'Esperando confirmación del tiempo del servidor…' : 'Partida competitiva · tiempo sincronizado'
       } else throw new Error('Cierre no confirmado')
-    } catch { this.timeoutUncertain = true; this.state.message = 'El tiempo terminó. No se confirmó el cierre; recarga para recuperar la partida.' }
-    finally { this.busy = false; if (!this.stopped) this.emit() }
+    } catch { this.timeoutUncertain = true; this.state.message = 'No se confirmó la vigencia o el cierre; recarga para recuperar la partida.' }
+    finally { this.timeSyncInFlight = false; await this.finishRequest() }
   }
   destroy() { this.stopped = true }
 }

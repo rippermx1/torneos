@@ -70,6 +70,7 @@ export async function POST(
     return Response.json({
       timedOut: game.end_reason === 'timeout',
       score: game.final_score,
+      serverNow: new Date().toISOString(),
     })
   }
 
@@ -97,6 +98,7 @@ export async function POST(
         tournament.play_window_end,
         tournament.max_game_duration_seconds
       ),
+      serverNow: new Date().toISOString(),
     })
   }
 
@@ -107,5 +109,6 @@ export async function POST(
     timedOut: closure.game.end_reason === 'timeout',
     score: closure.game.final_score,
     endedAt: closure.game.ended_at,
+    serverNow: new Date().toISOString(),
   })
 }

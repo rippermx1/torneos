@@ -5,6 +5,7 @@ import { Game2048 } from '@/lib/game/engine'
 import { DeterministicRNG, computeRngStates, RNG_PREVIEW_SIZE } from '@/lib/game/rng'
 import { checkPlayWindow } from '@/lib/tournament/helpers'
 import { isPastGameDeadline } from '@/lib/tournament/game-deadline'
+import { closeExpiredGame } from '@/lib/tournament/close-expired-game'
 import { analyzeMove } from '@/lib/anticheat/detector'
 import { checkRateLimit, getRequestIp, rateLimitResponse } from '@/lib/security/rate-limit'
 import type { Game, Tournament, Direction } from '@/types/database'
@@ -136,17 +137,12 @@ export async function POST(
   const playability = checkPlayWindow(tournament)
   if (!playability.ok) {
     // Ventana cerrada: marcar partida como timeout
-    await supabase
-      .from('games')
-      .update({
-        status: 'completed',
-        end_reason: 'timeout',
-        ended_at: new Date().toISOString(),
-      })
-      .eq('id', gameId)
-      .eq('status', 'active')
+    const closure = await closeExpiredGame(supabase, { gameId, tournamentId, userId })
+    if (!closure.ok) return closure.response
 
-    return Response.json({ error: 'La ventana de juego cerró', timeout: true }, { status: 400 })
+    return Response.json({ error: 'La ventana de juego cerró',
+      timeout: closure.game.end_reason === 'timeout', score: closure.game.final_score,
+      endedAt: closure.game.ended_at }, { status: 400 })
   }
 
   if (
@@ -157,17 +153,12 @@ export async function POST(
       tournament.max_game_duration_seconds
     )
   ) {
-    await supabase
-      .from('games')
-      .update({
-        status: 'completed',
-        end_reason: 'timeout',
-        ended_at: new Date().toISOString(),
-      })
-      .eq('id', gameId)
-      .eq('status', 'active')
+    const closure = await closeExpiredGame(supabase, { gameId, tournamentId, userId })
+    if (!closure.ok) return closure.response
 
-    return Response.json({ error: 'La partida alcanzó su duración máxima', timeout: true }, { status: 400 })
+    return Response.json({ error: 'La partida alcanzó su duración máxima',
+      timeout: closure.game.end_reason === 'timeout', score: closure.game.final_score,
+      endedAt: closure.game.ended_at }, { status: 400 })
   }
 
   // Verificar que el moveNumber es el siguiente esperado

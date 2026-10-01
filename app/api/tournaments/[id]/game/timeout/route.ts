@@ -2,6 +2,7 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { requireAnyRoleForApi } from '@/lib/supabase/auth'
 import { checkPlayWindow } from '@/lib/tournament/helpers'
 import { calculateGameDeadline, isPastGameDeadline } from '@/lib/tournament/game-deadline'
+import { closeExpiredGame } from '@/lib/tournament/close-expired-game'
 import { checkRateLimit, getRequestIp, rateLimitResponse } from '@/lib/security/rate-limit'
 import type { Game, Tournament } from '@/types/database'
 
@@ -99,20 +100,12 @@ export async function POST(
     })
   }
 
-  const endedAt = new Date().toISOString()
-  await supabase
-    .from('games')
-    .update({
-      status: 'completed',
-      end_reason: 'timeout',
-      ended_at: endedAt,
-    })
-    .eq('id', game.id)
-    .eq('status', 'active')
+  const closure = await closeExpiredGame(supabase, { gameId: game.id, tournamentId, userId })
+  if (!closure.ok) return closure.response
 
   return Response.json({
-    timedOut: true,
-    score: game.final_score,
-    endedAt,
+    timedOut: closure.game.end_reason === 'timeout',
+    score: closure.game.final_score,
+    endedAt: closure.game.ended_at,
   })
 }

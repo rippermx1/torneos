@@ -4,6 +4,7 @@ import { Game2048 } from '@/lib/game/engine'
 import { DeterministicRNG, generateGameSeed, computeRngStates, RNG_PREVIEW_SIZE } from '@/lib/game/rng'
 import { checkPlayWindow } from '@/lib/tournament/helpers'
 import { calculateGameDeadline, isPastGameDeadline } from '@/lib/tournament/game-deadline'
+import { closeExpiredGame } from '@/lib/tournament/close-expired-game'
 import { checkRateLimit, getRequestIp, rateLimitResponse } from '@/lib/security/rate-limit'
 import type { Game, Tournament } from '@/types/database'
 
@@ -120,17 +121,12 @@ export async function POST(
         tournamentState.max_game_duration_seconds
       )
     ) {
-      await supabase
-        .from('games')
-        .update({
-          status: 'completed',
-          end_reason: 'timeout',
-          ended_at: new Date().toISOString(),
-        })
-        .eq('id', game.id)
-        .eq('status', 'active')
+      const closure = await closeExpiredGame(supabase, { gameId: game.id, tournamentId, userId })
+      if (!closure.ok) return closure.response
 
-      return Response.json({ error: 'Tu partida alcanzó su duración máxima', timeout: true }, { status: 400 })
+      return Response.json({ error: 'Tu partida alcanzó su duración máxima',
+        timeout: closure.game.end_reason === 'timeout', score: closure.game.final_score,
+        endedAt: closure.game.ended_at }, { status: 400 })
     }
 
     // Retornar estado actual para reanudar

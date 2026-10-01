@@ -21,75 +21,39 @@ Alien Run permanece como práctica gratuita; su empaquetado no habilita premios.
 
 ## Desarrollo local
 
-### 1. Instala dependencias
+Con Docker Desktop abierto y las builds locales disponibles:
 
-```bash
+```powershell
 npm ci
+npm run local:up
 ```
 
-### 2. Configura el entorno
+Abre [Torneos](http://127.0.0.1:3081), [correo local](http://127.0.0.1:54324)
+o [Supabase Studio](http://127.0.0.1:54323). Web, APIs y ambos juegos comparten
+un contenedor de aplicación; Supabase aporta Auth, PostgreSQL, Storage y Cron.
+Los pagos utilizan un simulador persistente identificado **sin cargos reales**.
+Google está deshabilitado hasta configurar ese proveedor externo.
 
-La app necesita un proyecto Supabase real para probar:
+Las cuentas iniciales son `jugador1.local.e2e@example.com`,
+`jugador2.local.e2e@example.com` y `operador.local@example.com`. Su contraseña
+generada está en `SUPABASE_E2E_PASSWORD` dentro de `.env.local-stack`, ignorado
+por Git. El operador configura MFA desde el flujo habitual. `.env.local` y los
+proyectos cloud no se modifican ni se usan en este stack.
 
-- registro con email/password
-- inicio de sesión
-- OAuth con Google
-- rutas protegidas por sesión
-
-El `docker-compose.yml` del repo solo ofrece Postgres + PostgREST para desarrollo
-de base de datos. No incluye Supabase Auth ni providers OAuth.
-
-Usa `.env.local` con:
-
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` o `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `SUPABASE_SECRET_KEY` o `SUPABASE_SERVICE_ROLE_KEY`
-- `APP_URL=http://localhost:3001`
-
-### 3. Prepara usuarios de prueba
-
-Usa un proyecto Supabase separado de producción y define explícitamente el
-proyecto y la contraseña de las cuentas sintéticas:
-
-Añade a `.env.local`:
-
-```dotenv
-CONFIRM_SUPABASE_PROJECT_REF=tu_project_ref
-SUPABASE_E2E_PASSWORD=una_clave_de_pruebas_unica
+```powershell
+npm run local:smoke
+npm audit
 ```
 
-Luego ejecuta:
+Guía completa, persistencia, límites, parada y evidencia:
+[docs/AMBIENTE-LOCAL.md](docs/AMBIENTE-LOCAL.md).
+El antiguo `docker-compose.yml` DB/PostgREST y `dev:games` son alternativas
+anteriores sin autenticación completa; no levantarlos para este recorrido.
 
-```bash
-npm run setup:test-users
-```
-
-El script deja listos:
-
-- `admin.local.e2e@example.com`
-- `jugador1.local.e2e@example.com`
-- `jugador2.local.e2e@example.com`
-
-Todos usan la contraseña definida en `SUPABASE_E2E_PASSWORD`. El script no
-incluye una contraseña predeterminada y se niega a ejecutarse contra el
-proyecto productivo conocido.
-
-### 4. Levanta la app
-
-```bash
-npm run dev
-```
-
-Abre [http://localhost:3001](http://localhost:3001).
-
-Para una validación rápida completa:
-
-```bash
-npm run smoke:local
-```
-
-Los smoke tests y simuladores aplican la misma confirmación de proyecto y solo
-aceptan un Supabase no productivo.
+Para trabajar con un staging externo configurado por el propietario, se conservan
+`npm run dev`, `setup:test-users` y `smoke:local`; requieren `.env.local` y
+confirmación explícita de un Supabase no productivo. Estos comandos no cargan
+automáticamente `.env.local-stack`.
 
 ## Pruebas manuales recomendadas
 

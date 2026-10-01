@@ -1,7 +1,7 @@
 'use client'
 
 import { createBrowserClient } from '@supabase/ssr'
-import { getSupabaseBrowserKey, getSupabaseUrl } from '@/lib/env'
+import { getSupabaseBrowserKey, getSupabaseUrl, getSupabaseCookieOptions } from '@/lib/env'
 
 // Tipo genérico omitido intencionalmente hasta generar tipos con `supabase gen types`.
 // Usar los helpers de tipos de /types/database.ts para tipiear resultados.
@@ -18,6 +18,7 @@ export function createClient() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return createBrowserClient<any>(
     supabaseUrl,
-    supabaseBrowserKey
+    supabaseBrowserKey,
+    { cookieOptions: getSupabaseCookieOptions() }
   )
 }

@@ -1,0 +1,7 @@
+# Supabase is managed by the pinned CLI; this override keeps one app container.
+services:
+  app:
+    volumes:
+      - local_flow_data:/app/.local-flow
+volumes:
+  local_flow_data:

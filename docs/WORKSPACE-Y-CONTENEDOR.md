@@ -2,6 +2,12 @@
 
 Verificado el 2026-10-01 en `codex/torneos-container-workspace`, desde `8bc1312`.
 
+**Actualización posterior:** el entorno operativo está en
+`codex/operational-local-environment`; ver `AMBIENTE-LOCAL.md`. Sustituye los
+placeholders por Supabase local y el simulador de pagos. Orbit y su volumen ya
+no aparecen en el inventario final. Los datos/servicios descritos abajo corresponden
+a la auditoría histórica de `8790a37`, no al estado actual de Docker.
+
 ## Decisión de continuidad
 
 El workspace activo de plataforma y juegos es **C:/torneos**. Abrir aquí Next y los

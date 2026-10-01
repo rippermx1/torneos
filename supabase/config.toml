@@ -59,7 +59,8 @@ schema_paths = ["./schema.sql", "./migrations/*.sql"]
 
 [db.seed]
 # If enabled, seeds the database after migrations during a db reset.
-enabled = true
+enabled = false
+# Accounts and compatible fixtures are created by scripts/local-environment.mjs.
 # Specifies an ordered list of seed files to load during db reset.
 # Supports glob patterns relative to supabase directory: "./seeds/*.sql"
 sql_paths = ["./seed/demo.sql"]
@@ -151,9 +152,11 @@ max_indexes = 5
 enabled = true
 # The base URL of your website. Used as an allow-list for redirects and for constructing URLs used
 # in emails.
-site_url = "https://www.torneosplay.cl"
+site_url = "http://127.0.0.1:3081"
 # Redirect URLs permit wildcards and must cover production, previews, and local development.
 additional_redirect_urls = [
+  "http://127.0.0.1:3081/**",
+  "http://localhost:3081/**",
   "https://www.torneosplay.cl/**",
   "https://torneosplay.cl/**",
   "https://torneos-theta.vercel.app/**",
@@ -197,7 +200,7 @@ password_requirements = ""
 
 [auth.rate_limit]
 # Number of emails that can be sent per hour. Requires auth.email.smtp to be enabled.
-email_sent = 2
+email_sent = 100
 # Number of SMS messages that can be sent per hour. Requires auth.sms to be enabled.
 sms_sent = 30
 # Number of anonymous sign-ins that can be made per hour per IP address. Requires enable_anonymous_sign_ins = true.
@@ -381,7 +384,7 @@ deno_version = 2
 # secret_key = "env(SECRET_VALUE)"
 
 [analytics]
-enabled = true
+enabled = false
 port = 54327
 # Configure one of the supported backends: `postgres`, `bigquery`.
 backend = "postgres"

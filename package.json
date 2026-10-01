@@ -25,7 +25,11 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "local:up": "node scripts/local-environment.mjs up",
+    "local:setup": "node scripts/local-environment.mjs setup",
+    "local:seed": "node scripts/local-environment.mjs seed",
+    "local:smoke": "node scripts/local-environment.mjs smoke"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
@@ -34,7 +38,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.8.0",
-    "next": "16.2.10",
+    "next": "16.3.8",
     "react": "19.2.7",
     "react-dom": "19.2.7",
     "resend": "^6.12.3",
@@ -46,12 +50,13 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@vitest/coverage-v8": "^4.1.5",
+    "@vitest/coverage-v8": "4.1.11",
     "eslint": "^9",
-    "eslint-config-next": "16.2.10",
+    "eslint-config-next": "16.3.8",
     "shadcn": "^4.4.0",
+    "supabase": "2.119.0",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vitest": "^4.1.5"
+    "vitest": "4.1.11"
   }
 }

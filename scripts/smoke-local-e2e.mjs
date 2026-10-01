@@ -292,6 +292,7 @@ async function createTournamentAsAdmin(cookieJar) {
 
   const tournamentName = `Smoke Local ${Date.now()}`
   formData.append('tournament_type', 'freeroll')
+  formData.append('preset_key', 'internal_test_v1')
   formData.append('is_test', '1')
   formData.append('name', tournamentName)
   formData.append('description', 'Smoke test local end-to-end')
@@ -308,6 +309,7 @@ async function createTournamentAsAdmin(cookieJar) {
 
   const postResponse = await fetchWithJar(cookieJar, `${baseUrl}/admin/tournaments/new`, {
     method: 'POST',
+    headers: { origin: baseUrl },
     body: formData,
   })
 
@@ -506,7 +508,8 @@ async function main() {
   const player2 = await signIn('jugador2.local.e2e@example.com', fixturePassword)
 
   await registerPlayer(player1.cookieJar, tournamentId)
-  await registerPlayer(player2.cookieJar, tournamentId)
+  const fullRegistration = await callJson(`${baseUrl}/api/tournaments/${tournamentId}/register`, { method: 'POST' }, player2.cookieJar)
+  assert(fullRegistration.response.status === 400, 'La prueba interna de un cupo permitió otro participante.')
 
   const { error: startWindowError } = await adminSupabase
     .from('tournaments')
@@ -531,12 +534,10 @@ async function main() {
   })
 
   const game1 = await startGame(player1.cookieJar, tournamentId)
-  const game2 = await startGame(player2.cookieJar, tournamentId)
 
   const result1 = await playSomeMoves(player1.cookieJar, tournamentId, game1.gameId, game1.moveNumber, 8)
-  const result2 = await playSomeMoves(player2.cookieJar, tournamentId, game2.gameId, game2.moveNumber, 3)
 
-  console.log(`Partidas iniciadas. Scores parciales: jugador1=${result1.score}, jugador2=${result2.score}`)
+  console.log(`Partida interna iniciada. Score parcial servidor: ${result1.score}. Segundo participante bloqueado por capacidad.`)
 
   const { error: closeWindowError } = await adminSupabase
     .from('tournaments')
@@ -570,7 +571,7 @@ async function main() {
     .eq('tournament_id', tournamentId)
     .order('rank', { ascending: true })
 
-  assert((results ?? []).length >= 2, 'No se generaron resultados suficientes del torneo.')
+  assert((results ?? []).length === 1, 'No se generó el resultado de la prueba interna de un participante.')
 
   await expectPage(`${baseUrl}/tournaments/${tournamentId}/leaderboard`, {
     text: tournamentName,

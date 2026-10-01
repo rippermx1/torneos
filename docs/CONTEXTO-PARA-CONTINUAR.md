@@ -3,7 +3,17 @@
 Fecha: 2026-10-01. Este documento resume decisiones y entrega local; al retomar,
 verifica Git, procesos y configuración antes de asumir que siguen iguales.
 
-Continuidad actual: usar **C:/torneos** en `codex/torneos-container-workspace`,
+Continuidad actual: usar **C:/torneos** en `codex/operational-local-environment`,
+desde `8790a37`. `npm run local:up` arranca el stack operativo con Supabase local,
+Mailpit y pagos simulados elegidos por el propietario. Leer `AMBIENTE-LOCAL.md` y
+`LOCAL-ENVIRONMENT-EVIDENCE.json`: 315 pruebas, Auth/MFA/torneo/ranking E2E local,
+Unity autenticado con recuperación, pago/reembolso, persistencia y audit npm cero.
+`.env.local-stack` contiene las claves/cuentas locales y no se versiona; el operador
+es `operador.local@example.com`. Google permanece deshabilitado hasta configurar
+el proveedor. No hay cargos reales ni despliegue. El inventario final no contiene
+Orbit ni su volumen; esta entrega no eliminó ninguno. `main` aún está en `6308515`.
+
+Historia del contenedor previo: usar **C:/torneos** en `codex/torneos-container-workspace`,
 desde `8bc1312`. El contenedor independiente de Torneos sirve la web y ambos juegos
 en `127.0.0.1:3081`, con entorno local de placeholders. Las herramientas de Alien Run
 ya no escriben ni leen en el origen; su catálogo local está trasladado. El origen,
@@ -23,8 +33,7 @@ Abrir un chat nuevo dentro del proyecto **torneos**, en la carpeta local existen
 `C:/torneos`. Este chat de origen estaba asociado a `C:/play-games`; el cambio de
 producto y de carpeta ya está resuelto y no requiere volver a migrar los archivos.
 
-- Rama de trabajo actual: `codex/torneos-container-workspace` (desde
-  `codex/tournament-discovery` en `8bc1312`).
+- Rama de trabajo actual: `codex/operational-local-environment` (desde `8790a37`).
 - Commit de la entrega de juegos: `df6d463`.
 - `main` sigue en `6308515`; la migración todavía no está integrada en `main`.
 - El árbol estaba limpio antes de añadir este documento.
@@ -162,14 +171,16 @@ tiene procedencia en `games/2048/ART-PROVENANCE.json`.
 ## Mensaje sugerido para el nuevo chat
 
 > Continúa en C:/torneos usando la copia local y la rama actual
-> codex/torneos-container-workspace. Lee AGENTS.md, README.md, docs/STATUS.md y
+> codex/operational-local-environment. Lee AGENTS.md, README.md, docs/STATUS.md y
 > docs/CONTEXTO-PARA-CONTINUAR.md. TorneosPlay es el producto comercial y los juegos
 > son herramientas para participar en torneos. La migración local de Alien Run y
 > 2048 Unity ya está entregada; retoma el enfoque de negocio de la web pública,
 > el recorrido público de catálogo/ficha y retorno desde práctica/cuenta ya está
 > implementado localmente. La web y ambos juegos se sirven en el contenedor
 > torneos-app-1; las herramientas Unity trabajan solo desde este workspace.
-> C:/play-games y sus datos quedan preservados como historia.
+> C:/play-games queda como origen histórico. Supabase local y Mailpit están operativos;
+> los pagos son simulados sin cargos reales. Lee docs/AMBIENTE-LOCAL.md y usa
+> npm run local:up / npm run local:smoke. El inventario actual no contiene Orbit ni su volumen.
 > Lee docs/WORKSPACE-Y-CONTENEDOR.md y la evidencia;
 > continúa con la validación autenticada en staging o un incremento útil posterior
 > sin duplicar funciones. Conserva los límites y distingue lo probado de lo pendiente.

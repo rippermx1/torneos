@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { NextRequest } from 'next/server'
 
 const mocks = vi.hoisted(() => ({
@@ -34,7 +34,15 @@ beforeEach(() => {
   mocks.upsert.mockResolvedValue({ error: null })
 })
 
+afterEach(() => vi.unstubAllEnvs())
+
 describe('confirmation and OAuth destination contracts', () => {
+  it('exchanges a PKCE email code and redirects from Docker to the canonical public origin', async () => {
+    vi.stubEnv('APP_URL', 'http://127.0.0.1:3081')
+    const response = await confirm(new NextRequest('http://0.0.0.0:3000/auth/confirm?code=local-code&next=/onboarding'))
+    expect(mocks.auth.exchangeCodeForSession).toHaveBeenCalledWith('local-code')
+    expect(response.headers.get('location')).toBe('http://127.0.0.1:3081/onboarding')
+  })
   it.each(['confirm', 'oauth'])('returns through onboarding after successful %s', async (method) => {
     const next = getOnboardingPath(tournament)
     const query = new URLSearchParams({ next, token_hash: 'synthetic', type: 'signup', code: 'synthetic' })

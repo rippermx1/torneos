@@ -1,7 +1,29 @@
 # Estado — TorneosPlay
 
-Actualizado: 2026-10-01. Rama local de trabajo: `codex/torneos-container-workspace`,
-desde `codex/tournament-discovery` en `8bc1312`. `main` sigue en `6308515`.
+Actualizado: 2026-10-01. Rama local de trabajo: `codex/operational-local-environment`,
+desde `8790a37`. `main` sigue en `6308515`.
+
+## Ambiente local operativo
+
+`npm run local:up` levanta Supabase local completo y el contenedor Torneos en
+`127.0.0.1:3081`. Auth/email, Mailpit, Storage, DB y cuatro tareas Cron están
+operativos. El propietario eligió pagos simulados para desarrollo: checkout,
+confirmación y reembolso usan las APIs/RPC existentes, con estado persistente y
+etiqueta visible sin cargos reales. `.env.local` y producción no se modificaron.
+
+Auditoría npm completa: **0 vulnerabilidades**, incluido desarrollo; Next 16.3.8,
+Vitest/coverage 4.1.11 y CLI Supabase 2.119.0. Validación actual: **315/315 pruebas
+en 42 archivos**, scripts 4/4, TypeScript/lint PASS, Docker standalone exit 0 y
+14 comprobaciones HTTP/hashes. E2E local de Auth, MFA, admin, torneo y ranking;
+seis contratos de pago. Navegador: confirmación real en Mailpit, onboarding,
+inscripción, Unity competitivo con puntuación servidor y recuperación al recargar,
+checkout móvil y retorno confirmado. Sesión/pagos sobreviven al reinicio.
+
+Guía: `AMBIENTE-LOCAL.md`; evidencia: `LOCAL-ENVIRONMENT-EVIDENCE.json`.
+Google requiere configuración externa y está deshabilitado localmente. No hubo
+dinero real, despliegue ni aceptación humana. Orbit ya no aparece en Docker;
+su volumen tampoco aparece en el inventario final. No se ejecutó eliminación
+ni prune durante esta entrega. Los apartados siguientes son evidencia histórica.
 
 ## Workspace y contenedor de aplicación
 
@@ -94,7 +116,7 @@ continúa abierta; esta entrega no autoriza lanzamiento pagado.
 ## Continuidad del trabajo
 
 Para el próximo chat, usar el proyecto **torneos** y la copia local `C:/torneos` en
-`codex/torneos-container-workspace`. Los incrementos desde `df6d463` aún no están integrados en `main`;
+`codex/operational-local-environment`. Los incrementos desde `df6d463` aún no están integrados en `main`;
 las builds y assets locales ignorados también deben conservarse. Decisiones,
 evidencia, límites y mensaje para retomar en
 [CONTEXTO-PARA-CONTINUAR.md](CONTEXTO-PARA-CONTINUAR.md).

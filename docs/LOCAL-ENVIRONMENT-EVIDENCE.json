@@ -1,0 +1,24 @@
+{
+  "date": "2026-10-01",
+  "branch": "codex/operational-local-environment",
+  "baseCommit": "8790a37",
+  "environment": "isolated local Supabase and local payment simulator",
+  "app": { "container": "torneos-app-1", "url": "http://127.0.0.1:3081", "health": "healthy", "build": "Next webpack standalone, exit 0" },
+  "dependencies": { "next": "16.3.8", "eslintConfigNext": "16.3.8", "vitest": "4.1.11", "coverageV8": "4.1.11", "supabaseCli": "2.119.0", "npmAuditFull": { "info": 0, "low": 0, "moderate": 0, "high": 0, "critical": 0 } },
+  "checks": {
+    "platform": { "passed": 315, "files": 42 },
+    "scriptTests": { "passed": 4 },
+    "typescript": "PASS",
+    "affectedEslint": "PASS",
+    "httpAndGameAssets": { "passed": 14, "hashesAndHeaders": "PASS" },
+    "supabaseMigrations": "52 existing migrations applied locally and recorded in schema_migrations",
+    "scheduler": { "jobs": 4, "active": true, "observedHttpResponses": 200 },
+    "localSmoke": "Auth, email confirmation, non-admin rejection, TOTP AAL2, admin creation, capacity, registration, eight valid moves, completed ranking",
+    "paymentSmoke": ["approved checkout and authoritative return", "repeated callback has one registration", "duplicate checkout and foreign origin blocked", "rejection creates no registration", "late payment refunds without registration", "provider requires HMAC"],
+    "browser": ["signup, actual Mailpit confirmation and onboarding", "free registration", "authenticated competitive Unity directions with HTTP 200 and server score 16", "reload recovered same game, score 16 and moveNumber 7", "KYC pending checkout HTTP 403", "paid checkout, mobile simulator and confirmed return", "390px viewport without horizontal overflow", "session and payment survived app restart"],
+    "paymentPersistence": { "files": 11, "sha256BeforeAndAfterRestart": "414f51393cbd24d349beae903fcdea1ff6c99856c7ea33b20b6946803655d61b" },
+    "mailpit": "Auth mail and 13 local platform notifications observed before final browser payment"
+  },
+  "artifacts": "artifacts/local-environment (ignored; CLI logs may contain local credentials)",
+  "limits": ["No external Google OAuth configured", "No real charges, public Flow sandbox callback or deployment", "No new Unity compilation or Editor/PlayMode run in this environment increment", "No physical-device or human acceptance", "Alien Run practice only", "Historical Orbit containers and volume absent in final Docker inventory; this task issued no removal or prune command" ]
+}

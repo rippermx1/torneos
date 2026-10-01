@@ -11,8 +11,10 @@ interface Props {
 export function GoogleButton({ redirectTo = '/onboarding' }: Props) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const enabled = process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED !== 'false'
 
   async function handleClick() {
+    if (!enabled) return
     setLoading(true)
     setError(null)
     const supabase = createClient()
@@ -37,7 +39,7 @@ export function GoogleButton({ redirectTo = '/onboarding' }: Props) {
       <button
         type="button"
         onClick={handleClick}
-        disabled={loading}
+        disabled={loading || !enabled}
         className="w-full flex items-center justify-center gap-3 border rounded-xl px-4 py-2.5 text-sm font-medium hover:bg-muted transition-colors disabled:opacity-50"
       >
         {/* Google logo SVG */}
@@ -49,6 +51,7 @@ export function GoogleButton({ redirectTo = '/onboarding' }: Props) {
         </svg>
         {loading ? 'Redirigiendo…' : 'Continuar con Google'}
       </button>
+      {!enabled && <p className="text-center text-xs text-muted-foreground">En este ambiente local usa email y contraseña.</p>}
       {error && <p role="alert" className="text-center text-xs text-red-600">{error}</p>}
     </div>
   )

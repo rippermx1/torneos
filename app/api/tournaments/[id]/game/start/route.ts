@@ -3,8 +3,9 @@ import { requireAnyRoleForApi } from '@/lib/supabase/auth'
 import { Game2048 } from '@/lib/game/engine'
 import { DeterministicRNG, generateGameSeed, computeRngStates, RNG_PREVIEW_SIZE } from '@/lib/game/rng'
 import { checkPlayWindow } from '@/lib/tournament/helpers'
-import { calculateGameDeadline, isPastGameDeadline } from '@/lib/tournament/game-deadline'
+import { isPastGameDeadline } from '@/lib/tournament/game-deadline'
 import { closeExpiredGame } from '@/lib/tournament/close-expired-game'
+import { GAME_SNAPSHOT_FIELDS, gameSnapshotResponse, type SnapshotGame } from '@/lib/tournament/game-snapshot-response'
 import { checkRateLimit, getRequestIp, rateLimitResponse } from '@/lib/security/rate-limit'
 import type { Game, Tournament } from '@/types/database'
 
@@ -23,6 +24,12 @@ export async function POST(
   })
   if (!rateLimit.ok) return rateLimitResponse(rateLimit)
 
+  let recovery: { recoverOnly?: boolean; gameId?: string } = {}
+  if (req.body) {
+    try { recovery = await req.json() } catch { return Response.json({ error: 'Body JSON inválido' }, { status: 400 }) }
+    if (!recovery || typeof recovery !== 'object') return Response.json({ error: 'Body JSON inválido' }, { status: 400 })
+  }
+
   const { id: tournamentId } = await params
   const supabase = createAdminClient()
 
@@ -30,7 +37,7 @@ export async function POST(
     { data: profile },
     { data: tournament },
     { data: registration },
-    { data: existingGameData },
+    { data: existingGameData, error: existingGameError },
   ] = await Promise.all([
     supabase
       .from('profiles')
@@ -50,10 +57,10 @@ export async function POST(
       .single(),
     supabase
       .from('games')
-      .select('id, status, current_board, final_score, move_count, seed, started_at')
+      .select(`${GAME_SNAPSHOT_FIELDS}, seed`)
       .eq('tournament_id', tournamentId)
       .eq('user_id', userId)
-      .single(),
+      .maybeSingle(),
   ])
 
   if (profile?.is_banned) {
@@ -66,7 +73,27 @@ export async function POST(
     'id' | 'status' | 'min_players' | 'play_window_start' | 'play_window_end' | 'max_game_duration_seconds'
   >
 
+  if (!registration) return Response.json({ error: 'No estás inscrito en este torneo' }, { status: 403 })
+  if (existingGameError) return Response.json({ error: 'No se pudo recuperar la partida.', code: 'GAME_STATE_UNCONFIRMED' }, { status: 503 })
+  const existingGame = existingGameData as (SnapshotGame & Pick<Game, 'seed'>) | null
+  if (recovery.recoverOnly && (!existingGame || existingGame.id !== recovery.gameId)) {
+    return Response.json({ error: 'No se pudo recuperar la partida solicitada.', code: 'GAME_STATE_UNCONFIRMED' }, { status: 409 })
+  }
+  // Reading an owned result remains possible after the tournament window closes.
+  if (existingGame && existingGame.status !== 'active') {
+    return gameSnapshotResponse(existingGame, tournamentState.play_window_end,
+      tournamentState.max_game_duration_seconds, { resuming: true, nextRngStates: [] })
+  }
+
   const playability = checkPlayWindow(tournamentState)
+  if (existingGame && existingGame.started_at && (isPastGameDeadline(existingGame.started_at,
+    tournamentState.play_window_end, tournamentState.max_game_duration_seconds)
+    || !playability.ok && ['window_closed','completed'].includes(playability.reason))) {
+    const closure = await closeExpiredGame(supabase, { gameId: existingGame.id, tournamentId, userId })
+    if (!closure.ok) return closure.response
+    return gameSnapshotResponse(closure.game, tournamentState.play_window_end,
+      tournamentState.max_game_duration_seconds, { resuming: true, nextRngStates: [] })
+  }
   if (!playability.ok) {
     return Response.json({ error: playability.reason }, { status: 400 })
   }
@@ -101,53 +128,14 @@ export async function POST(
     }
   }
 
-  if (!registration) {
-    return Response.json({ error: 'No estás inscrito en este torneo' }, { status: 403 })
-  }
-
-  if (existingGameData) {
-    const game = existingGameData as Pick<
-      Game,
-      'id' | 'status' | 'current_board' | 'final_score' | 'move_count' | 'seed' | 'started_at'
-    >
-    if (game.status === 'completed' || game.status === 'abandoned') {
-      return Response.json({ error: 'Tu partida en este torneo ya finalizó' }, { status: 400 })
-    }
-    if (
-      game.started_at &&
-      isPastGameDeadline(
-        game.started_at,
-        tournamentState.play_window_end,
-        tournamentState.max_game_duration_seconds
-      )
-    ) {
-      const closure = await closeExpiredGame(supabase, { gameId: game.id, tournamentId, userId })
-      if (!closure.ok) return closure.response
-
-      return Response.json({ error: 'Tu partida alcanzó su duración máxima',
-        timeout: closure.game.end_reason === 'timeout', score: closure.game.final_score,
-        endedAt: closure.game.ended_at }, { status: 400 })
-    }
-
+  if (existingGame) {
+    const game = existingGame
     // Retornar estado actual para reanudar
     const resumeMoveNumber = game.move_count + 2 // +2 por los dos spawns iniciales
-    return Response.json({
-      gameId: game.id,
-      board: game.current_board,
-      score: game.final_score,
-      moveCount: game.move_count,
-      moveNumber: resumeMoveNumber,
+    return gameSnapshotResponse(game, tournamentState.play_window_end, tournamentState.max_game_duration_seconds, {
       nextRngStates: computeRngStates(game.seed, resumeMoveNumber, RNG_PREVIEW_SIZE),
       nextRngStatesFrom: resumeMoveNumber,
-      deadlineAt: game.started_at
-        ? calculateGameDeadline(
-            game.started_at,
-            tournamentState.play_window_end,
-            tournamentState.max_game_duration_seconds
-          )
-        : tournamentState.play_window_end,
       resuming: true,
-      serverNow: new Date().toISOString(),
     })
   }
 
@@ -178,20 +166,11 @@ export async function POST(
     return Response.json({ error: `Error creando partida: ${insertErr?.message}` }, { status: 500 })
   }
 
-  return Response.json({
-    gameId: newGame.id,
-    board: gameBoard.board,
-    score: 0,
-    moveCount: 0,
-    moveNumber: 2,
+  return gameSnapshotResponse({ id: newGame.id, status: 'active', current_board: gameBoard.board,
+    final_score: 0, move_count: 0, started_at: startedAt, end_reason: null, ended_at: null },
+    tournamentState.play_window_end, tournamentState.max_game_duration_seconds, {
     nextRngStates: computeRngStates(seed, 2, RNG_PREVIEW_SIZE),
     nextRngStatesFrom: 2,
-    deadlineAt: calculateGameDeadline(
-      startedAt,
-      tournamentState.play_window_end,
-      tournamentState.max_game_duration_seconds
-    ),
     resuming: false,
-    serverNow: new Date().toISOString(),
   })
 }

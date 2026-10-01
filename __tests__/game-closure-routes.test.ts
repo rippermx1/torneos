@@ -6,6 +6,8 @@ const fixture = vi.hoisted(() => ({
   queries: [] as { table: string; write: boolean; filters: [string, unknown][] }[],
   inserting: false,
   authenticated: true, registered: true,
+  readError: false,
+  finalMoveRow: null as Record<string, unknown> | null,
 }))
 vi.mock('@/lib/supabase/auth', () => ({ requireAnyRoleForApi: async () => fixture.authenticated
   ? { ok: true, access: { userId: 'closure-user' } }
@@ -13,13 +15,17 @@ vi.mock('@/lib/supabase/auth', () => ({ requireAnyRoleForApi: async () => fixtur
 vi.mock('@/lib/security/rate-limit', () => ({ checkRateLimit: async () => ({ ok: true }),
   getRequestIp: () => '127.0.0.1', rateLimitResponse: () => new Response('', { status: 429 }) }))
 vi.mock('next/server', () => ({ after: vi.fn() }))
-vi.mock('@/lib/supabase/server', () => ({ createAdminClient: () => ({ rpc: vi.fn(async () => ({ data: null, error: null })), from: (table: string) => {
+vi.mock('@/lib/supabase/server', () => ({ createAdminClient: () => ({ rpc: vi.fn(async () => {
+  if (fixture.finalMoveRow) fixture.game = fixture.finalMoveRow
+  return { data: null, error: null }
+}), from: (table: string) => {
   const query = { table, write: false, filters: [] as [string, unknown][] }
   const run = async (recovery: boolean) => {
     fixture.queries.push(query)
     if (fixture.inserting && table === 'games' && query.write) return { data: { id: 'new-clock-game' }, error: null }
     if (query.write) return fixture.update
     if (recovery) return fixture.recovery
+    if (table === 'games' && fixture.readError) return { data: null, error: { message: 'private read failure' } }
     const owner = query.filters.find(([key]) => key === 'user_id')?.[1]
     return { data: table === 'games' ? (owner === fixture.game.user_id ? fixture.game : null)
       : table === 'tournaments' ? fixture.tournament : table === 'profiles' ? { is_banned: false }
@@ -28,7 +34,7 @@ vi.mock('@/lib/supabase/server', () => ({ createAdminClient: () => ({ rpc: vi.fn
   const q = { select: () => q, update: () => { query.write = true; return q },
     insert: () => { fixture.inserting = true; query.write = true; return q },
     eq: (key: string, value: unknown) => { query.filters.push([key, value]); return q },
-    single: () => run(false), maybeSingle: () => run(true) }
+    single: () => run(false), maybeSingle: () => run(query.filters.some(([key]) => key === 'id')) }
   return q
 } }) }))
 import { POST as timeout } from '@/app/api/tournaments/[id]/game/timeout/route'
@@ -39,17 +45,19 @@ let sequence = 0
 beforeEach(() => {
   vi.useFakeTimers(); vi.setSystemTime(new Date('2026-10-01T16:00:00Z'))
   fixture.queries = []; fixture.authenticated = true; fixture.registered = true; fixture.inserting = false
+  fixture.readError = false
+  fixture.finalMoveRow = null
   fixture.game = { id: 'closure-game', user_id: 'closure-user', status: 'active', final_score: 4,
     move_count: 2, current_board: [[2,2,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]], seed: 'test-seed',
-    started_at: '2026-10-01T15:58:00Z', end_reason: null }
+    started_at: '2026-10-01T15:58:00Z', end_reason: null, ended_at: null }
   fixture.tournament = { id: `closure-tournament-${++sequence}`, status: 'live', min_players: 1,
     play_window_start: '2026-10-01T15:00:00Z', play_window_end: '2026-10-01T17:00:00Z', max_game_duration_seconds: 60 }
-  fixture.update = { data: { id: 'closure-game', status: 'completed', final_score: 16,
+  fixture.update = { data: { ...fixture.game, id: 'closure-game', status: 'completed', final_score: 16,
     end_reason: 'timeout', ended_at: '2026-10-01T16:00:00Z' }, error: null }
   fixture.recovery = { data: null, error: null }
 })
 afterEach(() => vi.useRealTimers())
-const routes = [ ['timeout', timeout, 200, 'timedOut'], ['start', start, 400, 'timeout'], ['move', move, 400, 'timeout'] ] as const
+const routes = [ ['timeout', timeout, 200, 'timedOut'], ['start', start, 200, 'timeout'], ['move', move, 400, 'timeout'] ] as const
 function request() { return new Request('http://local.test/game', { method: 'POST', headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ gameId: 'closure-game', direction: 'left', moveNumber: 4, clientTimestamp: Date.now() }) }) }
 function params() { return { params: Promise.resolve({ id: String(fixture.tournament.id) }) } }
@@ -79,7 +87,7 @@ describe.each(routes)('%s expiration persistence', (_name, route, status, flag) 
   })
   it('recovers the winner of a concurrent timeout without overwriting its score or endedAt', async () => {
     fixture.update = { data: null, error: null }
-    fixture.recovery = { data: { id: 'closure-game', status: 'completed', final_score: 128,
+    fixture.recovery = { data: { ...fixture.game, id: 'closure-game', status: 'completed', final_score: 128,
       end_reason: 'timeout', ended_at: '2026-10-01T15:59:59Z' }, error: null }
     const response = await route(request(), params()), data = await response.json()
     expect(response.status).toBe(status); expect(data[flag]).toBe(true)
@@ -90,7 +98,7 @@ describe.each(routes)('%s expiration persistence', (_name, route, status, flag) 
   })
   it('does not relabel a concurrently completed no_moves game as timeout', async () => {
     fixture.update = { data: null, error: null }
-    fixture.recovery = { data: { id: 'closure-game', status: 'completed', final_score: 256,
+    fixture.recovery = { data: { ...fixture.game, id: 'closure-game', status: 'completed', final_score: 256,
       end_reason: 'no_moves', ended_at: '2026-10-01T15:59:59Z' }, error: null }
     const response = await route(request(), params()), data = await response.json()
     expect(data[flag]).toBe(false); expect(data.score).toBe(256)
@@ -167,4 +175,71 @@ it('is idempotent for an already persisted timeout without writing again', async
   const response = await timeout(request(), params()), data = await response.json()
   expect(response.status).toBe(200); expect(data).toMatchObject({ timedOut: true, score: 512 })
   expect(fixture.queries.filter(q => q.write)).toHaveLength(0)
+})
+
+describe('owned full state recovery', () => {
+  it.each(routes)('%s preserves an already closed result after tournament completion', async (_name, route) => {
+    fixture.game = { ...fixture.game, status: 'completed', end_reason: 'no_moves', final_score: 128,
+      current_board: [[4,8,16,2],[8,16,32,64],[16,32,64,128],[32,64,128,256]], ended_at: '2026-10-01T15:59:59Z' }
+    fixture.tournament.status = 'completed'; fixture.tournament.play_window_end = '2026-10-01T15:59:59Z'
+    const response = await route(request(), params()), data = await response.json()
+    expect(response.status).toBe(_name === 'move' ? 400 : 200)
+    expect(data).toMatchObject({ stateConfirmed: true, gameId: 'closure-game', status: 'completed', gameOver: true,
+      endReason: 'no_moves', timedOut: false, score: 128, board: fixture.game.current_board, moveNumber: 4 })
+    expect(fixture.queries.filter(q => q.write)).toHaveLength(0)
+    expect(data.seed).toBeUndefined()
+  })
+  it.each([start, timeout])('returns an abandoned game without calling it no_moves or creating another game', async route => {
+    fixture.game = { ...fixture.game, status: 'abandoned', end_reason: 'self_ended', final_score: 32,
+      ended_at: '2026-10-01T15:59:59Z' }
+    const response = await route(request(), params()), data = await response.json()
+    expect(response.status).toBe(200)
+    expect(data).toMatchObject({ status: 'abandoned', gameOver: true, endReason: 'self_ended', score: 32, timedOut: false })
+    expect(fixture.queries.filter(q => q.write)).toHaveLength(0)
+  })
+  it('does not offer a fresh start when the existing-game read fails', async () => {
+    fixture.readError = true
+    expect((await start(request(), params())).status).toBe(503)
+    expect(fixture.queries.filter(q => q.write)).toHaveLength(0)
+  })
+  it.each(['completed','invalid','not_started'])('does not fabricate a result for incomplete %s state', async status => {
+    fixture.game = { ...fixture.game, status, current_board: null, end_reason: status === 'completed' ? 'no_moves' : null }
+    const response = await start(request(), params()), data = await response.json()
+    expect(response.status).toBe(503); expect(data.stateConfirmed).toBeUndefined(); expect(data.score).toBeUndefined()
+    expect(fixture.queries.filter(q => q.write)).toHaveLength(0)
+  })
+  it('returns the entire updated board and move count from expiration RETURNING', async () => {
+    const persistedBoard = [[4,8,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]]
+    fixture.update.data = { ...(fixture.update.data as object), current_board: persistedBoard, move_count: 3 }
+    const response = await timeout(request(), params()), data = await response.json()
+    expect(data).toMatchObject({ board: persistedBoard, moveNumber: 5, score: 16, gameOver: true, stateConfirmed: true })
+  })
+  it('closes an expired active game on resume after the tournament window has closed', async () => {
+    fixture.tournament.status = 'completed'
+    const response = await start(request(), params()), data = await response.json()
+    expect(response.status).toBe(200); expect(data).toMatchObject({ gameOver: true, score: 16, endReason: 'timeout' })
+    expect(fixture.queries.filter(q => q.write)).toHaveLength(1)
+  })
+  it.each(['missing-game','other-player-game'])('never creates a game when recovery requests %s', async gameId => {
+    fixture.game.user_id = 'other-user'
+    const response = await start(new Request('http://local.test/game', { method: 'POST', body: JSON.stringify({ recoverOnly: true, gameId }) }), params())
+    expect(response.status).toBe(409); expect(fixture.queries.filter(q => q.write)).toHaveLength(0)
+  })
+  it('returns the persisted final board and score after the last valid move', async () => {
+    fixture.game.started_at = '2026-10-01T15:59:45Z'
+    fixture.game.current_board = [[2,2,8,16],[8,16,32,64],[16,32,64,128],[32,64,128,256]]
+    const finalBoard = [[4,8,16,2],[8,16,32,64],[16,32,64,128],[32,64,128,256]]
+    fixture.finalMoveRow = { ...fixture.game, status: 'completed', end_reason: 'no_moves', final_score: 128,
+      current_board: finalBoard, move_count: 3, ended_at: '2026-10-01T16:00:00Z' }
+    const response = await move(request(), params()), data = await response.json()
+    expect(response.status).toBe(200)
+    expect(data).toMatchObject({ moved: true, stateConfirmed: true, gameOver: true, endReason: 'no_moves',
+      score: 128, moveNumber: 5, board: finalBoard })
+  })
+  it('does not claim the locally computed final result when the persisted row is still active', async () => {
+    fixture.game.started_at = '2026-10-01T15:59:45Z'
+    fixture.game.current_board = [[2,2,8,16],[8,16,32,64],[16,32,64,128],[32,64,128,256]]
+    const response = await move(request(), params()), data = await response.json()
+    expect(response.status).toBe(503); expect(data.stateConfirmed).toBeUndefined(); expect(data.score).toBeUndefined()
+  })
 })

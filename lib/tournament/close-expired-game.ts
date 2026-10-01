@@ -1,8 +1,8 @@
 import type { createAdminClient } from '@/lib/supabase/server'
-import type { Game } from '@/types/database'
+import { GAME_SNAPSHOT_FIELDS, type SnapshotGame } from './game-snapshot-response'
 
-type ClosedGame = Pick<Game, 'id' | 'status' | 'final_score' | 'end_reason' | 'ended_at'>
-const fields = 'id, status, final_score, end_reason, ended_at'
+type ClosedGame = SnapshotGame
+const fields = GAME_SNAPSHOT_FIELDS
 const unconfirmed = () => ({
   ok: false as const,
   response: Response.json({

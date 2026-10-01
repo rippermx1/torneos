@@ -47,7 +47,10 @@ export default async function TournamentPlayPage({
   }
 
   const playability = checkPlayWindow(tournament)
-  if (!playability.ok) {
+  const { data: existingGame, error: gameError } = await supabase.from('games').select('id')
+    .eq('tournament_id', id).eq('user_id', userId).maybeSingle()
+  if (gameError) return <p>No se pudo comprobar tu partida. Recarga para consultar su estado.</p>
+  if (!playability.ok && !existingGame) {
     const isBeforeWindow = playability.reason === 'window_not_open'
     return (
       <div className="max-w-xl mx-auto px-4 py-16 text-center space-y-4">

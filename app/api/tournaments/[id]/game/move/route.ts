@@ -6,6 +6,7 @@ import { DeterministicRNG, computeRngStates, RNG_PREVIEW_SIZE } from '@/lib/game
 import { checkPlayWindow } from '@/lib/tournament/helpers'
 import { calculateGameDeadline, isPastGameDeadline } from '@/lib/tournament/game-deadline'
 import { closeExpiredGame } from '@/lib/tournament/close-expired-game'
+import { GAME_SNAPSHOT_FIELDS, gameSnapshotResponse, type SnapshotGame } from '@/lib/tournament/game-snapshot-response'
 import { analyzeMove } from '@/lib/anticheat/detector'
 import { checkRateLimit, getRequestIp, rateLimitResponse } from '@/lib/security/rate-limit'
 import type { Game, Tournament, Direction } from '@/types/database'
@@ -110,7 +111,7 @@ export async function POST(
       .single(),
     supabase
       .from('games')
-      .select('id, status, move_count, current_board, final_score, seed, started_at')
+      .select(`${GAME_SNAPSHOT_FIELDS}, seed`)
       .eq('id', gameId)
       .eq('tournament_id', tournamentId)
       .eq('user_id', userId)
@@ -124,15 +125,12 @@ export async function POST(
 
   if (!gameData) return Response.json({ error: 'Partida no encontrada' }, { status: 404 })
 
-  const game = gameData as Pick<
-    Game,
-    'status' | 'move_count' | 'current_board' | 'final_score' | 'seed' | 'started_at'
-  >
-  if (game.status !== 'active') {
-    return Response.json({ error: 'La partida no está activa' }, { status: 400 })
-  }
-
+  const game = gameData as SnapshotGame & Pick<Game, 'seed'>
   if (!tournament) return Response.json({ error: 'Torneo no encontrado' }, { status: 404 })
+  if (game.status !== 'active') {
+    return gameSnapshotResponse(game, tournament.play_window_end, tournament.max_game_duration_seconds,
+      { error: 'La partida no está activa', moved: false }, 400)
+  }
 
   const playability = checkPlayWindow(tournament)
   if (!playability.ok) {
@@ -140,9 +138,8 @@ export async function POST(
     const closure = await closeExpiredGame(supabase, { gameId, tournamentId, userId })
     if (!closure.ok) return closure.response
 
-    return Response.json({ error: 'La ventana de juego cerró',
-      timeout: closure.game.end_reason === 'timeout', score: closure.game.final_score,
-      endedAt: closure.game.ended_at }, { status: 400 })
+    return gameSnapshotResponse(closure.game, tournament.play_window_end, tournament.max_game_duration_seconds,
+      { error: 'La ventana de juego cerró', moved: false }, 400)
   }
 
   if (
@@ -156,9 +153,8 @@ export async function POST(
     const closure = await closeExpiredGame(supabase, { gameId, tournamentId, userId })
     if (!closure.ok) return closure.response
 
-    return Response.json({ error: 'La partida alcanzó su duración máxima',
-      timeout: closure.game.end_reason === 'timeout', score: closure.game.final_score,
-      endedAt: closure.game.ended_at }, { status: 400 })
+    return gameSnapshotResponse(closure.game, tournament.play_window_end, tournament.max_game_duration_seconds,
+      { error: 'La partida alcanzó su duración máxima', moved: false }, 400)
   }
 
   // Verificar que el moveNumber es el siguiente esperado
@@ -251,6 +247,16 @@ export async function POST(
     : moveNumber + 1
   const nextRngStatesStart = Math.max(moveNumber + 1, requestedStart)
   const nextRngStates = gameOver ? [] : computeRngStates(game.seed, nextRngStatesStart, RNG_PREVIEW_SIZE)
+
+  if (gameOver) {
+    const persisted = await supabase.from('games').select(GAME_SNAPSHOT_FIELDS).eq('id', gameId)
+      .eq('tournament_id', tournamentId).eq('user_id', userId).single()
+    if (persisted.error || !persisted.data || persisted.data.status === 'active') {
+      return Response.json({ error: 'No se pudo recuperar el resultado persistido.', code: 'GAME_STATE_UNCONFIRMED' }, { status: 503 })
+    }
+    return gameSnapshotResponse(persisted.data, tournament.play_window_end, tournament.max_game_duration_seconds,
+      { moved: true, scoreGained: result.scoreGained, spawnedTile: result.spawnedTile, nextRngStates: [], nextRngStatesFrom: nextRngStatesStart })
+  }
 
   return Response.json({
     moved: true,

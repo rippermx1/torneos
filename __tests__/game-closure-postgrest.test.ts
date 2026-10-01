@@ -34,6 +34,8 @@ describe('Closure against the real Supabase HTTP client, isolated local PostgRES
       expect(requests[0].url.searchParams.get(key)).toBe(`eq.${value}`)
     }
     expect(requests[0].url.searchParams.get('select')).toContain('final_score')
+    expect(requests[0].url.searchParams.get('select')).toContain('current_board')
+    expect(requests[0].url.searchParams.get('select')).toContain('move_count')
     expect(requests[0].body).toMatchObject({ status: 'completed', end_reason: 'timeout' })
   })
   it('handles actual zero-row PostgREST response by reading the concurrent winner', async () => {

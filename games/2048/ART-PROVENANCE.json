@@ -1,0 +1,18 @@
+{
+  "generator": "image_gen.imagegen",
+  "mode": "generation",
+  "date": "2026-09-30",
+  "references": [],
+  "assets": [
+    {
+      "path": "UnityProject/Assets/Torneos/2048/Resources/Gpt/tile-face-v1.png",
+      "prompt": "Use case: stylized-concept. Asset type: original 2D UI sprite for a Unity 2048 puzzle. Create one blank premium rounded square tile face, front view, orthographic flat interface art, softly beveled porcelain surface with subtle fine grain and restrained soft edge highlight. Neutral warm ivory and grayscale so Unity can tint the sprite per numeric value. Square tile fills 90 percent of square image, consistent broad rounded corners. Transparent exterior, opaque tile center, no cast shadow outside its bounds. No text, no numbers, no symbols, no logo, no watermark, no additional objects. This is a production game sprite, not a screenshot or mockup. Keep shading quiet so dark numbers drawn by the engine will remain easy to read.",
+      "transparent_background": true
+    },
+    {
+      "path": "UnityProject/Assets/Torneos/2048/Resources/Gpt/background-v1.png",
+      "prompt": "Use case: stylized-concept. Asset type: original 2D game background for a Unity 2048 puzzle, landscape 3:2 composition. A restrained premium arcade ambience made of softly illuminated abstract geometric blocks and fine paper/ceramic textures at the perimeter. Muted midnight teal, charcoal, warm cream, small copper accents. The entire central 65 percent must be a very quiet nearly uniform dark teal field for a legible game board and numbers rendered by the game engine. No board, no tiles laid out in a grid, no text, no numerals, no people, no logos, no watermark, no UI controls. Sophisticated flat 2D illustration with depth suggested by subtle lighting, decorative rounded geometric blocks kept at the outermost left and right edges, low contrast. Production background artwork, not an interface mockup.",
+      "transparent_background": false
+    }
+  ]
+}

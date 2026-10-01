@@ -42,5 +42,21 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# Unity projects: preserve source and metadata, exclude regenerated caches.
+**/[Ll]ibrary/
+**/[Tt]emp/
+**/[Oo]bj/
+**/[Ll]ogs/
+**/[Uu]ser[Ss]ettings/
+**/[Bb]uilds/
+*.csproj
+*.sln
+**/Assets/ThirdParty/
+**/Assets/KayKit*/
+**/Assets/Kay Lousberg/
+games/alien-run/UnityProject/Assets/Orbit/AlienRun/LocalArt/
+games/alien-run/UnityProject/Assets/Orbit/AlienRun/LocalArt.meta
+public/games/*/*/
+
 .vercel
 .playwright-mcp

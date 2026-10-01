@@ -1,0 +1,10 @@
+{
+  "name": "Orbit.AlienRun",
+  "rootNamespace": "Orbit.AlienRun",
+  "references": [
+    "Orbit.SDK",
+    "Unity.InputSystem",
+    "UnityEngine.UI"
+  ],
+  "autoReferenced": true
+}

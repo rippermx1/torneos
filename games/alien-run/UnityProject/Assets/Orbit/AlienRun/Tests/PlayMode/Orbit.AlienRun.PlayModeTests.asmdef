@@ -1,0 +1,6 @@
+{
+  "name": "Orbit.AlienRun.PlayModeTests",
+  "references": ["Orbit.SDK", "Orbit.AlienRun", "Unity.InputSystem", "UnityEngine.UI"],
+  "optionalUnityReferences": ["TestAssemblies"],
+  "autoReferenced": false
+}

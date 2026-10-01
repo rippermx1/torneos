@@ -1,0 +1,89 @@
+{
+  "date": "2026-09-30",
+  "destination": "C:/torneos",
+  "branch": "codex/unity-games-migration",
+  "source": "C:/play-games",
+  "source_preserved": true,
+  "source_files_sha256_verified": 4437,
+  "transfer_conflicts": [],
+  "games": {
+    "puzzle2048": {
+      "project": "games/2048/UnityProject",
+      "build": "unity-2048-002",
+      "webgl_compiled": true,
+      "bytes": 15818967,
+      "reduction_percent_from_first_build": 74.9,
+      "art": "original image_gen generation, no commercial references"
+    },
+    "alienRun": {
+      "project": "games/alien-run/UnityProject",
+      "build": "level-030",
+      "rules": "practice-v10",
+      "source_build_copied": true,
+      "mode": "practice",
+      "prize_eligible": false
+    }
+  },
+  "checks": {
+    "platform_vitest": {
+      "passed": 242,
+      "failed": 0,
+      "test_files": 35,
+      "report": "artifacts/unity-2048/platform-all-tests.json"
+    },
+    "unity_editmode": {
+      "passed": 8,
+      "failed": 0,
+      "report": "artifacts/unity-2048/editmode.xml"
+    },
+    "unity_playmode": {
+      "passed": 1,
+      "failed": 0,
+      "report": "artifacts/unity-2048/playmode-final.xml"
+    },
+    "next_final_build": {
+      "exit": 0,
+      "log": "artifacts/unity-2048/next-build-final.log"
+    },
+    "typescript": "PASS",
+    "targeted_eslint": "PASS",
+    "http_assets": {
+      "puzzle2048": 6,
+      "alienRun": 5,
+      "bytes_match": true,
+      "app_framing": "DENY",
+      "entry_framing": "SAMEORIGIN"
+    },
+    "browser": {
+      "puzzle2048": [
+        "load",
+        "keyboard moves and score 4",
+        "new game score reset to 0",
+        "pointer drag in mobile viewport",
+        "board and control visibility",
+        "expanded viewport and return"
+      ],
+      "alienRun": [
+        "load with matching build/rules handshake",
+        "practice start",
+        "direction and jump",
+        "expanded viewport rendering"
+      ],
+      "complete_alien_run_on_new_host": "NOT_RUN",
+      "physical_phone": "NOT_RUN",
+      "native_fullscreen": "failed in integrated browser; replaced with CSS expanded mode"
+    }
+  },
+  "external_mutations": {
+    "deployment": false,
+    "production_database": false,
+    "flow_payments": false
+  },
+  "competitive_unity_authenticated_staging": "NOT_RUN",
+  "limits": [
+    "Alien Run source development build, approximately 116 MB; release optimization pending",
+    "Authenticated Unity 2048 tournament end to end in staging pending",
+    "Commercial assets stay local; distribution license review remains separate",
+    "Technical checks do not prove human integrity or owner acceptance"
+  ]
+}

@@ -1,0 +1,41 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no"><title>{{{ PRODUCT_NAME }}}</title><link rel="icon" href="data:,"><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#101923;color:#e5edf3;font:13px system-ui}#unity-canvas{width:100%;height:100%;display:block;touch-action:none}#loading{position:absolute;inset:0;display:grid;place-content:center;background:#101923}</style></head><body><canvas id="unity-canvas" tabindex="0"></canvas><div id="loading" role="status">Cargando juego…</div><script>
+const parentOrigin = window.location.origin;
+let unityInstance = null;
+let pendingConfig = null;
+window.addEventListener('message', event => {
+  const data = event.data;
+  if (event.origin !== parentOrigin || event.source !== window.parent || !data || data.channel !== 'orbit.arcade' || data.version !== 1 || data.type !== 'platform.start') return;
+  if (!data.config || typeof data.config.run_id !== 'string') return;
+  if (unityInstance) {
+    unityInstance.SendMessage('OrbitBridge', 'OnPlatformStart', JSON.stringify(data.config));
+    document.getElementById('unity-canvas').focus();
+  } else { pendingConfig = data.config; }
+});
+const loader = document.createElement('script');
+loader.src = 'Build/{{{ LOADER_FILENAME }}}';
+loader.onload = () => createUnityInstance(document.getElementById('unity-canvas'), {
+  dataUrl:'Build/{{{ DATA_FILENAME }}}', frameworkUrl:'Build/{{{ FRAMEWORK_FILENAME }}}',
+#if USE_WASM
+  codeUrl:'Build/{{{ CODE_FILENAME }}}',
+#endif
+  streamingAssetsUrl:'StreamingAssets', companyName:{{{ JSON.stringify(COMPANY_NAME) }}},
+  productName:{{{ JSON.stringify(PRODUCT_NAME) }}}, productVersion:{{{ JSON.stringify(PRODUCT_VERSION) }}},
+  matchWebGLToCanvasSize:true, devicePixelRatio:Math.min(window.devicePixelRatio || 1, 1.5)
+}, progress => { document.getElementById('loading').textContent = 'Cargando juego… ' + Math.round(progress*100) + '%'; })
+.then(instance => {
+  unityInstance = instance;
+  document.getElementById('loading').remove();
+  if (pendingConfig) {
+    unityInstance.SendMessage('OrbitBridge','OnPlatformStart',JSON.stringify(pendingConfig));
+    pendingConfig = null;
+  }
+}).catch(error => {
+  document.getElementById('loading').textContent = 'No se pudo cargar el juego.';
+  window.parent.postMessage({channel:'orbit.arcade',version:1,type:'game.error',message:'No se pudo cargar Unity: ' + String(error).slice(0,250)},parentOrigin);
+});
+loader.onerror = () => {
+  document.getElementById('loading').textContent='No se encontró la build del juego.';
+  window.parent.postMessage({channel:'orbit.arcade',version:1,type:'game.error',message:'Falta la build WebGL.'},parentOrigin);
+};
+document.body.appendChild(loader);
+</script></body></html>

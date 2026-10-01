@@ -1,0 +1,14 @@
+{
+  "name": "Orbit.AlienRun.Tests",
+  "references": [
+    "Orbit.SDK",
+    "Orbit.AlienRun"
+  ],
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "autoReferenced": false
+}

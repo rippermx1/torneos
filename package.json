@@ -4,6 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:games": "node scripts/dev-unity-preview.mjs",
+    "games:build:2048": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-build-2048.ps1",
+    "games:publish": "node scripts/publish-unity.mjs",
     "build": "next build",
     "start": "node scripts/start-standalone.mjs",
     "check:production-env": "node scripts/check-production-env.mjs",

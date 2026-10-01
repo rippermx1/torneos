@@ -110,3 +110,18 @@ aceptan un Supabase no productivo.
 - deploys: Vercel
 - scheduler principal: Supabase Cron; GitHub Actions y Vercel como respaldo
 - checklist: [docs/production.md](/C:/torneos/docs/production.md:1)
+
+## Juegos Unity (traslado desde C:/play-games)
+
+TorneosPlay es la base de la plataforma y los juegos son clientes separados:
+`games/alien-run/UnityProject` y `games/2048/UnityProject`, Unity 6000.3.24f1.
+2048 tiene arte 2D original generado con GPT y conserva el motor competitivo servidor.
+
+```powershell
+npm run games:build:2048
+npm run dev:games
+```
+
+Vista local sin credenciales productivas: [juegos](http://127.0.0.1:3080/play),
+[Alien Run](http://127.0.0.1:3080/play/alien-run). No ejecuta cobros ni despliegues.
+Estado y límites: `docs/STATUS.md`; arquitectura: `docs/UNITY-GAMES.md`.

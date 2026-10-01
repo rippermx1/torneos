@@ -1,0 +1,46 @@
+{
+  "date": "2026-10-01",
+  "task": "G2048-06.1",
+  "branch": "codex/2048-clean-gameplay",
+  "base_commit": "850a42e",
+  "status": "implemented_and_verified_in_preview_and_layout_fixtures",
+  "ownership": {
+    "platform": ["start", "practice_restart", "recovery", "competitive_clock", "messages", "results", "ranking", "expanded_view"],
+    "unity": ["board", "confirmed_score", "gameplay_effects", "direction_input"],
+    "competitive_authority": "server"
+  },
+  "tests": {
+    "targeted": { "passed": 80, "failed": 0, "files": 7, "new_tests": 18, "report": "artifacts/2048-platform-gui/targeted-tests.json" },
+    "index_sources": { "passed": 80, "failed": 0, "report": "artifacts/2048-platform-gui/index-tests.json" },
+    "typescript": "PASS",
+    "affected_file_lint": "PASS",
+    "production_build": { "status": "PASS", "exit_code": 0, "next_version": "16.3.8", "bundler": "webpack", "static_pages": 60, "output": ".next/2048-platform-gui-061", "external_services": "local_placeholders", "log": "artifacts/2048-platform-gui/build.log" }
+  },
+  "browser": {
+    "practice": {
+      "url": "http://127.0.0.1:3080/play",
+      "unity_build": "unity-2048-005",
+      "checks": ["expand_before_start", "explicit_start_while_expanded", "keyboard_move_and_merge_score_4", "change_view_without_new_start", "mobile_resize_preserves_score_4", "platform_restart_score_4_to_0", "normal_desktop_complete_board", "normal_mobile_complete_board", "expanded_landscape_complete_board"],
+      "layout_observations": 8,
+      "report": "artifacts/2048-platform-gui/practice-browser.json"
+    },
+    "competitive_layout_fixtures": {
+      "source": "real_host_JSX_and_CSS_with_supplied_hook_state",
+      "capsule_executed": false,
+      "authenticated": false,
+      "database_used": false,
+      "states": ["start", "active", "recovery", "timeout", "no_moves", "abandoned", "loading", "load_error"],
+      "views": ["normal", "expanded"],
+      "viewports": [[1280, 720], [390, 844], [844, 390]],
+      "checks": 48,
+      "overlaps": 0,
+      "horizontal_overflows": 0,
+      "expanded_control_or_frame_visibility_failures": 0,
+      "report": "artifacts/2048-platform-gui/competitive-layout-browser.json"
+    },
+    "screenshots": ["artifacts/2048-platform-gui/desktop-expanded-score.png", "artifacts/2048-platform-gui/desktop-normal-playing.png", "artifacts/2048-platform-gui/mobile-expanded-playing.png", "artifacts/2048-platform-gui/mobile-expanded-reset.png", "artifacts/2048-platform-gui/mobile-normal.png", "artifacts/2048-platform-gui/landscape-expanded.png", "artifacts/2048-platform-gui/fixture-mobile-result.png"]
+  },
+  "preserved": ["Unity_projects_and_assets", "other_game_WIP", "runtime_build_registry_WIP", "database", "Flow", "operational_container_3081"],
+  "limits": ["iframe_Escape_and_focus_pending_07.1", "operational_incorporation_pending_11.1", "authenticated_competitive_E2E_pending_04.4", "physical_phone_and_human_acceptance_pending", "normal_landscape_page_can_scroll", "main_not_integrated"],
+  "next_task": "G2048-07.1"
+}

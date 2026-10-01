@@ -11,18 +11,18 @@ export interface Unity2048State {
   locked: boolean; can_restart: boolean; mode: 'practice' | 'tournament'
   message: string; time_left_seconds: number
   started: boolean
+  can_recover?: boolean
   result_status?: 'completed' | 'abandoned'
   end_reason?: string | null
 }
 export interface TournamentUnityConfig { startUrl: string; moveUrl: string; timeoutUrl: string; existingGameId?: string; leaderboardUrl?: string }
 type JsonRequest = (url: string, body?: unknown) => Promise<Record<string, unknown>>
 const directions = new Set(['up', 'down', 'left', 'right'])
-export function parseUnity2048Input(data: unknown): 'ready' | 'restart' | Direction | null {
+export function parseUnity2048Input(data: unknown): 'ready' | Direction | null {
   if (!data || typeof data !== 'object') return null
   const x = data as Record<string, unknown>
   if (x.channel !== UNITY_2048_CHANNEL || x.version !== 1) return null
   if (x.type === 'game.ready' && x.build_id === UNITY_2048_BUILD) return 'ready'
-  if (x.type === 'game.restart') return 'restart'
   if (x.type === 'game.input' && typeof x.direction === 'string' && directions.has(x.direction)) return x.direction as Direction
   return null
 }
@@ -53,9 +53,11 @@ export class Unity2048Session {
     this.clock = new ServerGameClock(monotonicNow)
     this.state = { cells: Array(16).fill(0), score: 0, move_number: 2, game_over: false,
       locked: true, can_restart: !config, mode: config ? 'tournament' : 'practice',
-      message: config ? 'Pulsa Iniciar partida cuando estés listo.' : 'Práctica gratuita · sin premios', time_left_seconds: -1, started: false }
+      message: 'Pulsa Iniciar partida cuando estés listo.', time_left_seconds: -1, started: false }
   }
-  snapshot() { return { ...this.state, cells: [...this.state.cells] } }
+  snapshot() { return { ...this.state, cells: [...this.state.cells],
+    can_recover: !!this.config && !this.busy && !this.stopped && !this.state.game_over &&
+      (this.moveUncertain || this.timeoutUncertain || (!!this.config.existingGameId && !this.state.started)) } }
   private emit() { this.publish(this.snapshot()) }
   private updateClock() {
     this.state.time_left_seconds = this.clock.remainingSeconds()

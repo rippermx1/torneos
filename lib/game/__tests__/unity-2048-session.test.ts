@@ -65,5 +65,6 @@ describe('Unity 2048 platform session',()=>{
     expect(parseUnity2048Input(e)).toBe('ready');expect(parseUnity2048Input({...e,build_id:'old'})).toBeNull()
     expect(parseUnity2048Input({...e,type:'game.input',direction:'diagonal'})).toBeNull()
     expect(parseUnity2048Input({...e,type:'game.input',direction:'left',channel:'foreign'})).toBeNull()
+    expect(parseUnity2048Input({...e,type:'game.restart'})).toBeNull()
   })
 })

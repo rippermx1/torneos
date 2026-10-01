@@ -1,0 +1,154 @@
+# Contexto para continuar — TorneosPlay
+
+Fecha: 2026-09-30. Este documento resume decisiones y entrega local; al retomar,
+verifica Git, procesos y configuración antes de asumir que siguen iguales.
+
+## Dónde continuar
+
+Abrir un chat nuevo dentro del proyecto **torneos**, en la carpeta local existente
+`C:/torneos`. Este chat de origen estaba asociado a `C:/play-games`; el cambio de
+producto y de carpeta ya está resuelto y no requiere volver a migrar los archivos.
+
+- Rama de trabajo: `codex/unity-games-migration`.
+- Commit de la entrega de juegos: `df6d463`.
+- `main` sigue en `6308515`; la migración todavía no está integrada en `main`.
+- El árbol estaba limpio antes de añadir este documento.
+
+Usar la copia local actual: contiene proyectos Unity, assets comerciales permitidos
+para trabajo local y builds que están ignorados por Git. Un checkout desde `main`
+no incluye la migración; un worktree nuevo tampoco recupera automáticamente esos
+archivos ignorados. No crear otra copia del juego para retomar este trabajo.
+
+## Decisiones del propietario
+
+**La web pública es el producto comercial; los juegos son las herramientas con las
+que los usuarios participan en torneos.** El foco de negocio incluye descubrir un
+torneo, entender reglas/coste/premio, inscribirse, jugar y consultar resultados.
+
+Se eligió TorneosPlay como base porque ya tiene cuentas, torneos, inscripciones,
+Flow y contabilidad implementados. Se conserva el monolito modular
+Next.js/Supabase/Flow y se incorporan clientes Unity por juego. No trasladar a Unity
+la plataforma comercial ni volver a implementar pagos por seguir el backlog antiguo.
+La presencia de código de una integración no equivale a su validación productiva.
+
+El propietario autorizó trasladar Alien Run desde `C:/play-games` y crear 2048 en
+Unity con arte 2D generado con GPT. El origen permanece completo como referencia;
+el trabajo nuevo de plataforma y juegos continúa en `C:/torneos`.
+
+## Qué está entregado
+
+| Área | Situación actual |
+| --- | --- |
+| Plataforma | Se conservan cuentas, dominio comercial y APIs existentes. Esta migración no ejecutó cobros, cambios de DB ni despliegues. |
+| 2048 Unity | Proyecto real `games/2048/UnityProject`, Unity 6000.3.24f1, escena jugable, teclado, deslizamiento, controles y arte original generado con IA. Build `unity-2048-002`, 15.818.967 bytes. |
+| Alien Run | Proyecto real `games/alien-run/UnityProject`, fuentes/escena/SDK/metadata preservados. Snapshot `level-030` / `practice-v10`; 4437 archivos transferidos y verificados por SHA256, sin conflictos. |
+| `/play` | Práctica gratuita de 2048 Unity. No escribe partidas en DB. |
+| `/play/web` | Cliente ligero anterior de 2048, conservado. |
+| `/play/alien-run` | Alien Run como práctica gratuita; su resultado local no participa en rankings con premios. |
+| `/play/unity` | Redirige a `/play`. |
+| `/tournaments/[id]/play/unity` | Cliente Unity competitivo optativo sobre las APIs actuales, con reglas de acceso existentes. E2E autenticado en staging pendiente. |
+| `/tournaments/[id]/play` | Cliente competitivo anterior, conservado durante la validación de Unity. |
+
+2048 Unity comunica direcciones. El servidor mantiene tablero y puntuación de la
+partida competitiva; el cliente no envía una puntuación que deba aceptarse como
+confiable. Ante una petición de resultado incierto se detiene el envío y se recupera
+la sesión mediante recarga, sin repetir movimientos a ciegas.
+
+Alien Run conserva la build de desarrollo del origen, de aproximadamente 116 MB.
+Su integración nueva es de práctica: no hay validación competitiva servidor ni
+elegibilidad para premios. El modelo comercial actual sigue teniendo datos y
+desempates específicos de 2048; incorporar otro juego competitivo requiere abordar
+reglas, persistencia e integridad de ese juego.
+
+## Evidencia y límites
+
+La entrega de migración ejecutó:
+
+- Plataforma: 242/242 pruebas en 35 archivos; TypeScript y lint de archivos afectados.
+- Unity 2048: 8/8 EditMode, 1/1 PlayMode y compilación WebGL real.
+- Compilación Next final con webpack/standalone, exit 0.
+- HTTP: hashes de builds, gzip, MIME y encabezados de iframe verificados.
+- Navegador: 2048 con movimiento, puntuación, reinicio, deslizamiento en viewport
+  móvil y ampliar/volver; Alien Run con carga, handshake, inicio y controles.
+
+No se ejecutó el torneo Unity autenticado completo en staging, la llegada de Alien
+Run desde el nuevo host ni una prueba en teléfono físico. La vista móvil fue una
+emulación. Ampliar juego usa el viewport mediante CSS; el fullscreen nativo ocultó
+el canvas en el navegador integrado y se sustituyó por esa solución verificada.
+
+Estos resultados son evidencia del incremento anterior, no pruebas repetidas por
+la creación de este documento. Detalle versionado: `docs/UNITY-MIGRATION-EVIDENCE.json`.
+Logs, informes y capturas locales: `artifacts/unity-2048`, `artifacts/http-*.json` y
+`artifacts/alien-run-transfer.json`. Las pruebas técnicas no representan aceptación
+humana, validación legal ni autorización de publicación.
+
+## Siguiente trabajo candidato
+
+Retomar el enfoque de la **web pública como producto**. Revisar primero lo que ya
+existe y el backlog disponible, evitando duplicar capacidades de TorneosPlay.
+
+1. Mejorar el recorrido público de descubrimiento e inscripción: catálogo,
+   disponibilidad, reglas, coste/premio y conexión entre torneo, juego y ranking.
+   Elegir un incremento pequeño y observable a partir del recorrido actual.
+2. Validar 2048 Unity con cuentas y DB de staging: acceso, inicio, movimientos,
+   recuperación de sesión, duración y ranking. Solo después decidir si sustituye
+   al cliente competitivo predeterminado. No usar producción para esta prueba.
+3. Preparar varios juegos competitivos mediante reglas servidor y datos por juego.
+   Mientras esa integración no exista, conservar Alien Run como práctica gratuita.
+4. Optimizar la entrega de Alien Run y verificar los dos juegos en dispositivos
+   físicos antes de afirmar preparación de esa experiencia para publicación.
+
+Son opciones de continuidad, no nuevos tickets cerrados ni una aprobación para
+operar dinero o desplegar. No hace falta terminar una épica para mejorar la web.
+
+## Lectura y operación mínima
+
+Leer `AGENTS.md`, `README.md` y `docs/STATUS.md`; luego este documento y los
+contratos relevantes de `docs/UNITY-GAMES.md`. Consultar
+`games/2048/README.md` o `games/alien-run/README.md` solo según el cambio elegido.
+
+```powershell
+# Ejecutar desde C:/torneos y revisar cambios antes de editar.
+git status --short
+git branch --show-current
+
+# Vista local de los juegos con configuración aislada de producción.
+# Comprobar primero si 127.0.0.1:3080 ya está en uso.
+npm run dev:games
+
+# Según el alcance del siguiente incremento:
+npm test
+node node_modules/typescript/bin/tsc --noEmit --incremental false
+npm run games:build:2048
+```
+
+Vista local: `http://127.0.0.1:3080/play` y
+`http://127.0.0.1:3080/play/alien-run`. La configuración de `dev:games` sirve para
+práctica y entrega WebGL; no demuestra integración de autenticación/Flow/Supabase.
+No recompilar Unity ni repetir toda la suite solo para recuperar contexto.
+
+Unity disponible al cerrar: `C:/Program Files/Unity/Hub/Editor/6000.3.24f1-x86_64/Editor/Unity.exe`.
+Conservar `.meta`, `Packages` y `ProjectSettings`: los proyectos reales son la
+fuente de los juegos. El SDK compartido está en `packages/unity-sdk`; sincronizar
+cambios de su consumidor explícitamente, sin sobrescribir a ciegas.
+
+Las builds se publican **localmente** con `scripts/publish-unity.mjs`, usando IDs
+inmutables. `scripts/migrate-alien-run.mjs` sirve solo para adoptar un delta
+intencional del origen y rechaza conflictos; no es necesario volver a ejecutarlo.
+
+Aplican los límites de `AGENTS.md`: no confiar en puntuaciones del navegador ni
+confundir movimientos/semillas/hashes con prueba de participación humana; preservar
+trabajo ajeno; no modificar DB, Flow, recursos externos o despliegues por la migración.
+No imprimir credenciales de `.env.local`. KayKit/LocalArt permanecen locales e
+ignorados: no enviarlos a IA ni repositorios públicos. El arte original de 2048
+tiene procedencia en `games/2048/ART-PROVENANCE.json`.
+
+## Mensaje sugerido para el nuevo chat
+
+> Continúa en C:/torneos usando la copia local y la rama actual
+> codex/unity-games-migration. Lee AGENTS.md, README.md, docs/STATUS.md y
+> docs/CONTEXTO-PARA-CONTINUAR.md. TorneosPlay es el producto comercial y los juegos
+> son herramientas para participar en torneos. La migración local de Alien Run y
+> 2048 Unity ya está entregada; retoma el enfoque de negocio de la web pública,
+> revisa lo que existe y determina el siguiente incremento útil sin duplicar
+> funciones implementadas. Conserva los límites y distingue lo probado de lo pendiente.

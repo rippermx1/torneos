@@ -125,3 +125,7 @@ npm run dev:games
 Vista local sin credenciales productivas: [juegos](http://127.0.0.1:3080/play),
 [Alien Run](http://127.0.0.1:3080/play/alien-run). No ejecuta cobros ni despliegues.
 Estado y límites: `docs/STATUS.md`; arquitectura: `docs/UNITY-GAMES.md`.
+
+Para retomar en un chat del proyecto **torneos**, usa la carpeta local actual y lee
+[el contexto de continuidad](docs/CONTEXTO-PARA-CONTINUAR.md). Incluye la rama que
+contiene la migración, las decisiones del propietario y los pendientes verificados.

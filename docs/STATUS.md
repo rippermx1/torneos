@@ -51,3 +51,11 @@ origen, usa el script de transferencia y revisa conflictos antes de adoptarlo.
 
 Compilación y pruebas técnicas no equivalen a aceptación del propietario/usuarios,
 validación legal, integración de dinero ni autorización de publicación.
+
+## Continuidad del trabajo
+
+Para el próximo chat, usar el proyecto **torneos** y la copia local `C:/torneos` en
+`codex/unity-games-migration`. La entrega `df6d463` aún no está integrada en `main`;
+las builds y assets locales ignorados también deben conservarse. Decisiones,
+evidencia, límites y mensaje para retomar en
+[CONTEXTO-PARA-CONTINUAR.md](CONTEXTO-PARA-CONTINUAR.md).

@@ -1,0 +1,702 @@
+{
+  "date": "2026-10-02",
+  "task": "G2048-11.1",
+  "status": "DONE_TECHNICALLY_VERIFIED_LOCAL",
+  "gap": "A05",
+  "branch": "codex/2048-clean-gameplay",
+  "source_commit": "afb1fbd3c2cc439d6beac1c075c47698d10d6945",
+  "main_merge": "NOT_RUN",
+  "base": "http://127.0.0.1:3081",
+  "build": "unity-2048-007",
+  "operative_registry": {
+    "2048": "unity-2048-007",
+    "alien-run": "level-030",
+    "snake-arena": "snake-arena-006",
+    "factory-empire": "factory-empire-014"
+  },
+  "shared_registry": {
+    "2048": "unity-2048-007",
+    "alien-run": "level-030",
+    "snake-arena": "snake-arena-009",
+    "factory-empire": "factory-empire-3d-001"
+  },
+  "image": {
+    "active_tag": "torneos-app:g2048-007-20261002191810",
+    "default_alias": "torneos-app:local",
+    "id": "sha256:377066cba2bf7ef7ab16a39ec82cc8bb4eccf7d522c13f752442f601b2250579",
+    "rollback_tag": "torneos-app:g2048-before-20261002191810",
+    "rollback_id": "sha256:31e8c65f9f2c3240be6aa77050bb77b253f56eec0082d2a8e51b73d1358a549e",
+    "rollback_executed": false
+  },
+  "packaging": {
+    "context": "artifacts/2048-integration/context",
+    "files": 316,
+    "derivatives": [
+      "operative registry pins Snake 006 without changing workspace 009",
+      "ongoing Snake missions excluded in snapshot only",
+      "009 cosmetic selector hidden for 006 renderer in snapshot only",
+      "Snake server and startup copied byte for byte from prior image"
+    ],
+    "unrelated_wip": "preserved and excluded from 2048 source commit",
+    "rebuild_from_clean_commit": "requires reconciliation of existing infrastructure/other-game WIP"
+  },
+  "tests": {
+    "web": {
+      "passed": 533,
+      "total": 533,
+      "files": 62
+    },
+    "lint": "PASS",
+    "docker_build": "PASS",
+    "typescript": "PASS",
+    "static_pages": 65,
+    "unity": {
+      "recompiled": false,
+      "reference": "2048-ACCESSIBILITY-EVIDENCE.json",
+      "editmode": 14,
+      "playmode": 4
+    }
+  },
+  "http": {
+    "passed": 34,
+    "checks": [
+      {
+        "route": "/play",
+        "status": 200,
+        "framing": "DENY"
+      },
+      {
+        "route": "/play",
+        "check": "host and capsule version synchronized",
+        "scripts": 14
+      },
+      {
+        "route": "/play/ted-runner",
+        "status": 200,
+        "framing": "DENY"
+      },
+      {
+        "route": "/play/snake-arena",
+        "status": 200,
+        "framing": "DENY"
+      },
+      {
+        "route": "/play/factory-empire",
+        "status": 200,
+        "framing": "DENY"
+      },
+      {
+        "route": "/tournaments",
+        "status": 200,
+        "framing": "DENY"
+      },
+      {
+        "route": "/play/alien-run",
+        "status": 308,
+        "destination": "/play/ted-runner"
+      },
+      {
+        "route": "/games/2048/unity-2048-007/index.html",
+        "status": 200,
+        "bytes": 2483,
+        "sha256": "d150a9b7c776d9dd77edefd1a6365b3baeba0d811389055c48b4a55fc7f7956c",
+        "mime": "text/html; charset=UTF-8",
+        "framing": "SAMEORIGIN"
+      },
+      {
+        "route": "/games/2048/unity-2048-007/index.html",
+        "status": 304,
+        "check": "conditional cache revalidation"
+      },
+      {
+        "route": "/games/2048/unity-2048-007/Build/unity-2048-007.loader.js",
+        "status": 200,
+        "bytes": 26983,
+        "sha256": "ded3daace7ac1498a2b13729325f9c598200024e86ec8202bc5fc94dcf9ecf37",
+        "mime": "application/javascript; charset=UTF-8",
+        "framing": "DENY"
+      },
+      {
+        "route": "/games/2048/unity-2048-007/Build/unity-2048-007.data.gz",
+        "status": 200,
+        "bytes": 7372283,
+        "sha256": "1807e6fee033e397c5f836eaff77ee523d28eb25ca5eeca948221d76b74ee6a5",
+        "mime": "application/octet-stream",
+        "encoding": "gzip",
+        "unpackedBytes": 13334332,
+        "framing": "DENY"
+      },
+      {
+        "route": "/games/2048/unity-2048-007/Build/unity-2048-007.framework.js.gz",
+        "status": 200,
+        "bytes": 82989,
+        "sha256": "69ffb1280d63104d645b4266b6ff5f2d88f8bdc463e96b86e50200d334ec9b18",
+        "mime": "application/javascript",
+        "encoding": "gzip",
+        "unpackedBytes": 420947,
+        "framing": "DENY"
+      },
+      {
+        "route": "/games/2048/unity-2048-007/Build/unity-2048-007.wasm.gz",
+        "status": 200,
+        "bytes": 10077657,
+        "sha256": "0fcb1743c4a24f4d2ee97049f6573ae0c4e8bef315628ca1f79f61de5f710802",
+        "mime": "application/wasm",
+        "encoding": "gzip",
+        "unpackedBytes": 39426168,
+        "framing": "DENY"
+      },
+      {
+        "route": "/games/2048/unity-2048-007/build-manifest.json",
+        "status": 200,
+        "bytes": 190,
+        "sha256": "50d80863ac03ea51bf270ebaadb8dbdf56eb29ef0e30fd17a1d07b54f9fc5632",
+        "mime": "application/json; charset=UTF-8",
+        "framing": "DENY"
+      },
+      {
+        "route": "/games/alien-run/level-030/index.html",
+        "status": 200,
+        "bytes": 2718,
+        "sha256": "16ac83092453a666ba8aa10b3826b5e89bab9d451e292b77fea5b5adbd612e30",
+        "mime": "text/html; charset=UTF-8",
+        "framing": "SAMEORIGIN"
+      },
+      {
+        "route": "/games/alien-run/level-030/Build/level-030.loader.js",
+        "status": 200,
+        "bytes": 58343,
+        "sha256": "f764f104677b61cebdcc31d99ce23505d9ba157792c053654701cbb47cd5ab0c",
+        "mime": "application/javascript; charset=UTF-8",
+        "framing": "DENY"
+      },
+      {
+        "route": "/games/alien-run/level-030/Build/level-030.data",
+        "status": 200,
+        "bytes": 15535307,
+        "sha256": "cd214444f1408369627f349dc77393977db1a5dd0994309ea75dd6b1b7709938",
+        "mime": "application/octet-stream",
+        "framing": "DENY"
+      },
+      {
+        "route": "/games/alien-run/level-030/Build/level-030.framework.js",
+        "status": 200,
+        "bytes": 814099,
+        "sha256": "f7e9a19f5f444c48ff1610273a1482b35f005e0510f81ecfb2831317b792c7d4",
+        "mime": "application/javascript; charset=UTF-8",
+        "framing": "DENY"
+      },
+      {
+        "route": "/games/alien-run/level-030/Build/level-030.wasm",
+        "status": 200,
+        "bytes": 99696172,
+        "sha256": "38e3b7fa43a1ec09008480893b8c1ce6f3838fb2f2e2bac5c98063f189cd359b",
+        "mime": "application/wasm",
+        "framing": "DENY"
+      },
+      {
+        "route": "/games/snake-arena/snake-arena-006/index.html",
+        "status": 200,
+        "bytes": 2852,
+        "sha256": "3998e7cb9e5c33efc38ea36605029dd6fe6c5a485e6cefe287166172a27133b9",
+        "mime": "text/html; charset=UTF-8",
+        "framing": "SAMEORIGIN"
+      },
+      {
+        "route": "/games/snake-arena/snake-arena-006/Build/snake-arena-006.loader.js",
+        "status": 200,
+        "bytes": 26983,
+        "sha256": "db5ca781d5ed4819a4e8e979941caa694b0d721a524436cffbf1cae7f3e2e07d",
+        "mime": "application/javascript; charset=UTF-8",
+        "framing": "DENY"
+      },
+      {
+        "route": "/games/snake-arena/snake-arena-006/Build/snake-arena-006.data.gz",
+        "status": 200,
+        "bytes": 3881922,
+        "sha256": "d3d3a2627cd269508c535243bfbae314ad92267a4835c4f40ef5fd7b60e58840",
+        "mime": "application/octet-stream",
+        "encoding": "gzip",
+        "unpackedBytes": 9273198,
+        "framing": "DENY"
+      },
+      {
+        "route": "/games/snake-arena/snake-arena-006/Build/snake-arena-006.framework.js.gz",
+        "status": 200,
+        "bytes": 83412,
+        "sha256": "8865b0f64293fa413bfb6cc3a948c22a305b6162d5c1f377d37d71b136e211a7",
+        "mime": "application/javascript",
+        "encoding": "gzip",
+        "unpackedBytes": 421888,
+        "framing": "DENY"
+      },
+      {
+        "route": "/games/snake-arena/snake-arena-006/Build/snake-arena-006.wasm.gz",
+        "status": 200,
+        "bytes": 9937243,
+        "sha256": "7b3bddb03e9950a1040e26031764c4737c7eef87c9f96528e23dcbbd448501db",
+        "mime": "application/wasm",
+        "encoding": "gzip",
+        "unpackedBytes": 38800835,
+        "framing": "DENY"
+      },
+      {
+        "route": "/games/snake-arena/snake-arena-006/build-manifest.json",
+        "status": 200,
+        "bytes": 95,
+        "sha256": "12c8d3e0dea48ec27d51c3815b5addf078cdebc8eb3d7602b0aafffe3794f454",
+        "mime": "application/json; charset=UTF-8",
+        "framing": "DENY"
+      },
+      {
+        "route": "/games/factory-empire/factory-empire-014/index.html",
+        "status": 200,
+        "bytes": 3376,
+        "sha256": "5d3f4898661341c7331ed4c77032b13a2ee65e61adaa0d7cda04a0c5c125f4a3",
+        "mime": "text/html; charset=UTF-8",
+        "framing": "SAMEORIGIN"
+      },
+      {
+        "route": "/games/factory-empire/factory-empire-014/Build/factory-empire-014.loader.js",
+        "status": 200,
+        "bytes": 26983,
+        "sha256": "1a0b00f9a5a2657f081a600077e63e94918556289b15424ea440ef35a80c97d7",
+        "mime": "application/javascript; charset=UTF-8",
+        "framing": "DENY"
+      },
+      {
+        "route": "/games/factory-empire/factory-empire-014/Build/factory-empire-014.data.gz",
+        "status": 200,
+        "bytes": 9121196,
+        "sha256": "4fcc9b104be4e5da540eb6c7c1e12cfe458ad9cadbb67fccd03492d079e83bb0",
+        "mime": "application/octet-stream",
+        "encoding": "gzip",
+        "unpackedBytes": 15309975,
+        "framing": "DENY"
+      },
+      {
+        "route": "/games/factory-empire/factory-empire-014/Build/factory-empire-014.framework.js.gz",
+        "status": 200,
+        "bytes": 83096,
+        "sha256": "52a49788dbf25e136fcd9ec90d5388cd86c0379a54d889821450e17b76128231",
+        "mime": "application/javascript",
+        "encoding": "gzip",
+        "unpackedBytes": 422227,
+        "framing": "DENY"
+      },
+      {
+        "route": "/games/factory-empire/factory-empire-014/Build/factory-empire-014.wasm.gz",
+        "status": 200,
+        "bytes": 10105717,
+        "sha256": "a543cc1ce557d5b63bf4f50cc7bf574049401dede2abb3a5674d18aceb3809a2",
+        "mime": "application/wasm",
+        "encoding": "gzip",
+        "unpackedBytes": 39480417,
+        "framing": "DENY"
+      },
+      {
+        "route": "/games/factory-empire/factory-empire-014/build-manifest.json",
+        "status": 200,
+        "bytes": 181,
+        "sha256": "ded63c61b800d262c11b8aa88a7f39b07224cc4d9ddb463ed5d60e5e5e38bb29",
+        "mime": "application/json; charset=UTF-8",
+        "framing": "DENY"
+      },
+      {
+        "route": "/games/snake-arena/competition/index.html",
+        "status": 200
+      },
+      {
+        "route": "/admin",
+        "status": 307,
+        "check": "anonymous access remains protected"
+      },
+      {
+        "route": "/snake-arena/health",
+        "status": 200,
+        "health": {
+          "mode": "anonymous_local_practice",
+          "rooms": 0,
+          "ccu": 0,
+          "maxPlayers": 16,
+          "maxRooms": 8
+        }
+      }
+    ]
+  },
+  "browser": [
+    {
+      "check": "cold load before explicit start",
+      "observation": {
+        "active": "BODY",
+        "frame": "/games/2048/unity-2048-007/index.html",
+        "status": "Pulsa Iniciar partida cuando estés listo."
+      }
+    },
+    {
+      "check": "arrow movement",
+      "observation": {
+        "caption": "Tablero confirmado · puntaje 0",
+        "cells": [
+          "Vacía",
+          "Vacía",
+          "Vacía",
+          "Vacía",
+          "2",
+          "Vacía",
+          "Vacía",
+          "Vacía",
+          "2",
+          "2",
+          "Vacía",
+          "Vacía",
+          "Vacía",
+          "Vacía",
+          "Vacía",
+          "Vacía"
+        ]
+      }
+    },
+    {
+      "check": "arrow fusion",
+      "observation": {
+        "caption": "Tablero confirmado · puntaje 4",
+        "cells": [
+          "4",
+          "2",
+          "Vacía",
+          "Vacía",
+          "Vacía",
+          "Vacía",
+          "Vacía",
+          "Vacía",
+          "Vacía",
+          "Vacía",
+          "Vacía",
+          "Vacía",
+          "Vacía",
+          "2",
+          "Vacía",
+          "Vacía"
+        ]
+      }
+    },
+    {
+      "check": "WASD direction",
+      "observation": {
+        "caption": "Tablero confirmado · puntaje 4",
+        "cells": [
+          "Vacía",
+          "2",
+          "4",
+          "2",
+          "Vacía",
+          "Vacía",
+          "Vacía",
+          "Vacía",
+          "Vacía",
+          "Vacía",
+          "Vacía",
+          "Vacía",
+          "Vacía",
+          "Vacía",
+          "Vacía",
+          "2"
+        ]
+      }
+    },
+    {
+      "check": "desktop expanded layout",
+      "observation": {
+        "caption": "Tablero confirmado · puntaje 4",
+        "frame": {
+          "bottom": 516,
+          "height": 448,
+          "left": 460.8000183105469,
+          "right": 819.2000122070312,
+          "top": 68,
+          "width": 358.3999938964844,
+          "x": 460.8000183105469,
+          "y": 68
+        },
+        "height": 720,
+        "overflow": false,
+        "width": 1280
+      }
+    },
+    {
+      "check": "Escape from Unity",
+      "observation": {
+        "active": "Ampliar juego",
+        "caption": "Tablero confirmado · puntaje 4",
+        "modal": false
+      }
+    },
+    {
+      "check": "practice restart",
+      "observation": {
+        "caption": "Tablero confirmado · puntaje 0",
+        "frame": "/games/2048/unity-2048-007/index.html",
+        "tiles": 2
+      }
+    },
+    {
+      "check": "mobile expanded layout",
+      "observation": {
+        "cells": [
+          "Vacía",
+          "2",
+          "Vacía",
+          "Vacía",
+          "Vacía",
+          "Vacía",
+          "Vacía",
+          "Vacía",
+          "2",
+          "Vacía",
+          "Vacía",
+          "Vacía",
+          "Vacía",
+          "Vacía",
+          "Vacía",
+          "Vacía"
+        ],
+        "frame": {
+          "bottom": 567.4875183105469,
+          "height": 457.9875183105469,
+          "left": 12,
+          "right": 378.3875122070313,
+          "top": 109.5,
+          "width": 366.3875122070313,
+          "x": 12,
+          "y": 109.5
+        },
+        "height": 844,
+        "overflow": false,
+        "width": 390
+      }
+    },
+    {
+      "check": "mobile drag accepted",
+      "observation": {
+        "caption": "Tablero confirmado · puntaje 0",
+        "cells": [
+          "2",
+          "2",
+          "Vacía",
+          "Vacía",
+          "Vacía",
+          "Vacía",
+          "Vacía",
+          "Vacía",
+          "2",
+          "Vacía",
+          "Vacía",
+          "Vacía",
+          "Vacía",
+          "Vacía",
+          "Vacía",
+          "Vacía"
+        ]
+      }
+    },
+    {
+      "check": "landscape expanded layout",
+      "observation": {
+        "caption": "Tablero confirmado · puntaje 0",
+        "frame": {
+          "bottom": 276.7875061035156,
+          "height": 216.7875061035156,
+          "left": 335.2749938964844,
+          "right": 508.7124938964844,
+          "top": 60,
+          "width": 173.4375,
+          "x": 335.2749938964844,
+          "y": 60
+        },
+        "height": 390,
+        "overflow": false,
+        "width": 844
+      }
+    },
+    {
+      "check": "warm reload requires explicit start",
+      "observation": {
+        "active": "BODY",
+        "frame": "/games/2048/unity-2048-007/index.html",
+        "text": "Pulsa Iniciar partida cuando estés listo."
+      }
+    },
+    {
+      "check": "Ted Runner practice start",
+      "observation": {
+        "buttons": [
+          "Partida en curso",
+          "Ampliar juego"
+        ],
+        "frame": "/games/alien-run/level-030/index.html"
+      }
+    },
+    {
+      "check": "Snake operative renderer and admission",
+      "observation": {
+        "frame": "/games/snake-arena/snake-arena-006/index.html",
+        "authenticated_admission": "unavailable without existing practice secret"
+      }
+    },
+    {
+      "check": "Factory renderer loads with reference environment limit",
+      "observation": {
+        "alert": "Factory Empire requiere su entorno de referencia local.",
+        "frame": "/games/factory-empire/factory-empire-014/index.html"
+      }
+    },
+    {
+      "check": "Tab returns to host control",
+      "observation": {
+        "active": "SUMMARY",
+        "text": "Consultar tablero"
+      }
+    },
+    {
+      "check": "expanded dialog bounds and background isolated",
+      "observation": {
+        "dialog": {
+          "bottom": 720,
+          "height": 720,
+          "left": 0,
+          "right": 1280,
+          "top": 0,
+          "width": 1280,
+          "x": 0,
+          "y": 0
+        },
+        "frame": "/games/2048/unity-2048-007/index.html"
+      }
+    }
+  ],
+  "preservation": {
+    "critical_config": true,
+    "networks": true,
+    "mounts": true,
+    "other_containers": true,
+    "snake_runtime_sha256": "dc06c2384e4d6a83c68b4ae011bc44c30bbbab7406f5f784d7aca18fdd71a784",
+    "public_tables_unchanged": 26,
+    "total_tables_compared": 50,
+    "auth_identities_and_mfa_unchanged": true,
+    "auth_refresh": {
+      "changed_tables": [
+        "auth.audit_log_entries",
+        "auth.refresh_tokens",
+        "auth.sessions",
+        "auth.users"
+      ],
+      "observed_audit_actions": [
+        "token_refreshed",
+        "token_revoked"
+      ],
+      "accounts_before": "40",
+      "accounts_after": "40",
+      "sessions_before": "51",
+      "sessions_after": "51",
+      "browser_session": "continued authenticated"
+    },
+    "flow_operations": "NOT_RUN",
+    "migrations_seed_reset": "NOT_RUN",
+    "public_tables_immediately_after_activation_unchanged": 27,
+    "scheduled_jobs": {
+      "table": "public.cron_heartbeats",
+      "unchanged": false,
+      "observation": "Existing flow-reconcile, reconcile-refunds and process-tournaments jobs ran at 19:40 UTC with status ok; not invoked or reconfigured by this task"
+    }
+  },
+  "other_games": {
+    "ted": "level-030 loads and starts practice; full arrival not recertified",
+    "snake": {
+      "renderer": "006 loaded",
+      "socket": {
+        "checks": [
+          {
+            "type": "welcome",
+            "room": "670e0d8e-cf60-41ae-86ce-f6f763b4273e",
+            "authenticated": false
+          },
+          {
+            "type": "snapshot",
+            "tick": 1,
+            "ack": 1,
+            "players": 1
+          }
+        ],
+        "after": {
+          "mode": "anonymous_local_practice",
+          "rooms": 0,
+          "ccu": 0,
+          "maxPlayers": 16,
+          "maxRooms": 8
+        }
+      },
+      "authenticated_practice": "existing missing SNAKE_PRACTICE_SECRET"
+    },
+    "factory": {
+      "renderer": "014 loaded",
+      "reference_api": "existing production-local 503"
+    },
+    "prior_image_handlers": {
+      "factory": {
+        "status": 503,
+        "body": {
+          "detail": "Factory Empire requiere su entorno de referencia local."
+        }
+      },
+      "snake": {
+        "status": 503,
+        "body": {
+          "code": "practice_unavailable"
+        }
+      }
+    }
+  },
+  "build_sha256": {
+    "Build/unity-2048-007.data.gz": "1807e6fee033e397c5f836eaff77ee523d28eb25ca5eeca948221d76b74ee6a5",
+    "Build/unity-2048-007.framework.js.gz": "69ffb1280d63104d645b4266b6ff5f2d88f8bdc463e96b86e50200d334ec9b18",
+    "Build/unity-2048-007.loader.js": "ded3daace7ac1498a2b13729325f9c598200024e86ec8202bc5fc94dcf9ecf37",
+    "Build/unity-2048-007.wasm.gz": "0fcb1743c4a24f4d2ee97049f6573ae0c4e8bef315628ca1f79f61de5f710802",
+    "build-manifest.json": "50d80863ac03ea51bf270ebaadb8dbdf56eb29ef0e30fd17a1d07b54f9fc5632",
+    "index.html": "d150a9b7c776d9dd77edefd1a6365b3baeba0d811389055c48b4a55fc7f7956c"
+  },
+  "source_sha256": {
+    "components/game/unity-2048.tsx": "5f192e4c1362b5c0405c76c3a3e6e2bb678a308bb337801121c10d6d21aa4b14",
+    "components/game/unity-2048.module.css": "5f12d8f38b5a500cbb80f566c5a5898ccfbaaa0c27aa7a34d32437ca5d1db22e",
+    "lib/game/unity-2048-navigation.ts": "5e6b52d679cd141201cf793a173d6c192df06812672392631e9f84024d55b07d",
+    "games/2048/UnityProject/Assets/WebGLTemplates/Torneos2048/index.html": "cc7f2a66e7e57e48a4e7d26ad2e853dd808ca989d2b52de0f9baf0bc77bba76d",
+    "games/2048/UnityProject/Assets/Torneos/2048/Runtime/PuzzleClient.cs": "d3dfb29fbf03ec44b64b99df7136c890cde534147af39b54d9619bf14308708c",
+    "games/2048/UnityProject/ProjectSettings/ProjectSettings.asset": "0b5daf3372a22d8e5156b0bf24eb5632c960440c21c30723c0db6a61c2c7f66f"
+  },
+  "artifact_sha256": {
+    "artifacts/2048-integration/http-checks.json": "41c639b92c95357fa7d126567fed6cda42b4405c84d8c9538d3917ccb84cad9d",
+    "artifacts/2048-integration/browser-checks.json": "7185a79e88c0ddc5d8d535632e93d6f1396c308912e2a43927426abccbb0ef30",
+    "artifacts/2048-integration/snake-socket.json": "d30882333ba0c8661f21e24c1cf8868a0c0c752e27298a0db2d5391a713a75da",
+    "artifacts/2048-integration/baseline-routes.json": "441d9c439b3b675e192436efbbc9dc4c953c155f7f1b8f7499293ae4606d10f4",
+    "artifacts/2048-integration/preservation-before.json": "f5b279915851d8a13a4c53b81de0da8a1ce3077717dc358c1eed8017ee40f4b3",
+    "artifacts/2048-integration/preservation-final.json": "62b3be9253a66159f47acbc730671ac6555284360d918a0994db28baae74d3b3",
+    "artifacts/2048-integration/context-sha256.json": "d8e35d26a3fca3bdc2ebcc3919fe776e03dcfbb3af49eac46a9c546e1b663a5c",
+    "artifacts/2048-integration/operative-builds.json": "33c0da42f8c3a845486ca1774f4f093c49a9bb2cf2498c9673b93317d054fed2",
+    "artifacts/2048-integration/compose.candidate.json": "ea5eac28bc0fcac93f377df947403be846a48c7b0f82ee46121f9664feff9fd5",
+    "artifacts/2048-integration/compose.rollback.json": "2d7099300a4656c0d8692d2ebe59d9cabe7a655acb2e01b8fc5ed4d022d4d02c",
+    "artifacts/2048-integration/activation.log": "bb1b68cd2ce139480de34116cdb6533ec00af6d9b3a2f8094abc594ca039c04e",
+    "artifacts/2048-integration/docker-build.log": "9691cb0cea7c8e5c863d5a858e54f1c25663370b750485904126f953e0ee74e3",
+    "artifacts/2048-integration/web-tests.json": "8bed053dc23e713fe9ab84161184c00ea0b60f21989d1ca18dd7c0c9ff20b974",
+    "artifacts/2048-integration/3081-final.png": "c2340e9c3b5ee29519f13d1049873a53639430d66f03cb593b363be4433cec94",
+    "artifacts/2048-integration/3081-mobile.png": "e7b48d761c0336210916029ce5fdf12b9a55f0a7135b1f3709262c9b3449d96d",
+    "artifacts/2048-integration/3081-landscape.png": "e6fe099d8ddd338da6c8c9d26d7628b47c692b8b2fffb60b93e67516c60bedcf"
+  },
+  "next": "G2048-04.4",
+  "not_closed": [
+    "authenticated competitive E2E, deadline, concurrency and ranking",
+    "human GUI and screen reader acceptance",
+    "physical mobile performance and gesture",
+    "default tournament Unity entry",
+    "main merge and external deployment"
+  ]
+}

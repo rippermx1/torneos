@@ -9,7 +9,10 @@ Integración/DB real pendiente en 04.4. **06.1 implementada** en el contenedor w
 práctica real en preview y estados competitivos con fixtures de layout.
 [Entrega y límites](2048-PLATFORM-GUI-IMPLEMENTATION.md). **07.1 implementada** en
 la candidata local `007`: [navegación y accesibilidad](2048-ACCESSIBILITY-IMPLEMENTATION.md).
-Siguiente: **11.1**, versionar e incorporar conjuntamente el candidato a 3081.
+**11.1 terminada y probada localmente**: host y cápsula `007` incorporados juntos
+a 3081, fuentes versionadas, datos/servicios preservados y retorno disponible.
+[Entrega y evidencia](2048-INTEGRATION-IMPLEMENTATION.md). Siguiente: **04.4**,
+recorrido competitivo autenticado completo sobre ese paquete.
 Los demás gaps siguen abiertos. Fixtures no equivalen a aceptación del producto.
 
 ## Orden de implementación
@@ -127,6 +130,11 @@ movimiento reducido se aplica al cargar y cambiar. No cerrar G2048-07 sólo con
 un atributo ARIA: comprobar el recorrido con lector de pantalla y lectura humana.
 
 ### 6. G2048-11.1 — incorporar la versión al stack operativo
+
+Terminado y probado en 3081 el 2026-10-02: fuentes/recursos `afb1fbd`, imagen
+local `007`, 533 pruebas web, build Docker, 34 checks HTTP y navegador real.
+Ted/Snake/Factory conservan builds operativas y límites previos. Cierra A05;
+no cierra 04.4 ni aceptación humana. [Detalle](2048-INTEGRATION-IMPLEMENTATION.md).
 
 - Conciliar y versionar únicamente el alcance autorizado, preservando WIP de Ted
   Runner, Factory Empire, SnakeArena y otros frentes. No cambiar de rama encima

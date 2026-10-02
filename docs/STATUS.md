@@ -1,5 +1,28 @@
 # Estado — TorneosPlay
 
+## Incorporación 2048 a 3081 — 2026-10-02
+
+**G2048-11.1 terminado y probado localmente**: host y cápsula `unity-2048-007`
+activos juntos en 3081. Fuentes/arte/Inter/TMP/animaciones/navegación en `afb1fbd`,
+rama `codex/2048-clean-gameplay`; WIP de otros frentes preservado, sin merge a main.
+533/533 pruebas web (62 archivos), Docker/TypeScript/lint, 34 checks HTTP/hashes y
+navegador: carga/recarga, inicio explícito, flechas/WASD/arrastre, reinicio, Tab/Escape
+y vista ampliada en escritorio/móvil/paisaje emulados. [Entrega E15](2048-INTEGRATION-IMPLEMENTATION.md).
+
+Inventario operativo `007 / level-030 / snake-arena-006 / factory-empire-014`.
+Imagen anterior conservada para retorno; servidor Snake, configuración, volúmenes
+y servicios de datos sin reemplazo. Datos comerciales iguales antes/después; la
+sesión existente continúa autenticada y Auth renovó un token. Se preservan los
+límites previos de práctica autenticada Snake y del entorno de referencia Factory.
+Los trabajos cron existentes siguen activos. Sin migraciones/reseed/reset,
+operaciones Flow iniciadas por este incremento ni despliegue externo.
+
+Siguiente: **G2048-04.4**, E2E competitivo autenticado sobre esta versión.
+Revisión humana/lector de pantalla/teléfono físico y adopción habitual siguen
+pendientes. Backlog base: web **7/5/5**, Ted **2/4/7**, 2048 **5/3/3**;
+total **41**: **14 terminados/probados, 12 en progreso y 15 pendientes**.
+Los apartados siguientes describen entregas anteriores, no el estado operativo actual.
+
 Actualizado: 2026-10-01. Rama local de trabajo: `codex/operational-local-environment`,
 desde `8790a37`. `main` sigue en `6308515`.
 

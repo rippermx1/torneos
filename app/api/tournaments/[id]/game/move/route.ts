@@ -204,6 +204,26 @@ export async function POST(
   })
 
   if (rpcErr) {
+    // The atomic RPC can reject a calculation made before another tab or a
+    // timeout committed. Read the owned winner; never replay the direction.
+    if (rpcErr.code === 'PT409' || rpcErr.code === '23505') {
+      const current = await supabase.from('games').select(GAME_SNAPSHOT_FIELDS)
+        .eq('id', gameId).eq('tournament_id', tournamentId).eq('user_id', userId).single()
+      if (current.error || !current.data) {
+        return Response.json({ error: 'No se pudo confirmar el estado de la partida.',
+          code: 'GAME_STATE_UNCONFIRMED' }, { status: 503 })
+      }
+      let persisted = current.data as SnapshotGame
+      if (persisted.status === 'active' && persisted.started_at && isPastGameDeadline(
+        persisted.started_at, tournament.play_window_end, tournament.max_game_duration_seconds)) {
+        const closure = await closeExpiredGame(supabase, { gameId, tournamentId, userId })
+        if (!closure.ok) return closure.response
+        persisted = closure.game
+      }
+      return gameSnapshotResponse(persisted, tournament.play_window_end, tournament.max_game_duration_seconds,
+        { error: 'El estado de la partida cambió. Recupera su estado antes de continuar.', moved: false },
+        persisted.status === 'active' ? 409 : 400)
+    }
     return Response.json({ error: `Error guardando movimiento: ${rpcErr.message}` }, { status: 500 })
   }
 

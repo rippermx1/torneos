@@ -162,6 +162,23 @@ export async function POST(
     .select('id')
     .single()
 
+  // Two tabs can both observe no game before either INSERT commits. The unique
+  // constraint picks the winner; recover its owned row rather than retrying.
+  if (insertErr?.code === '23505') {
+    const persisted = await supabase.from('games').select(`${GAME_SNAPSHOT_FIELDS}, seed`)
+      .eq('tournament_id', tournamentId).eq('user_id', userId).maybeSingle()
+    if (persisted.error || !persisted.data) {
+      return Response.json({ error: 'No se pudo confirmar la partida. Recupera su estado.',
+        code: 'GAME_STATE_UNCONFIRMED' }, { status: 503 })
+    }
+    const game = persisted.data as SnapshotGame & Pick<Game, 'seed'>
+    const next = game.move_count + 2
+    return gameSnapshotResponse(game, tournamentState.play_window_end, tournamentState.max_game_duration_seconds, {
+      resuming: true,
+      nextRngStates: game.status === 'active' ? computeRngStates(game.seed, next, RNG_PREVIEW_SIZE) : [],
+      nextRngStatesFrom: next,
+    })
+  }
   if (insertErr || !newGame) {
     return Response.json({ error: `Error creando partida: ${insertErr?.message}` }, { status: 500 })
   }

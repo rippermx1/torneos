@@ -8,6 +8,11 @@ const fixture = vi.hoisted(() => ({
   authenticated: true, registered: true,
   readError: false,
   finalMoveRow: null as Record<string, unknown> | null,
+  insertError: null as { code: string; message: string } | null,
+  concurrentGame: null as Record<string, unknown> | null,
+  concurrentReadError: false,
+  rpcError: null as { code: string; message: string } | null,
+  rpcReadError: false,
 }))
 vi.mock('@/lib/supabase/auth', () => ({ requireAnyRoleForApi: async () => fixture.authenticated
   ? { ok: true, access: { userId: 'closure-user' } }
@@ -17,12 +22,16 @@ vi.mock('@/lib/security/rate-limit', () => ({ checkRateLimit: async () => ({ ok:
 vi.mock('next/server', () => ({ after: vi.fn() }))
 vi.mock('@/lib/supabase/server', () => ({ createAdminClient: () => ({ rpc: vi.fn(async () => {
   if (fixture.finalMoveRow) fixture.game = fixture.finalMoveRow
-  return { data: null, error: null }
+  if (fixture.rpcReadError) fixture.readError = true
+  return { data: null, error: fixture.rpcError }
 }), from: (table: string) => {
   const query = { table, write: false, filters: [] as [string, unknown][] }
   const run = async (recovery: boolean) => {
     fixture.queries.push(query)
-    if (fixture.inserting && table === 'games' && query.write) return { data: { id: 'new-clock-game' }, error: null }
+    if (fixture.inserting && table === 'games' && query.write) return fixture.insertError
+      ? { data: null, error: fixture.insertError } : { data: { id: 'new-clock-game' }, error: null }
+    if (fixture.inserting && table === 'games') return { data: fixture.concurrentGame,
+      error: fixture.concurrentReadError ? { message: 'private read failure' } : null }
     if (query.write) return fixture.update
     if (recovery) return fixture.recovery
     if (table === 'games' && fixture.readError) return { data: null, error: { message: 'private read failure' } }
@@ -47,6 +56,8 @@ beforeEach(() => {
   fixture.queries = []; fixture.authenticated = true; fixture.registered = true; fixture.inserting = false
   fixture.readError = false
   fixture.finalMoveRow = null
+  fixture.insertError = null; fixture.concurrentGame = null; fixture.concurrentReadError = false
+  fixture.rpcError = null; fixture.rpcReadError = false
   fixture.game = { id: 'closure-game', user_id: 'closure-user', status: 'active', final_score: 4,
     move_count: 2, current_board: [[2,2,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]], seed: 'test-seed',
     started_at: '2026-10-01T15:58:00Z', end_reason: null, ended_at: null }
@@ -55,6 +66,84 @@ beforeEach(() => {
   fixture.update = { data: { ...fixture.game, id: 'closure-game', status: 'completed', final_score: 16,
     end_reason: 'timeout', ended_at: '2026-10-01T16:00:00Z' }, error: null }
   fixture.recovery = { data: null, error: null }
+})
+
+describe('concurrent competitive start', () => {
+  function race() {
+    fixture.concurrentGame = { ...fixture.game, started_at: '2026-10-01T15:59:45Z' }
+    fixture.game.user_id = 'other-user'
+    fixture.insertError = { code: '23505', message: 'private unique constraint detail' }
+  }
+  it('recovers the same owned winner without retrying INSERT or exposing its seed', async () => {
+    race()
+    const response = await start(request(), params()), data = await response.json()
+    expect(response.status).toBe(200)
+    expect(data).toMatchObject({ gameId: 'closure-game', resuming: true, score: 4, moveNumber: 4 })
+    expect(data.board).toEqual(fixture.concurrentGame?.current_board)
+    expect(data.seed).toBeUndefined(); expect(data.nextRngStates.length).toBeGreaterThan(0)
+    expect(fixture.queries.filter(q => q.write)).toHaveLength(1)
+    expect(fixture.queries.at(-1)?.filters).toEqual([['tournament_id',fixture.tournament.id],['user_id','closure-user']])
+  })
+  it('preserves a concurrently completed result without RNG or another game', async () => {
+    race(); fixture.concurrentGame = { ...fixture.concurrentGame, status: 'completed',
+      final_score: 128, end_reason: 'no_moves', ended_at: '2026-10-01T16:00:00Z' }
+    const response = await start(request(), params()), data = await response.json()
+    expect(response.status).toBe(200)
+    expect(data).toMatchObject({ score: 128, gameOver: true, nextRngStates: [], resuming: true })
+    expect(fixture.queries.filter(q => q.write)).toHaveLength(1)
+  })
+  it.each(['missing','read failure'])('leaves state unconfirmed on %s after the unique conflict', async failure => {
+    race()
+    if (failure === 'missing') fixture.concurrentGame = null
+    else fixture.concurrentReadError = true
+    const response = await start(request(), params()), data = await response.json()
+    expect(response.status).toBe(503); expect(data.code).toBe('GAME_STATE_UNCONFIRMED')
+    expect(data.score).toBeUndefined(); expect(JSON.stringify(data)).not.toContain('private')
+    expect(fixture.queries.filter(q => q.write)).toHaveLength(1)
+  })
+  it('does not recover arbitrary insert errors as a successful start', async () => {
+    race(); fixture.insertError = { code: 'PGRST000', message: 'transport failure' }
+    expect((await start(request(), params())).status).toBe(500)
+    expect(fixture.queries.filter(q => q.table === 'games' && !q.write)).toHaveLength(1)
+  })
+})
+
+describe('atomic movement conflicts', () => {
+  function conflict(code = 'PT409') {
+    fixture.game.started_at = '2026-10-01T15:59:45Z'
+    fixture.rpcError = { code, message: 'private RPC diagnostic' }
+  }
+  it('returns a confirmed terminal winner when timeout committed before the RPC', async () => {
+    conflict()
+    fixture.finalMoveRow = { ...fixture.game, status: 'completed', end_reason: 'timeout', final_score: 16,
+      ended_at: '2026-10-01T16:00:00Z' }
+    const response = await move(request(), params()), data = await response.json()
+    expect(response.status).toBe(400)
+    expect(data).toMatchObject({ moved: false, score: 16, gameOver: true, stateConfirmed: true, endReason: 'timeout' })
+    expect(fixture.queries.filter(q => q.write)).toHaveLength(0)
+    expect(fixture.queries.at(-1)?.filters).toEqual([['id','closure-game'],['tournament_id',fixture.tournament.id],['user_id','closure-user']])
+  })
+  it.each(['PT409','23505'])('returns a recoverable active conflict for %s without replaying it', async code => {
+    conflict(code)
+    const response = await move(request(), params()), data = await response.json()
+    expect(response.status).toBe(409)
+    expect(data).toMatchObject({ moved: false, score: 4, gameOver: false, stateConfirmed: true })
+    expect(fixture.queries.filter(q => q.write)).toHaveLength(0)
+    expect(JSON.stringify(data)).not.toContain('private')
+  })
+  it('confirms persisted timeout when the deadline expires while waiting for the RPC', async () => {
+    conflict(); fixture.finalMoveRow = { ...fixture.game, started_at: '2026-10-01T15:58:00Z' }
+    const response = await move(request(), params()), data = await response.json()
+    expect(response.status).toBe(400)
+    expect(data).toMatchObject({ moved: false, score: 16, gameOver: true, endReason: 'timeout' })
+    expect(fixture.queries.filter(q => q.write)).toHaveLength(1)
+  })
+  it('leaves a rejected move unconfirmed when its recovery read fails', async () => {
+    conflict(); fixture.rpcReadError = true
+    const response = await move(request(), params()), data = await response.json()
+    expect(response.status).toBe(503); expect(data.code).toBe('GAME_STATE_UNCONFIRMED')
+    expect(data.score).toBeUndefined(); expect(fixture.queries.filter(q => q.write)).toHaveLength(0)
+  })
 })
 afterEach(() => vi.useRealTimers())
 const routes = [ ['timeout', timeout, 200, 'timedOut'], ['start', start, 200, 'timeout'], ['move', move, 400, 'timeout'] ] as const

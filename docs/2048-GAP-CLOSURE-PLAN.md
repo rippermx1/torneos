@@ -11,8 +11,13 @@ práctica real en preview y estados competitivos con fixtures de layout.
 la candidata local `007`: [navegación y accesibilidad](2048-ACCESSIBILITY-IMPLEMENTATION.md).
 **11.1 terminada y probada localmente**: host y cápsula `007` incorporados juntos
 a 3081, fuentes versionadas, datos/servicios preservados y retorno disponible.
-[Entrega y evidencia](2048-INTEGRATION-IMPLEMENTATION.md). Siguiente: **04.4**,
-recorrido competitivo autenticado completo sobre ese paquete.
+[Entrega y evidencia](2048-INTEGRATION-IMPLEMENTATION.md). **04.4 en progreso**:
+Auth/Unity/DB/cierre/ranking local comprobados; inicios concurrentes y movimiento
+posterior al timeout corregidos y activos en 3081, con autorización explícita del
+propietario para RPC/host locales. Cuatro carreras con DB real PASS; resultado final
+16 inmutable tras timeout y ranking. Falta regreso real desde segundo plano:
+el navegador automatizado mantiene ambas pestañas visibles; Chrome no conectado.
+[Recorrido y hallazgos](2048-COMPETITIVE-IMPLEMENTATION.md).
 Los demás gaps siguen abiertos. Fixtures no equivalen a aceptación del producto.
 
 ## Orden de implementación
@@ -30,7 +35,7 @@ severidad P1/P2 de la auditoría es distinta de estas prioridades de ejecución.
 | 4 | G2048-06.1 | P1 | Controles, reloj, avisos y resultados visibles en GUI normal y ampliada. | 04.3 | A03; tamaño de escritorio |
 | 5 | G2048-07.1 | P1 | Escape dentro del iframe, foco accesible y lectura del tablero. | 06.1 | A03; accesibilidad |
 | 6 | G2048-11.1 | P1 | Host y build final incorporados juntos al stack operativo 3081. | 04.1–04.3, 06.1, 07.1 | A05 |
-| 7 | G2048-04.4 | P1 | Recorrido competitivo autenticado verificado en el stack incorporado. | 11.1 | Confirmación integrada de A01–A05 |
+| 7 | G2048-04.4 | P1 | Recorrido local corregido y verificado; completar regreso real de segundo plano. | 11.1; RPC/host corregidos activos | A01 corregido con DB real; regreso real pendiente |
 | 8 | G2048-06.2 / 07.2 / 08.1 | P1 | Prueba física móvil y aceptación de la GUI de la build candidata. | 11.1; 04.4 para el recorrido competitivo | Límites de validación humana y dispositivos |
 | 9 | G2048-10.1 | P1 | Entrada habitual del torneo con Unity y alternativa ligera accesible. | 04.4, 08.1; ajustes de 06.2/07.2 resueltos | A06 |
 
@@ -151,6 +156,14 @@ que los demás juegos/rutas existentes no regresaron. Registrar commit/build/ent
 y punto de retorno al paquete anterior. No implica despliegue externo.
 
 ### 7. G2048-04.4 — comprobar el recorrido competitivo completo
+
+**2026-10-02: en progreso.** 9 casos API autenticados, GUI/cierres y tres rankings
+oficiales coincidentes. Inicio concurrente 200/500 corregido a 200/200.
+A01 corregido con autorización explícita: RPC y host activos en 3081, **4/4 carreras
+reales PASS**; un movimiento pendiente no altera el cierre ni el ranking score 16.
+13 comprobaciones en DB desechable, 240 regresiones web y build Next PASS. Cuatro
+casos API nuevos contra 3081 y recuperación por botón desde dos pestañas Unity PASS.
+Falta regreso real de segundo plano. [Evidencia y siguiente acción](2048-COMPETITIVE-IMPLEMENTATION.md).
 
 En cuentas y fixtures locales de prueba identificados, sin modificar partidas
 existentes ni usar pagos reales, comprobar:

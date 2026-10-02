@@ -1,5 +1,23 @@
 # Estado — TorneosPlay
 
+## 2048 competitivo: recorrido local corregido — 2026-10-02
+
+**G2048-04.4 en progreso**: Auth/inscripción, Unity `007`, direcciones/score servidor,
+recarga, dos pestañas y recuperación por botón, timeout/no_moves y rankings reales
+comprobados. Corregidos dos defectos: inicio concurrente 200/500 → 200/200/mismo ID;
+movimiento pendiente posterior al cierre ya no altera score 16 ni ranking oficial.
+RPC `record_game_move` y host corregido activos/healthy en 3081 con autorización
+explícita del propietario; única migración local `20261002202731`, sin DB push,
+Flow externo ni migraciones Snake ajenas. Imagen `g2048-044-candidate-1790973340774`,
+alias local actualizado, retorno `g2048-007-20261002191810` conservado.
+240/240 pruebas web (57 rutas), 13/13 comprobaciones SQL desechables, build Next/
+TypeScript/lint y 4/4 carreras integradas PASS; 4/4 casos nuevos contra 3081 PASS.
+Variables, redes, volúmenes y contenedores restantes preservados. Fuente `4953fb0`.
+**Resta regreso real desde segundo plano**: ambas pestañas automatizadas declaran
+visible y Chrome no conectado; pruebas de contrato/desfase no demuestran suspensión
+real. Staging, móvil físico, lector de pantalla y aceptación humana separados.
+[Entrega, fixtures, imágenes y evidencia](2048-COMPETITIVE-IMPLEMENTATION.md).
+
 ## Incorporación 2048 a 3081 — 2026-10-02
 
 **G2048-11.1 terminado y probado localmente**: host y cápsula `unity-2048-007`

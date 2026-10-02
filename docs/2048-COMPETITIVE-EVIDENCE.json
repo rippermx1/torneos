@@ -1,0 +1,940 @@
+{
+  "date": "2026-10-02",
+  "task": "G2048-04.4",
+  "status": "IN_PROGRESS_LOCAL_CORE_VERIFIED_BACKGROUND_PENDING",
+  "branch": "codex/2048-clean-gameplay",
+  "baseCommit": "c299b91f5fb583e181f1739e9c7bddd69b1a3ec6",
+  "mainMerge": "NOT_RUN",
+  "base": "http://127.0.0.1:3081",
+  "capsule": "unity-2048-007",
+  "previousImage": "sha256:377066cba2bf7ef7ab16a39ec82cc8bb4eccf7d522c13f752442f601b2250579",
+  "operativeImage": "sha256:4d22824563919416303d1de1a855ea664c46620fbb764e5b892a92e67f30409f",
+  "candidate": {
+    "task": "G2048-04.4",
+    "image": "torneos-app:g2048-044-candidate-1790973340774",
+    "imageId": "sha256:4d22824563919416303d1de1a855ea664c46620fbb764e5b892a92e67f30409f",
+    "baseline": "sha256:377066cba2bf7ef7ab16a39ec82cc8bb4eccf7d522c13f752442f601b2250579",
+    "context": "C:\\torneos\\artifacts\\2048-competitive\\context",
+    "patches": {
+      "app/api/tournaments/[id]/game/start/route.ts": "92f402357e0e1d59153eda01d498e0d8e8c1e5b89f125aca03864e4f64a5b801",
+      "app/api/tournaments/[id]/game/move/route.ts": "ca187df0c160448f1b120103c585607c025624b2beee48bc54f66f24463c0815"
+    },
+    "at": "2026-10-02T20:37:14.952Z",
+    "deployedTo3081": true,
+    "dbMigrationApplied": true
+  },
+  "localDbMigrationApplied": true,
+  "operativeHostReplaced": true,
+  "activation": {
+    "task": "G2048-04.4",
+    "at": "2026-10-02T20:45:22.629Z",
+    "authorization": "Human explicitly approved both local changes in current chat",
+    "beforeImage": "sha256:377066cba2bf7ef7ab16a39ec82cc8bb4eccf7d522c13f752442f601b2250579",
+    "afterImage": "sha256:4d22824563919416303d1de1a855ea664c46620fbb764e5b892a92e67f30409f",
+    "health": "healthy",
+    "runtimeEnvSha256": "423b8fefacf824f892a0242aecf4f280249e18e59cb4ba11f65eb60042c1e569",
+    "mountsPreserved": true,
+    "networksPreserved": true,
+    "activeSnakePlayers": 0,
+    "activeSnakeTournaments": 0,
+    "migration": "supabase/migrations/20261002202731_guard_2048_move_commit.sql",
+    "migrationSha256": "0f6c8310b1ac90e122d885645a84eca58111d6b314e72fa8c90ab7838cffe44b",
+    "migrationVersion": "20261002202731",
+    "rollbackImage": "torneos-app:g2048-007-20261002191810",
+    "rpcBackup": "artifacts/2048-competitive/record-game-move.before.sql",
+    "otherMigrationsApplied": false,
+    "globalCronInvoked": false,
+    "migrationFileFinalComments": "Only outer SQL comments updated after approval; applied function body matches source exactly"
+  },
+  "webChecks": {
+    "status": "PASS",
+    "tests": 240,
+    "files": 22,
+    "routeTests": 57,
+    "lint": "PASS_NO_WARNINGS",
+    "dockerNextTypeScriptStandaloneBuild": "PASS"
+  },
+  "apiChecks": {
+    "task": "G2048-04.4",
+    "at": "2026-10-02T20:16:43.201Z",
+    "checks": [
+      {
+        "name": "registration, explicit start and repeated start recover same game",
+        "status": "PASS",
+        "gameId": "826421e1-da64-4312-b34c-ed3eeb05e873",
+        "score": 0
+      },
+      {
+        "name": "server directions, forged score ignored and persistence matches",
+        "status": "PASS",
+        "gameId": "826421e1-da64-4312-b34c-ed3eeb05e873",
+        "score": 12,
+        "moveNumber": 6,
+        "moved": 4
+      },
+      {
+        "name": "foreign owner cannot move or recover",
+        "status": "PASS",
+        "moveStatus": 404,
+        "recoverStatus": 403
+      },
+      {
+        "name": "unknown movement response recovered without replay and skewed wall clock",
+        "status": "PASS",
+        "gameId": "826421e1-da64-4312-b34c-ed3eeb05e873",
+        "moveRequests": 1,
+        "moveCount": 5,
+        "score": 16,
+        "clock": "real server reference with isolated client wall-clock offset"
+      },
+      {
+        "name": "simultaneous starts share one game",
+        "status": "PASS",
+        "gameId": "050f41d0-3bea-4ac2-a449-90d138e01c17",
+        "statuses": [
+          200,
+          200
+        ]
+      },
+      {
+        "name": "simultaneous directions persist at most one sequence and recover",
+        "status": "PASS",
+        "gameId": "050f41d0-3bea-4ac2-a449-90d138e01c17",
+        "statuses": [
+          409,
+          200
+        ],
+        "moveCount": 1
+      },
+      {
+        "name": "near-terminal fixture closes no_moves and recovers final score",
+        "status": "PASS",
+        "gameId": "f843466a-b558-40ad-b8c2-e97382db9df8",
+        "fixture": "near-terminal board prearranged in owned test row",
+        "score": 128,
+        "endReason": "no_moves"
+      },
+      {
+        "name": "deadline closure persists and repeated timeout stays identical",
+        "status": "PASS",
+        "gameId": "874becaf-387b-4a72-b5e4-96d0aae769d0",
+        "deadline": "owned fixture elapsed time",
+        "score": 0,
+        "endedAt": "2026-10-02T20:16:48.932+00:00",
+        "lateMoveStatus": 400
+      },
+      {
+        "name": "anonymous and unregistered authorization",
+        "status": "PASS",
+        "anonymous": 307,
+        "unregistered": 403
+      }
+    ]
+  },
+  "corrected3081ApiChecks": {
+    "task": "G2048-04.4",
+    "at": "2026-10-02T20:48:52.941Z",
+    "base": "http://127.0.0.1:3081",
+    "checks": [
+      {
+        "name": "new authenticated registration and explicit start on corrected 3081",
+        "status": "PASS",
+        "gameId": "df50a5c6-05bd-4f4b-9e22-20b466e83210"
+      },
+      {
+        "name": "corrected RPC accepts valid directions and server score",
+        "status": "PASS",
+        "gameId": "df50a5c6-05bd-4f4b-9e22-20b466e83210",
+        "score": 8,
+        "moveCount": 4
+      },
+      {
+        "name": "ownership remains enforced after integration",
+        "status": "PASS",
+        "foreignMoveStatus": 404
+      },
+      {
+        "name": "corrected RPC commits no_moves with persisted final snapshot",
+        "status": "PASS",
+        "gameId": "6233a2c9-036c-4da6-a4b9-8a372bb1db27",
+        "score": 128
+      }
+    ]
+  },
+  "browserChecks": {
+    "task": "G2048-04.4",
+    "at": "2026-10-02T20:53:40.877Z",
+    "checks": [
+      {
+        "check": "authenticated fixture detail before registration",
+        "observation": {
+          "button": [
+            "Inscribirme gratis"
+          ],
+          "title": "G2048-04.4 browser 1790972187437"
+        }
+      },
+      {
+        "check": "Unity ready before explicit competitive start",
+        "observation": {
+          "frame": "/games/2048/unity-2048-007/index.html",
+          "text": "G2048-04.4 browser 1790972187437Ver rankingPuntaje: 0Iniciar partidaAmpliar juegoPulsa Iniciar partida cuando estés listo."
+        }
+      },
+      {
+        "check": "competitive arrows and score",
+        "observation": {
+          "caption": "Tablero confirmado · puntaje 4",
+          "cells": [
+            "4",
+            "Vacía",
+            "Vacía",
+            "Vacía",
+            "2",
+            "Vacía",
+            "Vacía",
+            "Vacía",
+            "Vacía",
+            "Vacía",
+            "Vacía",
+            "Vacía",
+            "Vacía",
+            "Vacía",
+            "Vacía",
+            "Vacía"
+          ],
+          "clock": "Tiempo 03:49"
+        }
+      },
+      {
+        "name": "natural 300 second deadline closes UI with persisted final score",
+        "status": "PASS",
+        "score": 4,
+        "mode": "expanded"
+      },
+      {
+        "name": "Unity screenshot, accessible table and real DB agree on terminal board",
+        "status": "PASS",
+        "gameId": "9609a471-86a5-4dde-99d9-8379858314ce",
+        "score": 4,
+        "moveCount": 2,
+        "cells": [
+          0,
+          0,
+          0,
+          4,
+          2,
+          0,
+          0,
+          2,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "name": "official ranking after owned fixture finalization equals final game score",
+        "status": "PASS",
+        "score": 4,
+        "rank": 1,
+        "simulatedPrizeCents": 100
+      },
+      {
+        "name": "reload after tournament completion recovers the same final game with no competitive restart",
+        "status": "PASS",
+        "gameId": "9609a471-86a5-4dde-99d9-8379858314ce",
+        "score": 4
+      },
+      {
+        "name": "no_moves terminal GUI recovers persisted score 128 after completed tournament",
+        "status": "PASS",
+        "gameId": "f843466a-b558-40ad-b8c2-e97382db9df8",
+        "score": 128,
+        "fixture": "near-terminal board prepared in owned test game"
+      },
+      {
+        "name": "corrected 3081: two UI tabs, one valid direction and one stale direction, button recovery without replay",
+        "status": "PASS",
+        "gameId": "df50a5c6-05bd-4f4b-9e22-20b466e83210",
+        "score": 16,
+        "moveCount": 5,
+        "rejectedTabScoreBeforeRecovery": 8,
+        "cells": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          4,
+          0,
+          2,
+          0,
+          0,
+          0,
+          2,
+          8,
+          0,
+          0
+        ]
+      },
+      {
+        "name": "corrected 3081 natural deadline after UI conflict recovery",
+        "status": "PASS",
+        "gameId": "df50a5c6-05bd-4f4b-9e22-20b466e83210",
+        "score": 16,
+        "moveCount": 5,
+        "endReason": "timeout"
+      },
+      {
+        "name": "corrected 3081 official ranking equals UI and completed DB score 16",
+        "status": "PASS",
+        "gameId": "df50a5c6-05bd-4f4b-9e22-20b466e83210",
+        "score": 16,
+        "rank": 1
+      }
+    ],
+    "limitations": [
+      "No physical phone or human visual acceptance",
+      "Browser automation reports both test tabs visible: genuine background suspension not demonstrated; Chrome connector unavailable"
+    ]
+  },
+  "rankingChecks": {
+    "task": "G2048-04.4",
+    "at": "2026-10-02T20:52:33.185Z",
+    "checks": [
+      {
+        "name": "browser",
+        "status": "PASS",
+        "gameId": "9609a471-86a5-4dde-99d9-8379858314ce",
+        "result": {
+          "tournament_id": "b2691183-7bbe-45f0-8ceb-f57b522a13b2",
+          "user_id": "cbd03e46-433a-4fb8-a94e-d28aca5cbbae",
+          "rank": 1,
+          "final_score": 4,
+          "prize_awarded_cents": 100
+        },
+        "prize": "local simulated fixture only"
+      },
+      {
+        "name": "noMoves",
+        "status": "PASS",
+        "gameId": "f843466a-b558-40ad-b8c2-e97382db9df8",
+        "result": {
+          "tournament_id": "52345abb-a9ac-4f4d-9dee-25464dcc97cb",
+          "user_id": "9030f25e-9f45-4c51-a09c-1978626b4b04",
+          "rank": 1,
+          "final_score": 128,
+          "prize_awarded_cents": 100
+        },
+        "prize": "local simulated fixture only"
+      },
+      {
+        "name": "deadline",
+        "status": "PASS",
+        "gameId": "874becaf-387b-4a72-b5e4-96d0aae769d0",
+        "result": {
+          "tournament_id": "ee3f8c80-6231-4416-a7b2-e8b3898237f9",
+          "user_id": "cc4800a2-3cfd-42af-ba4c-6de8266231ff",
+          "rank": 1,
+          "final_score": 0,
+          "prize_awarded_cents": 100
+        },
+        "prize": "local simulated fixture only"
+      },
+      {
+        "name": "fixedJourney",
+        "status": "PASS",
+        "gameId": "df50a5c6-05bd-4f4b-9e22-20b466e83210",
+        "result": {
+          "tournament_id": "8e0503f8-8cfe-4739-b1bb-6176f44c7532",
+          "user_id": "9030f25e-9f45-4c51-a09c-1978626b4b04",
+          "rank": 1,
+          "final_score": 16,
+          "prize_awarded_cents": 100
+        },
+        "prize": "local simulated fixture only"
+      },
+      {
+        "name": "fixedNoMoves",
+        "status": "PASS",
+        "gameId": "6233a2c9-036c-4da6-a4b9-8a372bb1db27",
+        "result": {
+          "tournament_id": "53090963-f51e-4f94-9702-562ee4fcb008",
+          "user_id": "cbd03e46-433a-4fb8-a94e-d28aca5cbbae",
+          "rank": 1,
+          "final_score": 128,
+          "prize_awarded_cents": 100
+        },
+        "prize": "local simulated fixture only"
+      }
+    ]
+  },
+  "baselineInterleavings": {
+    "task": "G2048-04.4",
+    "image": "sha256:377066cba2bf7ef7ab16a39ec82cc8bb4eccf7d522c13f752442f601b2250579",
+    "at": "2026-10-02T20:21:07.748Z",
+    "checks": [
+      {
+        "name": "simultaneous start with initial read barrier",
+        "status": "FAIL",
+        "httpStatuses": [
+          200,
+          500
+        ],
+        "gameId": "8fd262e6-d853-4ae5-b3a2-63dfe37f82f9",
+        "errors": [
+          "Error creando partida: duplicate key value violates unique constraint \"games_tournament_id_user_id_key\""
+        ]
+      },
+      {
+        "name": "failed closure does not fabricate terminal state, read recovery closes later",
+        "status": "PASS",
+        "gameId": "cb56cac5-41b8-4aed-8384-8639d336b8e8",
+        "errorCode": "GAME_CLOSURE_UNCONFIRMED",
+        "recoveredStatus": "completed"
+      },
+      {
+        "name": "in-flight movement must not mutate confirmed timeout",
+        "status": "FAIL",
+        "gameId": "130141fd-1ca0-4bec-8566-ba46ac049249",
+        "confirmedTimeout": {
+          "score": 16,
+          "moveCount": 0
+        },
+        "movementResponse": {
+          "status": 200,
+          "score": 20,
+          "gameOver": false
+        },
+        "persisted": {
+          "status": "completed",
+          "final_score": 20,
+          "move_count": 1,
+          "end_reason": "timeout"
+        }
+      }
+    ],
+    "trace": [
+      {
+        "event": "two initial game reads completed before either INSERT",
+        "tournamentId": "4aa7dc80-752e-4851-a31d-1d6bc0ff5f09"
+      },
+      {
+        "event": "closure persistence transport rejected",
+        "gameId": "cb56cac5-41b8-4aed-8384-8639d336b8e8"
+      },
+      {
+        "event": "movement paused before real RPC",
+        "gameId": "130141fd-1ca0-4bec-8566-ba46ac049249"
+      },
+      {
+        "event": "timeout confirmed before releasing move",
+        "score": 16,
+        "gameId": "130141fd-1ca0-4bec-8566-ba46ac049249"
+      }
+    ]
+  },
+  "candidateInterleavings": {
+    "task": "G2048-04.4",
+    "image": "sha256:4d22824563919416303d1de1a855ea664c46620fbb764e5b892a92e67f30409f",
+    "at": "2026-10-02T20:37:45.947Z",
+    "checks": [
+      {
+        "name": "simultaneous start with initial read barrier",
+        "status": "PASS",
+        "httpStatuses": [
+          200,
+          200
+        ],
+        "gameId": "77f22387-ac96-4d6f-8822-1ac12618dd91",
+        "errors": []
+      },
+      {
+        "name": "failed closure does not fabricate terminal state, read recovery closes later",
+        "status": "PASS",
+        "gameId": "dad1ea0b-40a9-4ac1-b072-61053b8ef2b0",
+        "errorCode": "GAME_CLOSURE_UNCONFIRMED",
+        "recoveredStatus": "completed"
+      },
+      {
+        "name": "in-flight movement must not mutate confirmed timeout",
+        "status": "FAIL",
+        "gameId": "fd6a93e2-4735-45d3-86f0-8ba1bdebaab5",
+        "confirmedTimeout": {
+          "score": 16,
+          "moveCount": 0
+        },
+        "movementResponse": {
+          "status": 200,
+          "score": 20,
+          "gameOver": false
+        },
+        "persisted": {
+          "status": "completed",
+          "final_score": 20,
+          "move_count": 1,
+          "end_reason": "timeout"
+        }
+      }
+    ],
+    "trace": [
+      {
+        "event": "two initial game reads completed before either INSERT",
+        "tournamentId": "9d5f5be0-520a-4c1b-8fc4-1df8fb036ed3"
+      },
+      {
+        "event": "closure persistence transport rejected",
+        "gameId": "dad1ea0b-40a9-4ac1-b072-61053b8ef2b0"
+      },
+      {
+        "event": "movement paused before real RPC",
+        "gameId": "fd6a93e2-4735-45d3-86f0-8ba1bdebaab5"
+      },
+      {
+        "event": "timeout confirmed before releasing move",
+        "score": 16,
+        "gameId": "fd6a93e2-4735-45d3-86f0-8ba1bdebaab5"
+      }
+    ],
+    "dbMigrationApplied": false
+  },
+  "integratedInterleavings": {
+    "task": "G2048-04.4",
+    "image": "sha256:4d22824563919416303d1de1a855ea664c46620fbb764e5b892a92e67f30409f",
+    "at": "2026-10-02T20:46:51.223Z",
+    "checks": [
+      {
+        "name": "simultaneous start with initial read barrier",
+        "status": "PASS",
+        "httpStatuses": [
+          200,
+          200
+        ],
+        "gameId": "7f003033-6447-40ff-b44c-e3994b64b0db",
+        "errors": []
+      },
+      {
+        "name": "failed closure does not fabricate terminal state, read recovery closes later",
+        "status": "PASS",
+        "gameId": "270c69ec-3391-48ab-bb0e-b5f45db5b4f3",
+        "errorCode": "GAME_CLOSURE_UNCONFIRMED",
+        "recoveredStatus": "completed"
+      },
+      {
+        "name": "in-flight movement must not mutate confirmed timeout",
+        "status": "PASS",
+        "gameId": "869292db-5865-4578-b2ec-f74e584530c5",
+        "confirmedTimeout": {
+          "score": 16,
+          "moveCount": 0
+        },
+        "movementResponse": {
+          "status": 400,
+          "score": 16,
+          "gameOver": true,
+          "stateConfirmed": true
+        },
+        "persisted": {
+          "status": "completed",
+          "final_score": 16,
+          "move_count": 0,
+          "end_reason": "timeout"
+        }
+      },
+      {
+        "name": "pending direction cannot change officially finalized ranking",
+        "status": "PASS",
+        "gameId": "c8f20339-ec1d-4bf9-931c-a4bc67bf6817",
+        "tournamentId": "59387fc0-1e48-409f-af8d-04211d189c28",
+        "result": {
+          "final_score": 16,
+          "rank": 1
+        },
+        "persisted": {
+          "final_score": 16,
+          "status": "completed",
+          "move_count": 0
+        },
+        "movementStatus": 400,
+        "movementsInserted": 0
+      }
+    ],
+    "trace": [
+      {
+        "event": "two initial game reads completed before either INSERT",
+        "tournamentId": "ba0da751-05a1-4497-9d21-2c612cb02190"
+      },
+      {
+        "event": "closure persistence transport rejected",
+        "gameId": "270c69ec-3391-48ab-bb0e-b5f45db5b4f3"
+      },
+      {
+        "event": "movement paused before real RPC",
+        "gameId": "869292db-5865-4578-b2ec-f74e584530c5"
+      },
+      {
+        "event": "timeout confirmed before releasing move",
+        "score": 16,
+        "gameId": "869292db-5865-4578-b2ec-f74e584530c5"
+      },
+      {
+        "event": "movement paused before real RPC",
+        "gameId": "c8f20339-ec1d-4bf9-931c-a4bc67bf6817"
+      }
+    ],
+    "dbMigrationApplied": true
+  },
+  "isolatedSqlChecks": {
+    "task": "G2048-04.4",
+    "at": "2026-10-02T20:53:31.385Z",
+    "scope": "disposable PostgreSQL 17, minimal relevant schema, no platform DB changes",
+    "checks": [
+      {
+        "name": "old RPC reproduces modification after completed timeout",
+        "status": "PASS",
+        "baselineDefectReproduced": true,
+        "persisted": {
+          "status": "completed",
+          "score": 20,
+          "count": 1,
+          "moves": 1
+        }
+      },
+      {
+        "name": "valid movement atomically persists board, score and sequence",
+        "status": "PASS",
+        "persisted": {
+          "status": "active",
+          "score": 20,
+          "count": 1,
+          "moves": 1
+        }
+      },
+      {
+        "name": "last valid no_moves movement closes once",
+        "status": "PASS",
+        "persisted": {
+          "status": "completed",
+          "score": 20,
+          "count": 1,
+          "moves": 1
+        }
+      },
+      {
+        "name": "completed score cannot be changed by delayed movement",
+        "status": "PASS",
+        "rejected": "GAME_COMMIT_CLOSED",
+        "persisted": {
+          "status": "completed",
+          "score": 16,
+          "count": 0,
+          "moves": 0
+        }
+      },
+      {
+        "name": "stale sequence is rejected without inserted movement",
+        "status": "PASS",
+        "rejected": "GAME_COMMIT_CONFLICT",
+        "persisted": {
+          "status": "active",
+          "score": 16,
+          "count": 1,
+          "moves": 0
+        }
+      },
+      {
+        "name": "stale board is rejected even with matching sequence",
+        "status": "PASS",
+        "rejected": "GAME_COMMIT_CONFLICT",
+        "persisted": {
+          "status": "active",
+          "score": 16,
+          "count": 0,
+          "moves": 0
+        }
+      },
+      {
+        "name": "two concurrent RPCs accept only one sequence",
+        "status": "PASS",
+        "persisted": {
+          "status": "active",
+          "score": 20,
+          "count": 1,
+          "moves": 1
+        }
+      },
+      {
+        "name": "movement waiting behind closure preserves confirmed score",
+        "status": "PASS",
+        "rejected": "GAME_COMMIT_CLOSED",
+        "persisted": {
+          "status": "completed",
+          "score": 16,
+          "count": 0,
+          "moves": 0
+        }
+      },
+      {
+        "name": "deadline is checked after lock wait using actual clock",
+        "status": "PASS",
+        "rejected": "GAME_COMMIT_DEADLINE",
+        "persisted": {
+          "status": "active",
+          "score": 16,
+          "count": 0,
+          "moves": 0
+        }
+      },
+      {
+        "name": "shorter tournament window rejects late commit",
+        "status": "PASS",
+        "rejected": "GAME_COMMIT_DEADLINE",
+        "persisted": {
+          "status": "active",
+          "score": 16,
+          "count": 0,
+          "moves": 0
+        }
+      },
+      {
+        "name": "completed tournament rejects an otherwise active game",
+        "status": "PASS",
+        "rejected": "GAME_COMMIT_DEADLINE",
+        "persisted": {
+          "status": "active",
+          "score": 16,
+          "count": 0,
+          "moves": 0
+        }
+      },
+      {
+        "name": "anon cannot execute privileged movement RPC",
+        "status": "PASS",
+        "role": "anon"
+      },
+      {
+        "name": "authenticated cannot execute privileged movement RPC",
+        "status": "PASS",
+        "role": "authenticated"
+      }
+    ],
+    "migration": "supabase/migrations/20261002202731_guard_2048_move_commit.sql",
+    "sha256": "3f9e53f28789314822add9960fc63cfc3d6a2ef51dd4fb2daf7d15add04f7bbf"
+  },
+  "fixtures": {
+    "accounts": [
+      {
+        "id": "cbd03e46-433a-4fb8-a94e-d28aca5cbbae",
+        "username": "g2048044_0_187437"
+      },
+      {
+        "id": "9030f25e-9f45-4c51-a09c-1978626b4b04",
+        "username": "g2048044_1_187437"
+      },
+      {
+        "id": "cc4800a2-3cfd-42af-ba4c-6de8266231ff",
+        "username": "g2048044_2_187437"
+      }
+    ],
+    "tournaments": {
+      "journey": {
+        "id": "cbfabc76-4097-45be-afb0-985c5f152e8b",
+        "name": "G2048-04.4 journey 1790972187437",
+        "owner": 0,
+        "duration": 300,
+        "gameId": "826421e1-da64-4312-b34c-ed3eeb05e873"
+      },
+      "parallelStart": {
+        "id": "f3998451-152b-459b-8ed6-a0de2ac1b8bf",
+        "name": "G2048-04.4 parallelStart 1790972187437",
+        "owner": 1,
+        "duration": 300,
+        "gameId": "050f41d0-3bea-4ac2-a449-90d138e01c17"
+      },
+      "noMoves": {
+        "id": "52345abb-a9ac-4f4d-9dee-25464dcc97cb",
+        "name": "G2048-04.4 noMoves 1790972187437",
+        "owner": 1,
+        "duration": 300
+      },
+      "deadline": {
+        "id": "ee3f8c80-6231-4416-a7b2-e8b3898237f9",
+        "name": "G2048-04.4 deadline 1790972187437",
+        "owner": 2,
+        "duration": 30
+      },
+      "race": {
+        "id": "d0fb7507-4074-41ae-923b-2f5b44e54c4b",
+        "name": "G2048-04.4 race 1790972187437",
+        "owner": 2,
+        "duration": 30
+      },
+      "browser": {
+        "id": "b2691183-7bbe-45f0-8ceb-f57b522a13b2",
+        "name": "G2048-04.4 browser 1790972187437",
+        "owner": 0,
+        "duration": 300
+      },
+      "barrierStart": {
+        "id": "4aa7dc80-752e-4851-a31d-1d6bc0ff5f09",
+        "owner": 1,
+        "duration": 30
+      },
+      "persistenceFailure": {
+        "id": "7886ee36-e773-4bf5-8cf1-d19f4bad9a0f",
+        "owner": 2,
+        "duration": 30
+      },
+      "closureRace": {
+        "id": "1bbba070-c629-4312-ae6c-7b33055db5e3",
+        "owner": 2,
+        "duration": 30
+      },
+      "barrierStartCandidate": {
+        "id": "9d5f5be0-520a-4c1b-8fc4-1df8fb036ed3",
+        "owner": 1,
+        "duration": 30
+      },
+      "persistenceFailureCandidate": {
+        "id": "bb101d3b-37b2-41bb-881b-75ea91b73ec4",
+        "owner": 2,
+        "duration": 30
+      },
+      "closureRaceCandidate": {
+        "id": "112ccf1b-6fd0-43d0-ae6d-fae059620827",
+        "owner": 2,
+        "duration": 30
+      },
+      "barrierStartFixed": {
+        "id": "ba0da751-05a1-4497-9d21-2c612cb02190",
+        "owner": 1,
+        "duration": 30
+      },
+      "persistenceFailureFixed": {
+        "id": "3238466a-ef4f-4541-bd8d-94fea2140ab8",
+        "owner": 2,
+        "duration": 30
+      },
+      "closureRaceFixed": {
+        "id": "a9ce1fd0-8fe5-42cd-ba3d-7523a655705e",
+        "owner": 2,
+        "duration": 30
+      },
+      "finalizationRaceFixed": {
+        "id": "59387fc0-1e48-409f-af8d-04211d189c28",
+        "owner": 2,
+        "duration": 30
+      },
+      "fixedJourney": {
+        "id": "8e0503f8-8cfe-4739-b1bb-6176f44c7532",
+        "owner": 1,
+        "duration": 120,
+        "gameId": "df50a5c6-05bd-4f4b-9e22-20b466e83210"
+      },
+      "fixedNoMoves": {
+        "id": "53090963-f51e-4f94-9702-562ee4fcb008",
+        "owner": 0,
+        "duration": 120,
+        "gameId": "6233a2c9-036c-4da6-a4b9-8a372bb1db27"
+      }
+    },
+    "count": 18,
+    "isTest": true,
+    "entryFeeCents": 0,
+    "simulatedPrizeCents": 100,
+    "credentialsVersioned": false,
+    "oldFixturesReset": false,
+    "globalCronInvoked": false
+  },
+  "authorization": {
+    "status": "EXPLICITLY_APPROVED_AND_EXECUTED",
+    "answer": "Autorizar ambos cambios locales",
+    "scope": [
+      "replace only record_game_move in local Supabase",
+      "activate only compiled candidate web image in 3081"
+    ],
+    "constraint": "Exception to AGENTS.md explicitly authorized in current chat"
+  },
+  "artifacts": [
+    "manifest.json",
+    "api-checks.json",
+    "api-fixed.json",
+    "activation.json",
+    "interleavings.json",
+    "interleavings-candidate.json",
+    "interleavings-fixed.json",
+    "sql-commit-checks.json",
+    "ranking-checks.json",
+    "browser-checks.json",
+    "terminal-normal.jpg",
+    "terminal-expanded.jpg",
+    "no-moves-expanded.jpg",
+    "ranking.jpg",
+    "two-tabs-conflict.jpg",
+    "two-tabs-recovered.jpg",
+    "fixed-terminal.jpg",
+    "fixed-ranking.jpg",
+    "candidate-build.log"
+  ],
+  "limits": [
+    "No actual background suspension demonstrated: both automated tabs report visible",
+    "Near-terminal board and elapsed clocks deliberately prepared only in owned fixtures",
+    "Client response loss and wall-clock skew use isolated real session adapter plus live APIs",
+    "Local container/DB only; external staging NOT_RUN",
+    "No physical phone, screen reader or human visual acceptance",
+    "Mailpit delivery in isolated fault-injection process NOT_VERIFIED",
+    "No Unity Editor or new capsule build; same immutable 007"
+  ],
+  "sourceCommit": "4953fb06dc44f9ecabf95ae99bee336ad3fe7c42",
+  "finalVerification": {
+    "at": "2026-10-02T20:57:27.149Z",
+    "health": "healthy",
+    "localAliasMatchesActiveImage": true,
+    "liveRpcBodyMatchesCommittedMigration": true,
+    "liveRpcBodySha256": "e692acb0c17c8f63b5c70e09314086cb1623d4ec84a889f6055b2d9208741aeb",
+    "unchangedOtherServices": [
+      {
+        "name": "supabase_studio_torneos",
+        "sameContainerId": true
+      },
+      {
+        "name": "supabase_pg_meta_torneos",
+        "sameContainerId": true
+      },
+      {
+        "name": "supabase_storage_torneos",
+        "sameContainerId": true
+      },
+      {
+        "name": "supabase_rest_torneos",
+        "sameContainerId": true
+      },
+      {
+        "name": "supabase_realtime_torneos",
+        "sameContainerId": true
+      },
+      {
+        "name": "supabase_inbucket_torneos",
+        "sameContainerId": true
+      },
+      {
+        "name": "supabase_auth_torneos",
+        "sameContainerId": true
+      },
+      {
+        "name": "supabase_kong_torneos",
+        "sameContainerId": true
+      },
+      {
+        "name": "supabase_db_torneos",
+        "sameContainerId": true
+      }
+    ]
+  }
+}

@@ -1,0 +1,102 @@
+{
+  "date": "2026-10-02",
+  "task": "G2048-09.1",
+  "status": "DONE_LOCAL_RULE_EQUIVALENCE",
+  "parentTask": "G2048-09",
+  "parentStatus": "IN_PROGRESS_ADVERSARIAL_REVIEW_PENDING",
+  "baseCommit": "c9c531a",
+  "branch": "codex/2048-clean-gameplay",
+  "runtime": {
+    "lib/game/engine.ts": {
+      "sha256": "c6da13243b4cc38ca121c14f97bba1ca8dc033cc468ef396e15c2401922331f3",
+      "unchangedFromHead": true
+    },
+    "lib/game/rng.ts": {
+      "sha256": "975ca074aec61c83da94169983aaa55f09317a7906587784a793ac7034506f26",
+      "unchangedFromHead": true
+    },
+    "lib/game/random-source.ts": {
+      "sha256": "0bc8124239f5cc93b87af5ccd2bd2b10a11fea334438ffc00a240d3319c43583",
+      "unchangedFromHead": true
+    },
+    "games/2048/UnityProject/Assets/Torneos/2048/Runtime/PracticeBoard.cs": {
+      "sha256": "11b63844eef0bed2243a03061593432273ef89cf455b8b8526634771167a4748",
+      "unchangedFromHead": true
+    }
+  },
+  "implementation": {
+    "scripts/2048-rule-cases.mjs": "d11845e5165c3942eacbcc1922ddab3e70577724d7843868a6fb1051a538635e",
+    "scripts/verify-2048-rules.ps1": "9676016fdb1e3be7e61c8f5903b2045b1234950dd941460032eb796a21813edc",
+    "__tests__/2048-rule-equivalence.test.ts": "c95a9cbc2afd8323652dd2156b37f9d69f2a03994452bf18229bb0524e6d09c9",
+    "games/2048/UnityProject/Assets/Torneos/2048/Tests/EditMode/RuleEquivalenceTests.cs": "16c0132cf622fbd56917da3ef269e60c45d154836af47702c684d514af0d4f56",
+    "games/2048/UnityProject/Assets/Torneos/2048/Tests/EditMode/RuleEquivalenceTests.cs.meta": "81c8760a536a080fa24b6fc79ebf44f19adac015e58fc94b7a58342afabef758",
+    "games/2048/UnityProject/Assets/Torneos/2048/Tests/EditMode/Fixtures.meta": "d36494a4b42493c26c5310c8590c0bfe52dc4fbb3814c9a9212bb8bddcc9d060",
+    "games/2048/UnityProject/Assets/Torneos/2048/Tests/EditMode/Fixtures/rule-cases.json": "f979bb1a638098b4b2004fe2f3fbf8c72b09bbd221d3d0185e404bdabdc26a5d",
+    "games/2048/UnityProject/Assets/Torneos/2048/Tests/EditMode/Fixtures/rule-cases.json.meta": "d2c41453f7781e53921e44e733af7965be497625f5e0ab1b7da4c99e746271a2"
+  },
+  "coverage": {
+    "cases": 2936,
+    "independentAnchors": 40,
+    "exhaustiveLines": 2500,
+    "wholeBoardCases": 384,
+    "fullBoardMovementCases": 12,
+    "byDirection": {
+      "left": 734,
+      "right": 734,
+      "up": 734,
+      "down": 734
+    },
+    "noOps": 662,
+    "mergeCases": 1514,
+    "terminalAfterSpawnCaseIds": [
+      "horizontal-only-left",
+      "vertical-only-up"
+    ]
+  },
+  "checks": {
+    "web": {
+      "passed": 2995,
+      "failed": 0,
+      "files": 3,
+      "report": "artifacts/2048-equivalence/web-tests.json",
+      "sha256": "96c5cf14a700e54eef209e263d9ce44681228d384ef5dbc84f89dd0dcbea80e5"
+    },
+    "editMode": {
+      "passed": 18,
+      "failed": 0,
+      "total": 18,
+      "result": "Passed",
+      "report": "artifacts/2048-equivalence/editmode.xml",
+      "sha256": "a5370a990979ffdadc319f88e0798f2aeb559b14dee2d461e527bfb924d7e604"
+    },
+    "unityCompilation": "PASS_EDITOR_6000.3.24f1",
+    "types": "PASS_TARGETED_INCREMENT",
+    "lint": "PASS",
+    "corpusReproduction": "PASS_CHECK_NO_WRITE",
+    "reproductionScript": "PASS_EXECUTED",
+    "playMode": "NOT_RUN_NO_RUNTIME_OR_GUI_CHANGE",
+    "webglBuild": "NOT_RUN_EXISTING_RUNTIME_UNCHANGED",
+    "browser": "NOT_RUN_NO_GUI_CHANGE"
+  },
+  "differencesDetected": [],
+  "rngScope": "Shared spawn contract; offline System.Random is not the competitive secret-seeded RNG sequence",
+  "mutations": {
+    "runtime": false,
+    "gui": false,
+    "projectSettings": false,
+    "packages": false,
+    "publishedBuild": false,
+    "database": false,
+    "flow": false,
+    "auth": false,
+    "deployment": false,
+    "licenses": false
+  },
+  "next": "G2048-09.2: tiebreaks, session limits and adversarial automated-direction/multi-account review",
+  "limits": [
+    "Valid 4x4 inputs and C# int-range scores; not every possible board",
+    "No assertion of identical spawn sequences across RNG algorithms",
+    "No anti-bot effectiveness claim or human-play proof",
+    "G2048-08.1 physical report remains pending; G2048-04.4 authenticated background return separate"
+  ]
+}

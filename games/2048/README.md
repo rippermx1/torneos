@@ -38,6 +38,7 @@ La plataforma ofrece una tabla accesible del tablero confirmado y gestiona el fo
 al ampliar/volver; Escape y Tab se comunican desde la cápsula al host.
 Incorporación local: [G2048-11.1](../../docs/2048-INTEGRATION-IMPLEMENTATION.md).
 Prueba física y mediciones: [G2048-08.1](../../docs/2048-DEVICE-IMPLEMENTATION.md).
+Reglas y regresión común TS/C#: [G2048-09.1](../../docs/2048-RULE-EQUIVALENCE.md).
 
 No sustituir el cálculo del servidor por `PracticeBoard`. Su RNG solo sirve en Editor;
 no promete reproducir las semillas secretas de torneos. Las direcciones del cliente

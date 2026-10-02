@@ -1,5 +1,18 @@
 # Estado — TorneosPlay
 
+## 2048: equivalencia de reglas automatizada — 2026-10-02
+
+**G2048-09.1 terminado y probado localmente**: 2.936 escenarios compartidos
+entre el motor TS real y `PracticeBoard` C#, con 40 anclas independientes.
+Deslizamiento, fusiones, puntaje, aparición y detección terminal coinciden;
+2.995 pruebas web, 18 EditMode, compilación C#, tipos y lint pasados.
+Sin diferencias que requieran cambiar runtime, GUI, build `007` o servidor.
+RNG offline/competitivo conservan secuencias distintas. **G2048-09 en progreso**:
+sigue 09.2, desempates/límites y evidencia adversarial de bots/multicuenta.
+08.1/04.4/06.2/07.2 mantienen sus verificaciones físicas/humanas pendientes.
+Backlog base: 15 terminados, 14 en progreso, 12 pendientes (41 tickets).
+[Entrega y reproducción](2048-RULE-EQUIVALENCE.md).
+
 ## 2048: prueba física preparada — 2026-10-02
 
 **G2048-08.1 en progreso**. Xiaomi 12 Pro/Android/Chrome indicado por el

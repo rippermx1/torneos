@@ -1,5 +1,20 @@
 # Contexto para continuar — TorneosPlay
 
+## Continuación G2048-09.1 — 2026-10-02
+
+Equivalencia de reglas entregada y probada: leer
+[2048-RULE-EQUIVALENCE.md](2048-RULE-EQUIVALENCE.md) y su evidencia.
+Corpus compartido de 2.936 escenarios y 40 anclas independientes; 2.995
+pruebas web y 18 EditMode PASS, más compilación C#, tipos y lint.
+No hay diferencias detectadas ni cambios de motor, build/WebGL, DB/Flow o
+despliegues. Reproducir con `scripts/verify-2048-rules.ps1`; usar Node 24 y
+Editor instalado, no abrir otro Editor sobre 2048 mientras corren los tests.
+G2048-09 sigue en progreso: **09.2** revisa desempates/límites y automatización
+adversarial/multicuenta. 08.1 requiere informe físico del Xiaomi; 04.4 mantiene
+regreso competitivo autenticado. 06.2/07.2 conservan aceptación y accesibilidad.
+Backlog base: **41 tickets, 15 terminados, 14 en progreso, 12 pendientes**.
+WIP cloud/Factory/Snake y assets privados preservados; no incluirlos en este commit.
+
 ## Continuación G2048-08.1 — 2026-10-02
 
 En progreso: [entrega física](2048-DEVICE-IMPLEMENTATION.md) y

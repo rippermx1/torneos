@@ -13,7 +13,15 @@
     "evidenceClass": "OWNER_REPORTED",
     "osVersion": null,
     "browserVersion": null,
-    "physicalResult": "NOT_RUN"
+    "physicalResult": "IN_PROGRESS_OWNER_REPORTED_LOAD_ONLY",
+    "ownerReportedLoad": {
+      "lanReachable": true,
+      "gameLoaded": true,
+      "panelVisible": true,
+      "evidenceClass": "OWNER_REPORTED",
+      "metricsReceipt": null,
+      "receivedAt": "2026-10-02T22:13:57.845Z"
+    }
   },
   "implementation": {
     "scripts/2048-device-probe/server.mjs": "ffb30cd42c9dd55fbf2d1626f0d15d36870ca7f8fe0abe72e1494b9a4a534c88",
@@ -289,7 +297,6 @@
     "externalAssets": false
   },
   "pending": [
-    "Phone LAN connectivity",
     "Android and Chrome versions",
     "Real touch in four directions and expanded view",
     "Physical orientation",

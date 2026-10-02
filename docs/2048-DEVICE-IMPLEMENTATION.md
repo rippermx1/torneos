@@ -3,6 +3,8 @@
 **En progreso: medición implementada y probada en PC; resultado del teléfono pendiente.**
 Dispositivo indicado por el propietario: Xiaomi 12 Pro, Android, Chrome
 (`OWNER_REPORTED`; versiones del sistema y navegador pendientes).
+El propietario confirma que desde ese teléfono cargan el juego y el panel de
+prueba por la dirección LAN (`OWNER_REPORTED`, sin informe de métricas aún).
 
 Se mide la cápsula operativa `unity-2048-007` de 3081, imagen
 `g2048-101-candidate-1790975961824`. El host sigue orquestando la partida y
@@ -37,7 +39,7 @@ herramientas locales de observación; no crea otra implementación del juego.
 | Navegador PC real | Unity cargado, panel visible, métricas disponibles, inicio/flechas y puntaje 4. JSON guardado mediante UI, recibo `e39fdedc-b172-4ec9-939c-c8deefefbeec`. Captura revisada: tablero/puntaje preservados y panel contraído fuera del juego. |
 | Medición inicial PC | `game.ready` a **8.793 ms** desde navegación; WASM reservado **128 MiB**, usado aproximadamente **84 MiB**. Última muestra guardada: FPS 54,12 y media móvil 47,52. Navegador automatizado con carga/instrumentación: no es benchmark del Xiaomi ni objetivo aprobado de rendimiento. |
 | Unity Editor/build | `STATUS_NO_INSTANCES`; no se ejecutó una nueva compilación ni se modificaron PlayerSettings. Se prueba el artefacto operativo existente. |
-| Teléfono físico | **Pendiente**: acceso LAN, versiones, tacto, orientación, fluidez y regreso real. No hay ADB conectado ni medición del Xiaomi disponible. |
+| Teléfono físico | Acceso LAN, carga del juego y panel confirmados por el propietario. **Pendiente**: versiones, tacto, orientación, fluidez y regreso real. No hay ADB conectado ni informe de métricas del Xiaomi disponible. |
 
 No se limpiaron cachés del navegador: primera navegación observada no significa
 carga fría. Las métricas del registrador tienen coste y sirven para detectar

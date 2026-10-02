@@ -18,7 +18,11 @@ propietario para RPC/host locales. Cuatro carreras con DB real PASS; resultado f
 16 inmutable tras timeout y ranking. Falta regreso real desde segundo plano:
 el navegador automatizado mantiene ambas pestañas visibles; Chrome no conectado.
 [Recorrido y hallazgos](2048-COMPETITIVE-IMPLEMENTATION.md).
-Los demás gaps siguen abiertos. Fixtures no equivalen a aceptación del producto.
+**10.1 implementada y verificada en candidata aislada 3082** según la nueva dirección
+aprobada: Unity como único cliente jugable. Entrada habitual/alias/resultado/ranking
+comprobados; A06 operativo conserva activación en 3081 pendiente.
+[Entrega E17](2048-UNITY-ENTRY-IMPLEMENTATION.md). Revisión física/humana sigue
+abierta. Fixtures no equivalen a aceptación del producto.
 
 ## Orden de implementación
 
@@ -37,7 +41,7 @@ severidad P1/P2 de la auditoría es distinta de estas prioridades de ejecución.
 | 6 | G2048-11.1 | P1 | Host y build final incorporados juntos al stack operativo 3081. | 04.1–04.3, 06.1, 07.1 | A05 |
 | 7 | G2048-04.4 | P1 | Recorrido local corregido y verificado; completar regreso real de segundo plano. | 11.1; RPC/host corregidos activos | A01 corregido con DB real; regreso real pendiente |
 | 8 | G2048-06.2 / 07.2 / 08.1 | P1 | Prueba física móvil y aceptación de la GUI de la build candidata. | 11.1; 04.4 para el recorrido competitivo | Límites de validación humana y dispositivos |
-| 9 | G2048-10.1 | P1 | Entrada habitual del torneo con Unity y alternativa ligera accesible. | 04.4, 08.1; ajustes de 06.2/07.2 resueltos | A06 |
+| 9 | G2048-10.1 | P1 | Unity como único cliente jugable; alias anteriores conservan contexto y partida. | Host/API de 04.4 y cápsula 007; móvil/revisión humana se verifican por separado | A06 |
 
 El orden es la secuencia recomendada de integración. Las correcciones visuales
 pueden prepararse mientras se resuelven las APIs, pero no se cierra su coherencia
@@ -183,7 +187,7 @@ staging externo separado si todavía no se ha ejecutado allí.
 ### 8. G2048-06.2 / 07.2 / 08.1 — cerrar revisión física y humana
 
 - Probar en teléfono físico identificado: gesto real, orientación, retorno tras
-  suspensión, carga, memoria y fluidez; comparar con alternativa ligera si falla.
+  suspensión, carga, memoria y fluidez; corregir los problemas observados en Unity.
 - Comprobar lectura de valores/puntaje, fusiones y avisos; una persona nueva debe
   poder iniciar, realizar un movimiento y entender fin/error sin guía del desarrollador.
 - Registrar observaciones, corregir problemas concretos y obtener decisión visual
@@ -194,19 +198,29 @@ humanas resueltas. Si falta una persona o dispositivo, se mantiene esa subparte
 pendiente; capturas/emulación no la sustituyen. Cierra G2048-06/07/08 sólo por sus
 criterios respectivos, sin confundir compilación con aceptación humana.
 
-### 9. G2048-10.1 — adoptar Unity en la entrada del torneo
+### 9. G2048-10.1 — Unity como único cliente jugable
 
-- Después de validar el candidato, hacer que el acceso habitual de la ficha lleve
-  al cliente Unity aprobado. Mantener alternativa ligera visible donde sea útil.
-- Preservar rutas previas, contexto/retorno, Auth, inscripción y única partida;
-  comprobar que cambiar de cliente recupera la misma partida, no crea otra.
-- Repetir el recorrido desde la ficha hasta score final/ranking en 3081, incluyendo
-  recarga, modo ampliado y salida. Preparar retorno al cliente anterior si regresa
-  compatibilidad. La adopción local no activa un despliegue externo automáticamente.
+Dirección aprobada por el propietario el 2026-10-02: Unity expone la cápsula y
+la plataforma orquesta la competencia. Se retira el requisito de una alternativa
+ligera visible y de alternar clientes. El cliente anterior permanece en Git y en
+la imagen operativa anterior para retorno técnico.
 
-**Cierra A06 y G2048-10 local:** un usuario entra por la acción habitual y juega
-la build Unity validada; la alternativa recupera el mismo gameId/board/score; resultado
-y ranking coinciden. Los seis hallazgos cuentan entonces con evidencia de cierre.
+- `/tournaments/[id]/play` monta Unity desde la acción habitual de la ficha;
+  `/tournaments/[id]/play/unity` redirige allí sin iniciar otra partida.
+- `/play` conserva práctica Unity; `/play/web` y `/play/unity` redirigen a `/play`
+  y conservan únicamente el retorno seguro a la ficha del torneo.
+- Preservar Auth, inscripción, única partida y recuperación del resultado;
+  direcciones, tiempo y puntuación siguen bajo autoridad del servidor.
+- Comprobar desde ficha hasta cliente/resultado/ranking en la candidata aislada;
+  documentar la versión efectivamente activa en 3081. Su activación local y
+  cualquier despliegue externo son acciones separadas.
+
+**Cierre de implementación:** rutas sin segundo cliente jugable, recuperación de
+la misma partida y verificaciones de acceso/redirección/navegador. **Cierre A06
+operativo:** entrada habitual comprobada sobre la candidata activa en 3081.
+04.4 conserva regreso real de segundo plano pendiente; 06.2/07.2/08.1 conservan
+las verificaciones humanas y físicas. No bloquean el cambio de rutas autorizado
+ni se dan por completadas al compilarlo.
 
 ## Evidencia y cierre de cada tarea
 

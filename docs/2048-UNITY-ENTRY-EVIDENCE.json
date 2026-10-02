@@ -1,0 +1,204 @@
+{
+  "date": "2026-10-02",
+  "task": "G2048-10.1",
+  "status": "IMPLEMENTED_CANDIDATE_VERIFIED_OPERATIVE_ACTIVATION_PENDING",
+  "branch": "codex/2048-clean-gameplay",
+  "baseCommit": "df4ad69",
+  "direction": "Unity is the sole playable 2048 client; platform/server retains competition authority",
+  "candidate": {
+    "task": "G2048-10.1",
+    "image": "torneos-app:g2048-101-candidate-1790975961824",
+    "imageId": "sha256:cb0d154790ac90846059a318d5ce395cce30d04ebc55104cb4f86a808dc68f20",
+    "baseline": "sha256:4d22824563919416303d1de1a855ea664c46620fbb764e5b892a92e67f30409f",
+    "context": "C:\\torneos\\artifacts\\2048-unity-entry\\context",
+    "patches": {
+      "app/(public)/tournaments/[id]/play/page.tsx": "6d73eaea87fe5a36cfafaf266efc457d86ffe459d4e6afd34c96852f68f445af",
+      "app/(public)/tournaments/[id]/play/unity/page.tsx": "78579ee8ea4206166698c2ed8ccef0610210d050332501ae478bd80970e8ce5d",
+      "app/(public)/play/web/page.tsx": "288e532454cafe7164b1631168e28df6f9265a22434ffcd8a4e0f5dde217a28d",
+      "app/(public)/play/unity/page.tsx": "52fc49d8d53e2f8ebf14d7bf1df3ef5ac6ba5b69a208ad8117d0061476c324c6",
+      "app/(public)/play/page.tsx": "d448979140d6a3e58ee441a42edbaf382044d5236241da2e71b1e10bbeb32048"
+    },
+    "registry": {
+      "2048": "unity-2048-007",
+      "alien-run": "level-030",
+      "snake-arena": "snake-arena-006",
+      "factory-empire": "factory-empire-014"
+    },
+    "at": "2026-10-02T21:22:37.445Z",
+    "deployedTo3081": false,
+    "databaseChanged": false
+  },
+  "preview": {
+    "containerId": "d0792cf021a358c7f3bc5c590158badd0a98c1d15870084b1d2b5239d25932f1",
+    "name": "torneos-2048-entry-preview",
+    "url": "http://127.0.0.1:3082",
+    "image": "torneos-app:g2048-101-candidate-1790975961824",
+    "imageId": "sha256:cb0d154790ac90846059a318d5ce395cce30d04ebc55104cb4f86a808dc68f20",
+    "at": "2026-10-02T21:23:12.476Z",
+    "operativeUnchanged": true,
+    "mounts": [],
+    "snakeServerStarted": false
+  },
+  "checks": {
+    "targetedWebTests": 195,
+    "testFiles": 14,
+    "lint": "PASS_NO_WARNINGS",
+    "nextDockerTypeScriptBuild": "PASS",
+    "http": {
+      "task": "G2048-10.1",
+      "at": "2026-10-02T21:25:20.471Z",
+      "base": "http://127.0.0.1:3082",
+      "image": "torneos-app:g2048-101-candidate-1790975961824",
+      "checks": [
+        {
+          "name": "canonical tournament entry requires authentication",
+          "status": "PASS"
+        },
+        {
+          "name": "owned completed game mounts Unity at the canonical entry",
+          "status": "PASS"
+        },
+        {
+          "name": "unregistered user cannot mount the competitive client",
+          "status": "PASS"
+        },
+        {
+          "name": "competitive Unity bookmark redirects to the same tournament",
+          "status": "PASS"
+        },
+        {
+          "name": "practice only offers Unity",
+          "status": "PASS"
+        },
+        {
+          "name": "/play/web redirects to Unity practice",
+          "status": "PASS"
+        },
+        {
+          "name": "/play/web preserves the safe tournament return",
+          "status": "PASS"
+        },
+        {
+          "name": "/play/web rejects an external return destination",
+          "status": "PASS"
+        },
+        {
+          "name": "/play/unity redirects to Unity practice",
+          "status": "PASS"
+        },
+        {
+          "name": "/play/unity preserves the safe tournament return",
+          "status": "PASS"
+        },
+        {
+          "name": "/play/unity rejects an external return destination",
+          "status": "PASS"
+        },
+        {
+          "name": "accepted Unity capsule remains available",
+          "status": "PASS"
+        },
+        {
+          "name": "page loads and aliases do not create or alter competitive games",
+          "status": "PASS"
+        },
+        {
+          "name": "operative app remains unchanged and healthy",
+          "status": "PASS"
+        }
+      ],
+      "ownedGame": {
+        "id": "df50a5c6-05bd-4f4b-9e22-20b466e83210",
+        "user_id": "9030f25e-9f45-4c51-a09c-1978626b4b04",
+        "final_score": 16,
+        "status": "completed",
+        "move_count": 5,
+        "current_board": [
+          [
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            4,
+            0
+          ],
+          [
+            2,
+            0,
+            0,
+            0
+          ],
+          [
+            2,
+            8,
+            0,
+            0
+          ]
+        ]
+      },
+      "deployedTo3081": false
+    },
+    "browser": {
+      "task": "G2048-10.1",
+      "at": "2026-10-02T21:26:59.192Z",
+      "base": "http://localhost:3082",
+      "checks": [
+        {
+          "name": "ficha â†’ Jugar ahora â†’ Unity en /play",
+          "status": "PASS",
+          "tournament": "f3998451-152b-459b-8ed6-a0de2ac1b8bf",
+          "capsule": "unity-2048-007",
+          "recoveredFinalScore": 0
+        },
+        {
+          "name": "GUI ampliada y retorno a pÃ¡gina",
+          "status": "PASS",
+          "visualInspection": "agent screenshot; no human acceptance"
+        },
+        {
+          "name": "alias competitivo â†’ ruta canÃ³nica â†’ mismo resultado",
+          "status": "PASS",
+          "tournament": "8e0503f8-8cfe-4739-b1bb-6176f44c7532",
+          "gameId": "df50a5c6-05bd-4f4b-9e22-20b466e83210",
+          "finalScore": 16
+        },
+        {
+          "name": "resultado y ranking oficial coinciden",
+          "status": "PASS",
+          "finalScore": 16,
+          "fixturePrize": "local simulated $1 CLP; no real charge"
+        },
+        {
+          "name": "alias /play/web â†’ prÃ¡ctica Unity con retorno seguro",
+          "status": "PASS",
+          "destination": "/play?next=%2Ftournaments%2F8e0503f8-8cfe-4739-b1bb-6176f44c7532"
+        },
+        {
+          "name": "prÃ¡ctica Unity con inicio del host y movimiento por teclado",
+          "status": "PASS"
+        }
+      ],
+      "humanAcceptance": "NOT_RUN",
+      "physicalMobile": "NOT_RUN",
+      "backgroundReturn": "NOT_VERIFIED"
+    }
+  },
+  "capsule": "unity-2048-007",
+  "operative3081Changed": false,
+  "newUnityBuild": "NOT_NEEDED_ROUTE_ONLY_INCREMENT",
+  "dbMigrations": "NOT_RUN",
+  "externalDeploy": "NOT_RUN",
+  "flowInitiated": "NOT_RUN",
+  "ownedFixtureEffect": "Opening parallelStart in Unity recovered its expired game and confirmed timeout at score 0 via the existing API. No new game or tournament was created. fixedJourney remained completed at score 16.",
+  "limits": [
+    "A06 operative closure pending activation on 3081",
+    "G2048-04.4 actual background return still pending",
+    "Physical phone, screen reader and human visual/gameplay acceptance NOT_RUN",
+    "No main merge or push"
+  ],
+  "rollback": "Operative g2048-044-candidate-1790973340774 and legacy board sources remain available."
+}

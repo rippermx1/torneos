@@ -1,5 +1,8 @@
 import { redirect } from 'next/navigation'
-export const metadata = { title: '2048 Unity — TorneosPlay', description: 'Práctica de 2048 con el nuevo cliente Unity.' }
-export default function UnityPracticePage() {
-  redirect('/play')
+import { getTournamentReturnPath, withAuthDestination } from '@/lib/auth/redirect'
+
+export const metadata = { title: '2048 — TorneosPlay' }
+export default async function UnityPracticePage({ searchParams }: { searchParams: Promise<{ next?: string | string[] }> }) {
+  const returnTo = getTournamentReturnPath((await searchParams).next)
+  redirect(returnTo ? withAuthDestination('/play', returnTo) : '/play')
 }

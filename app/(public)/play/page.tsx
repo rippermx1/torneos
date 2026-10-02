@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { Unity2048 } from '@/components/game/unity-2048'
-import { getTournamentReturnPath, withAuthDestination } from '@/lib/auth/redirect'
+import { getTournamentReturnPath } from '@/lib/auth/redirect'
 
 export const metadata: Metadata = {
   title: 'Práctica gratis — TorneosPlay',
@@ -28,7 +28,6 @@ export default async function PublicPlayPage({ searchParams }: { searchParams: P
       </div>
 
       <Unity2048 />
-      <p className="text-sm text-muted-foreground">¿Tu dispositivo necesita una carga más rápida? <Link href={returnTo ? withAuthDestination('/play/web', returnTo) : '/play/web'} className="underline">Abrir versión ligera</Link></p>
       <Link href="/play/alien-run" className="block rounded-2xl border p-6 hover:bg-muted">
         <h2 className="text-lg font-semibold">Alien Run</h2>
         <p className="mt-2 text-sm text-muted-foreground">Salta, recoge monedas y llega a la meta. Práctica gratuita, sin torneos ni premios.</p>

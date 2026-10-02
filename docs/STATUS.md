@@ -1,5 +1,19 @@
 # Estado — TorneosPlay
 
+## 2048: Unity como único cliente jugable — 2026-10-02
+
+**G2048-10.1 implementada y verificada en candidata aislada 3082**: la acción
+habitual del torneo monta Unity `007`; alias anteriores conservan contexto y misma
+partida, sin alternativa ligera visible. Plataforma mantiene Auth/inscripción,
+inicio, tiempo, puntuación y ranking. Resultado propio/ranking 16 y práctica 0 → 4
+comprobados en navegador; GUI ampliada revisada por el agente. 195/195 pruebas
+web (14 archivos), 14/14 checks HTTP, lint y Next/TypeScript/Docker PASS.
+Imagen candidata `g2048-101-candidate-1790975961824`; 3081 conserva la versión
+044 anterior. **Activación local pendiente**, sin migraciones ni cambios Flow.
+Contexto congelado preserva Ted/Snake/Factory operativos y WIP compartido.
+Regreso real tras suspensión, móvil físico, lector de pantalla y aceptación humana
+siguen separados. [Entrega/evidencia E17](2048-UNITY-ENTRY-IMPLEMENTATION.md).
+
 ## 2048 competitivo: recorrido local corregido — 2026-10-02
 
 **G2048-04.4 en progreso**: Auth/inscripción, Unity `007`, direcciones/score servidor,

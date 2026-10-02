@@ -1,0 +1,126 @@
+{
+  "date": "2026-10-02",
+  "task": "G2048-07.1",
+  "status": "IMPLEMENTED_TECHNICALLY_VERIFIED_LOCAL",
+  "branch": "codex/2048-clean-gameplay",
+  "base_commit": "5700a38",
+  "delivery": "Working tree increment. GUI source/assets already shared remain preserved; joint versioning and operative integration are G2048-11.1.",
+  "candidate": "unity-2048-007",
+  "preserved_builds": [
+    "unity-2048-005",
+    "unity-2048-006"
+  ],
+  "changes": [
+    "Validated Escape/Tab bridge from real Unity template",
+    "Modal outside branches inert with restoration",
+    "Visible keyboard focus and return to view control",
+    "No focus capture on load; failed/loading frames excluded",
+    "Confirmed 16-cell HTML table and score with silent clock updates",
+    "Reduced motion on load/change",
+    "Tile 8 nominal contrast corrected to 4.6989:1"
+  ],
+  "tests": {
+    "targeted": {
+      "passed": 119,
+      "failed": 0,
+      "total": 119,
+      "files": 11,
+      "artifact": "artifacts/2048-accessibility/web-tests.json"
+    },
+    "repository_vitest": {
+      "passed": 531,
+      "failed": 0,
+      "total": 531,
+      "files": 61,
+      "artifact": "artifacts/2048-accessibility/all-web-tests.json"
+    },
+    "unity_editmode": {
+      "passed": 14,
+      "total": 14,
+      "artifact": "artifacts/2048-accessibility/final/editmode.xml"
+    },
+    "unity_playmode": {
+      "passed": 4,
+      "total": 4,
+      "artifact": "artifacts/2048-accessibility/final/playmode.xml"
+    },
+    "typescript": "PASS",
+    "affected_eslint": "PASS",
+    "unity_webgl": {
+      "result": "PASS",
+      "artifact": "artifacts/2048-accessibility/final/webgl.log"
+    },
+    "next_production": {
+      "result": "PASS",
+      "version": "16.3.8",
+      "mode": "webpack",
+      "static_pages": 65,
+      "output": ".next/2048-accessibility-071",
+      "artifact": "artifacts/2048-accessibility/build.log",
+      "environment": "Auth/DB/Flow placeholders locally; no external mutations"
+    }
+  },
+  "browser": {
+    "url": "http://127.0.0.1:3080/play",
+    "kind": "agent_browser_practice_and_emulation",
+    "recorded_checks": 13,
+    "artifact": "artifacts/2048-accessibility/browser-checks.json",
+    "scenarios": [
+      "Keyboard start",
+      "Arrow and WASD merge",
+      "Consult board via Tab/Enter",
+      "Tab/Shift+Tab wrap in expanded mode",
+      "Escape to normal preserves score 4 and cells",
+      "Restart from host returns score 0",
+      "1280x720,390x844,844x390 expanded",
+      "Emulated pointer drag changes board",
+      "Loading failure: Tab to retry, Escape to view control"
+    ],
+    "screenshots": [
+      "artifacts/2048-accessibility/desktop-expanded.png",
+      "artifacts/2048-accessibility/semantic-board.png",
+      "artifacts/2048-accessibility/mobile-expanded.png",
+      "artifacts/2048-accessibility/landscape-expanded.png"
+    ]
+  },
+  "build_sha256": {
+    "Build/unity-2048-007.data.gz": "1807e6fee033e397c5f836eaff77ee523d28eb25ca5eeca948221d76b74ee6a5",
+    "Build/unity-2048-007.framework.js.gz": "69ffb1280d63104d645b4266b6ff5f2d88f8bdc463e96b86e50200d334ec9b18",
+    "Build/unity-2048-007.loader.js": "ded3daace7ac1498a2b13729325f9c598200024e86ec8202bc5fc94dcf9ecf37",
+    "Build/unity-2048-007.wasm.gz": "0fcb1743c4a24f4d2ee97049f6573ae0c4e8bef315628ca1f79f61de5f710802",
+    "build-manifest.json": "50d80863ac03ea51bf270ebaadb8dbdf56eb29ef0e30fd17a1d07b54f9fc5632",
+    "index.html": "d150a9b7c776d9dd77edefd1a6365b3baeba0d811389055c48b4a55fc7f7956c"
+  },
+  "source_sha256": {
+    "components/game/unity-2048.tsx": "5f192e4c1362b5c0405c76c3a3e6e2bb678a308bb337801121c10d6d21aa4b14",
+    "components/game/unity-2048.module.css": "5f12d8f38b5a500cbb80f566c5a5898ccfbaaa0c27aa7a34d32437ca5d1db22e",
+    "lib/game/unity-2048-navigation.ts": "5e6b52d679cd141201cf793a173d6c192df06812672392631e9f84024d55b07d",
+    "lib/game/runtime-builds.json": "1d8b53b660a2884e4b7ba854fcf8dcd3eb73f1a503e10774ceaecc2ab262d39f",
+    "games/2048/UnityProject/Assets/WebGLTemplates/Torneos2048/index.html": "cc7f2a66e7e57e48a4e7d26ad2e853dd808ca989d2b52de0f9baf0bc77bba76d",
+    "games/2048/UnityProject/Assets/Torneos/2048/Runtime/PuzzleClient.cs": "d3dfb29fbf03ec44b64b99df7136c890cde534147af39b54d9619bf14308708c",
+    "games/2048/UnityProject/ProjectSettings/ProjectSettings.asset": "0b5daf3372a22d8e5156b0bf24eb5632c960440c21c30723c0db6a61c2c7f66f"
+  },
+  "operative_readonly_check": {
+    "url": "http://127.0.0.1:3081",
+    "unity-2048-005": 200,
+    "unity-2048-007": 404,
+    "meaning": "Historical 005/404 is stale. Final candidate not incorporated yet."
+  },
+  "not_closed": [
+    "G2048-11.1: version shared accepted Unity GUI/art and incorporate final host/build into 3081",
+    "G2048-04.4 authenticated tournament start/time/recovery/result/ranking and interleavings",
+    "G2048-07.2 human screen reader and new player comprehension",
+    "G2048-06.2/08.1 human GUI acceptance and physical mobile",
+    "G2048-10.1 default tournament Unity entry"
+  ],
+  "no_mutations": [
+    "DB",
+    "Flow",
+    "external resources",
+    "external deployments",
+    "licenses"
+  ],
+  "human_acceptance": "NOT_RUN",
+  "physical_mobile": "NOT_RUN",
+  "main_merge": "NOT_RUN"
+}

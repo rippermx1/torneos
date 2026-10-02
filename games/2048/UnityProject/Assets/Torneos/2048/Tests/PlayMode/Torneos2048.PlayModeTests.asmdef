@@ -1,1 +1,1 @@
-{"name":"Torneos2048.PlayModeTests","references":["Torneos2048","Unity.ugui"],"optionalUnityReferences":["TestAssemblies"]}
+{"name":"Torneos2048.PlayModeTests","references":["Torneos2048","Unity.ugui","Unity.TextMeshPro"],"optionalUnityReferences":["TestAssemblies"]}

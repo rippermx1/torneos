@@ -1,138 +1,221 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Globalization;
 using System.Runtime.InteropServices;
+using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.UI;
-using UnityEngine.UI;
 
 namespace Torneos.Puzzle2048
 {
     [Serializable] public sealed class PuzzleState {
-        public int[] cells; public int score,move_number,time_left_seconds=-1;
-        public bool locked,game_over,can_restart; public string mode,message;
+        public int[] cells; public int score, move_number, time_left_seconds = -1;
+        public bool locked, game_over, can_restart, reduced_motion; public string mode, message;
     }
     public sealed class PuzzleClient : MonoBehaviour
     {
-        public const string BuildId="unity-2048-002";
-        Text scoreText,statusText,timeText; Image[] tiles=new Image[16]; Text[] numbers=new Text[16];
-        Button restart; PuzzleState state; PracticeBoard practice; float nextInput;
-        Sprite tileFace; Font font;
+        public const string BuildId = "unity-2048-007";
+        static readonly Color Ink = new Color(.10f, .20f, .22f);
+        static readonly CultureInfo ScoreCulture = CultureInfo.GetCultureInfo("es-CL");
+        readonly UnityEngine.UI.Image[] tiles = new UnityEngine.UI.Image[16];
+        readonly TextMeshProUGUI[] numbers = new TextMeshProUGUI[16];
+        readonly List<GameObject> ghosts = new List<GameObject>();
+        TextMeshProUGUI scoreText, gainText;
+        RectTransform board;
+        GameObject canvasRoot, ownedEventSystem;
+        Sprite tileFace; TMP_FontAsset font; Material faceMaterial;
+        PuzzleState state; PracticeBoard practice;
+        string pendingDirection; float nextInput;
+        Coroutine motion;
+        public bool IsAnimating => motion != null;
 #if UNITY_WEBGL && !UNITY_EDITOR
         [DllImport("__Internal")] static extern void Torneos2048Event(string json);
 #endif
-        void Send(string type,string direction=null) {
+        void Send(string direction = null) {
 #if UNITY_WEBGL && !UNITY_EDITOR
-            Torneos2048Event(JsonUtility.ToJson(new ClientEvent {type=type,direction=direction,build_id=BuildId}));
+            Torneos2048Event(JsonUtility.ToJson(new ClientEvent { type = direction == null ? "game.ready" : "game.input", direction = direction, build_id = BuildId }));
 #endif
         }
-        [Serializable] sealed class ClientEvent { public string channel="torneos.2048"; public int version=1; public string type,direction,build_id; }
+        [Serializable] sealed class ClientEvent { public string channel = "torneos.2048"; public int version = 1; public string type, direction, build_id; }
         void Start() {
-            Application.targetFrameRate=60;
+            Application.targetFrameRate = 60;
             CreateUI();
 #if UNITY_WEBGL && !UNITY_EDITOR
-            ApplyState(new PuzzleState{cells=new int[16],locked=true,can_restart=false,message="Conectando con TorneosPlay…"});
-            Send("game.ready");
+            ApplyState(new PuzzleState { cells = new int[16], locked = true });
+            Send();
 #else
-            Restart();
+            practice = new PracticeBoard(Environment.TickCount); RenderPractice();
 #endif
         }
         public void OnPlatformState(string json) { ApplyState(JsonUtility.FromJson<PuzzleState>(json)); }
         public void ApplyState(PuzzleState value) {
-            if(value==null || value.cells==null || value.cells.Length!=16) return;
-            state=value;
-            for(int i=0;i<16;i++) {
-                int n=state.cells[i]; numbers[i].text=n==0?"":n.ToString();
-                numbers[i].fontSize=n>=10000?35:n>=1000?43:55;
-                tiles[i].color=TileColor(n); numbers[i].color=n>=16?new Color(.98f,.96f,.87f):new Color(.07f,.17f,.19f);
+            if (value == null || value.cells == null || value.cells.Length != 16) return;
+            bool changed = state == null || state.score != value.score || state.move_number != value.move_number;
+            for (int i = 0; i < 16 && !changed; i++) changed |= state.cells[i] != value.cells[i];
+            var previous = state;
+            // Snapshot: Editor practice and later bridge messages may reuse arrays.
+            state = new PuzzleState { cells = (int[])value.cells.Clone(), score = value.score, move_number = value.move_number,
+                locked = value.locked, game_over = value.game_over, reduced_motion = value.reduced_motion };
+            if (!changed) {
+                if (!value.locked) pendingDirection = null;
+                if (value.reduced_motion && IsAnimating) { StopMotion(); RenderBoard(); }
+                return;
             }
-            scoreText.text="PUNTAJE  "+state.score.ToString("N0");
-            statusText.text=state.message ?? "";
-            timeText.text=state.time_left_seconds>=0?$"{state.time_left_seconds/60:00}:{state.time_left_seconds%60:00}":"PRÁCTICA LIBRE";
-            restart.gameObject.SetActive(state.can_restart);
+            var plan = previous != null && value.move_number == previous.move_number + 1 && value.score >= previous.score
+                ? TileMotionPlan.Confirm(previous.cells, value.cells, pendingDirection) : null;
+            pendingDirection = null;
+            StopMotion(); RenderBoard();
+            scoreText.text = state.score.ToString("N0", ScoreCulture);
+            if (plan != null && !state.reduced_motion) motion = StartCoroutine(Animate(plan, state.score - previous.score));
         }
         public void RequestDirection(string direction) {
-            if(state==null || state.locked || Time.unscaledTime<nextInput) return;
-            nextInput=Time.unscaledTime+.09f;
+            if (direction != "left" && direction != "right" && direction != "up" && direction != "down") return;
+            if (state == null || state.locked || state.game_over || IsAnimating || Time.unscaledTime < nextInput) return;
+            nextInput = Time.unscaledTime + .09f; pendingDirection = direction;
 #if UNITY_WEBGL && !UNITY_EDITOR
-            Send("game.input",direction);
+            Send(direction);
 #else
-            practice.Move(direction); RenderPractice();
+            // Offline Editor preview only; WebGL always waits for the platform.
+            if (practice == null) return;
+            bool previewChanged = practice.Score != state.score;
+            for (int i = 0; i < 16; i++) previewChanged |= practice.Cells[i] != state.cells[i];
+            if (previewChanged) practice = new PracticeBoard(state.cells, state.score);
+            bool moved = practice.Move(direction);
+            RenderPractice(state.move_number + (moved ? 1 : 0));
 #endif
         }
-        void Restart() {
-#if UNITY_WEBGL && !UNITY_EDITOR
-            if(state!=null && state.can_restart) Send("game.restart");
-#else
-            practice=new PracticeBoard(Environment.TickCount); RenderPractice();
-#endif
+        void RenderPractice(int move = 2) {
+            bool over = !practice.CanMove();
+            ApplyState(new PuzzleState { cells = practice.Cells, score = practice.Score, move_number = move, locked = over, game_over = over, reduced_motion = state?.reduced_motion ?? false });
         }
-        void RenderPractice() { ApplyState(new PuzzleState {cells=practice.Cells,score=practice.Score,can_restart=true,locked=!practice.CanMove(),game_over=!practice.CanMove(),mode="practice",message=practice.CanMove()?"Une fichas iguales · flechas, WASD o desliza":"Sin movimientos · juega otra vez"}); }
         void Update() {
-            var k=Keyboard.current; if(k==null) return;
-            if(k.leftArrowKey.wasPressedThisFrame || k.aKey.wasPressedThisFrame) RequestDirection("left");
-            else if(k.rightArrowKey.wasPressedThisFrame || k.dKey.wasPressedThisFrame) RequestDirection("right");
-            else if(k.upArrowKey.wasPressedThisFrame || k.wKey.wasPressedThisFrame) RequestDirection("up");
-            else if(k.downArrowKey.wasPressedThisFrame || k.sKey.wasPressedThisFrame) RequestDirection("down");
+            var k = Keyboard.current; if (k == null) return;
+            if (k.leftArrowKey.wasPressedThisFrame || k.aKey.wasPressedThisFrame) RequestDirection("left");
+            else if (k.rightArrowKey.wasPressedThisFrame || k.dKey.wasPressedThisFrame) RequestDirection("right");
+            else if (k.upArrowKey.wasPressedThisFrame || k.wKey.wasPressedThisFrame) RequestDirection("up");
+            else if (k.downArrowKey.wasPressedThisFrame || k.sKey.wasPressedThisFrame) RequestDirection("down");
         }
+        static Vector2 Position(int index) => new Vector2((index % 4 - 1.5f) * 160, (1.5f - index / 4) * 160);
+        void RenderBoard() {
+            for (int i = 0; i < 16; i++) {
+                SetTile(tiles[i], numbers[i], state.cells[i]);
+                tiles[i].gameObject.SetActive(state.cells[i] != 0);
+                tiles[i].rectTransform.localScale = Vector3.one;
+            }
+        }
+        static void SetTile(UnityEngine.UI.Image image, TextMeshProUGUI number, int value) {
+            image.color = TileColor(value); number.text = value == 0 ? "" : value.ToString();
+            number.fontSize = value >= 10000 ? 40 : value >= 1000 ? 52 : value >= 100 ? 62 : 72;
+            number.color = value >= 8 && value <= 64 ? Color.white : Ink;
+        }
+        IEnumerator Animate(TileMotionPlan plan, int gain) {
+            foreach (var tile in tiles) tile.gameObject.SetActive(false);
+            var movers = new List<RectTransform>();
+            foreach (var travel in plan.travels) {
+                var r = Node("MovingTile", board, new Vector2(150, 150), Position(travel.source));
+                var image = r.gameObject.AddComponent<UnityEngine.UI.Image>(); image.sprite = tileFace; image.material = faceMaterial; image.raycastTarget = false;
+                var number = Label("Value", r, "", 72, new Vector2(146, 146), Vector2.zero);
+                SetTile(image, number, travel.value); ghosts.Add(r.gameObject); movers.Add(r);
+            }
+            float elapsed = 0;
+            while (elapsed < .13f) {
+                elapsed += Time.unscaledDeltaTime;
+                float t = Mathf.Clamp01(elapsed / .13f); t = 1 - Mathf.Pow(1 - t, 3);
+                for (int i = 0; i < movers.Count; i++) movers[i].anchoredPosition = Vector2.Lerp(Position(plan.travels[i].source), Position(plan.travels[i].destination), t);
+                yield return null;
+            }
+            ClearGhosts(); RenderBoard();
+            gainText.text = gain > 0 ? "+" + gain.ToString("N0", ScoreCulture) : "";
+            elapsed = 0;
+            while (elapsed < .16f) {
+                elapsed += Time.unscaledDeltaTime; float t = Mathf.Clamp01(elapsed / .16f);
+                for (int i = 0; i < 16; i++) {
+                    float scale = plan.spawned[i] ? Mathf.Lerp(.65f, 1, 1 - Mathf.Pow(1 - t, 3)) : plan.merged[i] ? 1 + .10f * Mathf.Sin(t * Mathf.PI) : 1;
+                    tiles[i].rectTransform.localScale = Vector3.one * scale;
+                }
+                scoreText.rectTransform.localScale = Vector3.one * (1 + (gain > 0 ? .04f * Mathf.Sin(t * Mathf.PI) : 0));
+                gainText.rectTransform.anchoredPosition = new Vector2(0, 222 + t * 18);
+                gainText.alpha = 1 - t;
+                yield return null;
+            }
+            ResetEffects(); motion = null;
+        }
+        void ClearGhosts() { foreach (var g in ghosts) { g.SetActive(false); Destroy(g); } ghosts.Clear(); }
+        void ResetEffects() {
+            foreach (var t in tiles) if (t != null) t.rectTransform.localScale = Vector3.one;
+            if (scoreText != null) scoreText.rectTransform.localScale = Vector3.one;
+            if (gainText != null) { gainText.text = ""; gainText.alpha = 1; }
+        }
+        void StopMotion() { if (motion != null) StopCoroutine(motion); motion = null; ClearGhosts(); ResetEffects(); }
+        void OnDestroy() { StopMotion(); if (canvasRoot != null) Destroy(canvasRoot); if (ownedEventSystem != null) Destroy(ownedEventSystem); }
         public static Color TileColor(int n) => n switch {
-            0=>new Color(.14f,.26f,.28f,.65f), 2=>new Color(.88f,.86f,.74f), 4=>new Color(.78f,.86f,.74f),
-            8=>new Color(.45f,.75f,.64f), 16=>new Color(.20f,.59f,.52f), 32=>new Color(.20f,.46f,.48f),
-            64=>new Color(.23f,.37f,.52f), 128=>new Color(.53f,.39f,.23f),256=>new Color(.68f,.40f,.22f),
-            512=>new Color(.72f,.30f,.22f),1024=>new Color(.60f,.23f,.33f),_=>new Color(.44f,.25f,.50f) };
-        RectTransform Node(string name,Transform parent,Vector2 size,Vector2 position) {
-            var g=new GameObject(name,typeof(RectTransform)); var r=g.GetComponent<RectTransform>();r.SetParent(parent,false);
-            r.anchorMin=r.anchorMax=new Vector2(.5f,.5f);r.sizeDelta=size;r.anchoredPosition=position;return r;
+            0 => new Color(.87f, .89f, .85f), 2 => new Color(.87f, .94f, .87f), 4 => new Color(.67f, .86f, .73f),
+            8 => new Color(.23f, .50f, .43f), 16 => new Color(.15f, .43f, .39f), 32 => new Color(.17f, .36f, .38f),
+            64 => new Color(.22f, .31f, .38f), 128 => new Color(.95f, .80f, .44f), 256 => new Color(.96f, .72f, .38f),
+            512 => new Color(.95f, .64f, .39f), 1024 => new Color(.94f, .55f, .43f), _ => new Color(.90f, .66f, .78f) };
+        RectTransform Node(string name, Transform parent, Vector2 size, Vector2 position) {
+            var g = new GameObject(name, typeof(RectTransform)); var r = g.GetComponent<RectTransform>(); r.SetParent(parent, false);
+            r.anchorMin = r.anchorMax = new Vector2(.5f, .5f); r.sizeDelta = size; r.anchoredPosition = position; return r;
         }
-        Text Label(string name,Transform parent,string value,int size,Vector2 dimensions,Vector2 position,Color? color=null) {
-            var t=Node(name,parent,dimensions,position).gameObject.AddComponent<Text>();t.font=font;t.text=value;t.fontSize=size;
-            t.alignment=TextAnchor.MiddleCenter;t.color=color??new Color(.95f,.94f,.84f);t.raycastTarget=false;return t;
-        }
-        Button Control(string name,Transform parent,string label,Vector2 size,Vector2 pos,Action action) {
-            var r=Node(name,parent,size,pos);var im=r.gameObject.AddComponent<Image>();im.sprite=tileFace;im.color=new Color(.21f,.38f,.39f);
-            var b=r.gameObject.AddComponent<Button>();b.targetGraphic=im;b.onClick.AddListener(()=>action());b.navigation=new Navigation {mode=Navigation.Mode.None};
-            Label(name+"Text",r,label,28,size,Vector2.zero);return b;
+        TextMeshProUGUI Label(string name, Transform parent, string value, int size, Vector2 dimensions, Vector2 position) {
+            var t = Node(name, parent, dimensions, position).gameObject.AddComponent<TextMeshProUGUI>();
+            t.font = font; t.text = value; t.fontSize = size; t.alignment = TextAlignmentOptions.Center;
+            t.color = Ink; t.raycastTarget = false; return t;
         }
         void CreateUI() {
-            font=Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"); tileFace=Resources.Load<Sprite>("Gpt/tile-face-v1");
-            var root=new GameObject("PuzzleCanvas",typeof(Canvas),typeof(CanvasScaler),typeof(GraphicRaycaster));
-            var canvas=root.GetComponent<Canvas>();canvas.renderMode=RenderMode.ScreenSpaceOverlay;
-            var scaler=root.GetComponent<CanvasScaler>();scaler.uiScaleMode=CanvasScaler.ScaleMode.ScaleWithScreenSize;scaler.referenceResolution=new Vector2(800,1000);scaler.matchWidthOrHeight=0;
-            var bg=Node("GPTBackground",root.transform,new Vector2(800,1000),Vector2.zero).gameObject.AddComponent<Image>();
-            bg.sprite=Resources.Load<Sprite>("Gpt/background-v1");bg.color=Color.white;bg.raycastTarget=false;
-            var br=bg.rectTransform;br.anchorMin=Vector2.zero;br.anchorMax=Vector2.one;br.sizeDelta=Vector2.zero;
-            Label("Title",root.transform,"2048",74,new Vector2(500,90),new Vector2(0,430));
-            Label("Brand",root.transform,"TORNEOSPLAY",20,new Vector2(600,36),new Vector2(0,366),new Color(.71f,.76f,.68f));
-            scoreText=Label("Score",root.transform,"PUNTAJE  0",31,new Vector2(500,60),new Vector2(0,321));
-            timeText=Label("Time",root.transform,"PRÁCTICA LIBRE",20,new Vector2(550,36),new Vector2(0,278));
-            var board=Node("Board",root.transform,new Vector2(576,576),new Vector2(0,-137));
-            var bi=board.gameObject.AddComponent<Image>();bi.color=new Color(.04f,.14f,.16f,.90f);
-            board.gameObject.AddComponent<BoardSwipe>().client=this;
-            for(int i=0;i<16;i++) {
-                var r=Node("Cell"+i,board,new Vector2(128,128),new Vector2((i%4-1.5f)*140,(1.5f-i/4)*140));
-                tiles[i]=r.gameObject.AddComponent<Image>();tiles[i].sprite=tileFace;tiles[i].raycastTarget=false;
-                numbers[i]=Label("Value",r,"",55,new Vector2(128,128),Vector2.zero);
+            font = Resources.Load<TMP_FontAsset>("UI/Inter-Score"); tileFace = Resources.Load<Sprite>("Gpt/tile-face-v3");
+            faceMaterial = Resources.Load<Material>("UI/RoundedArtwork");
+            canvasRoot = new GameObject("PuzzleCanvas", typeof(Canvas), typeof(UnityEngine.UI.CanvasScaler), typeof(UnityEngine.UI.GraphicRaycaster));
+            canvasRoot.GetComponent<Canvas>().renderMode = RenderMode.ScreenSpaceOverlay;
+            var scaler = canvasRoot.GetComponent<UnityEngine.UI.CanvasScaler>();
+            scaler.uiScaleMode = UnityEngine.UI.CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(800, 1000); scaler.screenMatchMode = UnityEngine.UI.CanvasScaler.ScreenMatchMode.Expand;
+            var bg = Node("Background", canvasRoot.transform, Vector2.zero, Vector2.zero).gameObject.AddComponent<UnityEngine.UI.Image>();
+            bg.sprite = Resources.Load<Sprite>("Gpt/background-v2"); bg.color = Color.white; bg.raycastTarget = false;
+            bg.rectTransform.anchorMin = Vector2.zero; bg.rectTransform.anchorMax = Vector2.one;
+            var content = Node("Gameplay", canvasRoot.transform, new Vector2(800, 1000), Vector2.zero);
+            var caption = Label("ScoreLabel", content, "PUNTAJE", 22, new Vector2(680, 40), new Vector2(0, 374)); caption.characterSpacing = 7;
+            scoreText = Label("Score", content, "0", 82, new Vector2(680, 105), new Vector2(0, 303));
+            gainText = Label("ScoreGain", content, "", 27, new Vector2(680, 40), new Vector2(0, 222)); gainText.color = new Color(.23f, .53f, .45f);
+            board = Node("Board", content, new Vector2(684, 684), new Vector2(0, -120));
+            var bi = board.gameObject.AddComponent<UnityEngine.UI.Image>(); bi.sprite = tileFace; bi.material = faceMaterial; bi.color = new Color(.18f, .28f, .28f);
+            board.gameObject.AddComponent<BoardSwipe>().client = this;
+            for (int i = 0; i < 16; i++) {
+                var slot = Node("Slot" + i, board, new Vector2(150, 150), Position(i)).gameObject.AddComponent<UnityEngine.UI.Image>();
+                slot.sprite = tileFace; slot.material = faceMaterial; slot.color = TileColor(0); slot.raycastTarget = false;
             }
-            // Compact buttons make pointer play possible without keyboard focus.
-            Control("Left",root.transform,"A",new Vector2(100,55),new Vector2(-174,-463),()=>RequestDirection("left"));
-            Control("Up",root.transform,"W",new Vector2(100,55),new Vector2(-58,-463),()=>RequestDirection("up"));
-            Control("Down",root.transform,"S",new Vector2(100,55),new Vector2(58,-463),()=>RequestDirection("down"));
-            Control("Right",root.transform,"D",new Vector2(100,55),new Vector2(174,-463),()=>RequestDirection("right"));
-            // Status and restart are placed outside the board; the web host also exposes status accessibly.
-            statusText=Label("Status",root.transform,"",20,new Vector2(720,44),new Vector2(0,240));
-            restart=Control("Restart",root.transform,"Nueva partida",new Vector2(250,47),new Vector2(0,196),Restart);
-            if(FindFirstObjectByType<EventSystem>()==null) {
-                var es=new GameObject("EventSystem",typeof(EventSystem),typeof(InputSystemUIInputModule));
-                es.GetComponent<InputSystemUIInputModule>().AssignDefaultActions();
+            for (int i = 0; i < 16; i++) {
+                var r = Node("Cell" + i, board, new Vector2(150, 150), Position(i));
+                tiles[i] = r.gameObject.AddComponent<UnityEngine.UI.Image>(); tiles[i].sprite = tileFace; tiles[i].material = faceMaterial; tiles[i].raycastTarget = false;
+                numbers[i] = Label("Value", r, "", 72, new Vector2(146, 146), Vector2.zero);
+            }
+            if (FindFirstObjectByType<EventSystem>() == null) {
+                ownedEventSystem = new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
+                ownedEventSystem.GetComponent<InputSystemUIInputModule>().AssignDefaultActions();
             }
         }
     }
-    public sealed class BoardSwipe : MonoBehaviour, IPointerDownHandler, IPointerUpHandler {
-        public PuzzleClient client;Vector2 start;
-        public void OnPointerDown(PointerEventData e) { start=e.position; }
-        public void OnPointerUp(PointerEventData e) {
-            var d=e.position-start;if(d.magnitude<25) return;
-            client.RequestDirection(Mathf.Abs(d.x)>Mathf.Abs(d.y)?(d.x>0?"right":"left"):(d.y>0?"up":"down"));
+    public sealed class BoardSwipe : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IBeginDragHandler, IDragHandler, IEndDragHandler {
+        public PuzzleClient client;
+        Vector2 start; int? pointer;
+        public void OnPointerDown(PointerEventData e) {
+            if (pointer.HasValue || e.button != PointerEventData.InputButton.Left) return;
+            pointer = e.pointerId; start = e.position;
+        }
+        public void OnBeginDrag(PointerEventData e) { }
+        public void OnDrag(PointerEventData e) { }
+        public void OnPointerUp(PointerEventData e) { Complete(e); }
+        public void OnEndDrag(PointerEventData e) { Complete(e); }
+        void OnDisable() { pointer = null; }
+        void Complete(PointerEventData e) {
+            if (pointer != e.pointerId) return; pointer = null;
+            var delta = e.position - start;
+            float threshold = 28 * GetComponentInParent<Canvas>().scaleFactor;
+            if (delta.magnitude < threshold) return;
+            client.RequestDirection(Mathf.Abs(delta.x) > Mathf.Abs(delta.y) ? (delta.x > 0 ? "right" : "left") : (delta.y > 0 ? "up" : "down"));
         }
     }
 }

@@ -1,0 +1,75 @@
+{
+  "date": "2026-10-01",
+  "role": "auditor",
+  "workspace": "C:/torneos",
+  "branch": "codex/2048-clean-gameplay",
+  "verdict": "PARTIAL_SYNCHRONIZATION_FULL_INTEGRATION_NOT_APPROVED",
+  "report": "docs/2048-CROSS-AUDIT.md",
+  "findings": [
+    {"id":"A01","priority":"P1","subject":"timeout completion unverified in persistence","evidence_class":"ISOLATED_REAL_ROUTE_WITH_MOCKED_DB","tests":"cross-timeout.test.ts: write error and zero rows"},
+    {"id":"A02","priority":"P1","subject":"clock correction does not release refused-timeout lock","evidence_class":"ISOLATED_REAL_SESSION","tests":"cross-session.test.ts: early timeout refusal"},
+    {"id":"A03","priority":"P2","subject":"expanded GUI covers start/restart/time/status; iframe Escape does not exit","evidence_class":"BROWSER_PRACTICE_AND_COMPETITIVE_LAYOUT_CODE_REVIEW","screenshot":"artifacts/2048-cross-audit/expanded-before-start.jpg"},
+    {"id":"A04","priority":"P2","subject":"incomplete terminal-state recovery contract","evidence_class":"ISOLATED_ROUTE_SESSION_AND_CODE_REVIEW","tests":"cross-timeout.test.ts: terminal no_moves; cross-session.test.ts: expired resume"},
+    {"id":"A05","priority":"P2","subject":"operational container still serves build 002 instead of GUI 005","evidence_class":"HTTP_AND_BROWSER","screenshot":"artifacts/2048-cross-audit/stack-3081.jpg"},
+    {"id":"A06","priority":"P2","subject":"normal tournament play entry still mounts web GameBoardClient","evidence_class":"CODE_REVIEW"}
+  ],
+  "current_tests": {
+    "result":"PASS_REPRODUCTIONS_NOT_PRODUCT_ACCEPTANCE",
+    "total":21,
+    "passed":21,
+    "failed":0,
+    "new_audit_cases":8,
+    "existing_session_and_deadline_cases":13,
+    "report":"artifacts/2048-cross-audit/tests.json",
+    "sources":["artifacts/2048-cross-audit/__tests__/cross-session.test.ts","artifacts/2048-cross-audit/__tests__/cross-timeout.test.ts"],
+    "command":"npx vitest run artifacts/2048-cross-audit/__tests__ lib/game/__tests__/unity-2048-session.test.ts __tests__/game-deadline.test.ts --reporter=json --outputFile=artifacts/2048-cross-audit/tests.json"
+  },
+  "http": {
+    "report":"artifacts/2048-cross-audit/http.json",
+    "observations":15,
+    "preview_port":3080,
+    "operational_port":3081,
+    "preview_005_files_hashes_match":6,
+    "operational_005_files_404":6,
+    "operational_002_index_status":200,
+    "preview_mime_gzip_and_iframe_headers":"PASS",
+    "source_manifest":"artifacts/published-2048-unity-2048-005.json",
+    "command":"node artifacts/2048-cross-audit/http-audit.mjs"
+  },
+  "browser": {
+    "preview_build":"unity-2048-005",
+    "operational_build":"unity-2048-002",
+    "desktop_viewport":{"width":1280,"height":720},
+    "inline_iframe":{"width":680,"height":850,"requires_vertical_scroll":true},
+    "explicit_start":"PASS",
+    "keyboard_merge":{"host_score":4,"canvas_score":4},
+    "wasd_up":{"input":"w","observation":"initial 4 in bottom row and 2 in second row moved to top row; new 2 spawned","score":0},
+    "mobile":{"width":390,"height":844,"horizontal_overflow":false,"input":"CUA pointer drags, not physical touchscreen","down":"two original tiles moved to bottom row plus one new tile","left":"two 2 merged into 4","host_score":4,"canvas_score":4},
+    "platform_new_game":{"before_score":4,"after_score":0},
+    "warm_reload":"READY_WITH_EXPLICIT_START",
+    "expanded_before_start":"START_BUTTON_OCCLUDED",
+    "escape_in_canvas":"DID_NOT_EXIT",
+    "exit_button":"PASS",
+    "screenshots":["artifacts/2048-cross-audit/expanded-before-start.jpg","artifacts/2048-cross-audit/keyboard-merge.jpg","artifacts/2048-cross-audit/mobile-before-drag.jpg","artifacts/2048-cross-audit/mobile-down-settled.jpg","artifacts/2048-cross-audit/mobile-merge.jpg","artifacts/2048-cross-audit/stack-3081.jpg","artifacts/2048-cross-audit/warm-reload.jpg","artifacts/2048-cross-audit/wasd-before.jpg","artifacts/2048-cross-audit/wasd-up.jpg"]
+  },
+  "prior_unity_evidence_reviewed_not_rerun": {
+    "editmode_passed":14,"playmode_passed":4,
+    "xml":["artifacts/unity-2048/editmode.xml","artifacts/unity-2048/playmode.xml"],
+    "source_report":"docs/2048-GUI-EVIDENCE.json"
+  },
+  "boundaries": {
+    "functional_source_edits":false,
+    "database_changes":false,
+    "flow_changes":false,
+    "containers_rebuilt":false,
+    "external_deployment":false,
+    "authenticated_competitive_browser_e2e":"NOT_RUN",
+    "physical_phone":"NOT_RUN",
+    "full_accessibility_audit":"NOT_RUN",
+    "human_acceptance":"PENDING",
+    "unity_rebuild_and_tests":"NOT_RERUN",
+    "next_production_build":"NOT_RUN",
+    "full_web_suite":"NOT_RERUN",
+    "unrelated_wip":"PRESERVED"
+  }
+}

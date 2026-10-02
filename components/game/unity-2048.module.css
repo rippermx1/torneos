@@ -43,6 +43,13 @@
 }
 
 .frame { display: block; width: 100%; height: 100%; border: 0; }
+.frame:focus-visible { outline: 3px solid #193337; outline-offset: -3px; }
+.boardDescription { width: 100%; text-align: center; }
+.boardDescription summary { width: fit-content; margin: auto; padding: 0.5rem; cursor: pointer; min-height: 44px; }
+.boardDescription summary:focus-visible { outline: 2px solid #193337; outline-offset: -2px; border-radius: 0.5rem; }
+.boardDescription table { margin: 0.5rem auto; border-collapse: collapse; max-width: 100%; }
+.boardDescription th, .boardDescription td { padding: 0.4rem; border: 1px solid #19333740; }
+.boardDescription caption { padding: 0.25rem; }
 
 .feedback {
   display: flex;

@@ -11,7 +11,8 @@ function RunUnity([string[]]$Extra, [string]$LogName) {
   $process.WaitForExit(); $process.Refresh()
   if ($process.ExitCode -ne 0) { throw "Unity exit $($process.ExitCode): $LogName" }
 }
-RunUnity @('-executeMethod','Torneos.Puzzle2048.Editor.PuzzleBuilder.CreateScene','-quit') 'create-scene.log'
+RunUnity @('-executeMethod','Torneos.Puzzle2048.Editor.PuzzleBuilder.ImportTextResources') 'import-text.log'
+RunUnity @('-executeMethod','Torneos.Puzzle2048.Editor.PuzzleBuilder.ConfigureProject','-quit') 'create-scene.log'
 foreach ($testMode in @('EditMode','PlayMode')) {
   $resultPath = Join-Path $evidencePath ($testMode.ToLower()+'.xml')
   RunUnity @('-runTests','-testPlatform',$testMode,'-testResults',('"'+$resultPath+'"')) ($testMode.ToLower()+'.log')
@@ -21,4 +22,4 @@ foreach ($testMode in @('EditMode','PlayMode')) {
 }
 RunUnity @('-executeMethod','Torneos.Puzzle2048.Editor.PuzzleBuilder.BuildWebGL','-quit') 'webgl.log'
 Push-Location $repoRoot
-try { & node scripts/publish-unity.mjs 2048 unity-2048-002; if ($LASTEXITCODE -ne 0) { throw 'Local publishing failed' } } finally { Pop-Location }
+try { & node scripts/publish-unity.mjs 2048 unity-2048-007; if ($LASTEXITCODE -ne 0) { throw 'Local publishing failed' } } finally { Pop-Location }

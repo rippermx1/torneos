@@ -10,6 +10,20 @@ vi.mock('next/link', () => ({ default: 'a' }))
 import { Unity2048 } from '@/components/game/unity-2048'
 const tournament = { startUrl: '/start', moveUrl: '/move', timeoutUrl: '/timeout', existingGameId: 'g1', leaderboardUrl: '/tournaments/t1/leaderboard' }
 beforeEach(() => { fixture.index = 0; fixture.expanded = false; fixture.ready = true; fixture.failure = '' })
+it('offers all 16 confirmed cells with row and column headers and silent clock updates', () => {
+  fixture.state = { started: true, cells: [2,4,8,16,32,64,128,256,512,1024,2048,0,0,0,0,0], score: 2048, time_left_seconds: 45 }
+  const before = renderToStaticMarkup(Unity2048({ tournament }))
+  expect(before.match(/<td>/g)).toHaveLength(16)
+  expect(before).toContain('<summary>Consultar tablero</summary>'); expect(before).toContain('scope="row"')
+  expect(before).toContain('Columna 4'); expect(before.match(/<td>Vacía<\/td>/g)).toHaveLength(5)
+  expect(before).toContain('aria-live="off"'); expect(before).toContain('puntaje 2.048')
+  fixture.index = 0; fixture.state.time_left_seconds = 44
+  const after = renderToStaticMarkup(Unity2048({ tournament }))
+  expect(after.slice(after.indexOf('<table'), after.indexOf('</table>'))).toBe(before.slice(before.indexOf('<table'), before.indexOf('</table>')))
+  fixture.index = 0; fixture.state.cells = [4,...Array(15).fill(0)]; fixture.state.score = 4
+  const moved = renderToStaticMarkup(Unity2048({ tournament }))
+  expect(moved.match(/<td>Vacía<\/td>/g)).toHaveLength(15); expect(moved).toContain('puntaje 4')
+})
 it('renders the confirmed result and ranking without start or restart controls', () => {
   fixture.state = { started: true, game_over: true, locked: true, score: 128, can_restart: false,
     message: 'Sin movimientos · puntaje final: 128', time_left_seconds: 0 }
@@ -59,5 +73,6 @@ for (const expanded of [false, true]) {
     expect(html).toContain('role="alert"'); expect(html).toContain('Reintentar carga')
     expect(html).toContain(expanded ? 'Volver a la página' : 'Ampliar juego')
     expect(html).toContain('disabled=""')
+    expect(html).toContain('tabindex="-1" inert=""')
   })
 }

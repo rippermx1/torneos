@@ -1,5 +1,19 @@
 # Estado — TorneosPlay
 
+## 2048: prueba física preparada — 2026-10-02
+
+**G2048-08.1 en progreso**. Xiaomi 12 Pro/Android/Chrome indicado por el
+propietario; versiones y resultado físico pendientes. Medición HTTP de `007`
+en 3081: seis archivos/hash/gzip correctos, 17.562.585 bytes publicados.
+Servidor temporal de práctica en `http://192.168.1.4:3083/play` con registro
+de carga/FPS/memoria, punteros, orientación y visibilidad. Panel/guardado y
+partida con score 4 comprobados en navegador PC; 49 pruebas de límites/reloj
+pasadas y lint. Sin nueva build Unity, cambios DB/Flow/firewall ni activación
+de imagen. 3081 conserva la versión aprobada. Backlog base: 15 terminados,
+13 en progreso, 13 pendientes. Falta probar tacto, fluidez y suspensión reales;
+la práctica física no cierra el regreso competitivo autenticado de 04.4.
+[Entrega y recorrido](2048-DEVICE-IMPLEMENTATION.md).
+
 ## 2048: Unity como único cliente jugable — 2026-10-02
 
 **G2048-10.1 terminada y probada localmente; A06 cerrado**. Imagen aprobada

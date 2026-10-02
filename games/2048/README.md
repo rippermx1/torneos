@@ -2,8 +2,9 @@
 
 Mejoras y validaciones independientes: [backlog 2048](../../docs/BACKLOG.md#2048).
 Las pruebas locales autenticadas de inicio, movimientos y recuperación están en
-`docs/LOCAL-ENVIRONMENT-EVIDENCE.json`; staging y adopción como cliente predeterminado
-permanecen pendientes. El backlog separa juego y plataforma comercial.
+`docs/LOCAL-ENVIRONMENT-EVIDENCE.json`; Unity ya es el único cliente jugable en
+3081 (G2048-10.1). Staging y aceptación física/humana permanecen pendientes.
+El backlog separa juego y plataforma comercial.
 
 Proyecto real: `UnityProject`, Unity **6000.3.24f1**, plantilla Universal 2D.
 Se conserva la escena `Assets/Torneos/2048/Scenes/Puzzle.unity` y su GUID;
@@ -36,6 +37,7 @@ Diseño y validación de la GUI: [2048-GUI.md](../../docs/2048-GUI.md).
 La plataforma ofrece una tabla accesible del tablero confirmado y gestiona el foco
 al ampliar/volver; Escape y Tab se comunican desde la cápsula al host.
 Incorporación local: [G2048-11.1](../../docs/2048-INTEGRATION-IMPLEMENTATION.md).
+Prueba física y mediciones: [G2048-08.1](../../docs/2048-DEVICE-IMPLEMENTATION.md).
 
 No sustituir el cálculo del servidor por `PracticeBoard`. Su RNG solo sirve en Editor;
 no promete reproducir las semillas secretas de torneos. Las direcciones del cliente

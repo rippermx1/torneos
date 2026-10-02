@@ -1,5 +1,20 @@
 # Contexto para continuar — TorneosPlay
 
+## Continuación G2048-08.1 — 2026-10-02
+
+En progreso: [entrega física](2048-DEVICE-IMPLEMENTATION.md) y
+[evidencia](2048-DEVICE-EVIDENCE.json). Xiaomi 12 Pro/Android/Chrome indicado
+por el propietario, sin resultado físico todavía. La prueba temporal sirve
+práctica `007` desde `http://192.168.1.4:3083/play`, mientras 3081 mantiene
+la imagen 101 aprobada. No cambiar Auth/DB/Flow/firewall por esta prueba.
+49 pruebas y seis hashes HTTP PASS; carga, métricas, score 4 y guardado
+verificados en PC. Informes/PID en `artifacts/2048-device/` ignorado; detener
+solo el proceso identificado de `scripts/2048-device-probe/server.mjs`.
+Esperar acceso LAN e informe del propietario; cerrar fallos reproducidos con
+repetición física. 04.4 competitivo, 06.2 humano y 07.2 lector siguen separados.
+Backlog base vigente: **41 tickets, 15 terminados, 13 en progreso, 13 pendientes**.
+Los apartados siguientes documentan estados anteriores.
+
 ## Continuación 2048: Unity adoptado en 3081 — 2026-10-02
 
 G2048-10.1 y A06 terminados/probados localmente. Leer

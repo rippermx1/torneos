@@ -1,0 +1,306 @@
+{
+  "date": "2026-10-02",
+  "task": "G2048-08.1",
+  "status": "IN_PROGRESS_PHYSICAL_DEVICE_RESULT_PENDING",
+  "branch": "codex/2048-clean-gameplay",
+  "baseCommit": "e7be699",
+  "build": "unity-2048-007",
+  "operativeImage": "torneos-app:g2048-101-candidate-1790975961824",
+  "device": {
+    "model": "Xiaomi 12 Pro",
+    "os": "Android",
+    "browser": "Chrome",
+    "evidenceClass": "OWNER_REPORTED",
+    "osVersion": null,
+    "browserVersion": null,
+    "physicalResult": "NOT_RUN"
+  },
+  "implementation": {
+    "scripts/2048-device-probe/server.mjs": "ffb30cd42c9dd55fbf2d1626f0d15d36870ca7f8fe0abe72e1494b9a4a534c88",
+    "scripts/2048-device-probe/policy.mjs": "cb776831c07bffc2a8d29b2cc2c4b9eadf5284ea2b3e943e3c4d42b80ab40789",
+    "scripts/2048-device-probe/client.js": "2501320f93ac8db131ad88be3b82af2e60548b2801886f43179dd747068283c8",
+    "scripts/2048-device-probe/capsule.js": "8463afa031b013cfe816fa92942fbe805bd2133a825c5613cd9faea551198be3",
+    "scripts/measure-2048-delivery.mjs": "399551e73d0c7ff4ddc8407fa44bd0c1078231e9dc20b8a85197009115871ac2",
+    "__tests__/2048-device-probe.test.ts": "533e40aba70cc4d7d52ac7194a17e3395d09477c6ed908a0c86846a6e875ee08"
+  },
+  "checks": {
+    "targetedTests": 49,
+    "testFiles": 3,
+    "lint": "PASS",
+    "liveProxyScopeChecks": 6,
+    "editor": "NOT_RUN_STATUS_NO_INSTANCES",
+    "unityBuild": "NOT_RUN_EXISTING_OPERATIVE_ARTIFACT",
+    "phone": "PENDING_OWNER_TEST"
+  },
+  "delivery": {
+    "task": "G2048-08.1",
+    "at": "2026-10-02T21:57:43.847Z",
+    "base": "http://127.0.0.1:3081/games/2048/unity-2048-007/",
+    "evidenceClass": "LOOPBACK_HTTP_RAW_BYTES_NOT_PHONE_OR_STARTUP",
+    "files": [
+      {
+        "file": "Build/unity-2048-007.data.gz",
+        "encodedBytes": 7372283,
+        "decodedBytes": 13334332,
+        "encoding": "gzip",
+        "cacheControl": "public, max-age=0",
+        "sha256": "1807e6fee033e397c5f836eaff77ee523d28eb25ca5eeca948221d76b74ee6a5",
+        "samples": [
+          {
+            "request": 1,
+            "firstByteMs": 30.67,
+            "elapsedMs": 330.45
+          },
+          {
+            "request": 2,
+            "firstByteMs": 16.86,
+            "elapsedMs": 339.69
+          },
+          {
+            "request": 3,
+            "firstByteMs": 12.4,
+            "elapsedMs": 249.65
+          }
+        ],
+        "conditional": {
+          "status": 304,
+          "bytes": 0,
+          "elapsedMs": 11.44
+        }
+      },
+      {
+        "file": "Build/unity-2048-007.framework.js.gz",
+        "encodedBytes": 82989,
+        "decodedBytes": 420947,
+        "encoding": "gzip",
+        "cacheControl": "public, max-age=0",
+        "sha256": "69ffb1280d63104d645b4266b6ff5f2d88f8bdc463e96b86e50200d334ec9b18",
+        "samples": [
+          {
+            "request": 1,
+            "firstByteMs": 10.2,
+            "elapsedMs": 11.11
+          },
+          {
+            "request": 2,
+            "firstByteMs": 9.19,
+            "elapsedMs": 9.7
+          },
+          {
+            "request": 3,
+            "firstByteMs": 8.32,
+            "elapsedMs": 8.85
+          }
+        ],
+        "conditional": {
+          "status": 304,
+          "bytes": 0,
+          "elapsedMs": 7.55
+        }
+      },
+      {
+        "file": "Build/unity-2048-007.loader.js",
+        "encodedBytes": 26983,
+        "decodedBytes": 26983,
+        "encoding": null,
+        "cacheControl": "public, max-age=0",
+        "sha256": "ded3daace7ac1498a2b13729325f9c598200024e86ec8202bc5fc94dcf9ecf37",
+        "samples": [
+          {
+            "request": 1,
+            "firstByteMs": 8.23,
+            "elapsedMs": 8.88
+          },
+          {
+            "request": 2,
+            "firstByteMs": 9.02,
+            "elapsedMs": 9.39
+          },
+          {
+            "request": 3,
+            "firstByteMs": 7.45,
+            "elapsedMs": 7.95
+          }
+        ],
+        "conditional": {
+          "status": 304,
+          "bytes": 0,
+          "elapsedMs": 7.19
+        }
+      },
+      {
+        "file": "Build/unity-2048-007.wasm.gz",
+        "encodedBytes": 10077657,
+        "decodedBytes": 39426168,
+        "encoding": "gzip",
+        "cacheControl": "public, max-age=0",
+        "sha256": "0fcb1743c4a24f4d2ee97049f6573ae0c4e8bef315628ca1f79f61de5f710802",
+        "samples": [
+          {
+            "request": 1,
+            "firstByteMs": 12.28,
+            "elapsedMs": 168.57
+          },
+          {
+            "request": 2,
+            "firstByteMs": 7.81,
+            "elapsedMs": 227.79
+          },
+          {
+            "request": 3,
+            "firstByteMs": 10.24,
+            "elapsedMs": 262.38
+          }
+        ],
+        "conditional": {
+          "status": 304,
+          "bytes": 0,
+          "elapsedMs": 9.14
+        }
+      },
+      {
+        "file": "build-manifest.json",
+        "encodedBytes": 190,
+        "decodedBytes": 190,
+        "encoding": null,
+        "cacheControl": "public, max-age=0",
+        "sha256": "50d80863ac03ea51bf270ebaadb8dbdf56eb29ef0e30fd17a1d07b54f9fc5632",
+        "samples": [
+          {
+            "request": 1,
+            "firstByteMs": 9.44,
+            "elapsedMs": 9.88
+          },
+          {
+            "request": 2,
+            "firstByteMs": 8.18,
+            "elapsedMs": 9.25
+          },
+          {
+            "request": 3,
+            "firstByteMs": 7.6,
+            "elapsedMs": 7.92
+          }
+        ],
+        "conditional": {
+          "status": 304,
+          "bytes": 0,
+          "elapsedMs": 7.66
+        }
+      },
+      {
+        "file": "index.html",
+        "encodedBytes": 2483,
+        "decodedBytes": 2483,
+        "encoding": null,
+        "cacheControl": "public, max-age=0",
+        "sha256": "d150a9b7c776d9dd77edefd1a6365b3baeba0d811389055c48b4a55fc7f7956c",
+        "samples": [
+          {
+            "request": 1,
+            "firstByteMs": 10.13,
+            "elapsedMs": 10.57
+          },
+          {
+            "request": 2,
+            "firstByteMs": 11.4,
+            "elapsedMs": 12.2
+          },
+          {
+            "request": 3,
+            "firstByteMs": 9.96,
+            "elapsedMs": 10.63
+          }
+        ],
+        "conditional": {
+          "status": 304,
+          "bytes": 0,
+          "elapsedMs": 10.42
+        }
+      }
+    ],
+    "encodedBytes": 17562585,
+    "decodedBytes": 53211103,
+    "cacheReset": "NOT_RUN_BROWSER_CACHES_NOT_TOUCHED",
+    "settingsWritten": false,
+    "deployed": false
+  },
+  "pcBrowser": {
+    "evidenceClass": "PC_BROWSER_NOT_PHONE",
+    "receipt": "e39fdedc-b172-4ec9-939c-c8deefefbeec",
+    "model": "PC · Chromium automatizado · no telefono",
+    "readyMs": 8793,
+    "samplesSaved": 63,
+    "lastSavedMetrics": {
+      "at": 1790978701293,
+      "sinceLoadMs": 67246,
+      "totalWASMHeapSize": 134217728,
+      "usedWASMHeapSize": 88152680,
+      "totalJSHeapSize": 40766281,
+      "usedJSHeapSize": 38059765,
+      "pageLoadTimeToFrame1": 4926,
+      "fps": 54.124486315945816,
+      "movingAverageFps": 47.51669377931894,
+      "numJankedFrames": 387,
+      "assetLoadTime": 1482,
+      "codeDownloadTime": 244,
+      "webAssemblyStartupTime": 1424.5999999046326,
+      "gameStartupTime": 2436,
+      "canvas": {
+        "width": 432,
+        "height": 540,
+        "cssWidth": 346,
+        "cssHeight": 432
+      }
+    },
+    "directions": [
+      "left",
+      "down"
+    ],
+    "scoreObserved": 4,
+    "saveFormFinal": {
+      "receipt": "ac4c63d0-1899-4af9-a264-59c9de94b79e",
+      "notes": "Verificacion del formulario final en PC; tacto y suspension fisica pendientes."
+    },
+    "cacheReset": false,
+    "screenshotReviewed": true,
+    "finalCodeVerification": {
+      "receipt": "ad14aa98-f249-49fe-9886-b6c75c4e282b",
+      "readyMs": 9768,
+      "metrics": 42,
+      "notes": "Formulario final verificado; resultado del Xiaomi pendiente.",
+      "evidenceClass": "PC_BROWSER_NOT_PHONE"
+    }
+  },
+  "localProbe": {
+    "origin": "http://192.168.1.4:3083",
+    "scope": "ANONYMOUS_PRACTICE_ONLY",
+    "upstream": "http://127.0.0.1:3081",
+    "forwardsAuthCookies": false,
+    "allowsCommercialApi": false,
+    "firewallChanged": false,
+    "reports": "artifacts/2048-device/*.json"
+  },
+  "mutations": {
+    "operativeDeployment": false,
+    "playerSettings": false,
+    "database": false,
+    "flow": false,
+    "externalAssets": false
+  },
+  "pending": [
+    "Phone LAN connectivity",
+    "Android and Chrome versions",
+    "Real touch in four directions and expanded view",
+    "Physical orientation",
+    "Phone performance and memory",
+    "Real Home/lock return and pointer interruption",
+    "Competitive authenticated background return remains G2048-04.4"
+  ],
+  "operativeHealth": {
+    "imageId": "sha256:cb0d154790ac90846059a318d5ce395cce30d04ebc55104cb4f86a808dc68f20",
+    "health": "healthy",
+    "container": "torneos-app-1",
+    "verifiedAt": "2026-10-02T22:11:35.045Z"
+  }
+}

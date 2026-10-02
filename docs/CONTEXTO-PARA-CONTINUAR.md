@@ -1,5 +1,20 @@
 # Contexto para continuar — TorneosPlay
 
+## Continuación 2048: Unity adoptado en 3081 — 2026-10-02
+
+G2048-10.1 y A06 terminados/probados localmente. Leer
+[2048-UNITY-ENTRY-IMPLEMENTATION.md](2048-UNITY-ENTRY-IMPLEMENTATION.md) y su
+[evidencia](2048-UNITY-ENTRY-EVIDENCE.json) antes de retomar. Fuente `078ef86`,
+imagen 101 aprobada activa/healthy, cápsula `007`; sin nuevas migraciones/Flow.
+`/tournaments/[id]/play` monta Unity; `/tournaments/[id]/play/unity` es alias.
+`/play/web` y `/play/unity` redirigen a `/play` con retorno seguro a la ficha.
+Servidor conserva acceso, única partida, tiempo, tablero/score y resultados.
+Backlog base: **41 tickets: 15 terminados/probados, 12 en progreso, 14 pendientes**.
+Sigue **G2048-08.1**, teléfono físico/rendimiento; 04.4 conserva segundo plano real
+pendiente y 06.2/07.2 conservan aceptación/lector de pantalla. WIP ajeno y fuentes
+Unity preservados; imagen 044 disponible para retorno. Los apartados siguientes
+conservan entregas anteriores; sus rutas y cifras no describen el estado actual.
+
 Fecha: 2026-10-01. Este documento resume decisiones y entrega local; al retomar,
 verifica Git, procesos y configuración antes de asumir que siguen iguales.
 

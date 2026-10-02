@@ -18,9 +18,9 @@ propietario para RPC/host locales. Cuatro carreras con DB real PASS; resultado f
 16 inmutable tras timeout y ranking. Falta regreso real desde segundo plano:
 el navegador automatizado mantiene ambas pestañas visibles; Chrome no conectado.
 [Recorrido y hallazgos](2048-COMPETITIVE-IMPLEMENTATION.md).
-**10.1 implementada y verificada en candidata aislada 3082** según la nueva dirección
-aprobada: Unity como único cliente jugable. Entrada habitual/alias/resultado/ranking
-comprobados; A06 operativo conserva activación en 3081 pendiente.
+**10.1 terminada y probada localmente; A06 cerrado en 3081** según la nueva
+dirección aprobada: Unity como único cliente jugable. Imagen 101 activa/healthy
+con autorización; entrada habitual/alias/resultado/ranking comprobados en 3081.
 [Entrega E17](2048-UNITY-ENTRY-IMPLEMENTATION.md). Revisión física/humana sigue
 abierta. Fixtures no equivalen a aceptación del producto.
 
@@ -214,6 +214,9 @@ la imagen operativa anterior para retorno técnico.
 - Comprobar desde ficha hasta cliente/resultado/ranking en la candidata aislada;
   documentar la versión efectivamente activa en 3081. Su activación local y
   cualquier despliegue externo son acciones separadas.
+
+**Estado 2026-10-02: cierre técnico local/A06 verificado**, imagen 101 activa
+en 3081 y entrada habitual/ranking comprobados; [E17](2048-UNITY-ENTRY-EVIDENCE.json).
 
 **Cierre de implementación:** rutas sin segundo cliente jugable, recuperación de
 la misma partida y verificaciones de acceso/redirección/navegador. **Cierre A06

@@ -1,6 +1,7 @@
 # 2048: Unity como único cliente jugable — G2048-10.1
 
-Dirección aprobada por el propietario el 2026-10-02. La acción habitual
+**Terminado y probado localmente; A06 cerrado.** Dirección aprobada por el
+propietario el 2026-10-02. La acción habitual
 «Jugar ahora» abre Unity en `/tournaments/[id]/play`. La plataforma conserva
 Auth, inscripción, inicio, duración, tablero/puntuación autoritativos y ranking.
 Unity muestra la cápsula `unity-2048-007` y envía direcciones.
@@ -45,9 +46,9 @@ vencida y confirmó timeout en 0 mediante la API existente. No se crearon torneo
 usuarios o partidas adicionales ni se ejecutó finalización/cron global. El premio
 mostrado pertenece a un torneo local de prueba, sin cargo real.
 
-## Candidata y límites
+## Imagen activa y límites
 
-Preview aislado: **http://127.0.0.1:3082/play**. Imagen
+Operativo: **http://127.0.0.1:3081/play**. Preview aislado conservado en 3082. Imagen
 `torneos-app:g2048-101-candidate-1790975961824`, SHA
 `cb0d154790ac90846059a318d5ce395cce30d04ebc55104cb4f86a808dc68f20`.
 
@@ -56,12 +57,22 @@ La copia del catálogo recibió únicamente la retirada del enlace 2048; el WIP
 compartido de Ted/Snake/Factory permanece en el checkout. Builds preservadas:
 `007 / level-030 / snake-arena-006 / factory-empire-014`.
 
-**3081 no se reemplazó**: conserva
+**Activada en 3081 el 2026-10-02 con autorización explícita del propietario**.
+Contenedor healthy y alias `torneos-app:local` actualizado. Imagen anterior
 `g2048-044-candidate-1790973340774`, SHA
-`4d22824563919416303d1de1a855ea664c46620fbb764e5b892a92e67f30409f`.
-La candidata corre como web aislada, sin montar volúmenes operativos ni iniciar
-un segundo servidor Snake. No se aplicaron migraciones ni cambios Flow/despliegues
-externos. A06 operativo queda pendiente de activar/verificar esta imagen en 3081.
+`4d22824563919416303d1de1a855ea664c46620fbb764e5b892a92e67f30409f`,
+conservada para retorno técnico.
+
+Configuración runtime, redes y volúmenes iguales antes/después; los otros diez
+contenedores conservan sus identificadores. Se confirmó ausencia de jugadores,
+salas y torneos Snake activos antes del reemplazo. La huella de la función
+`record_game_move`, lista de migraciones y partida/resultado propios de 16 puntos
+coincide antes/después. No se aplicó SQL de escritura, migraciones, reset, cron
+ni operaciones Flow. La sustitución fue únicamente del servicio app local.
+Las 14 comprobaciones HTTP también pasan directamente contra 3081. Siete
+observaciones de navegador operativo: sesión existente, ficha → Jugar ahora,
+Unity cargado, ampliación/retorno, alias competitivo con resultado 16 y ranking
+oficial 16, alias de práctica con retorno seguro e inicio/fusión por flechas 0 → 4.
 
 Teléfono físico, lector de pantalla, aceptación humana y regreso real tras
 suspensión siguen sin verificar. No hubo merge a main ni push.
@@ -73,7 +84,8 @@ suspensión siguen sin verificar. No hubo merge a main ni push.
 - `scripts/preview-2048-unity-entry.mjs`: inicia la candidata web en puerto 3082
   libre; rechaza reutilizar un contenedor existente. No reemplaza 3081.
 - `scripts/verify-2048-unity-entry.mjs`: checks HTTP/lectura con fixtures locales
-  propias, sin imprimir credenciales ni repetir inicios.
+  propias, sin imprimir credenciales ni repetir inicios. `--integrated` verifica
+  la imagen aprobada activa en 3081 y conserva evidencia separada del preview.
 
 [Evidencia E17](2048-UNITY-ENTRY-EVIDENCE.json). Logs y manifiestos de preview
 en `artifacts/2048-unity-entry`, ignorados por Git.

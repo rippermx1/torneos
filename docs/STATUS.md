@@ -2,17 +2,18 @@
 
 ## 2048: Unity como único cliente jugable — 2026-10-02
 
-**G2048-10.1 implementada y verificada en candidata aislada 3082**: la acción
-habitual del torneo monta Unity `007`; alias anteriores conservan contexto y misma
-partida, sin alternativa ligera visible. Plataforma mantiene Auth/inscripción,
-inicio, tiempo, puntuación y ranking. Resultado propio/ranking 16 y práctica 0 → 4
-comprobados en navegador; GUI ampliada revisada por el agente. 195/195 pruebas
-web (14 archivos), 14/14 checks HTTP, lint y Next/TypeScript/Docker PASS.
-Imagen candidata `g2048-101-candidate-1790975961824`; 3081 conserva la versión
-044 anterior. **Activación local pendiente**, sin migraciones ni cambios Flow.
-Contexto congelado preserva Ted/Snake/Factory operativos y WIP compartido.
-Regreso real tras suspensión, móvil físico, lector de pantalla y aceptación humana
-siguen separados. [Entrega/evidencia E17](2048-UNITY-ENTRY-IMPLEMENTATION.md).
+**G2048-10.1 terminada y probada localmente; A06 cerrado**. Imagen aprobada
+`g2048-101-candidate-1790975961824` activa/healthy en 3081 con autorización explícita
+del propietario. La entrada habitual monta Unity `007`; alias conservan contexto
+sin otra partida ni alternativa ligera visible. Plataforma mantiene Auth/registro,
+inicio, tiempo, puntuación y ranking. Resultado/ranking 16 y GUI ampliada comprobados
+en navegador sobre 3081; 14/14 checks HTTP operativos, además de 195 pruebas web,
+14 checks candidata, lint y Next/TypeScript/Docker previos. Configuración, redes,
+volúmenes y otros diez contenedores preservados; función SQL, migraciones y
+partida/resultado propios sin cambios. Imagen 044 conservada para retorno.
+Sin nuevas migraciones ni operaciones Flow. Siguiente: **G2048-08.1**, rendimiento,
+gesto táctil y retorno tras suspensión en teléfono físico; 04.4/06.2/07.2 mantienen sus verificaciones
+pendientes. [Entrega/evidencia E17](2048-UNITY-ENTRY-IMPLEMENTATION.md).
 
 ## 2048 competitivo: recorrido local corregido — 2026-10-02
 

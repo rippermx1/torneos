@@ -1,11 +1,13 @@
-// HTTP/access checks against the isolated candidate, using only owned local fixtures.
+// HTTP/access checks against the preview or approved operative image, using owned local fixtures.
 import fs from 'node:fs/promises'
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
 import { createClient } from '@supabase/supabase-js'
 import { createServerClient } from '@supabase/ssr'
 
-const base = 'http://127.0.0.1:3082', dir = 'artifacts/2048-unity-entry/'
+assert.ok(process.argv.length === 2 || process.argv[2] === '--integrated', 'Use --integrated to verify the approved image on 3081')
+const integrated = process.argv[2] === '--integrated'
+const base = 'http://127.0.0.1:' + (integrated ? '3081' : '3082'), dir = 'artifacts/2048-unity-entry/'
 const env = Object.fromEntries((await fs.readFile('.env.local-stack', 'utf8')).split(/\r?\n/)
   .filter(line => /^[A-Z_0-9]+=/.test(line)).map(line => [line.slice(0, line.indexOf('=')), line.slice(line.indexOf('=') + 1)]))
 assert.equal(env.TORNEOS_LOCAL_MODE, '1')
@@ -17,7 +19,8 @@ const admin = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SECRET_KEY
 const candidate = JSON.parse(await fs.readFile(dir + 'candidate.json', 'utf8'))
 const live = () => JSON.parse(execFileSync('docker', ['inspect', 'torneos-app-1'], { encoding: 'utf8', windowsHide: true }))[0]
 const baseline = live()
-assert.equal(baseline.Image, candidate.baseline)
+assert.equal(baseline.Image, integrated ? candidate.imageId : candidate.baseline)
+if (integrated) assert.equal(candidate.deployedTo3081, true)
 const checks = [], record = name => checks.push({ name, status: 'PASS' })
 async function sign(account) {
   const jar = new Map(), client = createServerClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? env.NEXT_PUBLIC_SUPABASE_ANON_KEY, {
@@ -69,6 +72,6 @@ assert.equal(asset.status, 200); record('accepted Unity capsule remains availabl
 assert.deepEqual(await games(), before); record('page loads and aliases do not create or alter competitive games')
 const after = live()
 assert.equal(after.Id, baseline.Id); assert.equal(after.Image, baseline.Image); assert.equal(after.State.Health.Status, 'healthy'); record('operative app remains unchanged and healthy')
-const result = { task: 'G2048-10.1', at: new Date().toISOString(), base, image: candidate.image, checks, ownedGame: before.find(game => game.user_id === credentials[fixture.owner].id), deployedTo3081: false }
-await fs.writeFile(dir + 'http-checks.json', JSON.stringify(result, null, 2) + '\n')
+const result = { task: 'G2048-10.1', at: new Date().toISOString(), base, image: candidate.image, checks, ownedGame: before.find(game => game.user_id === credentials[fixture.owner].id), deployedTo3081: integrated }
+await fs.writeFile(dir + (integrated ? 'http-integrated-checks.json' : 'http-checks.json'), JSON.stringify(result, null, 2) + '\n')
 console.log(JSON.stringify({ task: result.task, base, checks: checks.length, status: 'PASS', ownedGameId: result.ownedGame.id, finalScore: result.ownedGame.final_score }))

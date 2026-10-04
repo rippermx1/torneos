@@ -1,10 +1,10 @@
 {
   "date": "2026-10-04",
   "task": "G2048-09.2",
-  "status": "IMPLEMENTED_LOCAL_WEB_PERMISSION_SQL_PENDING",
+  "status": "DONE_LOCAL_IMPLEMENTATION_VALIDATED",
   "parentTask": "G2048-09",
   "parentStatus": "IN_PROGRESS",
-  "baseCommit": "c46ae22",
+  "baseCommit": "92ae970",
   "branch": "codex/2048-clean-gameplay",
   "implementation": {
     "app/api/tournaments/[id]/game/start/route.ts": "86813bb968af710c31fb569db2aaf3adeeef61cabbaab67057116134c8f9d22f",
@@ -21,9 +21,9 @@
     "__tests__/2048-rate-limit.test.ts": "559d41bf4513d00f9dacceede2f1af1ff9a2f52bdea844dee7b94be69589bdc9",
     "__tests__/2048-anticheat-adversarial.test.ts": "26233f8d0a8e7025a015ff18c0ab4699ae74d9380447853bc8b84abefb926b04",
     "__tests__/2048-ranking-adversarial.test.ts": "253fbf1ad45d11fd6a03fa47d5dc6cbe015ba3b3a8adc42bb718b3d3407eafe0",
-    "scripts/verify-2048-adversarial.mjs": "15deb7707a237c20e00ccebb16d561f77b9620c4767ddf5a85213b587b5348d7",
-    "scripts/verify-2048-adversarial-sql.mjs": "0b3103d6b102a248c395b52a34d53e009951c7c9f0606d88c0ccdaca98d746d5",
-    "scripts/sql/2048-seed-visibility-candidate.sql": "921d9de71703615d9d6095f2022fc6c7705e3e6923bbc2e18e8bd12ba848495d"
+    "scripts/verify-2048-adversarial.mjs": "4c4c3b8622ebfe78c9cef7874d04d92627531c91860727936f7b06efb5dd6580",
+    "scripts/verify-2048-adversarial-sql.mjs": "82798276db3d2d8b4eefd90b802597daf6d14ecbadb2f7b1f77b92274caf53ff",
+    "supabase/migrations/20261004184805_guard_2048_seed_visibility.sql": "9bd5e89f8d6ecca3d1b388860554e63566586334afcb1a65cc26913c82c45f7c"
   },
   "checks": {
     "web": {
@@ -31,8 +31,8 @@
       "failed": 0,
       "files": 14
     },
-    "types": "PASS_TARGETED_INCREMENT",
-    "lint": "PASS",
+    "types": "PASS_REEXECUTED_TARGETED_INCREMENT",
+    "lint": "PASS_REEXECUTED",
     "nextBuild": {
       "status": "PASS",
       "version": "16.3.8",
@@ -41,16 +41,127 @@
       "scope": "isolated tracked web source plus only own runtime changes, dummy Supabase credentials",
       "warning": "pre-existing dynamic filesystem tracing in lib/dev/local-flow.ts",
       "report": "artifacts/2048-adversarial/build.log",
-      "sha256": "ef6c790dd6fdec2d0e6f9813da88248bcd3e6fecb0514294df33798bc5f01ba6"
+      "sha256": "ef6c790dd6fdec2d0e6f9813da88248bcd3e6fecb0514294df33798bc5f01ba6",
+      "reexecutedAtClosure": false,
+      "reason": "No web runtime changes since the recorded successful build"
     },
     "sql": {
       "task": "G2048-09.2",
-      "date": "2026-10-04T18:24:34.058Z",
-      "status": "NOT_RUN",
-      "scope": "isolated PostgreSQL 17; no network, platform database, Flow or deployment access",
-      "checks": [],
-      "sources": {},
-      "reason": "Docker engine unavailable (bounded 5-second probe)"
+      "date": "2026-10-04T18:52:16.483Z",
+      "status": "PASS",
+      "scope": "fresh native PostgreSQL 17 cluster, loopback only; no platform DB, Flow or deployment access",
+      "checks": [
+        {
+          "name": "all tie-break levels and invalid exclusion follow the original finalizer SQL",
+          "status": "PASS"
+        },
+        {
+          "name": "one session per account and tournament; distinct accounts remain independent",
+          "status": "PASS"
+        },
+        {
+          "name": "original authenticated table grant exposes an active owned seed despite row isolation",
+          "status": "PASS"
+        },
+        {
+          "name": "candidate preserves owned safe columns without exposing another account",
+          "status": "PASS"
+        },
+        {
+          "name": "candidate denies authenticated seed and wildcard reads",
+          "status": "PASS"
+        },
+        {
+          "name": "candidate retains server seed access for gameplay and audit",
+          "status": "PASS"
+        },
+        {
+          "name": "240-account movement limit rejects request 241 using the original atomic RPC",
+          "status": "PASS"
+        },
+        {
+          "name": "concurrent starts share one 15-request account quota",
+          "status": "PASS"
+        },
+        {
+          "name": "a second account does not share the first quota",
+          "status": "PASS"
+        },
+        {
+          "name": "expired quota resets instead of locking out the next window",
+          "status": "PASS"
+        },
+        {
+          "name": "anon cannot consume privileged quotas",
+          "status": "PASS"
+        },
+        {
+          "name": "authenticated cannot consume privileged quotas",
+          "status": "PASS"
+        },
+        {
+          "name": "baseline movement RPC changes a closed score",
+          "status": "PASS"
+        },
+        {
+          "name": "service role atomically commits a valid movement",
+          "status": "PASS"
+        },
+        {
+          "name": "last no_moves commit closes exactly once",
+          "status": "PASS"
+        },
+        {
+          "name": "closed result cannot be overwritten by a delayed move",
+          "status": "PASS"
+        },
+        {
+          "name": "stale sequence cannot insert another movement",
+          "status": "PASS"
+        },
+        {
+          "name": "stale board is rejected with an otherwise correct sequence",
+          "status": "PASS"
+        },
+        {
+          "name": "two concurrent directions commit only once",
+          "status": "PASS"
+        },
+        {
+          "name": "pending direction behind timeout preserves the closed score",
+          "status": "PASS"
+        },
+        {
+          "name": "deadline includes actual row-lock wait time",
+          "status": "PASS"
+        },
+        {
+          "name": "shorter tournament window rejects a late move",
+          "status": "PASS"
+        },
+        {
+          "name": "completed tournament rejects an active-session move",
+          "status": "PASS"
+        },
+        {
+          "name": "anon cannot call the privileged movement RPC",
+          "status": "PASS"
+        },
+        {
+          "name": "authenticated cannot call the privileged movement RPC",
+          "status": "PASS"
+        }
+      ],
+      "sources": {
+        "supabase/migrations/20261004184805_guard_2048_seed_visibility.sql": "9bd5e89f8d6ecca3d1b388860554e63566586334afcb1a65cc26913c82c45f7c",
+        "supabase/migrations/20260805163009_fixed_prize_business_model.sql": "262fe2dd85123db1f166a7597a487b7e6d6afabcd63929b67b5ec5459ca64d5d",
+        "supabase/migrations/20260519000000_record_game_move_rpc.sql": "a8b81578b983e9ee70f917c63d4a1d1f899c0b1e35c6b0d415818025cbe082a7",
+        "supabase/migrations/20260508212105_rate_limit_buckets.sql": "fc53b186111074735ebcc8e27d86e2d3df9e927ba9313e25eddfe73d0d2f72a9",
+        "supabase/migrations/20261002202731_guard_2048_move_commit.sql": "3f9e53f28789314822add9960fc63cfc3d6a2ef51dd4fb2daf7d15add04f7bbf",
+        "supabase/migrations/001_init_schema.sql": "2d017f97a8040f92cc230c8937190709dc3bf75363890447517ffc8b22cdd2f3"
+      },
+      "engine": "postgres (PostgreSQL) 17.11",
+      "cleanup": "PASS"
     },
     "browser": "NOT_RUN",
     "physicalDevice": "NOT_RUN",
@@ -72,7 +183,7 @@
   },
   "verificationReport": {
     "path": "artifacts/2048-adversarial/all-tests.json",
-    "sha256": "fb06208e5c5d2ef7d20e4bacf229a787f84f0cf8e6a478bc0b109bfff2b46275"
+    "sha256": "dcc7d09fc2f69e833ca2b7e5e37dede139e4c5f083f466a6874f34e22118c24a"
   },
   "limitsPerAccountPer60Seconds": {
     "start": 15,
@@ -86,13 +197,6 @@
     "user_id ASC"
   ],
   "knownOpenGaps": [
-    {
-      "id": "OWNED_ACTIVE_SEED_SELECT",
-      "source": "20260805163009 authenticated whole-table SELECT plus owned-row RLS",
-      "status": "SOURCE_AUDIT_FINDING_NOT_LIVE_DB_VERIFIED",
-      "candidate": "scripts/sql/2048-seed-visibility-candidate.sql",
-      "applied": false
-    },
     {
       "id": "PACED_AUTOMATION",
       "evidence": "39 simulated moves at 500ms intervals pass actual detector; winner review has no flags",
@@ -114,8 +218,42 @@
     "webglBuild": false,
     "operationalDatabase": false,
     "flow": false,
-    "deployment": false
+    "deployment": false,
+    "migrationSource": true,
+    "isolatedSyntheticDatabase": true
   },
   "buildActivated": false,
-  "sharedWipPreserved": true
+  "sharedWipPreserved": true,
+  "featureClosed": true,
+  "closureScope": "Web source, versioned seed-permission migration and real isolated SQL verification; operating deployment not changed",
+  "sqlReport": {
+    "path": "artifacts/2048-adversarial/sql.json",
+    "sha256": "eac1e46b3c4c1461d23aee13718424b84662b13aba66043adda02f0a15b5cab6"
+  },
+  "verificationScriptReport": {
+    "path": "artifacts/2048-adversarial/verification.json",
+    "sha256": "dc46ff85b044435becf1fc34cbfa7fed3dab74c76603614a7868348c70334452"
+  },
+  "resolvedSeedGap": {
+    "status": "REPRODUCED_AND_FIXED_IN_REAL_ISOLATED_POSTGRES",
+    "migration": "supabase/migrations/20261004184805_guard_2048_seed_visibility.sql",
+    "generator": "Supabase CLI 2.119.0 migration new guard_2048_seed_visibility",
+    "isolatedApplied": true,
+    "operationalApplied": false
+  },
+  "integrationPending": [
+    "Apply tested migration and web candidate to the authorized operating environment, then verify real grants and authenticated entry"
+  ],
+  "nextImplementationTask": "G2048-09.3",
+  "portablePostgres": {
+    "version": "17.11",
+    "source": "https://get.enterprisedb.com/postgresql/postgresql-17.11-3-windows-x64-binaries.zip",
+    "sourcePage": "https://www.enterprisedb.com/download-postgresql-binaries",
+    "zipSha256": "4b8db0930c38f6ef845db919551dedda3b6b845aeb0927b3d79a6e8e9e4537cf",
+    "installerUsed": false,
+    "windowsServiceInstalled": false,
+    "sharedProcessesStopped": false,
+    "listen": "127.0.0.1 only",
+    "privateFixturesOnly": true
+  }
 }

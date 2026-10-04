@@ -30,7 +30,13 @@ try {
   report.web = { passed: testReport.numPassedTests, failed: testReport.numFailedTests, files: testReport.testResults.length }
   await run('types', ['node_modules/typescript/bin/tsc', '-p', path.join(dir, 'tsconfig.json')])
   await run('lint', ['node_modules/eslint/bin/eslint.js', ...source, ...newTests, 'scripts/verify-2048-adversarial.mjs', 'scripts/verify-2048-adversarial-sql.mjs'])
-  if (process.argv.includes('--sql')) await run('postgres', ['scripts/verify-2048-adversarial-sql.mjs'])
+  if (process.argv.includes('--sql')) {
+    const pgBinArg = process.argv.indexOf('--pg-bin')
+    const args = ['scripts/verify-2048-adversarial-sql.mjs']
+    if (pgBinArg !== -1) args.push('--pg-bin', process.argv[pgBinArg + 1])
+    await run('postgres', args)
+    report.sql = JSON.parse(await fs.readFile(path.join(dir, 'sql.json'), 'utf8'))
+  }
   else report.sql = 'NOT_RUN; use --sql with a running Docker engine for isolated SQL checks'
 } catch (error) { report.error = error.message; process.exitCode = 1 }
 await fs.writeFile(path.join(dir, 'verification.json'), JSON.stringify(report, null, 2) + '\n')

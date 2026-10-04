@@ -1,8 +1,11 @@
 # G2048-09.2 — desempates, límites y revisión adversarial
 
-2026-10-04. **Implementación web preparada y probada; validación SQL y cierre de
-permisos de semilla pendientes. G2048-09 sigue En progreso.** Rama
-`codex/2048-clean-gameplay`, base `c46ae22`. Sin activación ni merge a main.
+2026-10-04. **G2048-09.2 terminado y probado localmente**: implementación web y
+migración de permisos verificadas, 3.180 pruebas web y 25 comprobaciones SQL reales
+PASS. El cierre corresponde a código y pruebas; aplicación/activación operativa
+queda en integración. **G2048-09 sigue En progreso** por contramedidas pendientes.
+Rama `codex/2048-clean-gameplay`; implementación `92ae970`, cierre sobre esa base.
+Sin activación ni merge a main.
 [Evidencia](2048-ADVERSARIAL-EVIDENCE.json).
 
 Unity conserva tablero y puntaje confirmado. La plataforma autoriza la cuenta,
@@ -34,33 +37,44 @@ El cliente web optimista histórico deja de disponer de RNG anticipado; la entra
 canónica ya usa Unity exclusivamente. No se afirma compatibilidad jugable con ese
 cliente retirado.
 
-## Brecha de permisos todavía abierta
+## Corrección de permisos verificada
 
 La migración `20260805163009_fixed_prize_business_model.sql` concede `SELECT` sobre
 **toda** `public.games` a `authenticated`. La política de
 `20260507001033_optimize_rls_policy_performance.sql` permite al jugador leer su
 fila. `seed` es una columna de esa fila. Por la combinación de ambas fuentes, un
 jugador podría obtener la semilla activa directamente mediante PostgREST, aunque
-la API ya no exponga RNG futuro. **Hallazgo de fuentes, sin confirmar los grants
-de una base operativa en esta ejecución.** RLS limita filas, no oculta columnas;
+la API ya no exponga RNG futuro. **Reproducido en PostgreSQL real con el grant
+anterior y una política de fila propia.** RLS limita filas, no oculta columnas;
 ver [documentación oficial](https://supabase.com/docs/guides/database/postgres/row-level-security).
 
-Corrección revisable: [SQL candidato](../scripts/sql/2048-seed-visibility-candidate.sql).
+Corrección versionada:
+[migración](../supabase/migrations/20261004184805_guard_2048_seed_visibility.sql),
+creada con Supabase CLI 2.119.0 mediante `migration new guard_2048_seed_visibility`.
 Revoca lectura general/semilla del navegador y concede solo columnas de estado
 seguras. Conserva la política de filas y acceso servidor `service_role`; la
 auditoría pública sigue mostrando huellas calculadas en servidor, no la semilla
-cruda. El SQL está fuera de `supabase/migrations` y **no se ha aplicado**. La regla
+cruda. El candidato anterior se reemplazó por esta migración como fuente única.
+**Aplicada y probada solo en el cluster aislado; sin aplicar al ambiente operativo.** La regla
 de [AGENTS.md](../AGENTS.md) dice «No cambies DB, Flow, despliegues, recursos externos
 ni licencias por esta migración»; esta entrega conserva ese alcance.
 
-El verificador SQL preparado reproduce el grant inseguro y compara la candidata
-en un PostgreSQL desechable sin red. También comprueba todos los desempates,
-restricción de sesión, cuota 240/241, concurrencia de inicios, expiración, cuentas
-separadas y permisos de RPC. **NOT_RUN:** Docker no responde a una comprobación
-acotada de cinco segundos; no se creó ningún contenedor de prueba ni se tocó
-Supabase. La compilación JS/lint del verificador sí pasaron. Las 13 comprobaciones
-del commit de movimientos de G2048-04.4 son evidencia histórica, no una ejecución
-nueva de 09.2.
+El verificador SQL ejecutó **25/25 comprobaciones PASS** en PostgreSQL **17.11**
+nativo portable: grant inseguro reproducido, semilla/`SELECT *` bloqueados tras
+migrar, columnas propias seguras y acceso servidor conservados, cuatro niveles
+de desempate, sesión única, cuota 240/241, 20 peticiones paralelas compartiendo
+15 inicios permitidos, expiración y aislamiento de cuotas/permisos. También volvió
+a ejecutar los 13 casos del contrato de commit: dos direcciones simultáneas
+persisten una sola, movimiento pendiente tras timeout conserva resultado, reloj
+incluye espera por bloqueo, tablero/secuencia obsoletos y RPC sin permiso rechazados.
+
+Docker sigue sin responder. Se utilizaron los [binarios oficiales de EDB](https://www.enterprisedb.com/download-postgresql-binaries),
+distribución enlazada por [PostgreSQL](https://www.postgresql.org/download/windows/),
+sin instalador ni servicio Windows. Cada ejecución inicializa una carpeta UUID
+propia en artifacts, escucha solo en `127.0.0.1` y se detiene en `finally`:
+**cleanup PASS**. Ningún proceso/DB de otro trabajo se detuvo. No se leyó ni cambió
+Supabase operativo ni se copiaron sus datos. Binario y datos sintéticos quedan
+locales e ignorados; procedencia/hash en evidencia.
 
 ## Límites que las pruebas hacen explícitos
 
@@ -80,7 +94,8 @@ nueva de 09.2.
 
 ## Verificación y reproducción
 
-**3.180 pruebas en 14 archivos PASS**, tipos del incremento y lint PASS. Incluye
+**3.180 pruebas en 14 archivos PASS**, tipos del incremento y lint PASS, ejecutados
+nuevamente junto con las 25 pruebas SQL al cerrar. Incluye
 los 2.936 casos compartidos de reglas y pruebas existentes de cierres, transporte
 PostgREST, regreso al torneo, entrada Unity, disponibilidad y revisión de ganadores.
 Los primeros lotes reprodujeron 26 fallos de contrato/limiter y siete del detector
@@ -95,9 +110,10 @@ preexistente; no se modificó ese frente. Candidata **sin activar**.
 
 ```powershell
 node scripts/verify-2048-adversarial.mjs
-# Requiere Docker operativo. Crea y elimina únicamente su contenedor sin red.
+# Windows: usa los binarios portables locales, un cluster nuevo y loopback.
+node scripts/verify-2048-adversarial.mjs --sql --pg-bin artifacts/2048-adversarial/postgres-portable/pgsql/bin
+# Alternativa con Docker operativo: contenedor propio sin red.
 node scripts/verify-2048-adversarial-sql.mjs
-# Alternativa: web + tipos + lint + SQL; un SQL no ejecutado no se marca PASS.
 node scripts/verify-2048-adversarial.mjs --sql
 ```
 
@@ -106,11 +122,12 @@ Editor Unity. Sus resultados anteriores no cierran estos límites.
 
 ## Trabajo siguiente
 
-1. Completar 09.2: ejecutar PostgreSQL aislado, verificar grants reales en el
-   ambiente autorizado y tratar la candidata de permisos por el procedimiento de
-   cambios DB autorizado. No cerrar la brecha de semilla solo con la API.
-2. Mantener G2048-09 abierto para contramedidas y política verificable frente a
-   automatización pausada/multicuenta y coherencia de sanción/resultado cerrado.
-   No habilitar premios comerciales basándose en estas heurísticas.
+1. **Integración operativa pendiente:** verificar grants del ambiente autorizado,
+   aplicar la migración probada y activar la candidata web según su procedimiento
+   autorizado. El cierre local de 09.2 no declara ese ambiente corregido ni probado.
+2. **G2048-09.3:** tratar los hallazgos confirmados de automatización pausada,
+   persona con varias cuentas y coherencia de sanción/resultado cerrado. G2048-09
+   padre sigue abierto. Las pruebas adversariales de 09.2 describen estos límites;
+   no constituyen una solución de identidad/bots ni habilitan premios comerciales.
 3. Continúan 08.1 (informe Xiaomi), 04.4 (regreso competitivo físico), 06.2
    (aceptación visual) y 07.2 (lector/nuevo usuario).

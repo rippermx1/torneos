@@ -1,6 +1,5 @@
--- G2048-09.2 review candidate ONLY. Not an auto-applied migration.
--- All playable Unity clients use server APIs. Closed-game audit reads seeds
--- through service_role and renders fingerprints, never raw browser SELECT.
+-- Competitive 2048 never exposes its active RNG seed to a browser role.
+-- Preserve owned safe-state reads and service_role access for gameplay/audit.
 BEGIN;
 REVOKE SELECT ON TABLE public.games FROM PUBLIC, anon, authenticated;
 REVOKE SELECT (seed) ON TABLE public.games FROM PUBLIC, anon, authenticated;

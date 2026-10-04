@@ -2,19 +2,20 @@
 
 ## 2048: revisión adversarial y límites — 2026-10-04
 
-**G2048-09.2 implementado en candidata web; cierre SQL pendiente.** Desempate
-completo, cuotas por cuenta (15/240/30 por minuto), validación estricta, fin
-exclusivo, configuración fresca y respuestas sin RNG futuro. Detector real:
-cinco intervalos completos; reloj cliente aislado de sanciones; escrituras
-comprobadas. **3.180 pruebas / 14 archivos, tipos/lint y build Next 16.3.8 PASS**.
+**G2048-09.2 terminado y probado localmente**: 3.180 pruebas web / 14 archivos,
+25 verificaciones SQL reales, tipos/lint PASS. Desempates/cuotas, solicitudes,
+reloj, RNG anticipado y detector corregidos. Migración versionada
+`20261004184805_guard_2048_seed_visibility.sql` bloquea semilla/SELECT * del
+navegador y conserva estado propio/acceso servidor; aplicada y comprobada en
+PostgreSQL 17.11 portable aislado, con concurrencia real y cleanup PASS.
+La compilación Next anterior sigue válida: sin nuevas modificaciones web runtime.
 
-La revisión de grants en las migraciones encuentra lectura de semilla propia:
-[SQL candidato](../scripts/sql/2048-seed-visibility-candidate.sql) preparado,
-**sin aplicar**. Docker no responde; PostgreSQL aislado y grants reales no
-verificados en esta ejecución. Bots pausados y persona con varias cuentas
-siguen fuera de las garantías. **G2048-09 En progreso**, sin activar ni cambiar
-DB/Flow/Unity. [Entrega](2048-ADVERSARIAL-IMPLEMENTATION.md) y
-[evidencia](2048-ADVERSARIAL-EVIDENCE.json). Continúan 08.1/04.4/06.2/07.2.
+Cierre de implementación local: **sin aplicación/activación operativa**; esa
+integración conserva su verificación de grants/entrada autenticada pendiente.
+**G2048-09 padre En progreso; sigue G2048-09.3** para automatización pausada,
+multicuenta y coherencia de sanciones. Continúan 08.1/04.4/06.2/07.2.
+[Entrega](2048-ADVERSARIAL-IMPLEMENTATION.md) y
+[evidencia](2048-ADVERSARIAL-EVIDENCE.json).
 Backlog base conservado: 15 terminados, 14 en progreso, 12 pendientes.
 
 ## 2048: equivalencia de reglas automatizada — 2026-10-02

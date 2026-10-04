@@ -2,24 +2,24 @@
 
 ## Continuación G2048-09.2 — 2026-10-04
 
-Leer [2048-ADVERSARIAL-IMPLEMENTATION.md](2048-ADVERSARIAL-IMPLEMENTATION.md)
-y su evidencia. Candidata web preparada: desempates alineados con SQL, cuotas
-por cuenta con fallo cerrado, validación, reloj exclusivo, configuración fresca,
-RNG anticipado retirado y correcciones del detector. 3.180 pruebas / 14 archivos,
-tipos/lint y build Next aislado PASS. Reproducción:
-`node scripts/verify-2048-adversarial.mjs`.
+**G2048-09.2 cerrado como implementación local validada.** Leer
+[2048-ADVERSARIAL-IMPLEMENTATION.md](2048-ADVERSARIAL-IMPLEMENTATION.md)
+y evidencia actualizada: 3.180 pruebas / 14 archivos y 25 checks de PostgreSQL
+17.11 reales, tipos/lint PASS; concurrentes, deadlines/bloqueos, commits y grants.
+Migración de permisos versionada con CLI 2.119.0; candidato auxiliar eliminado.
+Cierra lectura de seed en DB de pruebas sin romper servidor/estado propio.
 
-**No cerrar G2048-09 ni 09.2 todavía:** fuente SQL concede lectura de semilla
-propia a authenticated. Candidata revisable en
-`scripts/sql/2048-seed-visibility-candidate.sql`, fuera de migraciones y sin
-aplicar. Docker no responde; ejecutar verificador PostgreSQL sin red al recuperar
-el motor, revisar grants del ambiente autorizado y seguir procedimiento autorizado
-para DB. No atribuir a esta ejecución pruebas de DB/navegador/Editor/físicas.
+Reproducir: `node scripts/verify-2048-adversarial.mjs --sql --pg-bin artifacts/2048-adversarial/postgres-portable/pgsql/bin`.
+Docker sigue sin responder; runner admite PostgreSQL nativo en cluster UUID propio,
+loopback y parada en finally (cleanup PASS). No detener clusters/procesos de otro
+trabajo. Binarios EDB quedan ignorados en artifacts; procedencia/hash en evidencia.
 
-Automatización pausada pasa heurísticas; cuotas/propiedad separan cuentas sin
-identificar personas; after() y dos escrituras no garantizan sanción en N+1 ni
-invalidación atómica. Sin activación/DB/Flow/Unity ni inclusión de WIP ajeno.
+**G2048-09.3 siguiente**: contramedidas para bot pausado/multicuenta y coherencia
+de sanción/resultado. G2048-09 padre sigue En progreso; no prueba juego humano.
+Integración operativa separada: aplicar migración/activar candidata solo en ambiente
+autorizado y verificar grants/entrada; no afirmar que eso ocurrió aquí.
 Siguen informes físicos/humanos 08.1/04.4/06.2/07.2. Backlog base 41: 15/14/12.
+WIP paralelo preservado; no hubo merge a main ni modificación operativa.
 
 ## Continuación G2048-09.1 — 2026-10-02
 

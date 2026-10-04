@@ -4,7 +4,8 @@ import { checkPlayWindow } from '@/lib/tournament/helpers'
 import { isPastGameDeadline } from '@/lib/tournament/game-deadline'
 import { closeExpiredGame } from '@/lib/tournament/close-expired-game'
 import { GAME_SNAPSHOT_FIELDS, gameSnapshotResponse, type SnapshotGame } from '@/lib/tournament/game-snapshot-response'
-import { checkRateLimit, getRequestIp, rateLimitResponse } from '@/lib/security/rate-limit'
+import { checkRateLimit, rateLimitResponse } from '@/lib/security/rate-limit'
+import { isJsonObject, isGameId } from '@/lib/tournament/game-request'
 import type { Tournament } from '@/types/database'
 
 interface TimeoutRequest {
@@ -20,9 +21,10 @@ export async function POST(
 
   const userId = auth.access.userId
   const rateLimit = await checkRateLimit({
-    key: `game:timeout:${userId}:${getRequestIp(req)}`,
+    key: `game:timeout:${userId}`,
     limit: 30,
     windowMs: 60_000,
+    onError: 'deny',
   })
   if (!rateLimit.ok) return rateLimitResponse(rateLimit)
 
@@ -33,7 +35,7 @@ export async function POST(
     return Response.json({ error: 'Body JSON inválido' }, { status: 400 })
   }
 
-  if (!body.gameId) {
+  if (!isJsonObject(body) || !isGameId(body.gameId)) {
     return Response.json({ error: 'gameId requerido' }, { status: 400 })
   }
 

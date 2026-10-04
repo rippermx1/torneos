@@ -1,0 +1,121 @@
+{
+  "date": "2026-10-04",
+  "task": "G2048-09.2",
+  "status": "IMPLEMENTED_LOCAL_WEB_PERMISSION_SQL_PENDING",
+  "parentTask": "G2048-09",
+  "parentStatus": "IN_PROGRESS",
+  "baseCommit": "c46ae22",
+  "branch": "codex/2048-clean-gameplay",
+  "implementation": {
+    "app/api/tournaments/[id]/game/start/route.ts": "86813bb968af710c31fb569db2aaf3adeeef61cabbaab67057116134c8f9d22f",
+    "app/api/tournaments/[id]/game/move/route.ts": "fbaf2904db34385ee436d605ab4145bd01e5d3cb8c32cc80dc73510dbe219671",
+    "app/api/tournaments/[id]/game/timeout/route.ts": "7da4a942e07421ddf220970909ad085f6699ff22bf098187520aed033763c48e",
+    "app/(public)/tournaments/[id]/leaderboard/page.tsx": "e1ae305b6f496c3974d527f2b3eee191c43e6a9c3a93ed56c404fbce0afd9a2d",
+    "app/(public)/tournaments/[id]/audit/page.tsx": "3417edc7b620f2a6cdde031daffda001fce49623944c2a850584cdf5e0f6dd15",
+    "lib/anticheat/detector.ts": "79be8e3d3dd831462014a435c2438477a1737bdb14057563084888393d846aa5",
+    "lib/anticheat/winner-review.ts": "1fa457f63b9f2e11e047f24676d9ad0bb0a1def15005727371a4d1a23a089af5",
+    "lib/security/rate-limit.ts": "2d83eee69cb1eb6625a257f53f14e588e41d6e368a9a70cd1f7d179931c047a5",
+    "lib/tournament/game-request.ts": "fb2dc0774ba7dcf1f666e324d9e7c30fe92c3482a375ef241b343ab32975dade",
+    "lib/tournament/helpers.ts": "06d16f85551feef3502f3de40d22d76716f96a25423f110bff4a6b81755cc351",
+    "__tests__/game-closure-routes.test.ts": "15f9f42e08087031ed6a26f97a570397edfef0338d25a2a052152ee8e59e87c7",
+    "__tests__/2048-rate-limit.test.ts": "559d41bf4513d00f9dacceede2f1af1ff9a2f52bdea844dee7b94be69589bdc9",
+    "__tests__/2048-anticheat-adversarial.test.ts": "26233f8d0a8e7025a015ff18c0ab4699ae74d9380447853bc8b84abefb926b04",
+    "__tests__/2048-ranking-adversarial.test.ts": "253fbf1ad45d11fd6a03fa47d5dc6cbe015ba3b3a8adc42bb718b3d3407eafe0",
+    "scripts/verify-2048-adversarial.mjs": "15deb7707a237c20e00ccebb16d561f77b9620c4767ddf5a85213b587b5348d7",
+    "scripts/verify-2048-adversarial-sql.mjs": "0b3103d6b102a248c395b52a34d53e009951c7c9f0606d88c0ccdaca98d746d5",
+    "scripts/sql/2048-seed-visibility-candidate.sql": "921d9de71703615d9d6095f2022fc6c7705e3e6923bbc2e18e8bd12ba848495d"
+  },
+  "checks": {
+    "web": {
+      "passed": 3180,
+      "failed": 0,
+      "files": 14
+    },
+    "types": "PASS_TARGETED_INCREMENT",
+    "lint": "PASS",
+    "nextBuild": {
+      "status": "PASS",
+      "version": "16.3.8",
+      "staticPages": 58,
+      "base": "c46ae22",
+      "scope": "isolated tracked web source plus only own runtime changes, dummy Supabase credentials",
+      "warning": "pre-existing dynamic filesystem tracing in lib/dev/local-flow.ts",
+      "report": "artifacts/2048-adversarial/build.log",
+      "sha256": "ef6c790dd6fdec2d0e6f9813da88248bcd3e6fecb0514294df33798bc5f01ba6"
+    },
+    "sql": {
+      "task": "G2048-09.2",
+      "date": "2026-10-04T18:24:34.058Z",
+      "status": "NOT_RUN",
+      "scope": "isolated PostgreSQL 17; no network, platform database, Flow or deployment access",
+      "checks": [],
+      "sources": {},
+      "reason": "Docker engine unavailable (bounded 5-second probe)"
+    },
+    "browser": "NOT_RUN",
+    "physicalDevice": "NOT_RUN",
+    "unityEditor": "NOT_RUN_UNITY_UNCHANGED"
+  },
+  "baseline": {
+    "contractLimiter": {
+      "passed": 63,
+      "failed": 26,
+      "report": "artifacts/2048-adversarial/baseline.json",
+      "sha256": "5e3392ff3a82b9ecf6582abdcfa30a7b1f811dc1c80ac7f5426639176516240c"
+    },
+    "detector": {
+      "passed": 5,
+      "failed": 7,
+      "report": "artifacts/2048-adversarial/detector-baseline.json",
+      "sha256": "8d4e09436f2deb3ade7acec060910b6ed6cbe424e20bccccc8b430d11c21f8fa"
+    }
+  },
+  "verificationReport": {
+    "path": "artifacts/2048-adversarial/all-tests.json",
+    "sha256": "fb06208e5c5d2ef7d20e4bacf229a787f84f0cf8e6a478bc0b109bfff2b46275"
+  },
+  "limitsPerAccountPer60Seconds": {
+    "start": 15,
+    "move": 240,
+    "timeout": 30
+  },
+  "tieBreak": [
+    "final_score DESC",
+    "highest_tile DESC",
+    "move_count ASC",
+    "user_id ASC"
+  ],
+  "knownOpenGaps": [
+    {
+      "id": "OWNED_ACTIVE_SEED_SELECT",
+      "source": "20260805163009 authenticated whole-table SELECT plus owned-row RLS",
+      "status": "SOURCE_AUDIT_FINDING_NOT_LIVE_DB_VERIFIED",
+      "candidate": "scripts/sql/2048-seed-visibility-candidate.sql",
+      "applied": false
+    },
+    {
+      "id": "PACED_AUTOMATION",
+      "evidence": "39 simulated moves at 500ms intervals pass actual detector; winner review has no flags",
+      "status": "CONFIRMED_HEURISTIC_COUNTEREXAMPLE_NOT_AUTHENTICATED_E2E"
+    },
+    {
+      "id": "SAME_PERSON_MULTIPLE_ACCOUNTS",
+      "status": "NOT_DETECTED_BY_OWNERSHIP_OR_ACCOUNT_QUOTAS"
+    },
+    {
+      "id": "ASYNC_SANCTION_RESULT_CONSISTENCY",
+      "status": "NO_N_PLUS_ONE_OR_ATOMIC_INVALIDATION_GUARANTEE"
+    }
+  ],
+  "mutations": {
+    "webSource": true,
+    "unityProject": false,
+    "engineRules": false,
+    "webglBuild": false,
+    "operationalDatabase": false,
+    "flow": false,
+    "deployment": false
+  },
+  "buildActivated": false,
+  "sharedWipPreserved": true
+}

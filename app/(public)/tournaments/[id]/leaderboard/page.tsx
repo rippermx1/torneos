@@ -82,6 +82,7 @@ export default async function LeaderboardPage({
       .order('final_score', { ascending: false })
       .order('highest_tile', { ascending: false })
       .order('move_count', { ascending: true })
+      .order('user_id', { ascending: true })
       .limit(50)
 
     rows = games ?? []

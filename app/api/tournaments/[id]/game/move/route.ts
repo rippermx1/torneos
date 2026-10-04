@@ -2,34 +2,26 @@ import { after } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { requireAnyRoleForApi } from '@/lib/supabase/auth'
 import { Game2048 } from '@/lib/game/engine'
-import { DeterministicRNG, computeRngStates, RNG_PREVIEW_SIZE } from '@/lib/game/rng'
+import { DeterministicRNG } from '@/lib/game/rng'
 import { checkPlayWindow } from '@/lib/tournament/helpers'
 import { calculateGameDeadline, isPastGameDeadline } from '@/lib/tournament/game-deadline'
 import { closeExpiredGame } from '@/lib/tournament/close-expired-game'
 import { GAME_SNAPSHOT_FIELDS, gameSnapshotResponse, type SnapshotGame } from '@/lib/tournament/game-snapshot-response'
 import { analyzeMove } from '@/lib/anticheat/detector'
-import { checkRateLimit, getRequestIp, rateLimitResponse } from '@/lib/security/rate-limit'
+import { checkRateLimit, rateLimitResponse } from '@/lib/security/rate-limit'
+import { isJsonObject, isGameId, isMoveNumber, isClientTimestamp } from '@/lib/tournament/game-request'
 import type { Game, Tournament, Direction } from '@/types/database'
 
-// ── Tournament cache ─────────────────────────────────────────────────────────
-// Tournament rows are immutable during the play window (status, window dates,
-// max_game_duration_seconds never change mid-game). Caching them eliminates
-// one DB round-trip on every move request after the first.
+// Tournament status and limits must be fresh if an operator changes them.
 type TournamentRow = Pick<
   Tournament,
   'id' | 'status' | 'play_window_start' | 'play_window_end' | 'max_game_duration_seconds'
 >
-type CacheEntry = { data: TournamentRow; expiresAt: number }
-const tournamentCache = new Map<string, CacheEntry>()
-const TOURNAMENT_TTL_MS = 5 * 60 * 1_000 // 5 min
 
 async function getTournament(
   supabase: ReturnType<typeof createAdminClient>,
   tournamentId: string,
 ): Promise<TournamentRow | null> {
-  const cached = tournamentCache.get(tournamentId)
-  if (cached && cached.expiresAt > Date.now()) return cached.data
-
   const { data } = await supabase
     .from('tournaments')
     .select('id, status, play_window_start, play_window_end, max_game_duration_seconds')
@@ -37,10 +29,6 @@ async function getTournament(
     .single()
 
   if (!data) return null
-  tournamentCache.set(tournamentId, {
-    data: data as TournamentRow,
-    expiresAt: Date.now() + TOURNAMENT_TTL_MS,
-  })
   return data as TournamentRow
 }
 // ────────────────────────────────────────────────────────────────────────────
@@ -50,10 +38,7 @@ interface MoveRequest {
   direction: Direction
   moveNumber: number
   clientTimestamp: number
-  // Posición optimista del cliente (puede estar adelantado por movimientos rápidos
-  // ya aplicados visualmente pero aún encolados al servidor). Permite al servidor
-  // enviar estados RNG relevantes a la posición actual del cliente en vez de
-  // estados ya consumidos por el buffer optimista.
+  // Legacy wire field, validated but unused by the authoritative Unity client.
   clientCurrentMoveNumber?: number
 }
 
@@ -68,9 +53,10 @@ export async function POST(
 
   const userId = auth.access.userId
   const rateLimit = await checkRateLimit({
-    key: `game:move:${userId}:${getRequestIp(req)}`,
+    key: `game:move:${userId}`,
     limit: 240,
     windowMs: 60_000,
+    onError: 'deny',
   })
   if (!rateLimit.ok) return rateLimitResponse(rateLimit)
 
@@ -83,24 +69,25 @@ export async function POST(
     return Response.json({ error: 'Body JSON inválido' }, { status: 400 })
   }
 
+  if (!isJsonObject(body) || !isGameId(body.gameId)) {
+    return Response.json({ error: 'Body JSON inválido' }, { status: 400 })
+  }
   const { gameId, direction, moveNumber, clientTimestamp, clientCurrentMoveNumber } = body
 
   if (!VALID_DIRECTIONS.has(direction)) {
     return Response.json({ error: `Dirección inválida: ${direction}` }, { status: 400 })
   }
-  if (typeof moveNumber !== 'number' || moveNumber < 2) {
+  if (!isMoveNumber(moveNumber) || clientCurrentMoveNumber !== undefined && !isMoveNumber(clientCurrentMoveNumber)) {
     return Response.json({ error: 'moveNumber inválido' }, { status: 400 })
   }
-  if (typeof clientTimestamp !== 'number') {
+  if (!isClientTimestamp(clientTimestamp)) {
     return Response.json({ error: 'clientTimestamp inválido' }, { status: 400 })
   }
 
   const supabase = createAdminClient()
 
-  // tournament is served from in-process cache after the first request;
-  // profile + game always hit the DB (ban status must be fresh, game state changes every move).
   const [
-    { data: profileCheck },
+    { data: profileCheck, error: profileError },
     { data: gameData },
     tournament,
   ] = await Promise.all([
@@ -119,7 +106,10 @@ export async function POST(
     getTournament(supabase, tournamentId),
   ])
 
-  if (profileCheck?.is_banned) {
+  if (profileError || !profileCheck || typeof profileCheck.is_banned !== 'boolean') {
+    return Response.json({ error: 'No se pudo comprobar el estado de tu cuenta.' }, { status: 503 })
+  }
+  if (profileCheck.is_banned) {
     return Response.json({ error: 'Tu cuenta ha sido suspendida.' }, { status: 403 })
   }
 
@@ -227,11 +217,8 @@ export async function POST(
     return Response.json({ error: `Error guardando movimiento: ${rpcErr.message}` }, { status: 500 })
   }
 
-  // Anticheat corre DESPUÉS de responder usando after() (= waitUntil de Vercel).
-  // El ban queda escrito en DB antes de que el siguiente movimiento pase el check
-  // is_banned al inicio de esta route, por lo que bots quedan bloqueados en el
-  // movimiento N+1. Ganancia: ~50-200ms por movimiento al eliminar los SELECT
-  // extra que antes bloqueaban sincrónamente la respuesta.
+  // after() completes persisted-move analysis without blocking the response.
+  // Concurrent requests may be accepted before a sanction is persisted.
   const serverTimestampForAnticheat =
     (rpcResult as unknown as Array<{ server_timestamp: string }> | null)?.[0]?.server_timestamp ?? null
   after(async () => {
@@ -253,20 +240,10 @@ export async function POST(
     }
   })
 
-  // Estados RNG para los próximos N movimientos. Permiten al cliente reproducir
-  // localmente los spawns del servidor sin recibir el seed → gameplay fluido sin
-  // exponer información que comprometa el anti-cheat.
-  //
-  // Se envían desde max(moveNumber+1, clientCurrentMoveNumber) para que ráfagas
-  // rápidas (cliente adelantado al servidor) reciban estados útiles y no estados
-  // que el cliente ya consumió. El cap MAX_AHEAD previene que un cliente malicioso
-  // pida estados muy adelantados para precomputar la partida.
-  const MAX_AHEAD = 20
-  const requestedStart = typeof clientCurrentMoveNumber === 'number'
-    ? Math.min(clientCurrentMoveNumber, moveNumber + 1 + MAX_AHEAD)
-    : moveNumber + 1
-  const nextRngStatesStart = Math.max(moveNumber + 1, requestedStart)
-  const nextRngStates = gameOver ? [] : computeRngStates(game.seed, nextRngStatesStart, RNG_PREVIEW_SIZE)
+  // Unity renders confirmed spawns. Keep the legacy fields without publishing
+  // future random states that would give automated players advance knowledge.
+  const nextRngStatesStart = moveNumber + 1
+  const nextRngStates: number[] = []
 
   if (gameOver) {
     const persisted = await supabase.from('games').select(GAME_SNAPSHOT_FIELDS).eq('id', gameId)

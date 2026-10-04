@@ -1,12 +1,13 @@
 import { createAdminClient } from '@/lib/supabase/server'
 import { requireAnyRoleForApi } from '@/lib/supabase/auth'
 import { Game2048 } from '@/lib/game/engine'
-import { DeterministicRNG, generateGameSeed, computeRngStates, RNG_PREVIEW_SIZE } from '@/lib/game/rng'
+import { DeterministicRNG, generateGameSeed } from '@/lib/game/rng'
 import { checkPlayWindow } from '@/lib/tournament/helpers'
 import { isPastGameDeadline } from '@/lib/tournament/game-deadline'
 import { closeExpiredGame } from '@/lib/tournament/close-expired-game'
 import { GAME_SNAPSHOT_FIELDS, gameSnapshotResponse, type SnapshotGame } from '@/lib/tournament/game-snapshot-response'
-import { checkRateLimit, getRequestIp, rateLimitResponse } from '@/lib/security/rate-limit'
+import { checkRateLimit, rateLimitResponse } from '@/lib/security/rate-limit'
+import { isJsonObject, isGameId } from '@/lib/tournament/game-request'
 import type { Game, Tournament } from '@/types/database'
 
 export async function POST(
@@ -18,23 +19,29 @@ export async function POST(
 
   const userId = auth.access.userId
   const rateLimit = await checkRateLimit({
-    key: `game:start:${userId}:${getRequestIp(req)}`,
+    key: `game:start:${userId}`,
     limit: 15,
     windowMs: 60_000,
+    onError: 'deny',
   })
   if (!rateLimit.ok) return rateLimitResponse(rateLimit)
 
   let recovery: { recoverOnly?: boolean; gameId?: string } = {}
   if (req.body) {
     try { recovery = await req.json() } catch { return Response.json({ error: 'Body JSON inválido' }, { status: 400 }) }
-    if (!recovery || typeof recovery !== 'object') return Response.json({ error: 'Body JSON inválido' }, { status: 400 })
+    if (!isJsonObject(recovery)
+      || recovery.recoverOnly !== undefined && typeof recovery.recoverOnly !== 'boolean'
+      || recovery.gameId !== undefined && !isGameId(recovery.gameId)
+      || recovery.recoverOnly === true && !isGameId(recovery.gameId)) {
+      return Response.json({ error: 'Body JSON inválido' }, { status: 400 })
+    }
   }
 
   const { id: tournamentId } = await params
   const supabase = createAdminClient()
 
   const [
-    { data: profile },
+    { data: profile, error: profileError },
     { data: tournament },
     { data: registration },
     { data: existingGameData, error: existingGameError },
@@ -63,7 +70,10 @@ export async function POST(
       .maybeSingle(),
   ])
 
-  if (profile?.is_banned) {
+  if (profileError || !profile || typeof profile.is_banned !== 'boolean') {
+    return Response.json({ error: 'No se pudo comprobar el estado de tu cuenta.' }, { status: 503 })
+  }
+  if (profile.is_banned) {
     return Response.json({ error: 'Tu cuenta ha sido suspendida.' }, { status: 403 })
   }
 
@@ -133,7 +143,7 @@ export async function POST(
     // Retornar estado actual para reanudar
     const resumeMoveNumber = game.move_count + 2 // +2 por los dos spawns iniciales
     return gameSnapshotResponse(game, tournamentState.play_window_end, tournamentState.max_game_duration_seconds, {
-      nextRngStates: computeRngStates(game.seed, resumeMoveNumber, RNG_PREVIEW_SIZE),
+      nextRngStates: [],
       nextRngStatesFrom: resumeMoveNumber,
       resuming: true,
     })
@@ -175,7 +185,7 @@ export async function POST(
     const next = game.move_count + 2
     return gameSnapshotResponse(game, tournamentState.play_window_end, tournamentState.max_game_duration_seconds, {
       resuming: true,
-      nextRngStates: game.status === 'active' ? computeRngStates(game.seed, next, RNG_PREVIEW_SIZE) : [],
+      nextRngStates: [],
       nextRngStatesFrom: next,
     })
   }
@@ -186,7 +196,7 @@ export async function POST(
   return gameSnapshotResponse({ id: newGame.id, status: 'active', current_board: gameBoard.board,
     final_score: 0, move_count: 0, started_at: startedAt, end_reason: null, ended_at: null },
     tournamentState.play_window_end, tournamentState.max_game_duration_seconds, {
-    nextRngStates: computeRngStates(seed, 2, RNG_PREVIEW_SIZE),
+    nextRngStates: [],
     nextRngStatesFrom: 2,
     resuming: false,
   })

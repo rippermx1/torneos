@@ -1,5 +1,22 @@
 # Estado — TorneosPlay
 
+## 2048: revisión adversarial y límites — 2026-10-04
+
+**G2048-09.2 implementado en candidata web; cierre SQL pendiente.** Desempate
+completo, cuotas por cuenta (15/240/30 por minuto), validación estricta, fin
+exclusivo, configuración fresca y respuestas sin RNG futuro. Detector real:
+cinco intervalos completos; reloj cliente aislado de sanciones; escrituras
+comprobadas. **3.180 pruebas / 14 archivos, tipos/lint y build Next 16.3.8 PASS**.
+
+La revisión de grants en las migraciones encuentra lectura de semilla propia:
+[SQL candidato](../scripts/sql/2048-seed-visibility-candidate.sql) preparado,
+**sin aplicar**. Docker no responde; PostgreSQL aislado y grants reales no
+verificados en esta ejecución. Bots pausados y persona con varias cuentas
+siguen fuera de las garantías. **G2048-09 En progreso**, sin activar ni cambiar
+DB/Flow/Unity. [Entrega](2048-ADVERSARIAL-IMPLEMENTATION.md) y
+[evidencia](2048-ADVERSARIAL-EVIDENCE.json). Continúan 08.1/04.4/06.2/07.2.
+Backlog base conservado: 15 terminados, 14 en progreso, 12 pendientes.
+
 ## 2048: equivalencia de reglas automatizada — 2026-10-02
 
 **G2048-09.1 terminado y probado localmente**: 2.936 escenarios compartidos

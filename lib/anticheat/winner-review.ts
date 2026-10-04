@@ -1,8 +1,8 @@
 // Revisión post-torneo de GANADORES (los que reciben premio). No bloquea el
 // pago: produce señales para que el operador revise la partida en el admin
 // antes de aprobar el cobro del premio. Complementa al detector en vivo
-// (detector.ts), que banea los casos flagrantes; esto atrapa la zona gris:
-// bots "a velocidad humana" con consistencia imposible.
+// (detector.ts). Estas heurísticas no prueban juego humano: la automatización
+// con pausas puede no producir ninguna señal en ambos detectores.
 
 export interface WinnerGameStats {
   moveCount: number

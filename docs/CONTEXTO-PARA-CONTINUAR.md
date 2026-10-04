@@ -1,5 +1,26 @@
 # Contexto para continuar — TorneosPlay
 
+## Continuación G2048-09.2 — 2026-10-04
+
+Leer [2048-ADVERSARIAL-IMPLEMENTATION.md](2048-ADVERSARIAL-IMPLEMENTATION.md)
+y su evidencia. Candidata web preparada: desempates alineados con SQL, cuotas
+por cuenta con fallo cerrado, validación, reloj exclusivo, configuración fresca,
+RNG anticipado retirado y correcciones del detector. 3.180 pruebas / 14 archivos,
+tipos/lint y build Next aislado PASS. Reproducción:
+`node scripts/verify-2048-adversarial.mjs`.
+
+**No cerrar G2048-09 ni 09.2 todavía:** fuente SQL concede lectura de semilla
+propia a authenticated. Candidata revisable en
+`scripts/sql/2048-seed-visibility-candidate.sql`, fuera de migraciones y sin
+aplicar. Docker no responde; ejecutar verificador PostgreSQL sin red al recuperar
+el motor, revisar grants del ambiente autorizado y seguir procedimiento autorizado
+para DB. No atribuir a esta ejecución pruebas de DB/navegador/Editor/físicas.
+
+Automatización pausada pasa heurísticas; cuotas/propiedad separan cuentas sin
+identificar personas; after() y dos escrituras no garantizan sanción en N+1 ni
+invalidación atómica. Sin activación/DB/Flow/Unity ni inclusión de WIP ajeno.
+Siguen informes físicos/humanos 08.1/04.4/06.2/07.2. Backlog base 41: 15/14/12.
+
 ## Continuación G2048-09.1 — 2026-10-02
 
 Equivalencia de reglas entregada y probada: leer

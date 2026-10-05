@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { createHash } from 'node:crypto'
-import { pathToFileURL } from 'node:url'
+import { pathToFileURL, fileURLToPath } from 'node:url'
 import { migrationComparison, sourceHash, sourceInventory } from './release-manifest.mjs'
 
 // Deliberately no Supabase connection, dotenv loading, Flow calls or SQL execution.
@@ -38,6 +38,7 @@ export function catalogSql() {
 SELECT jsonb_build_object(
   'schema',1,'observed_at',clock_timestamp(),'postgres',current_setting('server_version'),
   'versions',(SELECT coalesce(jsonb_agg(version ORDER BY version),'[]'::jsonb) FROM supabase_migrations.schema_migrations),
+  'migration_records',(SELECT coalesce(jsonb_agg(jsonb_build_object('version',version,'name',name,'sql_sha256',encode(extensions.digest(regexp_replace(replace(array_to_string(statements,E'\\n'),E'\\r\\n',E'\\n'),E'\\n+$','','g'),'sha256'),'hex')) ORDER BY version),'[]'::jsonb) FROM supabase_migrations.schema_migrations WHERE name ~ '^2026100[245][0-9]{6}_'),
   'tables',(SELECT coalesce(jsonb_agg(jsonb_build_object(
     'name',c.relname,'rls',c.relrowsecurity,
     'browser_write',EXISTS(SELECT 1 FROM pg_roles r WHERE r.rolname IN ('anon','authenticated') AND
@@ -70,7 +71,13 @@ export function assessCatalog(inventory, required, now = Date.now()) {
   const at = Date.parse(inventory?.observed_at ?? '')
   if (inventory?.schema !== 1 || !Number.isFinite(at) || at > now || now - at > 86400000) issues.push('Inventario inválido o con más de 24 horas')
   let migrations = { pending: required, present: [] }
-  try { migrations = migrationComparison(required, inventory?.versions) } catch { issues.push('Historial de migraciones inválido') }
+  try {
+    const hashes = Object.fromEntries(required.filter(file=>/^[0-9]{14}_[a-z0-9_]+\.sql$/.test(file)).map(file=>{
+      const absolute=path.join(path.dirname(fileURLToPath(import.meta.url)),'../supabase/migrations',file)
+      return [file,fs.existsSync(absolute)?hash(fs.readFileSync(absolute,'utf8').replace(/\r\n/g,'\n').replace(/\n+$/,'')):null]
+    }))
+    migrations = migrationComparison(required, verifiedMigrationVersions(inventory,required,hashes))
+  } catch { issues.push('Historial de migraciones inválido') }
   if (migrations.pending.length) issues.push(`Migraciones pendientes: ${migrations.pending.length}`)
   for (const name of guardedTables) {
     const rows = inventory?.tables?.filter(row => row.name === name) ?? []
@@ -86,6 +93,16 @@ export function assessCatalog(inventory, required, now = Date.now()) {
   for (const id of ['kyc-documents','payout-proofs','cash-proofs']) if (inventory?.private_buckets?.filter(bucket => bucket.id === id && bucket.public === false).length !== 1) issues.push(`Bucket ausente/público: ${id}`)
   if (inventory?.seed_readable_anon !== false || inventory?.seed_readable_authenticated !== false) issues.push('Semilla 2048 accesible o permiso no verificado')
   return { status: issues.length ? 'BLOCKED' : 'PASS', issues, migrations, scope: 'selected catalog invariants only; not SQL equivalence, JWT/RLS behavior, Storage object access or migration recovery' }
+}
+export function verifiedMigrationVersions(inventory, required, hashes) {
+  // MCP assigns its own timestamp. Credit canonical SQL only when its entire
+  // source hash (CRLF and trailing LF normalized) and original filename match.
+  const versions = [...(inventory?.versions ?? [])]
+  for(const file of required) {
+    const rows=(inventory?.migration_records ?? []).filter(row=>row.name===file.replace(/\.sql$/,'') && inventory.versions.includes(row.version))
+    if(rows.length===1 && hashes[file] && rows[0].sql_sha256===hashes[file] && !versions.includes(file.slice(0,14))) versions.push(file.slice(0,14))
+  }
+  return versions
 }
 export function validateTarget({ projectRef, productionRef, appUrl }) {
   if (!/^[a-z0-9]{20}$/.test(projectRef ?? '') || !/^[a-z0-9]{20}$/.test(productionRef ?? '') || projectRef === productionRef) throw new Error('Destino staging explícito y distinto del proyecto productivo requerido')

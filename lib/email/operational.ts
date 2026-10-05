@@ -1,4 +1,5 @@
 import { FROM_SYSTEM } from '@/lib/email/client'
+import { assertProviderDispatchAllowed } from '@/lib/config/provider-dispatch.mjs'
 import { isLocalEnvironment } from '@/lib/dev/local-environment'
 import type { OpsNotification } from '@/lib/ops/monitor'
 
@@ -9,6 +10,7 @@ export class OperationalEmailError extends Error {
 // Durable queue owns retries. Frozen recipient/body and a stable key survive response loss.
 // Acceptance means the provider accepted this message, never delivery or operator acknowledgement.
 export async function sendOperationalEmail(notification: Pick<OpsNotification, 'id' | 'recipient' | 'subject' | 'text_body'>): Promise<string> {
+  assertProviderDispatchAllowed()
   if (!notification.recipient) throw new OperationalEmailError('Destinatario operativo no configurado', false)
   const text = notification.text_body
   const html = `<pre>${text.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')}</pre>`

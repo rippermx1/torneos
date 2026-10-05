@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createHash } from 'node:crypto'
-import { assessCatalog, assessCandidate, catalogSql, functions, guardedTables, privateTables, triggers, validateTarget } from '../scripts/staging-preflight.mjs'
+import { assessCatalog, assessCandidate, catalogSql, functions, guardedTables, privateTables, triggers, validateTarget, verifiedMigrationVersions } from '../scripts/staging-preflight.mjs'
 import { classifyRead, probeIdentity } from '../scripts/staging-auth-preflight.mjs'
 
 const now = Date.parse('2026-10-05T20:00:00Z')
@@ -11,6 +11,15 @@ const fixture = () => ({ schema: 1, observed_at: '2026-10-05T19:00:00Z', version
   private_buckets: ['kyc-documents','payout-proofs','cash-proofs'].map(id => ({ id,public: false })), seed_readable_anon: false,seed_readable_authenticated: false,
 })
 describe('RM12 live catalog checks cannot substitute for financial E2E', () => {
+  it('requires both canonical filename and exact SQL hash to credit MCP timestamps', () => {
+    const file='20261005175927_cash.sql',digest='a'.repeat(64)
+    const row={version:'20261006100000',name:file.slice(0,-4),sql_sha256:digest}
+    const catalog={versions:[row.version],migration_records:[row]}
+    expect(verifiedMigrationVersions(catalog,[file],{[file]:digest})).toContain(file.slice(0,14))
+    expect(verifiedMigrationVersions(catalog,[file],{[file]:'b'.repeat(64)})).not.toContain(file.slice(0,14))
+    expect(verifiedMigrationVersions({...catalog,migration_records:[row,row]},[file],{[file]:digest})).not.toContain(file.slice(0,14))
+    expect(verifiedMigrationVersions({...catalog,versions:[]},[file],{[file]:digest})).not.toContain(file.slice(0,14))
+  })
   it('accepts only the selected catalog scope, including legacy migration history', () => {
     const result = assessCatalog(fixture(),['20261005175927_cash.sql'],now)
     expect(result.status).toBe('PASS'); expect(result.scope).toContain('not SQL equivalence')

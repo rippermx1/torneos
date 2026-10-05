@@ -1,5 +1,6 @@
 import { createHmac } from 'crypto'
 import { getFlowApiBase, getFlowApiKey, getFlowApiSecret } from '@/lib/env'
+import { assertProviderDispatchAllowed } from '@/lib/config/provider-dispatch.mjs'
 
 // ───────────────────────────────────────────────────────────────
 // Cliente Flow.cl REST.
@@ -36,6 +37,7 @@ export function signParams(params: FlowParams, secretKey: string): string {
 }
 
 function getCredentials() {
+  assertProviderDispatchAllowed()
   const apiKey = getFlowApiKey()
   const secret = getFlowApiSecret()
   if (!apiKey || !secret) {

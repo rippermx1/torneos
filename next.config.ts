@@ -51,5 +51,5 @@ export default function config(phase: string): NextConfig {
   if (phase === PHASE_PRODUCTION_BUILD) assertEnvironment(process.env, { phase: 'public-build' });
   const c = effectiveConfig(process.env);
   const aliases = Object.fromEntries(['NEXT_PUBLIC_SITE_URL', 'NEXT_PUBLIC_APP_URL', 'NEXT_PUBLIC_GOOGLE_AUTH_ENABLED'].map(name => [name, firstNonEmpty(process.env[name]) ?? null]));
-  return { ...nextConfig, env: { TORNEOS_BUILD_PUBLIC_CONFIG: JSON.stringify({ url: c.publicUrl, key: c.browserKey, environment: c.environment, aliases }) } };
+  return { ...nextConfig, env: { TORNEOS_BUILD_PUBLIC_CONFIG: JSON.stringify({ url: c.publicUrl, key: c.browserKey, environment: c.environment, stagingPhase: c.stagingPhase, vercelProjectId: process.env.STAGING_VERCEL_PROJECT_ID ?? null, aliases }) } };
 }

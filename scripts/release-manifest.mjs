@@ -42,10 +42,12 @@ export function createManifest(root = process.cwd(), applied) {
   assertEnvironment(process.env, { phase: 'public-build', builtPublic: snapshot })
   const config = JSON.parse(read('config/commercial-release.json'))
   const migrations = config.migrations.map(file => ({ file, sha256: sourceHash(read(`supabase/migrations/${file}`), file) }))
-  const gameOutput = JSON.parse(execFileSync(process.execPath, [path.join(root, 'scripts/check-game-builds.mjs')], { cwd: root, encoding: 'utf8' }))
+  const gameArgs = [path.join(root, 'scripts/check-game-builds.mjs')]
+  if (snapshot.stagingPhase === 'preflight') gameArgs.push(path.join(root,'config/staging-published-games.json'))
+  const gameOutput = JSON.parse(execFileSync(process.execPath, gameArgs, { cwd: root, encoding: 'utf8' }))
   const source = sourceInventory(root)
   const publicNames = ['NEXT_PUBLIC_SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY', 'NEXT_PUBLIC_SUPABASE_ANON_KEY', 'NEXT_PUBLIC_SITE_URL', 'NEXT_PUBLIC_APP_URL', 'NEXT_PUBLIC_GOOGLE_AUTH_ENABLED']
-  const frozen = { environment: snapshot.environment, app_origin_sha256: sha(normalizeUrl(effectiveConfig(process.env).appUrl)), values: Object.fromEntries(publicNames.map(name => [name, { present: Boolean(process.env[name]), sha256: process.env[name] ? sha(process.env[name]) : null }])) }
+  const frozen = { environment: snapshot.environment, staging_phase: snapshot.stagingPhase ?? 'financial', app_origin_sha256: sha(normalizeUrl(effectiveConfig(process.env).appUrl)), values: Object.fromEntries(publicNames.map(name => [name, { present: Boolean(process.env[name]), sha256: process.env[name] ? sha(process.env[name]) : null }])) }
   const npm = npmInvocation()
   const application = [
     { file: '.next/BUILD_ID', sha256: sha(read('.next/BUILD_ID')) },

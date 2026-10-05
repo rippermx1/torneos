@@ -1,4 +1,5 @@
 import { pathToFileURL } from 'node:url'
+import { assertProviderDispatchAllowed } from '../lib/config/provider-dispatch.mjs'
 
 // No dependency on the app's queue, DB scheduler, runtime or .env files.
 // Fixed half-hour payload/key permits bounded response-loss retries by the external runner.
@@ -13,6 +14,7 @@ export async function checkOperationalDeadman(env=process.env,fetcher=fetch,nowM
     healthy=response.ok && body.ok===true && Number.isFinite(last) && last<=nowMs+60_000 && nowMs-last<15*60_000
   } catch { /* App unavailable is a monitored failure, not a reason to suppress the independent alarm. */ }
   if(healthy)return {healthy:true,providerAccepted:false}
+  assertProviderDispatchAllowed(env)
   if(!env.OPS_ESCALATION_EMAIL || !env.RESEND_API_KEY)throw new Error('Falta suplente o credencial de correo en el monitor externo')
   const bucket=Math.floor(nowMs/(30*60_000))
   const text=`El monitor de obligaciones de ${origin.origin} está caído, vencido o no se pudo comprobar. Ventana UTC: ${new Date(bucket*30*60_000).toISOString()}. Revisar aplicación, base de datos y scheduler; registrar atención y conciliar obligaciones antes de operar.`

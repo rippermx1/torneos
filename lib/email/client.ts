@@ -1,4 +1,5 @@
 import { Resend } from 'resend'
+import { assertProviderDispatchAllowed } from '@/lib/config/provider-dispatch.mjs'
 import { isLocalEnvironment } from '@/lib/dev/local-environment'
 
 let _client: Resend | null = null
@@ -28,6 +29,7 @@ export interface SendEmailParams {
 }
 
 export async function sendEmail(params: SendEmailParams): Promise<void> {
+  assertProviderDispatchAllowed()
   if (isLocalEnvironment()) {
     const url = new URL(process.env.LOCAL_EMAIL_API_URL ?? 'http://127.0.0.1:54324/api/v1/send')
     if (url.protocol !== 'http:' || !['127.0.0.1', 'localhost', 'host.docker.internal'].includes(url.hostname) ||
@@ -62,6 +64,7 @@ export async function sendTemplateEmail(params: {
   from?: string
   data: Record<string, string | number | boolean>
 }): Promise<void> {
+  assertProviderDispatchAllowed()
   if (isLocalEnvironment()) {
     // Provider-hosted templates are unavailable offline. Preserve their variables in a local preview.
     const text = `Plantilla local: ${params.templateId}\n${JSON.stringify(params.data, null, 2)}`

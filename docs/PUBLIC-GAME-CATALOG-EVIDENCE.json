@@ -1,0 +1,164 @@
+{
+  "id": "E24",
+  "task": "WEB-11.1",
+  "at": "2026-10-05T15:41:54.254Z",
+  "status": "IMPLEMENTED_AND_VERIFIED_LOCAL_NEXT_PREVIEW",
+  "parentWEB11": "IN_PROGRESS",
+  "sources": {
+    "components/game/public-game-catalog.tsx": "02a72fa9cc6da6baf4d0a340757c29928dfc2dd4360e8fc8bafc87e55e8e8729",
+    "components/game/public-game-catalog.module.css": "d0f7f35abaf452c60f1f2f149b060f7fe83e0a27298580b5fa3ae95a721ec202",
+    "components/game/practice-navigation.tsx": "5387d22f4eb0a007b0c469c7874eec6c50294e44a532cdf05256c5779d45f0a8",
+    "app/(public)/play/catalog/page.tsx": "e7d3ede39d6ab8b4740d342a5bcbd1c9099c080df43981ef13f8145bbb272c91",
+    "app/(public)/play/layout.tsx": "64e974292234326500608db6ad3f97765c190ee89f785e8c850ed0beaf7593d2",
+    "lib/game/__tests__/public-game-catalog.test.ts": "d1f3c6f1a2cc794b48f88352f3d732a0c7f7e446dbc5bd0c0a998db7cd2ee25f"
+  },
+  "tests": {
+    "passed": 135,
+    "failed": 0,
+    "files": 12,
+    "report": "artifacts/public-game-catalog/tests.json",
+    "sha256": "72765e20dcf68e3cb8464036c6a580b8eaf57c69ab10dac04c96a6e20d83d6d1"
+  },
+  "checks": [
+    {
+      "name": "types",
+      "status": "PASS",
+      "code": 0
+    },
+    {
+      "name": "lint",
+      "status": "PASS",
+      "code": 0
+    }
+  ],
+  "build": {
+    "base": "8c5c2df8b9dad16f4dcaf1fbba8ea98b7614ea40",
+    "snapshot": "C:\\torneos\\artifacts\\public-game-catalog\\web-source-e95930a7-d5c9-4923-a56c-98e9e3d8c2bc",
+    "patches": {
+      "components/game/public-game-catalog.tsx": "02a72fa9cc6da6baf4d0a340757c29928dfc2dd4360e8fc8bafc87e55e8e8729",
+      "components/game/public-game-catalog.module.css": "d0f7f35abaf452c60f1f2f149b060f7fe83e0a27298580b5fa3ae95a721ec202",
+      "components/game/practice-navigation.tsx": "5387d22f4eb0a007b0c469c7874eec6c50294e44a532cdf05256c5779d45f0a8",
+      "app/(public)/play/catalog/page.tsx": "e7d3ede39d6ab8b4740d342a5bcbd1c9099c080df43981ef13f8145bbb272c91",
+      "app/(public)/play/layout.tsx": "64e974292234326500608db6ad3f97765c190ee89f785e8c850ed0beaf7593d2",
+      "app/(public)/play/ted-runner/page.tsx": "52604e368623082b5781d7b374c9ab3c4cc2f31161a3996e1ddb19da53fa2c81",
+      "components/game/unity-ted-runner.tsx": "f04c4e0ecf80be38f81fd0a85b2da9dbdc2fc4ce7edd740703782155296a0a6e"
+    },
+    "status": "PASS",
+    "code": 0,
+    "scope": "Owned catalog delta plus two unchanged Ted rename dependencies and its existing alias; build placeholders, no operative activation",
+    "at": "2026-10-05T15:33:49.200Z"
+  },
+  "buildDependencies": {
+    "unchangedParallelWip": [
+      "app/(public)/play/ted-runner/page.tsx",
+      "components/game/unity-ted-runner.tsx"
+    ],
+    "alias": "Existing /play/alien-run -> /play/ted-runner copied into snapshot; parallel source not committed by this task"
+  },
+  "http": {
+    "at": "2026-10-05T15:38:46.648Z",
+    "checks": [
+      {
+        "label": "plain",
+        "status": "PASS",
+        "http": 200
+      },
+      {
+        "label": "chosen",
+        "status": "PASS",
+        "http": 200
+      },
+      {
+        "label": "unsafe",
+        "status": "PASS",
+        "http": 200
+      },
+      {
+        "label": "duplicate",
+        "status": "PASS",
+        "http": 200
+      },
+      {
+        "label": "existing Ted alias preserves tournament query",
+        "status": "PASS",
+        "http": 308
+      }
+    ],
+    "status": "PASS"
+  },
+  "browser": {
+    "task": "WEB-11.1",
+    "at": "2026-10-05T15:38:45.915Z",
+    "nextProduction": true,
+    "scope": "Owned isolated preview; synthetic tournament ID, no authenticated tournament assertion",
+    "checks": [
+      "catalog has no game iframe",
+      "2048 Unity ready without automatically starting",
+      "Ted alias redirects to Ted route with same next",
+      "Ted Unity ready without automatically starting",
+      "both return to catalog via shared navigation with same next",
+      "keyboard Tab/Enter opens 2048",
+      "desktop card controls at least 44px and no horizontal overflow"
+    ],
+    "mobile": {
+      "width": 375,
+      "scrollWidth": 375,
+      "cards": [
+        {
+          "title": "2048",
+          "x": 16,
+          "width": 343.20001220703125,
+          "top": 302.3125
+        },
+        {
+          "title": "Ted Runner",
+          "x": 16,
+          "width": 343.20001220703125,
+          "top": 951.8624877929688
+        }
+      ],
+      "links": [
+        {
+          "text": "Practicar 2048",
+          "width": 140.0749969482422,
+          "height": 44
+        },
+        {
+          "text": "Volver al torneo elegido",
+          "width": 175.1750030517578,
+          "height": 44
+        },
+        {
+          "text": "Practicar Ted Runner",
+          "width": 189.125,
+          "height": 44
+        }
+      ]
+    },
+    "mobileScope": "Compiled Next server HTML with application scripts removed, rendered in a 390x844 iframe (375px content after scrollbar); layout only, not phone touch or hydration",
+    "auth": "NOT_RUN",
+    "phone": "NOT_RUN"
+  },
+  "screenshots": {
+    "catalog-desktop.png": "1076a9876b525d44bb70153383714599f8e8ce38d8b848945e73f2c79829e0b7",
+    "catalog-mobile.png": "8b09496e5e4ce693b195feb7024fe913906a91980aa50112bf853c1170aa1f12"
+  },
+  "mutations": {
+    "ownedCatalogSource": true,
+    "commonPracticeLayout": true,
+    "unitySource": false,
+    "unityBuild": false,
+    "db": false,
+    "flow": false,
+    "operatingDeployment": false,
+    "cloud": false,
+    "credentials": false
+  },
+  "limits": [
+    "Synthetic tournament UUID; real detail/Auth/enrollment not verified",
+    "Mobile HTML layout harness has no application hydration; no physical phone check",
+    "Existing Auth placeholder fetch failures prevent a global console-clean claim",
+    "Operative activation pending; 3081 unchanged; G2048-09.4 Docker blocker unchanged",
+    "Existing legacy/global links keep their prior behavior; selected context preserved through the catalog and common navigation"
+  ]
+}

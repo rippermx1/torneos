@@ -1,0 +1,30 @@
+.catalog { max-width: 68rem; margin: auto; padding: 1.5rem 1rem 3rem; color: var(--foreground); }
+.heading { max-width: 40rem; margin-bottom: 2rem; }
+.eyebrow { font-size: .75rem; font-weight: 650; letter-spacing: .09em; text-transform: uppercase; }
+.heading h1 { margin: .75rem 0; font-size: clamp(1.8rem, 5vw, 2.6rem); line-height: 1.15; font-weight: 700; }
+.heading > p:last-child { line-height: 1.7; color: var(--muted-foreground); }
+.cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem; }
+.card { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 1.2rem; overflow: hidden; background: var(--card); }
+.art { height: 10rem; display: flex; align-items: center; justify-content: center; gap: .75rem; }
+.numbers { background: #f1f1e8; color: #193337; }
+.numbers span { display: grid; place-items: center; width: 3.5rem; height: 3.5rem; border-radius: .7rem; background: #e1e7d5; font-size: 1.6rem; font-weight: 750; }
+.numbers span:nth-child(2) { background: #dae5c4; }
+.numbers span:nth-child(3) { background: #bccf9e; }
+.numbers span:nth-child(4) { background: #a7c786; }
+.runner { background: #152c3c; color: #f5d879; font-size: 2.6rem; }
+.runner span:first-child { color: #bce0e7; font-size: 4rem; }
+.runner span:nth-child(2) { transform: translateY(-.75rem); font-size: 1.6rem; }
+.runner span:last-child { transform: translateY(-1.5rem); }
+.content { display: flex; flex-direction: column; gap: .8rem; padding: 1.5rem; flex: 1; }
+.mode { color: var(--muted-foreground); font-size: .8rem; font-weight: 650; }
+.content h2 { font-size: 1.6rem; font-weight: 700; }
+.content > p { line-height: 1.65; }
+.controls { font-size: .9rem; }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: .65rem 1rem; margin-top: auto; padding-top: .75rem; }
+.actions a, .navigation a { display: inline-flex; align-items: center; min-height: 44px; text-underline-offset: .2em; text-decoration: underline; font-weight: 600; }
+.actions .primary { padding: .6rem 1rem; border-radius: .6rem; background: var(--foreground); color: var(--background); text-decoration: none; }
+.note { font-size: .8rem; color: var(--muted-foreground); }
+.unavailable { border: 1px solid var(--border); border-radius: .6rem; padding: .65rem 1rem; font-size: .9rem; }
+.navigation { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .5rem 1.5rem; max-width: 68rem; padding: .5rem 1rem; margin: auto; }
+.actions a:focus-visible, .navigation a:focus-visible { outline: 3px solid var(--foreground); outline-offset: 4px; }
+@media (max-width: 640px) { .cards { grid-template-columns: 1fr; } .content { padding: 1.25rem; } .numbers { gap: .5rem; } .numbers span { width: 3rem; height: 3rem; } }

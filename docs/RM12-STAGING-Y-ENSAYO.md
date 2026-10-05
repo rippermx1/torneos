@@ -70,7 +70,7 @@ Desde el checkout de la candidata, sin cargar `.env.local`:
 npm run staging:catalog
 # Ejecutar artifacts/staging/catalog.sql mediante conexión READ ONLY/MCP
 # en jnoyjewsqbooqaiighcs; guardar el objeto inventory junto con project_ref.
-node scripts/staging-preflight.mjs --inventory artifacts/staging/dev-catalog.json --manifest artifacts/release/manifest.json --project-ref jnoyjewsqbooqaiighcs --production-ref baeylvoipmazcthnwxmz --app-url https://torneos-dev.vercel.app --output artifacts/staging/dev-preflight.json
+node scripts/staging-preflight.mjs --inventory artifacts/staging/dev-catalog.json --manifest artifacts/staging/dev-manifest.json --project-ref jnoyjewsqbooqaiighcs --production-ref baeylvoipmazcthnwxmz --app-url https://torneos-dev.vercel.app --output artifacts/staging/dev-preflight.json
 node --env-file=C:/torneos/.env.cloud-development.local --env-file=C:/torneos/.env.cloud-test-users.local scripts/staging-auth-preflight.mjs --project-ref jnoyjewsqbooqaiighcs --production-ref baeylvoipmazcthnwxmz --app-url https://torneos-dev.vercel.app --output artifacts/staging/dev-auth.json
 ```
 

@@ -31,6 +31,7 @@ export async function GET(req: Request): Promise<Response> {
   const startedAt = Date.now()
 
   try {
+    await recordHeartbeat('reconcile-refunds', 'started')
     // El barrido de cancelados va primero: emite las reversas que falten para
     // que los trabajadores recuperen las obligaciones registradas.
     const cancelledSweep = await reconcileCancelledTournamentRefunds()
@@ -56,7 +57,7 @@ export async function GET(req: Request): Promise<Response> {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
     console.error('[cron/reconcile-refunds] Error fatal:', message)
-    await recordHeartbeat('reconcile-refunds', 'error', message)
+    await recordHeartbeat('reconcile-refunds', 'error', message).catch(error => console.error('[cron] Registro operativo falló', error))
     return Response.json({ ok: false, error: message }, { status: 500 })
   }
 }

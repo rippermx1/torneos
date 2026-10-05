@@ -25,6 +25,7 @@ export async function GET(req: Request): Promise<Response> {
   const startedAt = Date.now()
 
   try {
+    await recordHeartbeat('flow-reconcile', 'started')
     const admin = createAdminClient()
     const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString()
 
@@ -83,7 +84,7 @@ export async function GET(req: Request): Promise<Response> {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
     console.error('[cron/flow-reconcile] Error fatal:', message)
-    await recordHeartbeat('flow-reconcile', 'error', message)
+    await recordHeartbeat('flow-reconcile', 'error', message).catch(error => console.error('[cron] Registro operativo falló', error))
     return Response.json({ ok: false, error: message }, { status: 500 })
   }
 }

@@ -332,6 +332,11 @@ export interface CronHeartbeat {
   last_run_at: string
   last_status: 'ok' | 'error'
   detail: string | null
+  last_started_at?: string | null
+  last_success_at?: string | null
+  last_dispatch_failure_at?: string | null
+  consecutive_dispatch_failures?: number
+  consecutive_failures?: number
 }
 
 export interface PlatformBusinessRule {
@@ -510,6 +515,24 @@ export type Database = {
         Update: Partial<Omit<PlayerRating, 'profile_id'>> & DbRecord
         Relationships: []
       }
+      ops_incidents: {
+        Row: import('@/lib/ops/monitor').OpsIncident & DbRecord
+        Insert: never
+        Update: never
+        Relationships: []
+      }
+      ops_notifications: {
+        Row: import('@/lib/ops/monitor').OpsNotification & DbRecord
+        Insert: never
+        Update: never
+        Relationships: []
+      }
+      ops_incident_events: {
+        Row: { id: string; incident_id: string; action: string; actor_id: string | null; note: string | null; created_at: string } & DbRecord
+        Insert: never
+        Update: never
+        Relationships: []
+      }
       cron_heartbeats: {
         Row: CronHeartbeat & DbRecord
         Insert: InsertWithOptional<CronHeartbeat, 'last_run_at' | 'last_status' | 'detail'>
@@ -611,6 +634,15 @@ export type Database = {
       }
     }
     Functions: {
+      record_cron_dispatch_failure: { Args: { p_job: string } & DbRecord; Returns: undefined }
+      review_ops_notification: { Args: { p_id: string; p_actor: string; p_action: string; p_note: string } & DbRecord; Returns: undefined }
+      record_cron_execution: { Args: { p_job: string; p_status: string; p_detail?: string | null } & DbRecord; Returns: undefined }
+      operational_snapshot: { Args: DbRecord; Returns: import('@/lib/ops/monitor').OperationalSnapshot & DbRecord }
+      observe_operations: { Args: { p_recipient?: string | null; p_escalation_recipient?: string | null } & DbRecord; Returns: import('@/lib/ops/monitor').OperationalSnapshot & DbRecord }
+      acknowledge_ops_incident: { Args: { p_id: string; p_actor: string; p_note: string } & DbRecord; Returns: undefined }
+      claim_ops_notifications: { Args: DbRecord; Returns: (import('@/lib/ops/monitor').OpsNotification & DbRecord)[] }
+      finish_ops_notification: { Args: { p_id: string; p_token: string; p_provider_id?: string | null; p_error?: string | null; p_retryable?: boolean } & DbRecord; Returns: undefined }
+
       authorize_competitive_entry: {
         Args: { p_user_id: string; p_tournament_id: string } & DbRecord
         Returns: boolean

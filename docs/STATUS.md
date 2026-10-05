@@ -1,5 +1,18 @@
 # Estado — TorneosPlay
 
+## Preparación de dinero real: RM-09 — 2026-10-05
+
+Candidata `codex/real-money-access`, checkout aislado; **implementación local**
+de obligaciones por monto/edad, comprobaciones contables, incidentes persistentes,
+acuse con MFA, escalamiento al suplente y recuperación comprobada. Inicio,
+éxito del procesamiento y fallo del respaldo separados; avisos durables con
+aceptación del proveedor distinguida de entrega y recepción humana.
+Watchdog cada cinco minutos en configuración fuente y monitor externo preparado.
+**Sin migración operativa, despliegue, correos reales ni activación de workflows.**
+**NO_GO vigente**; sigue RM-10, conciliación y reserva de caja.
+[Entrega](RM09-OBLIGACIONES-Y-ALERTAS.md) y
+[evidencia](RM09-OBLIGACIONES-Y-ALERTAS-EVIDENCE.json).
+
 ## Preparación de dinero real: RM-08 — 2026-10-05
 
 Candidata `codex/real-money-access`, checkout aislado; **implementación local**

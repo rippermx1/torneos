@@ -1,6 +1,6 @@
 # Plan de preparación para operar torneos con dinero real
 
-Fecha del plan: **2026-10-04**. Actualización: **2026-10-05**. Estado: **en ejecución; acceso, recuperación financiera y retención de premios validados localmente**. Decisión vigente: **NO_GO para lanzamiento pagado** hasta demostrar los cierres definidos aquí.
+Fecha del plan: **2026-10-04**. Actualización: **2026-10-05**. Estado: **en ejecución; acceso, recuperación financiera, retención de premios y seguimiento operativo validados localmente**. Decisión vigente: **NO_GO para lanzamiento pagado** hasta demostrar los cierres definidos aquí.
 
 Este plan convierte los doce hallazgos de la [auditoría operativa](AUDITORIA-OPERATIVA-DINERO-REAL-2026-10-04.md) en entregables técnicos, comerciales y operativos. No habilita cobros, modifica Supabase/Flow ni autoriza un despliegue. La viabilidad jurídica del modelo exacto puede cambiar el alcance antes de invertir en su preparación financiera.
 
@@ -18,8 +18,9 @@ Primera candidata en `codex/real-money-access`, checkout `C:/Users/valde/.codex/
 | RM-06 | Obligaciones durables y envío reclamado, verificados localmente | Conciliación manual auditada, alertas y devoluciones externas |
 | RM-07 | Solicitud y débito atómicos con clave estable, verificados localmente | Integración staging y operación bancaria |
 | RM-08 | Retención/revisión persistente, segundo operador y conciliación bancaria verificados localmente | Titularidad documentada, staging, ensayo humano/bancario y plazos/apelación aceptados |
+| RM-09 | Agregados por monto/edad, incidentes, acuse, escalamiento y recuperación implementados y verificados localmente | Activación staging, destinatarios/guardias nominales, recepción real y monitor externo ensayados |
 
-El checkout compartido y los juegos en progreso se conservan. Sin cambios a Supabase operativo, Flow, despliegues, premios ni merge a main. La [segunda entrega](RM05-RM07-DINERO-RECUPERABLE.md) y su [evidencia](RM05-RM07-DINERO-RECUPERABLE-EVIDENCE.json) registran 3.591 pruebas web, 62 verificaciones SQL, tipos/lint y build Webpack PASS. La [tercera entrega RM-08](RM08-RETENCION-Y-REVISION-PREMIOS.md) y su [evidencia](RM08-RETENCION-Y-REVISION-PREMIOS-EVIDENCE.json) registran 3.628 pruebas web, 83 verificaciones SQL y controles de retención/doble operador validados localmente. Sigue RM-09; los hallazgos no se dan por cerrados operativamente por estas pruebas locales.
+El checkout compartido y los juegos en progreso se conservan. Sin cambios a Supabase operativo, Flow, despliegues, premios ni merge a main. La [segunda entrega](RM05-RM07-DINERO-RECUPERABLE.md) y su [evidencia](RM05-RM07-DINERO-RECUPERABLE-EVIDENCE.json) registran 3.591 pruebas web, 62 verificaciones SQL, tipos/lint y build Webpack PASS. La [tercera entrega RM-08](RM08-RETENCION-Y-REVISION-PREMIOS.md) y su [evidencia](RM08-RETENCION-Y-REVISION-PREMIOS-EVIDENCE.json) registran 3.628 pruebas web, 83 verificaciones SQL y controles de retención/doble operador validados localmente. La [cuarta entrega RM-09](RM09-OBLIGACIONES-Y-ALERTAS.md) y su [evidencia](RM09-OBLIGACIONES-Y-ALERTAS-EVIDENCE.json) incorporan obligaciones por monto/edad, incidentes, acuse y avisos recuperables. Sigue RM-10: conciliación y reserva de caja. Los hallazgos no se dan por cerrados operativamente por estas pruebas locales.
 
 ## 1. Base de trabajo y alcance comercial
 

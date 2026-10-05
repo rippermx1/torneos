@@ -1,5 +1,6 @@
 import { assessCronHeartbeats, type CronJobHealth } from '@/lib/ops/health'
 import { createAdminClient } from '@/lib/supabase/server'
+import type { OperationalSnapshot, OpsIncident } from '@/lib/ops/monitor'
 import type { CronHeartbeat } from '@/types/database'
 
 export type AdminHealthLevel = 'healthy' | 'attention' | 'critical'
@@ -117,6 +118,8 @@ export async function loadAdminHealthDashboard(): Promise<AdminHealthDashboard> 
     dteResult,
     liabilityResult,
     heartbeatsResult,
+    operationalResult,
+    incidentsResult,
   ] = await Promise.all([
     admin.from('profiles').select('*', { count: 'exact', head: true }).eq('is_admin', false),
     admin.from('registrations').select('*', { count: 'exact', head: true }).gte('registered_at', sevenDaysAgo),
@@ -128,7 +131,7 @@ export async function loadAdminHealthDashboard(): Promise<AdminHealthDashboard> 
     admin
       .from('flow_payment_attempts')
       .select('created_at', { count: 'exact' })
-      .in('status', ['pending', 'unknown', 'expired'])
+      .in('status', ['pending', 'unknown'])
       .order('created_at', { ascending: true })
       .limit(1),
     admin
@@ -168,7 +171,9 @@ export async function loadAdminHealthDashboard(): Promise<AdminHealthDashboard> 
       .order('created_at', { ascending: true })
       .limit(1),
     admin.from('prize_liability').select('*').maybeSingle(),
-    admin.from('cron_heartbeats').select('job_name, last_run_at, last_status, detail'),
+    admin.from('cron_heartbeats').select('*'),
+    admin.rpc('operational_snapshot'),
+    admin.from('ops_incidents').select('*').is('resolved_at', null),
   ])
 
   const failures: string[] = []
@@ -245,6 +250,7 @@ export async function loadAdminHealthDashboard(): Promise<AdminHealthDashboard> 
     console.error('No se pudo leer la salud de automatizaciones para el resumen administrativo:', heartbeatsResult.error.message)
   }
 
+  if (operationalResult.error || !operationalResult.data || incidentsResult.error) failures.push('obligaciones y alertas persistentes')
   const liabilityRow = liabilityResult.data
   const committedCents = Number(liabilityRow?.committed_cents ?? 0)
   const liability: PrizeLiabilitySummary | null = liabilityResult.error
@@ -268,20 +274,20 @@ export async function loadAdminHealthDashboard(): Promise<AdminHealthDashboard> 
     level: 'critical',
     title: `No se pudo verificar: ${source}`,
     detail: 'El panel no tiene datos suficientes para confirmar que esta área está saludable.',
-    href: '/admin/audit',
+    href: '/admin/operations',
   }))
 
   for (const cron of cronJobs) {
     if (cron.state !== 'healthy') {
       issues.push({
-        level: 'critical',
+        level: cron.critical ? 'critical' : 'attention',
         title: `${cron.label} requiere revisión`,
         detail: cron.state === 'error'
           ? `La última ejecución terminó con error${cron.detail ? `: ${cron.detail}` : '.'}`
           : cron.state === 'missing'
             ? 'No existe un latido registrado para esta automatización.'
             : `El último latido superó el límite de ${cron.maxAgeMinutes} minutos.`,
-        href: '/admin/audit',
+        href: '/admin/operations',
       })
     }
   }
@@ -349,10 +355,21 @@ export async function loadAdminHealthDashboard(): Promise<AdminHealthDashboard> 
     })
   }
 
+  if (!incidentsResult.error) for (const incident of (incidentsResult.data ?? []) as OpsIncident[]) {
+    issues.push({ level: incident.severity, title: incident.title,
+      detail: incident.acknowledged_at ? 'Incidente en atención; su causa sigue activa.' : 'Incidente pendiente de atención y acuse del operador.', href: '/admin/operations' })
+  }
+  if (!operationalResult.error && operationalResult.data) {
+    const snapshot = operationalResult.data as unknown as OperationalSnapshot
+    for (const check of snapshot.checks) if (check.count > 0) issues.push({ level: 'critical', title: check.title, detail: `${check.count} diferencias detectadas; revisar antes de operar.`, href: check.href })
+    const retained = snapshot.queues.find(q => q.key === 'retained-prizes')
+    if (retained?.count) issues.push({ level: 'attention', title: 'Premios retenidos por revisar', detail: `${retained.count} premios requieren revisión.`, href: retained.href })
+  }
+
   if (liability && liability.coverage < 1) {
     issues.push({
       level: 'critical',
-      title: 'Cobertura de premios insuficiente',
+      title: 'Recaudación registrada menor que premios comprometidos',
       detail: 'Los ingresos recaudados no cubren los premios ya comprometidos.',
       href: '/admin/tournaments',
     })

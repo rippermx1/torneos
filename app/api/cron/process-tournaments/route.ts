@@ -26,6 +26,7 @@ export async function GET(req: Request): Promise<Response> {
   const startedAt = Date.now()
 
   try {
+    await recordHeartbeat('process-tournaments', 'started')
     const results = await processTournamentTransitions()
 
     const acted = results.filter((r) => r.action !== 'skipped' && !r.error)
@@ -59,7 +60,7 @@ export async function GET(req: Request): Promise<Response> {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
     console.error('[cron] Error fatal en process-tournaments:', message)
-    await recordHeartbeat('process-tournaments', 'error', message)
+    await recordHeartbeat('process-tournaments', 'error', message).catch(error => console.error('[cron] Registro operativo falló', error))
     return Response.json({ ok: false, error: message }, { status: 500 })
   }
 }

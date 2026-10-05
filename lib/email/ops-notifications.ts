@@ -36,7 +36,7 @@ export async function sendOpsAlertEmail(input: {
   }
 }
 
-async function resolveOpsAlertEmail(): Promise<string | undefined> {
+export async function resolveOpsAlertEmail(): Promise<string | undefined> {
   const configured = getAlertEmail()
   if (configured) return configured
 

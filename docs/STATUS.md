@@ -1,5 +1,18 @@
 # Estado — TorneosPlay
 
+## Preparación de dinero real: RM-08 — 2026-10-05
+
+Candidata `codex/real-money-access`, checkout aislado; **implementación local**
+de revisión obligatoria de todos los premios reales, retenciones persistentes,
+validación vigente de ban/KYC/roles/disputas y pago manual con operador responsable
+más un segundo aprobador. Incertidumbre exige conciliación; comprobantes
+conservados y referencias únicas. Gasto/pasivo preservados durante la revisión.
+**3.628 pruebas web / 68 archivos, 83 checks PostgreSQL, tipos/lint y build
+Next Webpack PASS**. Sin aplicación operativa, despliegue o transferencias reales.
+**NO_GO vigente**; sigue RM-09, obligaciones por edad/monto y alertas atendidas.
+[Entrega](RM08-RETENCION-Y-REVISION-PREMIOS.md) y
+[evidencia](RM08-RETENCION-Y-REVISION-PREMIOS-EVIDENCE.json).
+
 ## Preparación de dinero real: RM-05/06/07 — 2026-10-05
 
 Candidata `codex/real-money-access`, checkout aislado; **implementación local** de

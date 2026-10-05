@@ -8,10 +8,11 @@ import assert from 'node:assert/strict'
 
 const index = process.argv.indexOf('--pg-bin')
 if (index < 0 || !process.argv[index + 1]) throw new Error('Use --pg-bin with PostgreSQL 17 binaries')
-const financial = process.argv.includes('--financial')
-const pgBin = path.resolve(process.argv[index + 1]), dir = path.resolve(financial ? 'artifacts/financial-operations' : 'artifacts/commercial-entry')
+const prizeReview = process.argv.includes('--prize-review')
+const financial = prizeReview || process.argv.includes('--financial')
+const pgBin = path.resolve(process.argv[index + 1]), dir = path.resolve(prizeReview ? 'artifacts/prize-review' : financial ? 'artifacts/financial-operations' : 'artifacts/commercial-entry')
 const cluster = path.join(dir, `pg-${randomUUID()}`)
-const report = { task: financial ? 'RM-01/02/03 + RM-05/06/07' : 'RM-01/02/03', startedAt: new Date().toISOString(), status: 'NOT_RUN',
+const report = { task: prizeReview ? 'RM-01/02/03 + RM-05/06/07 + RM-08' : financial ? 'RM-01/02/03 + RM-05/06/07' : 'RM-01/02/03', startedAt: new Date().toISOString(), status: 'NOT_RUN',
   scope: 'fresh loopback PostgreSQL fixture; real SQL roles/claims, not Supabase JWT/Data API', sources: {}, checks: [], cleanup: 'NOT_RUN' }
 let port, started = false, flowSequence = 100
 const run = (binary, args, input, timeout = 15000) => new Promise(resolve => {
@@ -199,6 +200,10 @@ try {
   if (financial) {
     const { verifyFinancialCases } = await import('./verify-financial-cases.mjs')
     await verifyFinancialCases({ checked, denied, check, source, service, fixture, payment, settle, sql })
+  }
+  if (prizeReview) {
+    const { verifyPrizeReviewCases } = await import('./verify-prize-review-cases.mjs')
+    await verifyPrizeReviewCases({ checked, denied, check, source, service, fixture, payment, settle, sql })
   }
   report.status = 'PASS'
 } catch (error) { report.status = 'FAIL'; report.error = error.message; process.exitCode = 1 }

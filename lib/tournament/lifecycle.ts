@@ -357,6 +357,9 @@ async function notifyPrizeWinners(
   tournamentName: string,
 ): Promise<void> {
   try {
+    const { data: tournament } = await supabase.from('tournaments').select('is_test').eq('id', tournamentId).single()
+    // Existing hosted email promises availability. Real awards remain visible as pending in Mis premios.
+    if (!tournament?.is_test) return
     const { data: results } = await supabase
       .from('tournament_results')
       .select('user_id, rank, prize_awarded_cents, final_score')
@@ -392,10 +395,7 @@ async function notifyPrizeWinners(
 // anómalas ($50.000): los premios grandes merecen una revisión adicional.
 const BIG_PRIZE_REVIEW_CENTS = 5000000
 
-// Revisa a los ganadores premiados en busca de señales de automatización y
-// alerta al operador por email (no bloquea el pago del premio). Es la capa
-// "gris" del anti-cheat: el detector en vivo banea lo flagrante; esto expone
-// consistencias sobrehumanas para revisión manual en el admin.
+// Las señales orientan la revisión; todos los premios reales nacen retenidos en SQL.
 async function reviewPrizeWinners(
   supabase: ReturnType<typeof createAdminClient>,
   tournamentId: string,
@@ -454,7 +454,7 @@ async function reviewPrizeWinners(
         lines: [
           `El torneo "${tournamentName}" finalizó con ganadores que ameritan revisión:`,
           ...alertLines,
-          'Los premios ya fueron acreditados; el control efectivo es la aprobación manual del pago (cobro de premios).',
+          'Los premios reales permanecen retenidos hasta revisión manual en /admin/prize-reviews. La ausencia de señales no demuestra integridad.',
         ],
       })
     }

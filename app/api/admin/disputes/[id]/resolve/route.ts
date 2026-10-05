@@ -1,3 +1,4 @@
+import { financialError } from '@/lib/payouts/review'
 import { createAdminClient } from '@/lib/supabase/server'
 import { requireAdminMfaForApi } from '@/lib/supabase/admin-mfa'
 import { recordAdminAction } from '@/lib/admin/audit'
@@ -26,26 +27,22 @@ export async function POST(
   if (!['resolved', 'rejected'].includes(body.resolution)) {
     return Response.json({ error: 'Resolución inválida' }, { status: 400 })
   }
-  if (!body.notes?.trim()) {
+  if (typeof body.notes !== 'string' || body.notes.trim().length < 10 || body.notes.length > 2000) {
     return Response.json({ error: 'Las notas de resolución son obligatorias' }, { status: 400 })
   }
 
   const { id: disputeId } = await params
   const adminSupabase = createAdminClient()
 
-  const { error } = await adminSupabase
-    .from('disputes')
-    .update({
-      status: body.resolution,
-      admin_notes: body.notes.trim(),
-      resolved_by: userId,
-      resolved_at: new Date().toISOString(),
-    })
-    .eq('id', disputeId)
-    .eq('status', 'open') // solo abiertas
+  const { error } = await Promise.resolve(adminSupabase.rpc('resolve_financial_dispute', {
+    p_dispute_id: disputeId,
+    p_admin_id: userId,
+    p_resolution: body.resolution,
+    p_reason: body.notes.trim(),
+  })).catch(() => ({ error: { message: 'Respuesta perdida' } }))
 
   if (error) {
-    return Response.json({ error: error.message }, { status: 400 })
+    return financialError(error)
   }
 
   await recordAdminAction(adminSupabase, {

@@ -101,7 +101,7 @@ export async function POST(req: Request): Promise<Response> {
       p_verified_full_name: profile.full_name,
     })
     if (error) {
-      const status = /^PT(400|402|403|409|422|429)$/.test(error.code) ? Number(error.code.slice(2)) : 503
+      const status = /^PT(400|402|403|409|422|423|429)$/.test(error.code) ? Number(error.code.slice(2)) : 503
       return Response.json({ error: status === 503 ? 'No se pudo confirmar la solicitud. Reintenta con los mismos datos.' : error.message }, { status })
     }
     if (data !== requestId) throw new Error('Respuesta de retiro inconsistente')

@@ -1,6 +1,6 @@
 export type KycStatus = 'pending' | 'approved' | 'rejected'
 export type KycDocumentType = 'cedula_chilena' | 'passport' | 'other'
-export type WithdrawalStatus = 'pending' | 'approved' | 'paid' | 'rejected'
+export type WithdrawalStatus = 'pending' | 'claimed' | 'approved' | 'transferring' | 'reconciling' | 'paid' | 'rejected'
 export type DisputeType = 'payment' | 'tournament_result' | 'technical' | 'other'
 export type DisputeStatus = 'open' | 'resolved' | 'rejected'
 export type AppRole = 'user' | 'admin' | 'owner'
@@ -158,7 +158,21 @@ export interface TournamentResult {
   created_at: string
 }
 
+export interface PrizeReview {
+  id: string; tournament_id: string; user_id: string; amount_cents: number
+  status: 'pending' | 'held' | 'approved'; reason: string; reviewed_by: string | null
+  reviewed_at: string | null; evidence: Record<string, unknown>; created_at: string
+}
+export interface FinancialHold {
+  id: string; user_id: string; reason: string; created_by: string; created_at: string
+  released_by: string | null; released_at: string | null; release_reason: string | null
+}
+
 export interface WithdrawalRequest {
+  claimed_by: string | null
+  claimed_at: string | null
+  transfer_started_at: string | null
+  identity_snapshot: Record<string, unknown> | null
   id: string
   user_id: string
   amount_cents: number
@@ -424,9 +438,27 @@ export type Database = {
         Update: Partial<Omit<TournamentResult, 'id' | 'created_at'>> & DbRecord
         Relationships: []
       }
+      prize_reviews: {
+        Row: PrizeReview & DbRecord
+        Insert: PrizeReview & DbRecord
+        Update: Partial<PrizeReview> & DbRecord
+        Relationships: []
+      }
+      financial_holds: {
+        Row: FinancialHold & DbRecord
+        Insert: FinancialHold & DbRecord
+        Update: Partial<FinancialHold> & DbRecord
+        Relationships: []
+      }
+      financial_review_events: {
+        Row: { id: string; target_id: string; action: string; actor_id: string | null; reason: string; details: Record<string, unknown>; created_at: string } & DbRecord
+        Insert: DbRecord
+        Update: DbRecord
+        Relationships: []
+      }
       withdrawal_requests: {
         Row: WithdrawalRequest & DbRecord
-        Insert: InsertWithOptional<WithdrawalRequest, 'id' | 'created_at' | 'status' | 'admin_notes' | 'reviewed_by' | 'reviewed_at' | 'wallet_transaction_id' | 'paid_by' | 'paid_at' | 'bank_transfer_reference' | 'proof_storage_path' | 'receipt_number' | 'payment_notes'>
+        Insert: InsertWithOptional<WithdrawalRequest, 'id' | 'created_at' | 'status' | 'admin_notes' | 'reviewed_by' | 'reviewed_at' | 'wallet_transaction_id' | 'paid_by' | 'paid_at' | 'bank_transfer_reference' | 'proof_storage_path' | 'receipt_number' | 'payment_notes' | 'claimed_by' | 'claimed_at' | 'transfer_started_at' | 'identity_snapshot'>
         Update: Partial<Omit<WithdrawalRequest, 'id' | 'created_at'>> & DbRecord
         Relationships: []
       }
@@ -672,6 +704,30 @@ export type Database = {
           p_tournament_id: string
         } & DbRecord
         Returns: Record<string, unknown>
+      }
+      resolve_financial_dispute: {
+        Args: { p_dispute_id: string; p_admin_id: string; p_resolution: string; p_reason: string } & DbRecord
+        Returns: undefined
+      }
+      review_prize: {
+        Args: { p_review_id: string; p_admin_id: string; p_decision: string; p_reason: string; p_evidence: Record<string, unknown> } & DbRecord
+        Returns: undefined
+      }
+      set_financial_hold: {
+        Args: { p_hold_id: string; p_user_id: string; p_admin_id: string; p_release: boolean; p_reason: string } & DbRecord
+        Returns: undefined
+      }
+      claim_withdrawal: {
+        Args: { p_request_id: string; p_admin_id: string } & DbRecord
+        Returns: undefined
+      }
+      begin_withdrawal_transfer: {
+        Args: { p_request_id: string; p_admin_id: string } & DbRecord
+        Returns: Record<string, unknown>
+      }
+      reconcile_withdrawal: {
+        Args: { p_request_id: string; p_admin_id: string; p_outcome: string; p_bank_reference: string | null; p_proof_path: string | null; p_reason: string } & DbRecord
+        Returns: undefined
       }
       approve_withdrawal: {
         Args: {

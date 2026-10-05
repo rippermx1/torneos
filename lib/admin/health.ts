@@ -146,7 +146,7 @@ export async function loadAdminHealthDashboard(): Promise<AdminHealthDashboard> 
     admin
       .from('withdrawal_requests')
       .select('created_at', { count: 'exact' })
-      .in('status', ['pending', 'approved'])
+      .in('status', ['pending', 'claimed', 'approved', 'transferring', 'reconciling'])
       .order('created_at', { ascending: true })
       .limit(1),
     admin

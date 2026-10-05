@@ -1,0 +1,459 @@
+{
+  "task": "RM-08",
+  "date": "2026-10-05",
+  "scope": "isolated local candidate; no operational Supabase, Flow, bank, email or deployment",
+  "branch": "codex/real-money-access",
+  "base_commit": "d3280513216b8e5eec84eafef717b696482770b8",
+  "worktree": "C:\\Users\\valde\\.codex\\worktrees\\real-money-access\\torneos",
+  "implementation": "PASS_LOCAL",
+  "production_decision": "NO_GO",
+  "verification": {
+    "web": {
+      "status": "PASS",
+      "tests": 3628,
+      "files": 68,
+      "artifact": "artifacts/prize-review/web.json",
+      "sha256": "4343682dd55674a876222d334fa4fbe0bf975cfedb0ee129f3b78c2c824ea427"
+    },
+    "native_postgres": {
+      "status": "PASS",
+      "engine": "postgres (PostgreSQL) 17.11",
+      "checks": 83,
+      "previous_checks": 62,
+      "rm08_checks": 21,
+      "cleanup": "PASS_OWN_CLUSTER_STOPPED",
+      "artifact": "artifacts/prize-review/sql.json",
+      "sha256": "aec6ddc0377708d7f3cd9b541f7ecd559c38ccd50f404f58d26d14e4a213949e",
+      "source_hashes_match": true,
+      "checks_detail": [
+        {
+          "name": "baseline owned INSERT creates unpaid registration and server game",
+          "status": "PASS"
+        },
+        {
+          "name": "new privileged functions have no client execute and a pinned empty search path",
+          "status": "PASS"
+        },
+        {
+          "name": "anon cannot INSERT registrations including column grants",
+          "status": "PASS"
+        },
+        {
+          "name": "anon cannot UPDATE registrations including column grants",
+          "status": "PASS"
+        },
+        {
+          "name": "anon cannot DELETE registrations including column grants",
+          "status": "PASS"
+        },
+        {
+          "name": "anon cannot invoke authorization, registration, credit or settlement",
+          "status": "PASS"
+        },
+        {
+          "name": "authenticated cannot INSERT registrations including column grants",
+          "status": "PASS"
+        },
+        {
+          "name": "authenticated cannot UPDATE registrations including column grants",
+          "status": "PASS"
+        },
+        {
+          "name": "authenticated cannot DELETE registrations including column grants",
+          "status": "PASS"
+        },
+        {
+          "name": "authenticated cannot invoke authorization, registration, credit or settlement",
+          "status": "PASS"
+        },
+        {
+          "name": "preexisting forged registration/game cannot authorize or mutate score",
+          "status": "PASS"
+        },
+        {
+          "name": "seed/wildcard denied, safe owned state and server seed retained",
+          "status": "PASS"
+        },
+        {
+          "name": "trusted unpaid direct registration denied",
+          "status": "PASS"
+        },
+        {
+          "name": "confirmed payment alone cannot start a game without registration",
+          "status": "PASS"
+        },
+        {
+          "name": "browser cannot mutate game or movement tables",
+          "status": "PASS"
+        },
+        {
+          "name": "browser cannot fabricate confirmed payment through table or column grants",
+          "status": "PASS"
+        },
+        {
+          "name": "payment pending cannot authorize registration",
+          "status": "PASS"
+        },
+        {
+          "name": "payment rejected cannot authorize registration",
+          "status": "PASS"
+        },
+        {
+          "name": "payment wrong amount cannot authorize registration",
+          "status": "PASS"
+        },
+        {
+          "name": "payment unverified status cannot authorize registration",
+          "status": "PASS"
+        },
+        {
+          "name": "payment other owner cannot authorize registration",
+          "status": "PASS"
+        },
+        {
+          "name": "payment other tournament cannot authorize registration",
+          "status": "PASS"
+        },
+        {
+          "name": "ban revocation after checkout rolls back settlement and entry",
+          "status": "PASS"
+        },
+        {
+          "name": "minor revocation after checkout rolls back settlement and entry",
+          "status": "PASS"
+        },
+        {
+          "name": "missing age revocation after checkout rolls back settlement and entry",
+          "status": "PASS"
+        },
+        {
+          "name": "KYC revocation after checkout rolls back settlement and entry",
+          "status": "PASS"
+        },
+        {
+          "name": "old terms revocation after checkout rolls back settlement and entry",
+          "status": "PASS"
+        },
+        {
+          "name": "missing terms revocation after checkout rolls back settlement and entry",
+          "status": "PASS"
+        },
+        {
+          "name": "future acceptance revocation after checkout rolls back settlement and entry",
+          "status": "PASS"
+        },
+        {
+          "name": "application user role required for trusted INSERT",
+          "status": "PASS"
+        },
+        {
+          "name": "eligible free entry needs neither payment nor paid KYC",
+          "status": "PASS"
+        },
+        {
+          "name": "concurrent duplicate settlement is atomic and idempotent; later KYC revocation denies moves",
+          "status": "PASS"
+        },
+        {
+          "name": "concurrent last slot preserves capacity and rolls back losing paid transition",
+          "status": "PASS"
+        },
+        {
+          "name": "registration deadline includes tournament lock wait",
+          "status": "PASS"
+        },
+        {
+          "name": "provider identity mismatch cannot settle a matching amount",
+          "status": "PASS"
+        },
+        {
+          "name": "all original accounting adapter entries balance; no repeated event keys",
+          "status": "PASS"
+        },
+        {
+          "name": "financial functions revoke default client execute and pin search_path",
+          "status": "PASS"
+        },
+        {
+          "name": "legacy rejected dispatch stays unknown and cannot be claimed",
+          "status": "PASS"
+        },
+        {
+          "name": "confirmed late payment recovers from unknown",
+          "status": "PASS"
+        },
+        {
+          "name": "confirmed late payment recovers from expired",
+          "status": "PASS"
+        },
+        {
+          "name": "confirmed late payment recovers from rejected",
+          "status": "PASS"
+        },
+        {
+          "name": "confirmed late payment recovers from cancelled",
+          "status": "PASS"
+        },
+        {
+          "name": "response-loss payment recovers by commerce/order without token",
+          "status": "PASS"
+        },
+        {
+          "name": "confirmed payment after ban revocation leaves durable refund",
+          "status": "PASS"
+        },
+        {
+          "name": "confirmed payment after KYC revocation leaves durable refund",
+          "status": "PASS"
+        },
+        {
+          "name": "confirmed payment after terms revocation leaves durable refund",
+          "status": "PASS"
+        },
+        {
+          "name": "last-slot concurrency enrols once and durably refunds losing payment",
+          "status": "PASS"
+        },
+        {
+          "name": "second expired paid attempt is refunded despite a newer active checkout",
+          "status": "PASS"
+        },
+        {
+          "name": "cancel transaction creates obligation before worker, without network",
+          "status": "PASS"
+        },
+        {
+          "name": "concurrent refund claims authorize only one dispatch",
+          "status": "PASS"
+        },
+        {
+          "name": "stale worker cannot attach another workers response; no reclaim after crash",
+          "status": "PASS"
+        },
+        {
+          "name": "verified refund enforces amount/token and completion cannot regress",
+          "status": "PASS"
+        },
+        {
+          "name": "cancellation with missing email retains manual obligation",
+          "status": "PASS"
+        },
+        {
+          "name": "out of order provider failure cannot discard received payment",
+          "status": "PASS"
+        },
+        {
+          "name": "obligation persistence failure rolls back received transition and is retryable",
+          "status": "PASS"
+        },
+        {
+          "name": "unsupported legacy confirmed deposit leaves a manual obligation, no extra wallet credit",
+          "status": "PASS"
+        },
+        {
+          "name": "withdrawal locks fresh verified name and bank identity",
+          "status": "PASS"
+        },
+        {
+          "name": "concurrent stable withdrawal retries create one debit and one request",
+          "status": "PASS"
+        },
+        {
+          "name": "different concurrent withdrawal IDs cannot double reserve balance",
+          "status": "PASS"
+        },
+        {
+          "name": "failure after debit rolls back request and wallet atomically",
+          "status": "PASS"
+        },
+        {
+          "name": "withdrawal excludes test prizes and checks KYC after checkout",
+          "status": "PASS"
+        },
+        {
+          "name": "daily and monthly limits remain atomic and wallet history balanced",
+          "status": "PASS"
+        },
+        {
+          "name": "RM08 RPCs private helpers and tables have explicit grants and pinned paths",
+          "status": "PASS"
+        },
+        {
+          "name": "historical award retained without deleting original credit",
+          "status": "PASS"
+        },
+        {
+          "name": "finalization retains ALL real awards and cannot bypass review RPC",
+          "status": "PASS"
+        },
+        {
+          "name": "test awards retain mock behavior and remain unwithdrawable",
+          "status": "PASS"
+        },
+        {
+          "name": "concurrent approvals release one credit; rehold and reapprove never double award",
+          "status": "PASS"
+        },
+        {
+          "name": "review cannot approve without evidence or with invalid operator",
+          "status": "PASS"
+        },
+        {
+          "name": "manual hold blocks requests approvals begins and completion; release requires new prize review",
+          "status": "PASS"
+        },
+        {
+          "name": "fresh ban changes retain approved prize and block transfer completion",
+          "status": "PASS"
+        },
+        {
+          "name": "fresh KYC changes retain approved prize and block transfer completion",
+          "status": "PASS"
+        },
+        {
+          "name": "fresh name changes retain approved prize and block transfer completion",
+          "status": "PASS"
+        },
+        {
+          "name": "fresh RUT changes retain approved prize and block transfer completion",
+          "status": "PASS"
+        },
+        {
+          "name": "two simultaneous operators claim once; claimant cannot self approve",
+          "status": "PASS"
+        },
+        {
+          "name": "lost begin response cannot authorize a second bank attempt or rejection",
+          "status": "PASS"
+        },
+        {
+          "name": "complete retries return same receipt; duplicate normalized bank reference cannot pay another request",
+          "status": "PASS"
+        },
+        {
+          "name": "reconciliation records already-paid bank fact after account ban without new authorization",
+          "status": "PASS"
+        },
+        {
+          "name": "resolved tournament dispute does not automatically reapprove prizes; unrelated claimant cannot freeze tournament",
+          "status": "PASS"
+        },
+        {
+          "name": "audit persistence failure rolls back prize release and credit",
+          "status": "PASS"
+        },
+        {
+          "name": "fresh profile revocation wins concurrent transfer authorization under lock",
+          "status": "PASS"
+        },
+        {
+          "name": "owner can read prize state but no internal notes, signals or other winners",
+          "status": "PASS"
+        },
+        {
+          "name": "journal retains full prize liability before credit and books paid cash once",
+          "status": "PASS"
+        },
+        {
+          "name": "withdrawal amount/destination immutable; role revocation blocks already-approved transfer",
+          "status": "PASS"
+        }
+      ]
+    },
+    "types": {
+      "status": "PASS",
+      "command": "tsc --noEmit --incremental false",
+      "artifact": "artifacts/prize-review/types.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "lint": {
+      "status": "PASS",
+      "warnings": 0,
+      "scope": "changed TS/TSX/MJS, plus final native verifier after history-preservation adjustment",
+      "artifact": "artifacts/prize-review/lint.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "next_build": {
+      "status": "PASS",
+      "mode": "Next 16.3.8 Webpack with synthetic credentials",
+      "artifact": "artifacts/prize-review/build-webpack.log",
+      "sha256": "7794d1c039c2367fb06da0903c3230c9778d507baadb65730345b5d5c100192d"
+    },
+    "git_diff_check": "PASS",
+    "utf8": "PASS"
+  },
+  "not_run": [
+    "operational migration/deployment",
+    "full Supabase schema with historical data",
+    "Supabase Auth/JWT/Data API",
+    "private Storage bucket acceptance",
+    "human two-operator banking rehearsal",
+    "mobile acceptance",
+    "real bank transfer/refund",
+    "Turbopack release build"
+  ],
+  "limitations": [
+    "No heuristic proves unique human participation; all awards require human review.",
+    "Manual bank acts are outside application control; uncertain outcomes require independent reconciliation.",
+    "RUT/name and file signatures do not prove bank ownership or authenticity.",
+    "Global financial-decision lock is bounded to pilot; throughput remains RM-13.",
+    "Historical already-started transfers must be reconciled before migrating approved requests."
+  ],
+  "sources_sha256": {
+    "__tests__/fixtures/prize-review.sql": "43df7c76c8a35b258445b89fd88d19ed196ada0bf34c732073a00e8e84beacba",
+    "__tests__/payout-operator-view.test.ts": "4485a925150045a249139833d3c9fc18c26d0843ada20363873264e2e23f4a0f",
+    "__tests__/prize-review-accounting.test.ts": "8dad2c72c07a33f6dbe66bc5da0900caf4f62c78dcab1879c2e6171c8391cb18",
+    "__tests__/prize-review-routes.test.ts": "81dcf2487ae09f2d45625c412922be33ff5e00a8c5bbccbf2b86acf8eb6c8a6b",
+    "app/(admin)/admin/payouts/page.tsx": "9fa8b180085c0890f1ea79f212062341c25fdf5385646eb65a547b3ed1c0bebd",
+    "app/(admin)/admin/prize-reviews/page.tsx": "233e3830223beb09286dbdb00dbec6f97cd662a25dbddd0b347f686590c85ce4",
+    "app/(user)/premios/cobrar/page.tsx": "e2a2fb182b71e14148d1ed4e1c64908700c66daf6e45d7d70412f91a9919fc84",
+    "app/(user)/premios/page.tsx": "c4a340357ba3256dc83bcbc438da5e56490439b6fa089261609bfe8911177739",
+    "app/api/admin/disputes/[id]/resolve/route.ts": "0d20ad334d2c62dba1bb526dec579004732fa6af45e2f70407d3bea05169bd1a",
+    "app/api/admin/financial-holds/route.ts": "ab5f763b73c1fa7bc5a549e9d4ab13b101e883ac11a7f843e2a5f320444f46d1",
+    "app/api/admin/payouts/[id]/approve/route.ts": "ce0f5d3c297132132800edbf4979fda7d7cb2981f0a83eee32c66abfda408e2b",
+    "app/api/admin/payouts/[id]/begin/route.ts": "7b4cc5cad2be9a220578209217b14eed0d8070f6b9c3c40239f42786f365c0d3",
+    "app/api/admin/payouts/[id]/claim/route.ts": "2c673066e57a860e3da82633db969ca00ede6afb46d2baec79f3ecfe7eddcd02",
+    "app/api/admin/payouts/[id]/complete/route.ts": "be0fbe826a3b53811130948048f8d37f3c1df3f113810f5ce41df838a2ceb438",
+    "app/api/admin/payouts/[id]/reconcile/route.ts": "8aeb7c54d22fd644dcee665e52c145417488c48129777aeaeddd67b3c95e4a6b",
+    "app/api/admin/payouts/[id]/reject/route.ts": "1fd6197223b29b6343b33b151e2c011563a7b67658babea3483b632c7b7d4d28",
+    "app/api/admin/prize-reviews/[id]/route.ts": "92df2a8e2a0a83f31cfeb0842512567bce861050c23b881e32d713079a0af4e9",
+    "app/api/wallet/withdraw/request/route.ts": "5e60241a99f16a17e5baa1b11c786698dda6ae27d9252fa21449f72691c8331a",
+    "components/admin/admin-sidebar.tsx": "310a9652d08ff3512affb2fb83e3b9a555b76e7dbd5b06b9ed2a5836910090ca",
+    "components/admin/payout-actions.tsx": "cc8ab8f11c847c46c3247d1f7c79e15b30cb1e2989c83617cf44b245b831f640",
+    "components/admin/payout-completion-form.tsx": "0f624fb908a9a4a5228836d83400d366d69e1ae37c18d6c1a9687be45ce8824d",
+    "components/admin/prize-review-actions.tsx": "7e63710574884166e3825c92a0445b61742b11adc096eede83633198aa1016e8",
+    "docs/PLAN-OPERACION-DINERO-REAL.md": "e3968d6a48e08fe948a333e992f63f2de4aa3be166f4b4f93e0ccd710b481ef2",
+    "docs/RM08-RETENCION-Y-REVISION-PREMIOS.md": "0d59109d92be95fc697cc10b6744f8708706ec559c0153485a08bde7afcafdfb",
+    "docs/STATUS.md": "c8e45ca913571475159af0ef92eaf316dd6e1dc4dba361e106439898c18d0053",
+    "lib/accounting/model-a-report.ts": "b00436dc63e8e73295d048eb07fd1f4ae1799a040a43b9793b1eb750ea56cf04",
+    "lib/admin/health.ts": "bdc9aea8f5f0762fcf9ea7abaa01ff9ec165153dcd8e44f3c25ebf96c55c7c6a",
+    "lib/payouts/proof-storage.ts": "985fd3021022272cf7fe282ca50a671cb58cdbc6e9747f167aeeb22970763069",
+    "lib/payouts/review.ts": "7a71af81a1ae9fc6bb16b7550c9079be0387e23e8a39a76fe896425d5fbc7990",
+    "lib/tournament/lifecycle.ts": "bd905446eed6a86b39d020b0456b1f17c2a2f161db132b8ae0d743439f7d7a9a",
+    "scripts/verify-commercial-entry-sql.mjs": "43b200ed255680be5ae50ca38ec7a64c8100942da9edf4846a91ea4f66d3ee56",
+    "scripts/verify-prize-review-cases.mjs": "171908549f3336f09bc947b6e6c51342e82b1076112a9df307f4abd12f426158",
+    "supabase/migrations/20261005145934_prize_review_and_payout_holds.sql": "59072ebab504178b04ebe9884b90d3ac621ec6b89826dc153485ac9963d5613b",
+    "types/database.ts": "aff672575e656e56c61d2fd8097b58ec55229ecb83ce8a9a08906222e5a05873"
+  },
+  "sql_loaded_sources_sha256": {
+    "__tests__/fixtures/commercial-entry.sql": "24854d26b4195d85131b95fbe287e58d3f60e54f4bb5a493b262db611b37db62",
+    "supabase/migrations/20260506200000_route1_direct_checkout.sql": "d06cd25d51d37c24a7499592b7d0e801855541b8b148a37bcdcea1539764f774",
+    "supabase/migrations/20260507001033_optimize_rls_policy_performance.sql": "ef333a99ea1584b7974c882614f1f11d4e4efa2beadcb52ecd34272d13f1cfa3",
+    "supabase/migrations/20260805163009_fixed_prize_business_model.sql": "52b52a759d21f01d8ef664a1e3a1dbff0bfc1036a46616bc6847a3470c17e6ea",
+    "supabase/migrations/20261005131208_guard_commercial_entry.sql": "d5a79175d3a9afd3b92308984e593e92b97232aeae7ac2bcae049d81fbfd7eb9",
+    "lib/legal/terms.ts": "412b1ac609cece613b92a1be9a80ed53ba7d3e7e85d3cb71240d41beaa8302a9",
+    "supabase/migrations/20261004184805_guard_2048_seed_visibility.sql": "bca6642aa21d0146e3544a5b2d90101b8986d6927b830f5c8dfa6643d33ca1b6",
+    "supabase/migrations/20261002202731_guard_2048_move_commit.sql": "fbec5d60db689bab2dadf87f976329af417cf6f820abc8ca51910060a6c98a41",
+    "supabase/migrations/20260804223538_accounting_double_entry_ledger.sql": "ff6a8cb5ca17e532d4f4ffcb657aa7e97f1474f0a3bf6a4a3452959f3f87ed5e",
+    "__tests__/fixtures/financial-operations.sql": "f311074a9d0ca58299e3f5c7b29cdc032c0a3e5fb45fe3fa30ba06feec45250c",
+    "supabase/migrations/20260513100000_flow_refunds.sql": "d734824cbfd12dc4ca3afa226406a658fa036b74b1c63d14a07a6a54bf10a1c1",
+    "supabase/migrations/20260803162546_payout_evidence_and_cash_ledger.sql": "2f39265eddd6835a46ac8937eabc0af0469240f685c1b3a0c13e63c1124cf902",
+    "supabase/migrations/009_flow_payments.sql": "eb43234b8f50eb16bd15933d73a8b6dc3ed7c192e33aa08c2769525099a3e18b",
+    "supabase/migrations/20260507000624_harden_public_functions.sql": "cbaaf9d80c96f8bb224b63b5cae4c7e57cf20ea458af32098bd410068b25a7ab",
+    "supabase/migrations/20261005141433_durable_financial_operations.sql": "13075dfeaec07c9cf126d409663665f88326e0838d0728ad0ff85f2be6860d38",
+    "__tests__/fixtures/prize-review.sql": "43df7c76c8a35b258445b89fd88d19ed196ada0bf34c732073a00e8e84beacba",
+    "supabase/migrations/20261005145934_prize_review_and_payout_holds.sql": "59072ebab504178b04ebe9884b90d3ac621ec6b89826dc153485ac9963d5613b",
+    "supabase/migrations/20260804231035_account_for_pre_completion_refunds.sql": "af30903b2ac4b0e12b018d817a26be118d765a13fad0cd827aa94c28cecee3dc"
+  },
+  "next_increment": "RM-09"
+}

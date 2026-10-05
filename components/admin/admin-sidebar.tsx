@@ -60,6 +60,12 @@ const NAV_GROUPS: NavGroup[] = [
         icon: UserRoundCheck,
       },
       {
+        href: '/admin/prize-reviews',
+        label: 'Revisión de premios',
+        description: 'Revisa ganadores y retenciones',
+        icon: Trophy,
+      },
+      {
         href: '/admin/payouts',
         label: 'Pagos de premios',
         description: 'Autoriza, respalda y concilia transferencias',

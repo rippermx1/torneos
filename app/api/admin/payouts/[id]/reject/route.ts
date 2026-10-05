@@ -1,3 +1,4 @@
+import { financialError } from '@/lib/payouts/review'
 import { after } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { requireAdminMfaForApi } from '@/lib/supabase/admin-mfa'
@@ -14,8 +15,10 @@ export async function POST(
   const userId = auth.access.userId
 
   const { id: requestId } = await params
-  let body: { notes?: string } = {}
-  try { body = await req.json() } catch { /* notes es opcional */ }
+  const body = await req.json().catch(() => null)
+  if (!body || typeof body.notes !== 'string' || body.notes.trim().length < 10 || body.notes.length > 2000) {
+    return Response.json({ error: 'Justificación de 10 a 2000 caracteres requerida' }, { status: 400 })
+  }
 
   const adminSupabase = createAdminClient()
 
@@ -29,18 +32,18 @@ export async function POST(
     return Response.json({ error: 'Solicitud no encontrada' }, { status: 404 })
   }
 
-  if (!['pending', 'approved'].includes(request.status)) {
+  if (!['pending', 'claimed', 'approved'].includes(request.status)) {
     return Response.json({ error: 'La solicitud ya fue procesada' }, { status: 409 })
   }
 
-  const { error } = await adminSupabase.rpc('reject_withdrawal', {
+  const { error } = await Promise.resolve(adminSupabase.rpc('reject_withdrawal', {
     p_request_id: requestId,
     p_admin_id: userId,
     p_notes: body.notes ?? null,
-  })
+  })).catch(() => ({ error: { message: 'Respuesta perdida' } }))
 
   if (error) {
-    return Response.json({ error: error.message }, { status: 400 })
+    return financialError(error)
   }
 
   await recordAdminAction(adminSupabase, {

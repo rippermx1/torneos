@@ -1,0 +1,62 @@
+{
+  "id": "E27",
+  "task": "G2048-04.4",
+  "date": "2026-10-05",
+  "status": "IN_PROGRESS_REAL_BACKGROUND_SKIPPED_BY_USER",
+  "featureClosed": false,
+  "target": "http://127.0.0.1:3081",
+  "imageId": "sha256:51412127d028715b658a2921115b39d45a6dc874204728df34add89315312e25",
+  "capsule": "unity-2048-007",
+  "fixture": {
+    "tournamentId": "82f51723-acf1-4676-8d9a-49906a11e47f",
+    "userId": "3c149ab4-e036-42b9-a5b4-0c9e5e7330ad",
+    "isTest": true,
+    "preset": "internal_test_v1",
+    "naturalDurationSeconds": 300,
+    "clockAdjusted": false,
+    "boardAdjusted": false,
+    "gameStarted": false,
+    "lastDatabaseObservation": "2026-10-05T21:01:11.083Z",
+    "games": 0,
+    "moves": 0,
+    "credentials": "Ignored local artifact; no credentials in versioned evidence"
+  },
+  "browser": {
+    "availableController": "Codex In-app Browser",
+    "hiddenAfterHidingBrowser": false,
+    "hiddenAfterOpeningAnotherVisibleTab": false,
+    "visibilityStateInBothTabs": "visible",
+    "syntheticVisibilityEvents": false,
+    "humanBrowser": "Chrome desktop, reported by owner",
+    "unityLoadedAndStartAvailable": "PASS_OWNER_CONFIRMATION",
+    "returnWhileActive": "SKIPPED_BY_USER",
+    "returnAfterDeadline": "NOT_RUN",
+    "ownerInstruction": "omite"
+  },
+  "checks": {
+    "regressions": { "status": "PASS", "files": 4, "tests": 53, "workers": 1, "durationSeconds": 1.94 },
+    "initialParallelAttempt": { "passed": 51, "timeouts": 2, "assertionFailures": 0 },
+    "scriptLint": "PASS",
+    "governedFixtureCreation": "PASS",
+    "readOnlyStateAndCheckpoint": "PASS",
+    "duplicatePrepareRejection": "PASS_EXPECTED_EXIT_1",
+    "closedVerificationWithoutGameRejection": "PASS_EXPECTED_EXIT_1_MANIFEST_PRESERVED",
+    "initialUnhandledRejection": "FAILED_WINDOWS_CHILD_EXIT_3221226505_LIBUV_ASSERT",
+    "handledRejectionGuardRunner": "PASS_2_EXPECTED_REJECTIONS_MANIFEST_PRESERVED",
+    "authenticatedClosedResultVerification": "NOT_RUN_NO_GAME_STARTED"
+  },
+  "operations": {
+    "ownMonitorStopped": true,
+    "existingAccountsChanged": false,
+    "schemaChanged": false,
+    "flowChanged": false,
+    "imageActivated": false,
+    "unityChanged": false,
+    "externalChanges": false
+  },
+  "pending": [
+    "Actual Chrome return while active with preserved game, board and score and a subsequent legal direction",
+    "Actual Chrome return after natural deadline with confirmed closure and no late move",
+    "Correlate owner observations with read-only PostgreSQL timeline and authenticated immutable-result checks"
+  ]
+}

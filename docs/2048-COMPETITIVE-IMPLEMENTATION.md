@@ -1,5 +1,10 @@
 # G2048-04.4: recorrido competitivo autenticado
 
+Continuación 2026-10-05: [recorrido real y fixture E27](2048-BACKGROUND-VALIDATION.md).
+Unity cargado en Chrome, según el propietario. Se omitió el cambio real de pestaña
+por su respuesta «omite»; G2048-04.4 permanece en progreso. Imagen actual: 094/E26.
+La evidencia siguiente conserva las ejecuciones originales del 2026-10-02.
+
 2026-10-02. **En progreso: recorrido local verificado; regreso real de segundo plano pendiente.**
 Rama `codex/2048-clean-gameplay`, base `c299b91`. No merge a main.
 [Evidencia estructurada](2048-COMPETITIVE-EVIDENCE.json).

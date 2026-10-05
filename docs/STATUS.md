@@ -1,5 +1,16 @@
 # Estado — TorneosPlay
 
+## Preparación de dinero real: RM-12 — 2026-10-05
+
+Preflight real de torneos-dev: faltan seis migraciones comerciales y controles
+nuevos; grants de escritura/semilla incompatibles con la candidata. Auth/roles
+jugador y operador PASS; operador sin MFA verificado. HTTPS responde; identidad
+del artefacto publicado, objetos privados y ciclo financiero NOT_RUN.
+Flow productivo explícito admitido en staging, con cobros reales advertidos;
+monto/pagador pendientes. **RM-12 IN_PROGRESS; NO_GO vigente.**
+[Entrega y protocolo](RM12-STAGING-Y-ENSAYO.md),
+[evidencia](RM12-STAGING-Y-ENSAYO-EVIDENCE.json).
+
 ## Preparación de dinero real: RM-11 — 2026-10-05
 
 Candidata `codex/real-money-access`, checkout aislado; configuración efectiva

@@ -33,6 +33,9 @@
     "typecheck": "tsc --noEmit --incremental false",
     "release:manifest": "node scripts/release-manifest.mjs",
     "release:check": "node scripts/release-check.mjs",
+    "staging:catalog": "node scripts/staging-preflight.mjs --emit-sql artifacts/staging/catalog.sql",
+    "staging:preflight": "node scripts/staging-preflight.mjs",
+    "staging:auth": "node scripts/staging-auth-preflight.mjs",
     "postbuild": "node scripts/prepare-release.mjs"
   },
   "dependencies": {

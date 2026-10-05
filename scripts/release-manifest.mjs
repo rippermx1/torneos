@@ -24,7 +24,9 @@ export function fileInventory(root, relative) {
   return walk(relative).sort((a, b) => a.file.localeCompare(b.file, 'en'))
 }
 export function migrationComparison(required, applied) {
-  if (!Array.isArray(applied) || applied.some(value => typeof value !== 'string' || !/^\d{14}$/.test(value)) || new Set(applied).size !== applied.length) throw new Error('Inventario destino inválido: versiones únicas de 14 dígitos requeridas')
+  // The live Supabase history preserves the original 001..009 migrations.
+  // Accept those identifiers without treating them as timestamped candidate SQL.
+  if (!Array.isArray(applied) || applied.some(value => typeof value !== 'string' || !/^(?:\d{14}|00[1-9])$/.test(value)) || new Set(applied).size !== applied.length) throw new Error('Inventario destino inválido: versiones únicas de 14 dígitos o legacy 001..009 requeridas')
   return { pending: required.filter(file => !applied.includes(file.slice(0, 14))), present: required.filter(file => applied.includes(file.slice(0, 14))), warning: 'Version presence does not prove SQL hashes/grants or historical dependencies. Review drift on staging; do not db push all migrations.' }
 }
 export function sourceInventory(root = process.cwd()) {

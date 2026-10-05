@@ -14,7 +14,7 @@
   "staging_required": [
     "migration compatibility and grants",
     "Auth/MFA and private Storage",
-    "Flow sandbox HTTPS callback",
+    "Flow HTTPS callback; production-only account requires a bounded authorized real-money trial",
     "end-to-end registration/game/refund/review/withdrawal",
     "real operator and backup acceptance"
   ],

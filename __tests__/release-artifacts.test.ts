@@ -29,6 +29,11 @@ describe('release decisions retain evidence boundaries', () => {
     const result = migrationComparison(['20261005175927_cash.sql', '20261005160247_ops.sql'], ['20261005160247'])
     expect(result.pending).toEqual(['20261005175927_cash.sql']); expect(result.present).toEqual(['20261005160247_ops.sql']); expect(result.warning).toContain('does not prove SQL hashes/grants')
   })
+  it('accepts the real legacy history without crediting it as candidate migrations', () => {
+    const result = migrationComparison(['20261005175927_cash.sql'], ['001', '009', '20261005160247'])
+    expect(result.pending).toEqual(['20261005175927_cash.sql'])
+    expect(result.present).toEqual([])
+  })
   it.each([['20261005160247', '20261005160247'], ['latest'], [false]].map(value => ({ value })))('rejects ambiguous destination inventory $value', ({ value }) => expect(() => migrationComparison([], value)).toThrow())
 })
 

@@ -6,6 +6,15 @@ import { getFlowApiBase, getSupabaseBrowserKey, getSupabaseServiceKey, getSupaba
 export const deploymentFixture = () => ({ NODE_ENV: 'production', TORNEOS_ENVIRONMENT: 'production', APP_URL: 'https://torneos.example.org', NEXT_PUBLIC_SITE_URL: 'https://torneos.example.org', NEXT_PUBLIC_SUPABASE_URL: 'https://abcdefghijklmnopqrst.supabase.co', PRODUCTION_SUPABASE_PROJECT_REF: 'abcdefghijklmnopqrst', NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: `sb_publishable_${'a'.repeat(30)}`, SUPABASE_SECRET_KEY: `sb_secret_${'b'.repeat(30)}`, FLOW_API_BASE: 'https://www.flow.cl/api', FLOW_API_KEY: 'c'.repeat(32), FLOW_API_SECRET: 'd'.repeat(32), COMPANY_LEGAL_NAME: 'Empresa de prueba limitada', COMPANY_RUT: '12.345.678-5', CRON_SECRET: 'e'.repeat(64), RESEND_API_KEY: `re_${'f'.repeat(32)}`, RESEND_FROM_EMAIL: 'Torneos <ops@example.org>', ALERT_EMAIL: 'owner@example.org', OPS_ESCALATION_EMAIL: 'backup@example.org' })
 afterEach(() => vi.unstubAllEnvs())
 describe('RM11 one effective configuration contract', () => {
+  it('allows explicitly selected production-only Flow on isolated staging and states real-money exposure', () => {
+    const fixture = { ...deploymentFixture(), TORNEOS_ENVIRONMENT: 'staging', STAGING_SUPABASE_PROJECT_REF: 'abcdefghijklmnopqrst', PRODUCTION_SUPABASE_PROJECT_REF: 'zyxwvutsrqponmlkjihg' }
+    const result = validateEnvironment(fixture)
+    expect(result.ok).toBe(true)
+    expect(result.warnings.join()).toContain('cobros y devoluciones son reales')
+    expect(validateEnvironment({ ...fixture, PRODUCTION_SUPABASE_PROJECT_REF: fixture.STAGING_SUPABASE_PROJECT_REF }).ok).toBe(false)
+    expect(validateEnvironment({ ...fixture, FLOW_API_BASE: undefined }).ok).toBe(false)
+    expect(validateEnvironment({ ...fixture, FLOW_API_BASE: 'https://www.flow.cl/api?token=hidden' }).ok).toBe(false)
+  })
   it('accepts a structurally complete fixture without claiming credentials were authenticated', () => expect(validateEnvironment(deploymentFixture()).ok).toBe(true))
   it.each(['', ' ', 'https://sandbox.flow.cl/api', 'https://evil.example.org/api', 'https://www.flow.cl/api?key=hidden', 'http://www.flow.cl/api', 'https://user:secret@www.flow.cl/api'])('rejects unsafe or missing production Flow endpoint %s', value => {
     const result = validateEnvironment({ ...deploymentFixture(), FLOW_API_BASE: value }); expect(result.ok).toBe(false); expect(result.issues.join()).not.toContain('hidden'); expect(result.issues.join()).not.toContain('user:secret')

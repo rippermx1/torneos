@@ -50,6 +50,11 @@
 .boardDescription table { margin: 0.5rem auto; border-collapse: collapse; max-width: 100%; }
 .boardDescription th, .boardDescription td { padding: 0.4rem; border: 1px solid #19333740; }
 .boardDescription caption { padding: 0.25rem; }
+.instructions { width: 100%; }
+.instructions summary { width: fit-content; margin: auto; padding: 0.5rem; cursor: pointer; min-height: 44px; }
+.instructions summary:focus-visible { outline: 2px solid #193337; outline-offset: -2px; border-radius: 0.5rem; }
+.instructions > div { max-width: 60ch; margin: 0.25rem auto; text-align: left; }
+.instructions p + p { margin-top: 0.5rem; }
 
 .feedback {
   display: flex;

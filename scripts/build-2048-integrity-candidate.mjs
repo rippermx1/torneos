@@ -1,4 +1,4 @@
-// Build the owned 09.2/09.3 delta on the accepted source context and runtime.
+// Build the owned 09.2/09.3 delta and E23 host on the accepted context/runtime.
 // Baseline mismatch is a real stop: never replace simultaneous game work blindly.
 import fs from 'node:fs/promises'
 import path from 'node:path'
@@ -16,17 +16,25 @@ const files = [
   'app/api/admin/tournaments/[id]/integrity/route.ts', 'app/api/admin/tournaments/[id]/finalize/route.ts',
   'app/(admin)/admin/tournaments/[id]/games/page.tsx', 'app/(admin)/admin/tournaments/[id]/games/[gameId]/page.tsx',
   'components/tournament/integrity-reviews.tsx',
+  'components/game/unity-2048.tsx', 'components/game/unity-2048.module.css',
 ]
 const dir = 'artifacts/2048-integrity-integration'
 const report = { task: 'G2048-09.4', at: new Date().toISOString(), patches: {}, status: 'NOT_RUN', activated: false }
 try {
   await localEnv(); await migrationSources()
-  // Compare every owned patch against the reviewed commit, not mutable foreign WIP.
+  const hostEvidence = JSON.parse(await fs.readFile('docs/2048-FIRST-MOVE-EVIDENCE.json', 'utf8'))
+  assert.equal(hostEvidence.task, 'G2048-07.2.1')
+  // Compare owned patches with the reviewed commit or explicit E23 source hashes.
   for (const file of files) {
     const bytes = await fs.readFile(file)
-    const committed = execFileSync('git', ['show', `79f5e89:${file}`], { windowsHide: true })
-    assert.equal(bytes.toString('utf8').replaceAll('\r\n', '\n'), committed.toString('utf8').replaceAll('\r\n', '\n'),
-      `Re-audit changed owned source: ${file}`)
+    if (file.startsWith('components/game/unity-2048')) {
+      assert.equal(sha256(bytes.toString('utf8').replaceAll('\r\n', '\n')), hostEvidence.sources[file],
+        `Re-audit changed E23 host: ${file}`)
+    } else {
+      const committed = execFileSync('git', ['show', `79f5e89:${file}`], { windowsHide: true })
+      assert.equal(bytes.toString('utf8').replaceAll('\r\n', '\n'), committed.toString('utf8').replaceAll('\r\n', '\n'),
+        `Re-audit changed owned source: ${file}`)
+    }
     report.patches[file] = sha256(bytes)
   }
   report.sourceManifestStatus = 'PASS'

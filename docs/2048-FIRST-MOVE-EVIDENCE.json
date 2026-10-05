@@ -1,0 +1,138 @@
+{
+  "id": "E23",
+  "task": "G2048-07.2.1",
+  "at": "2026-10-05T15:07:18.000Z",
+  "status": "IMPLEMENTED_AND_TECHNICALLY_VERIFIED_LOCAL_PREVIEW",
+  "incrementClosed": true,
+  "parentG2048_07": "IN_PROGRESS",
+  "problem": "Full instructions were only available after starting; loading percentages appeared in two live regions",
+  "changes": [
+    "Native disclosure guide available before start and in expanded mode",
+    "Iframe controls description with React instance IDs",
+    "Queryable loading progress and stable status message",
+    "Atomic confirmed-score announcements after start"
+  ],
+  "verification": {
+    "at": "2026-10-05T14:54:45.130Z",
+    "checks": [
+      {
+        "name": "tests",
+        "status": "PASS",
+        "code": 0
+      },
+      {
+        "name": "types",
+        "status": "PASS",
+        "code": 0
+      },
+      {
+        "name": "lint",
+        "status": "PASS",
+        "code": 0
+      }
+    ],
+    "tests": {
+      "passed": 123,
+      "failed": 0,
+      "files": 11
+    },
+    "scope": "123 focused regressions with own valid isolated config",
+    "testReport": {
+      "path": "artifacts/2048-first-move/tests.json",
+      "sha256": "97d5da54093d855302bae973f451c7b8596f462bc9c9efb354c388bc7692bbac"
+    },
+    "lint": {
+      "path": "artifacts/2048-first-move/lint.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "types": {
+      "path": "artifacts/2048-first-move/types.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "build": {
+    "base": "8196e25edf9ea4d582aedd5646c309977104ee5a",
+    "snapshot": "C:\\torneos\\artifacts\\2048-first-move\\web-source-8d9a15fb-41d9-4872-83ff-6b0ec34734c4",
+    "patches": {
+      "components/game/unity-2048.tsx": "8d90cf16a65edf865406af8791aadceb4e0dd680b61681284669084ce60fa7d7",
+      "components/game/unity-2048.module.css": "deb3d4aa014e3a53232cadcae4d681decaba4a41dda7d683a0d129ada20eee8a"
+    },
+    "status": "PASS",
+    "code": 0,
+    "scope": "Tracked source plus only first-move host delta; isolated build placeholders; not an operative artifact",
+    "at": "2026-10-05T14:53:09.013Z",
+    "version": "Next.js 16.3.8",
+    "log": {
+      "path": "artifacts/2048-first-move/build.log",
+      "sha256": "6d4de7faad1aa8f213ab90f930c4e35f910a32b1f61a9b0fea03d2105ea79ecc"
+    }
+  },
+  "browser": {
+    "task": "G2048-07.2.1",
+    "at": "2026-10-05T14:59:41.460Z",
+    "scope": "Real Unity 007 and changed host in standalone Vite practice preview; no Auth/DB/Flow",
+    "checks": [
+      "guide opened before first start",
+      "real arrow-key input and merge to score 4",
+      "Tab leaves canvas for guide",
+      "Enter opens guide and confirmed board table",
+      "expanded dialog guide reachable by keyboard",
+      "Escape returns focus to view button without resetting score or cells",
+      "same 16 cells and score across normal and expanded views"
+    ],
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "frame": {
+      "width": 358.4,
+      "height": 448,
+      "top": 68,
+      "bottom": 516
+    },
+    "horizontalOverflow": false,
+    "score": 4,
+    "assistiveTechnologySpeech": "NOT_RUN",
+    "newPlayerComprehension": "NOT_RUN",
+    "phone": "NOT_RUN"
+  },
+  "screenshots": {
+    "normal-guide.png": "ac24ba8272b554a3a19b178fe9371a65a6e2948453255e3fc7d07f021cc51a64",
+    "expanded-guide.png": "0c5a9352486c949353bbbec64fe2b5ed674878034ed4ea2179d204b13bd4a676"
+  },
+  "sources": {
+    "components/game/unity-2048.tsx": "8d90cf16a65edf865406af8791aadceb4e0dd680b61681284669084ce60fa7d7",
+    "components/game/unity-2048.module.css": "deb3d4aa014e3a53232cadcae4d681decaba4a41dda7d683a0d129ada20eee8a",
+    "lib/game/__tests__/unity-2048-result-ui.test.ts": "1449f4d312906c55fe5954137c982f54a57c4b02e38acbe4d4cb7333f2777017",
+    "lib/game/__tests__/unity-2048-host-clock.test.ts": "2342757b03ca88f0572252901c321021aedcd2c99f00e43f6fa767d8d5747d72",
+    "lib/game/__tests__/unity-2048-host-navigation.test.ts": "3b8bdfde4c2c43085b668ea1211a5b47092c54aca6136cdd3e436609b6075e15",
+    "lib/game/__tests__/unity-2048-host-recovery.test.ts": "88dd19fc85cba3b639c5b3e85b8ad76730288ef47b2bf38bde4981a59bb48e4c",
+    "scripts/build-2048-integrity-candidate.mjs": "fbb6f8eb82499839b88b0b5d309f740990d694acb7fa3bfdbc3e4f283d9c0384"
+  },
+  "integration": {
+    "manifestIncludesE23Host": true,
+    "hostActivated": false,
+    "docker": "Existing G2048-09.4 blocker remains; no attempt to resume integration in this increment"
+  },
+  "sharedWorkspace": {
+    "wipPreserved": true,
+    "transientMalformedConfig": "Isolated config used; later shared config was already valid; no root tsconfig edit by this task"
+  },
+  "mutations": {
+    "hostSource": true,
+    "tests": true,
+    "unitySource": false,
+    "webglBuild": false,
+    "operatingDatabase": false,
+    "existingCredentialsOrMfa": false,
+    "flow": false,
+    "cloud": false,
+    "deployment": false
+  },
+  "limits": [
+    "Browser preview renders real React host and Unity practice; does not verify authenticated Next tournament flow",
+    "Assistive-technology speech and a new person understanding the first move NOT_RUN",
+    "Physical-phone touch/layout/performance NOT_RUN",
+    "Shared operating host 3081 not activated; integrate audited source once recovered"
+  ]
+}

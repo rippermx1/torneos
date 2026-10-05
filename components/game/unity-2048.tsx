@@ -1,6 +1,6 @@
 'use client'
 import Link from 'next/link'
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { parseUnity2048Input, UNITY_2048_BUILD, UNITY_2048_CHANNEL,
   Unity2048Session, type TournamentUnityConfig, type Unity2048State } from '@/lib/game/unity-2048-session'
 import { requestGameJson } from '@/lib/game/game-json-request'
@@ -9,6 +9,7 @@ import styles from './unity-2048.module.css'
 
 const ENTRY = `/games/2048/${UNITY_2048_BUILD}/index.html`
 export function Unity2048({ tournament }: { tournament?: TournamentUnityConfig }) {
+  const guideId = useId(), controlsId = `${guideId}-controls`, statusId = `${guideId}-status`
   const frame = useRef<HTMLIFrameElement>(null), viewport = useRef<HTMLDivElement>(null)
   const session = useRef<Unity2048Session>(null)
   const shell = useRef<HTMLElement>(null), viewControl = useRef<HTMLButtonElement>(null)
@@ -88,24 +89,31 @@ export function Unity2048({ tournament }: { tournament?: TournamentUnityConfig }
   }, [generation,startUrl,moveUrl,timeoutUrl,existingGameId,leaderboardUrl])
   return <section ref={shell} className={`${styles.shell} ${fullscreen ? styles.expanded : ''}`} role={fullscreen ? 'dialog' : undefined} aria-modal={fullscreen ? true : undefined} aria-label="2048 en Unity" data-view={fullscreen ? 'expanded' : 'normal'}>
     <div className={styles.toolbar} aria-label="Controles de la plataforma">
-      <p className="sr-only" aria-live="polite">{state ? `Puntaje: ${state.score.toLocaleString('es-CL')}` : `Cargando juego ${progress}%`}</p>
+      <p className="sr-only" role="status" aria-atomic="true">{ready && state?.started && !failure ? `Puntaje: ${state.score.toLocaleString('es-CL')}` : ''}</p>
       {!tournament && <button type="button" disabled={!ready || !state?.can_restart || !!failure} className={styles.action} onClick={() => { void session.current?.start(); focusUnity2048(frame.current) }}>{state?.started ? 'Nueva partida' : 'Iniciar partida'}</button>}
       {tournament && ready && !failure && !state?.started && !existingGameId && <button type="button" className={styles.action} onClick={() => { void session.current?.start(); focusUnity2048(frame.current) }}>Iniciar partida</button>}
       {tournament && ready && !failure && state?.can_recover && <button type="button" className={styles.action} onClick={() => void session.current?.recover()}>Recuperar partida</button>}
       {tournament && state?.started && state.time_left_seconds >= 0 && <p className={styles.clock} aria-label="Tiempo restante">Tiempo {Math.floor(state.time_left_seconds / 60).toString().padStart(2,'0')}:{(state.time_left_seconds % 60).toString().padStart(2,'0')}</p>}
       <button ref={viewControl} type="button" className={`${styles.action} ${styles.viewAction}`} aria-expanded={fullscreen} onClick={() => setFullscreen(value => !value)}>{fullscreen ? 'Volver a la página' : 'Ampliar juego'}</button>
     </div>
-    <div ref={viewport} className={styles.viewport}>
-      <iframe key={generation} ref={frame} title="2048 · Unity" tabIndex={ready && !failure ? 0 : -1} inert={!ready || !!failure} sandbox="allow-scripts allow-same-origin" allow="fullscreen" className={styles.frame} />
-      {!ready && !failure && <div className="absolute inset-0 flex items-center justify-center text-[#193337]" role="status">Cargando Unity… {progress}%</div>}
+    <div ref={viewport} className={styles.viewport} aria-busy={!ready && !failure} aria-describedby={!ready && !failure ? statusId : undefined}>
+      <iframe key={generation} ref={frame} title="2048 · Unity" aria-describedby={controlsId} tabIndex={ready && !failure ? 0 : -1} inert={!ready || !!failure} sandbox="allow-scripts allow-same-origin" allow="fullscreen" className={styles.frame} />
+      {!ready && !failure && <div className="absolute inset-0 flex items-center justify-center text-[#193337]" role="progressbar" aria-label="Carga de 2048" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress}>Cargando Unity… {progress}%</div>}
       {failure && <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-[#f6f5f0] p-8 text-center text-[#193337]"><p role="alert">{failure}</p><button type="button" className="rounded-lg border px-4 py-2" onClick={() => { setFailure(''); setReady(false); setProgress(0); setGeneration(x=>x+1) }}>Reintentar carga</button></div>}
     </div>
     <div className={styles.feedback} aria-label="Estado de la partida">
-      <p role="status" aria-live="polite">{state?.message ?? 'El juego estará disponible al terminar la carga.'}</p>
+      <p id={statusId} role="status" aria-atomic="true">{state?.message ?? 'Cargando 2048. El juego estará disponible al terminar la carga.'}</p>
       {tournament && state?.game_over && leaderboardUrl && <Link href={leaderboardUrl} className={styles.action}>Ver ranking</Link>}
+      <details className={styles.instructions}>
+        <summary>Cómo jugar</summary>
+        <div>
+          <p>Une fichas del mismo número para sumar puntos: dos fichas de 2 forman una de 4. Cada movimiento desplaza todo el tablero; sigue jugando mientras queden movimientos.</p>
+          <p id={controlsId}>Activa «Iniciar partida». Usa las flechas o WASD para mover; en el teléfono, desliza sobre el tablero. Tab permite salir del tablero y Escape vuelve a los controles de la plataforma.</p>
+          <p>{tournament ? 'En torneo tienes una sola partida. El tiempo restante y el resultado aparecen en la plataforma.' : 'En práctica puedes comenzar de nuevo con «Nueva partida».'} Después de iniciar, «Consultar tablero» permite leer las casillas y el puntaje.</p>
+        </div>
+      </details>
       {state?.started && state.cells?.length === 16 && <details className={styles.boardDescription}>
         <summary>Consultar tablero</summary>
-        <p>Flechas o WASD para mover. Tab para salir del tablero; Escape para volver a los controles de la plataforma.</p>
         <table aria-live="off">
           <caption>Tablero confirmado · puntaje {state.score.toLocaleString('es-CL')}</caption>
           <thead><tr><th scope="col">Fila</th>{[1,2,3,4].map(column => <th scope="col" key={column}>Columna {column}</th>)}</tr></thead>

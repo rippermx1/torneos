@@ -2,6 +2,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 
 const hooks = vi.hoisted(() => ({ cleanups: [] as (() => void)[], tick: vi.fn(), resync: vi.fn(), destroy: vi.fn() }))
 vi.mock('react', () => ({
+  useId: () => 'clock-guide',
   useRef: () => ({ current: null }),
   useState: (initial: unknown) => [initial, vi.fn()],
   useEffect: (effect: () => (() => void) | undefined) => { const cleanup = effect(); if (cleanup) hooks.cleanups.push(cleanup) },

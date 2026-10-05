@@ -2,6 +2,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 const fixture = vi.hoisted(() => ({ index: 0, frame: { contentWindow: { postMessage: vi.fn() }, focus: vi.fn(), src: '' },
   recover: vi.fn(), start: vi.fn(), cleanups: [] as (() => void)[] }))
 vi.mock('react', () => ({
+  useId: () => 'recovery-guide',
   useRef: () => fixture.index++ === 0 ? { current: fixture.frame } : { current: null },
   useState: (initial: unknown) => [initial, vi.fn()],
   useEffect: (effect: () => (() => void) | undefined) => { const cleanup = effect(); if (cleanup) fixture.cleanups.push(cleanup) },

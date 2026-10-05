@@ -576,6 +576,10 @@ export type Database = {
       }
     }
     Functions: {
+      authorize_competitive_entry: {
+        Args: { p_user_id: string; p_tournament_id: string } & DbRecord
+        Returns: boolean
+      }
       wallet_insert_transaction: {
         Args: {
           p_user_id: string

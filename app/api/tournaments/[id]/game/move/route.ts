@@ -10,6 +10,7 @@ import { GAME_SNAPSHOT_FIELDS, gameSnapshotResponse, type SnapshotGame } from '@
 import { analyzeMove } from '@/lib/anticheat/detector'
 import { checkRateLimit, rateLimitResponse } from '@/lib/security/rate-limit'
 import { isJsonObject, isGameId, isMoveNumber, isClientTimestamp } from '@/lib/tournament/game-request'
+import { requireCompetitiveEntry, competitiveEntryErrorResponse } from '@/lib/tournament/competitive-entry'
 import type { Game, Tournament, Direction } from '@/types/database'
 
 // Tournament status and limits must be fresh if an operator changes them.
@@ -122,6 +123,9 @@ export async function POST(
       { error: 'La partida no está activa', moved: false }, 400)
   }
 
+  const entryDenied = await requireCompetitiveEntry(supabase, userId, tournamentId)
+  if (entryDenied) return entryDenied
+
   const playability = checkPlayWindow(tournament)
   if (!playability.ok) {
     // Ventana cerrada: marcar partida como timeout
@@ -214,6 +218,8 @@ export async function POST(
         { error: 'El estado de la partida cambió. Recupera su estado antes de continuar.', moved: false },
         persisted.status === 'active' ? 409 : 400)
     }
+    const commitDenied = competitiveEntryErrorResponse(rpcErr)
+    if (commitDenied) return commitDenied
     return Response.json({ error: `Error guardando movimiento: ${rpcErr.message}` }, { status: 500 })
   }
 

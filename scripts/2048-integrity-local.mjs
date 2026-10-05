@@ -10,6 +10,12 @@ export const migrations = [
   ['20261005131216', 'guard_2048_integrity_reviews', 'd03acc197a1a715f82008d221cba3a5bb63a30499fee9d806ae002543b5ae0b4'],
 ]
 export const sha256 = bytes => createHash('sha256').update(bytes).digest('hex')
+export function reviewedMigrationHash(source, expected) {
+  // Git checkouts/archives may use LF or CRLF; all other byte changes remain rejected.
+  const normalizedSha256 = sha256(source.replaceAll('\r\n', '\n'))
+  assert.equal(normalizedSha256, expected, 'Reviewed migration content changed')
+  return { sha256: sha256(source), normalizedSha256 }
+}
 export function assertLocalTarget(env) {
   assert.equal(env.TORNEOS_LOCAL_MODE, '1', 'Local mode required')
   assert.equal(env.CONFIRM_SUPABASE_PROJECT_REF, 'local', 'Local project required')
@@ -42,8 +48,8 @@ export async function migrationSources() {
   return Promise.all(migrations.map(async ([version, name, expected]) => {
     const file = `supabase/migrations/${version}_${name}.sql`
     const source = await readFile(new URL(`../${file}`, import.meta.url), 'utf8')
-    assert.equal(sha256(source), expected, `Reviewed migration changed: ${file}`)
-    return { version, name, file, sha256: expected, source }
+    const hashes = reviewedMigrationHash(source, expected)
+    return { version, name, file, ...hashes, source }
   }))
 }
 export function migrationTransaction(sources) {

@@ -17,9 +17,10 @@ const files = git(['ls-tree', '-r', '--name-only', commit]).split('\n')
 assertSourcePaths(files)
 const output = await safeOutputDirectory(root, option('--output') ?? `artifacts/source-validation/${randomUUID()}`)
 const source = path.join(output, 'source'), env = validationEnvironment()
-const report = { task: 'WEB-16.1', commit, node: process.version, platform: process.platform, at: new Date().toISOString(),
+const hosted = process.env.GITHUB_ACTIONS === 'true'
+const report = { task: 'WEB-16.1', commit, node: process.version, platform: process.platform, execution: hosted ? 'GITHUB_ACTIONS' : 'LOCAL', at: new Date().toISOString(),
   scope: 'Committed source only; fresh npm ci, no operating environment or Unity bundles', checks: [], status: 'NOT_RUN',
-  integration: { auth: 'NOT_RUN', database: 'NOT_RUN', flow: 'NOT_RUN', unityRuntime: 'NOT_RUN', restore: 'NOT_RUN', githubHostedRun: 'NOT_RUN' } }
+  integration: { auth: 'NOT_RUN', database: 'NOT_RUN', flow: 'NOT_RUN', unityRuntime: 'NOT_RUN', restore: 'NOT_RUN', githubHostedRun: hosted ? 'THIS_JOB' : 'NOT_RUN' } }
 await fs.mkdir(source)
 git(['archive', '--format=tar', '-o', path.join(output, 'source.tar'), commit])
 execFileSync('tar', ['-xf', path.join(output, 'source.tar'), '-C', source], { windowsHide: true })
@@ -44,6 +45,8 @@ const execute = async (name, command, list, timeoutMs) => {
 const npm = process.platform === 'win32' ? path.join(path.dirname(process.execPath), 'node_modules/npm/bin/npm-cli.js') : null
 const installed = await execute('install', npm ? process.execPath : 'npm', npm ? [npm, 'ci', '--no-audit', '--no-fund'] : ['ci', '--no-audit', '--no-fund'])
 if (installed) {
+  report.dependencies = {}
+  for (const dependency of ['next', 'react', 'vitest', 'typescript', 'eslint']) report.dependencies[dependency] = JSON.parse(await fs.readFile(path.join(source, 'node_modules', dependency, 'package.json'), 'utf8')).version
   const bin = relative => path.join(source, 'node_modules', relative)
   await execute('tests', process.execPath, [bin('vitest/vitest.mjs'), 'run', '--reporter=json', `--outputFile=${path.join(output, 'tests.private.json')}`])
   try {
@@ -51,7 +54,7 @@ if (installed) {
     report.tests = { passed: tests.numPassedTests, failed: tests.numFailedTests, pending: tests.numPendingTests, files: tests.testResults.length }
   } catch { /* Command failure remains FAIL; missing test details never become PASS. */ }
   if (nodeTests.length) {
-    await execute('node-tests', process.execPath, ['--test', ...nodeTests])
+    await execute('node-tests', process.execPath, ['--test', '--test-reporter=tap', ...nodeTests])
     const tap = await fs.readFile(path.join(output, 'node-tests.private.log'), 'utf8')
     report.nodeTests = Object.fromEntries(['tests', 'pass', 'fail', 'skipped'].map(key => [key, Number([...tap.matchAll(new RegExp(`^# ${key} (\\d+)$`, 'gm'))].at(-1)?.[1] ?? 0)]))
   }

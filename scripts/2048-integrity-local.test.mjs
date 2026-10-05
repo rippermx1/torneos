@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { assertLocalTarget, migrationSources, migrationTransaction, transactionBody } from './2048-integrity-local.mjs'
+import { assertLocalTarget, migrationSources, migrationTransaction, reviewedMigrationHash, sha256, transactionBody } from './2048-integrity-local.mjs'
 
 const local = { TORNEOS_LOCAL_MODE: '1', CONFIRM_SUPABASE_PROJECT_REF: 'local', APP_URL: 'http://127.0.0.1:3081',
   NEXT_PUBLIC_SUPABASE_URL: 'http://127.0.0.1:54321' }
@@ -27,4 +27,12 @@ test('transaction extraction preserves PL/pgSQL BEGIN blocks but rejects unexpec
   const source = 'BEGIN;\nCREATE FUNCTION f() AS $$\nBEGIN\nRETURN 1;\nEND $$;\nCOMMIT;\n'
   assert.ok(transactionBody(source).includes('BEGIN\nRETURN'))
   assert.throws(() => transactionBody('DO $$ BEGIN; SELECT 1; END $$;\n COMMIT;'))
+})
+test('reviewed migrations accept only LF/CRLF differences and record the actual byte hash', () => {
+  const lf = 'BEGIN;\nSELECT 1;\nCOMMIT;\n', crlf = lf.replaceAll('\n', '\r\n'), expected = sha256(lf)
+  assert.equal(reviewedMigrationHash(lf, expected).sha256, expected)
+  assert.equal(reviewedMigrationHash(crlf, expected).normalizedSha256, expected)
+  assert.equal(reviewedMigrationHash(crlf, expected).sha256, sha256(crlf))
+  assert.throws(() => reviewedMigrationHash(lf.replace('SELECT 1', 'SELECT 2'), expected))
+  assert.throws(() => reviewedMigrationHash(lf + ' ', expected))
 })

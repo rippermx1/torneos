@@ -1,0 +1,424 @@
+{
+  "schema": 1,
+  "status": "DEV_PREFLIGHT_DEPLOYED",
+  "production_decision": "NO_GO",
+  "observed_at": "2026-10-05T21:31:36.599Z",
+  "candidate_revision": "9548aed84894be97ebf6cdd7ae3792a1df3a1ca2",
+  "app_url": "https://rm12-torneos-dev.vercel.app",
+  "project_id": "prj_QHiZYuYkztFToMGmwhPsyOx9nVdG",
+  "supabase_project_ref": "jnoyjewsqbooqaiighcs",
+  "protected_production_ref": "baeylvoipmazcthnwxmz",
+  "deployment_id": "dpl_7Boj1sHipzgvaBnqcRV3QCSS1Dp8",
+  "deployment_state": "READY",
+  "hosting_channel": "production channel of isolated dev project, domain auto-promotion skipped",
+  "staging_phase": "preflight",
+  "provider_keys_injected": false,
+  "company_identity_source": "authorized production Vercel variables; RUT format/checksum valid; no legal acceptance implied",
+  "ops_recipients_present": false,
+  "source_package": {
+    "status": "PASS",
+    "sha256": "5c78653fd74440780f13bc5124f46d53fc9abb4d84b4b6a0d13d9ec88413d388",
+    "files": 287,
+    "scope": "all uploaded source/asset bytes match Vercel source tree; compiled cross-platform equality NOT_RUN"
+  },
+  "database": {
+    "status": "PASS_SELECTED_INVARIANTS",
+    "versions": 69,
+    "applied_this_increment": [
+      {
+        "name": "20261004184805_guard_2048_seed_visibility",
+        "version": "20261005211520",
+        "sql_sha256": "de7671aa29e584f45a6e4ef469c6dd96b7b4633eaf4c2617db447ae01dfa8ff4"
+      },
+      {
+        "name": "20261005131208_guard_commercial_entry",
+        "version": "20261005211545",
+        "sql_sha256": "02f179b0c945cd41a7ccf1c8392f8e9ef6b934468974aac172b2162c604e6229"
+      },
+      {
+        "name": "20261005141433_durable_financial_operations",
+        "version": "20261005211556",
+        "sql_sha256": "6e4a68ddadf7e4ef7865b1e9b6330764f0d9a79d1debbfb11950370a63ac2e71"
+      },
+      {
+        "name": "20261005145934_prize_review_and_payout_holds",
+        "version": "20261005211621",
+        "sql_sha256": "57213588fcf9bad04554f7cb702671816c96913a62c2f3d8c51453901fb769ec"
+      },
+      {
+        "name": "20261005160247_operational_obligations_and_alerts",
+        "version": "20261005211651",
+        "sql_sha256": "6e276cf910a7c360238f6174f39d104c8abf2159f0a226d78425ffd421cd0d78"
+      },
+      {
+        "name": "20261005175927_cash_reconciliation_and_reserve",
+        "version": "20261005211653",
+        "sql_sha256": "0a7e2bd433b1afc89af6458d4963bad244984725d18fe879941320ca85fd2a28"
+      }
+    ],
+    "migrations_pending": [],
+    "tables": 16,
+    "rpc": 18,
+    "triggers": 7,
+    "buckets": [
+      {
+        "id": "cash-proofs",
+        "public": false
+      },
+      {
+        "id": "kyc-documents",
+        "public": false
+      },
+      {
+        "id": "payout-proofs",
+        "public": false
+      }
+    ],
+    "cash_paused": true,
+    "scope": "selected catalog invariants only; not SQL equivalence, JWT/RLS behavior, Storage object access or migration recovery"
+  },
+  "rehearsal": {
+    "status": "PASS",
+    "migrations": 6,
+    "checks": 18,
+    "scope": "offline actual catalog replay, empty financial tables; Auth helpers stubbed, no hosted JWT/Storage recovery claim",
+    "snapshot_sha256": "2b58c0778d0316b9574cd24bee7f02b0964f690f7081862e7ba1b1ce243f4e0b"
+  },
+  "auth": {
+    "identities": [
+      {
+        "label": "player",
+        "identity": "PASS",
+        "role": "PASS",
+        "current_aal": "aal1",
+        "mfa": "OBSERVED",
+        "seed_column": "DENIED",
+        "private_table_reads": {
+          "financial_holds": "DENIED",
+          "financial_review_events": "DENIED",
+          "ops_incidents": "DENIED",
+          "ops_incident_events": "DENIED",
+          "ops_notifications": "DENIED",
+          "cron_heartbeats": "DENIED",
+          "cash_policy": "DENIED",
+          "cash_movements": "DENIED",
+          "cash_reconciliations": "DENIED",
+          "cash_differences": "DENIED",
+          "cash_events": "DENIED"
+        },
+        "cleanup": "PASS"
+      },
+      {
+        "label": "operator",
+        "identity": "PASS",
+        "role": "PASS",
+        "current_aal": "aal1",
+        "mfa": "CHALLENGE_NOT_RUN",
+        "seed_column": "DENIED",
+        "private_table_reads": {
+          "financial_holds": "DENIED",
+          "financial_review_events": "DENIED",
+          "ops_incidents": "DENIED",
+          "ops_incident_events": "DENIED",
+          "ops_notifications": "DENIED",
+          "cron_heartbeats": "DENIED",
+          "cash_policy": "DENIED",
+          "cash_movements": "DENIED",
+          "cash_reconciliations": "DENIED",
+          "cash_differences": "DENIED",
+          "cash_events": "DENIED"
+        },
+        "cleanup": "PASS"
+      }
+    ],
+    "mfa_acceptance": "NOT_RUN"
+  },
+  "application": {
+    "status": "PASS",
+    "checks": [
+      {
+        "name": "page /",
+        "status": "PASS",
+        "http": 200
+      },
+      {
+        "name": "page /sign-in",
+        "status": "PASS",
+        "http": 200
+      },
+      {
+        "name": "page /play",
+        "status": "PASS",
+        "http": 200
+      },
+      {
+        "name": "page /play/alien-run",
+        "status": "PASS",
+        "http": 200
+      },
+      {
+        "name": "2048 iframe entry",
+        "status": "PASS",
+        "http": 200
+      },
+      {
+        "name": "2048 Build/unity-2048-007.loader.js",
+        "status": "PASS",
+        "http": 200,
+        "content_type": "application/javascript; charset=utf-8"
+      },
+      {
+        "name": "2048 Build/unity-2048-007.data.gz",
+        "status": "PASS",
+        "http": 200,
+        "content_type": "application/octet-stream"
+      },
+      {
+        "name": "2048 Build/unity-2048-007.framework.js.gz",
+        "status": "PASS",
+        "http": 200,
+        "content_type": "application/javascript"
+      },
+      {
+        "name": "2048 Build/unity-2048-007.wasm.gz",
+        "status": "PASS",
+        "http": 200,
+        "content_type": "application/wasm"
+      },
+      {
+        "name": "player session verified",
+        "status": "PASS"
+      },
+      {
+        "name": "player prizes page",
+        "status": "PASS",
+        "http": 200
+      },
+      {
+        "name": "authenticated practice start and move",
+        "status": "PASS",
+        "http": 200,
+        "scope": "free practice only"
+      },
+      {
+        "name": "player cash mutation rejected before handler",
+        "status": "PASS",
+        "http": 403
+      },
+      {
+        "name": "operator session verified",
+        "status": "PASS"
+      },
+      {
+        "name": "operator cash mutation rejected before handler",
+        "status": "PASS",
+        "http": 403
+      },
+      {
+        "name": "kyc-documents service control download",
+        "status": "PASS"
+      },
+      {
+        "name": "kyc-documents anon private object denied",
+        "status": "PASS"
+      },
+      {
+        "name": "kyc-documents player private object denied",
+        "status": "PASS"
+      },
+      {
+        "name": "kyc-documents operator-aal1 private object denied",
+        "status": "PASS"
+      },
+      {
+        "name": "kyc-documents own probe removed",
+        "status": "PASS"
+      },
+      {
+        "name": "payout-proofs service control download",
+        "status": "PASS"
+      },
+      {
+        "name": "payout-proofs anon private object denied",
+        "status": "PASS"
+      },
+      {
+        "name": "payout-proofs player private object denied",
+        "status": "PASS"
+      },
+      {
+        "name": "payout-proofs operator-aal1 private object denied",
+        "status": "PASS"
+      },
+      {
+        "name": "payout-proofs own probe removed",
+        "status": "PASS"
+      },
+      {
+        "name": "cash-proofs service control download",
+        "status": "PASS"
+      },
+      {
+        "name": "cash-proofs anon private object denied",
+        "status": "PASS"
+      },
+      {
+        "name": "cash-proofs player private object denied",
+        "status": "PASS"
+      },
+      {
+        "name": "cash-proofs operator-aal1 private object denied",
+        "status": "PASS"
+      },
+      {
+        "name": "cash-proofs own probe removed",
+        "status": "PASS"
+      },
+      {
+        "name": "cash remains paused",
+        "status": "PASS"
+      },
+      {
+        "name": "probe session cleanup",
+        "status": "PASS"
+      },
+      {
+        "name": "probe session cleanup",
+        "status": "PASS"
+      }
+    ],
+    "browser": {
+      "status": "PASS",
+      "at": "2026-10-05T21:27:00Z",
+      "app_url": "https://rm12-torneos-dev.vercel.app",
+      "route": "/play",
+      "tool": "agent-browser 0.27.0",
+      "iframe": "/games/2048/unity-2048-007/index.html",
+      "canvas_loaded": true,
+      "provider_block_banner": true,
+      "framework_error_overlay": false,
+      "uncaught_browser_errors": 0,
+      "keyboard_actions": [
+        "ArrowLeft",
+        "ArrowUp",
+        "ArrowRight",
+        "ArrowDown",
+        "ArrowLeft",
+        "ArrowUp"
+      ],
+      "score_before": 0,
+      "score_after": 20,
+      "screenshot": "2048-played.png",
+      "scope": "desktop cloud WebGL free practice; no funded tournament, MFA acceptance or mobile acceptance",
+      "browser_session_closed": true
+    }
+  },
+  "shared_deployment": {
+    "before": "dpl_3VxaPf5t4yAGb2TRX28GjgJpJXFH",
+    "observed": "dpl_97VBvufgcoKozhAKLytz7Hjjs7SW",
+    "concurrent_update": true,
+    "rm12_assigned_to_shared_domain": false
+  },
+  "financial": {
+    "payments_created": 0,
+    "refunds_dispatched": 0,
+    "withdrawals_created": 0,
+    "provider_callback_delivery": "NOT_RUN",
+    "funded_registration_and_game": "NOT_RUN",
+    "prize_review_and_transfer": "NOT_RUN",
+    "refund_recovery": "NOT_RUN"
+  },
+  "remaining": [
+    "primary and backup operators with AAL2 acceptance",
+    "ALERT_EMAIL and OPS_ESCALATION_EMAIL",
+    "Resend sender/credential and actual alert delivery",
+    "authorized operator Storage object access",
+    "complete Supabase data recovery rehearsal",
+    "bounded Flow trial with explicit CLP amount and payer",
+    "funded registration/game/refund/prize/withdrawal cycle",
+    "human and mobile acceptance"
+  ],
+  "checkpoint": "artifacts\\staging\\checkpoints\\9548aed84894be97ebf6cdd7ae3792a1df3a1ca2-dpl_7Boj1sHipzgvaBnqcRV3QCSS1Dp8",
+  "artifacts": [
+    {
+      "file": "after-catalog.json",
+      "sha256": "88b7eb24ad756465fc91f0b853376cad5c6f95fe46cbae755fc0c1221088e2ca",
+      "bytes": 14938
+    },
+    {
+      "file": "after-catalog-assessment.json",
+      "sha256": "d8740d96178fcc9a393018a188bd9c276b7e207284f6ba55218ea1f0732e9472",
+      "bytes": 780
+    },
+    {
+      "file": "after-auth.json",
+      "sha256": "ce87ba1f176c58f82f97b705f3606d1bab769bd1cdac7403dc7823c128d29fff",
+      "bytes": 1983
+    },
+    {
+      "file": "deployed-smoke.json",
+      "sha256": "25b85a52d85dd0ac02428023d8206872c2e8a24c72eafa7e213d938a445cc8e6",
+      "bytes": 3483
+    },
+    {
+      "file": "browser-evidence.json",
+      "sha256": "535898230c09085991d66aeb4b1d791cd31257f0e528a8755d81f2d23c1f4180",
+      "bytes": 657
+    },
+    {
+      "file": "after-state.json",
+      "sha256": "2bf22eee082caf0ece5bf190e52a6e35193bf846b3b2a889cf460b9fac56e707",
+      "bytes": 152
+    },
+    {
+      "file": "rehearsal/report.json",
+      "sha256": "b4b629818ef2aa0d7e11185b0db7a9a84cad8a09fe0f4ae4620201ede346a6ab",
+      "bytes": 3095
+    },
+    {
+      "file": "upload-verification.json",
+      "sha256": "34e046c51888c8a1e2438749a9dbcfdddd0fdd76996db13ec6d074105d9edcbb",
+      "bytes": 48650
+    },
+    {
+      "file": "deployment-status.json",
+      "sha256": "dd7535b715fd5f5bbe22d195af69174a56ec827d46b738c9056508bfdf06b058",
+      "bytes": 367
+    },
+    {
+      "file": "package.json",
+      "sha256": "c0f80148a4234efb35b686b7f254c9616daeff0466cf7d8f1dc96c182c52d770",
+      "bytes": 48155
+    },
+    {
+      "file": "2048-browser.png",
+      "sha256": "e3a8c8cf8b910c6f6d85ae5f910e4099f6fb862f56e7c1150fd701f1426ec414",
+      "bytes": 115922
+    },
+    {
+      "file": "2048-played.png",
+      "sha256": "18cf6ceeda6ede56d84ee81b5b844aaec12a74f8f74beb46786a696a77988de2",
+      "bytes": 115867
+    },
+    {
+      "file": "build-cloud.log",
+      "sha256": "eff1a07a2d4269fd3b232a194f0ffb21a30fb944baa364ba37f72f5a1d8797c4",
+      "bytes": 435
+    },
+    {
+      "file": "smoke.mjs",
+      "sha256": "ff880f5e321e370399691f28b1e055594e6a305ac79d0047a68a3b9be2f676c5",
+      "bytes": 5940
+    },
+    {
+      "file": "verify-upload.mjs",
+      "sha256": "1538af0fde846f9ed96e880f97e32962f45d441953fc31efec8b397ef790f3f3",
+      "bytes": 2442
+    },
+    {
+      "file": "browser.mjs",
+      "sha256": "c184c7a6ddd4f47047525a6012be7cdee67723d81473bbf105a7bc6d5d7e0863",
+      "bytes": 951
+    }
+  ]
+}

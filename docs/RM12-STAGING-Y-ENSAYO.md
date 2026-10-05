@@ -2,6 +2,10 @@
 
 2026-10-05. **IN_PROGRESS; NO_GO para lanzamiento con dinero real.**
 
+Continuación: [despliegue y pruebas de dev](RM12-DESPLIEGUE-DEV.md), con seis
+migraciones aplicadas y candidata aislada publicada. Las observaciones de este
+informe corresponden al preflight inicial anterior a ese despliegue.
+
 Destino elegido por el propietario: `https://torneos-dev.vercel.app`, Supabase
 `jnoyjewsqbooqaiighcs`; producción protegida `baeylvoipmazcthnwxmz`.
 El ambiente dev comparte avances de contabilidad y juegos. No constituye una
@@ -33,7 +37,7 @@ definir antes del cobro. No se infiere disponibilidad de sandbox para esta cuent
 El requisito de sandbox descrito en el informe histórico RM-11 corresponde a
 esa revisión; esta entrega lo adapta al ambiente disponible para el comercio.
 
-## Observación real de torneos-dev
+## Observación inicial de torneos-dev, antes del despliegue
 
 | Comprobación | Resultado y alcance |
 | --- | --- |

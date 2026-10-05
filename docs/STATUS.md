@@ -2,14 +2,17 @@
 
 ## Preparación de dinero real: RM-12 — 2026-10-05
 
-Preflight real de torneos-dev: faltan seis migraciones comerciales y controles
-nuevos; grants de escritura/semilla incompatibles con la candidata. Auth/roles
-jugador y operador PASS; operador sin MFA verificado. HTTPS responde; identidad
-del artefacto publicado, objetos privados y ciclo financiero NOT_RUN.
-Flow productivo explícito admitido en staging, con cobros reales advertidos;
-monto/pagador pendientes. **RM-12 IN_PROGRESS; NO_GO vigente.**
-[Entrega y protocolo](RM12-STAGING-Y-ENSAYO.md),
-[evidencia](RM12-STAGING-Y-ENSAYO-EVIDENCE.json).
+Seis migraciones ensayadas y aplicadas sólo en Supabase dev; catálogo, grants,
+semilla y Auth real PASS. Candidata `9548aed` publicada en el proyecto torneos-dev:
+https://rm12-torneos-dev.vercel.app, con proveedores bloqueados y caja pausada.
+3.811 pruebas/81 archivos, tipos/lint/build remoto, 287 archivos publicados,
+práctica WebGL real y denegación de objetos privados PASS. Dominio compartido
+asignado a otro despliegue; trabajo simultáneo preservado.
+MFA AAL2, correos operativos, recuperación completa y ciclo financiero pendientes.
+Definir monto/pagador antes de cobro. **RM-12 IN_PROGRESS; NO_GO vigente.**
+[Despliegue](RM12-DESPLIEGUE-DEV.md),
+[evidencia](RM12-DESPLIEGUE-DEV-EVIDENCE.json),
+[protocolo inicial](RM12-STAGING-Y-ENSAYO.md).
 
 ## Preparación de dinero real: RM-11 — 2026-10-05
 

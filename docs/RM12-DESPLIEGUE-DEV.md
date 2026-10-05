@@ -39,12 +39,39 @@ El despliegue no sustituye el avance de Factory Empire en `torneos-dev.vercel.ap
   Resend no fueron recuperadas ni enviadas al candidato de preflight.
 
 Pruebas locales: 3.811 casos en 81 archivos PASS; TypeScript y ESLint PASS.
-Publicación HTTPS y prueba de aplicación: pendientes de registrar abajo.
+Publicación Vercel y prueba de aplicación PASS:
+
+- URL: [RM-12 en torneos-dev](https://rm12-torneos-dev.vercel.app).
+  Mantiene la protección de acceso de Vercel. La verificación utilizó un enlace
+  temporal, sin deshabilitar la protección del proyecto.
+- Revisión publicada `9548aed84894be97ebf6cdd7ae3792a1df3a1ca2`;
+  despliegue `dpl_7Boj1sHipzgvaBnqcRV3QCSS1Dp8`, estado READY.
+  Compilación webpack y TypeScript remotos PASS. Los 287 archivos de entrada
+  coinciden byte por byte con el árbol de fuentes registrado por Vercel.
+  Huella SHA256 del inventario: `5c78653fd74440780f13bc5124f46d53fc9abb4d84b4b6a0d13d9ec88413d388`.
+  No se afirma igualdad de bytes compilados con la salida Windows anterior.
+- Cuatro páginas HTTPS, entrada iframe y cuatro assets WebGL PASS. Sesión real
+  de jugador, página de premios y práctica autenticada inicio/movimiento PASS.
+  Jugador y operador AAL1 reciben 403 antes de operar caja.
+- Tres objetos sintéticos privados: descarga de control con service role PASS;
+  anon, jugador ajeno y operador AAL1 denegados en los tres buckets. Eliminación
+  de las sondas comprobada; cero objetos de prueba remanentes.
+- Navegador de escritorio: canvas Unity cargado, banner de bloqueo visible,
+  sin overlay de framework ni errores no capturados. Seis flechas reales llevan
+  el puntaje de 0 a 20. Esto acredita práctica gratuita, no torneo financiado.
+- Caja pausada y cero pagos/devoluciones/retiros creados. El dominio compartido
+  permanece asignado a otro despliegue; recibió una actualización concurrente
+  de `dpl_3VxaPf5t4yAGb2TRX28GjgJpJXFH` a
+  `dpl_97VBvufgcoKozhAKLytz7Hjjs7SW`, que se preservó.
+
+[Evidencia del despliegue](RM12-DESPLIEGUE-DEV-EVIDENCE.json). Los 16 artefactos
+locales se congelaron con hashes en un checkpoint independiente; no contiene
+credenciales ni el enlace temporal de acceso.
 
 ## Pendientes para el ensayo financiero
 
 MFA de operadores y suplente, correos operativos, revisión de remitente/credencial
-Resend, recuperación completa, acceso real a objetos privados, recepción humana,
+Resend, recuperación completa, lectura de objetos por operador AAL2, recepción humana,
 callback HTTPS entregado por Flow y ciclo completo inscripción/premio/retiro/
 devolución. Definir monto máximo en CLP y pagador antes de cualquier cobro.
 La caja permanece pausada y no se ejecutaron cobros, devoluciones ni transferencias.

@@ -11,7 +11,11 @@ import { localEnv, docker, sql, assertInstalled, sha256 } from './2048-integrity
 const report = { task: 'G2048-09.4', at: new Date().toISOString(), checks: [],
   authentication: 'NOT_RUN', browserInteraction: 'NOT_RUN',
   cadence: 'Controlled timestamps on real API move history; not measured human cadence', fixtures: {} }
-const dir = 'artifacts/2048-integrity-integration'
+const root = 'artifacts/2048-integrity-integration'
+const dir = `${root}/admin-${randomUUID()}`
+const prepareBrowser = process.argv.includes('--prepare-browser')
+await mkdir(dir, { recursive: true })
+report.artifacts = dir
 const check = async (name, run) => {
   try { await run(); report.checks.push({ name, status: 'PASS' }) }
   catch { report.checks.push({ name, status: 'FAIL' }); throw new Error(name) }
@@ -82,7 +86,7 @@ try {
       }
       const text = await response.text()
       let payload; try { payload = JSON.parse(text) } catch { payload = null }
-      return { status: response.status, payload, text }
+      return { status: response.status, payload, text, location: response.headers.get('location') }
     }
     const tournament = randomUUID()
     report.fixtures.tournament = tournament
@@ -92,7 +96,14 @@ try {
       for (const actor of [null, clear]) {
         for (const [route, body] of [[integrityUrl, undefined], [integrityUrl, {}], [finalizeUrl, {}],
           [`/api/admin/users/${sanction.user.id}/ban`, { ban: true }]]) {
-          assert.ok([401, 403].includes((await call(actor, route, body)).status))
+          const denied = await call(actor, route, body)
+          if (actor === null && denied.status === 307) {
+            // The accepted proxy intercepts anonymous API requests before handlers.
+            const target = new URL(denied.location, env.APP_URL)
+            assert.equal(target.origin, env.APP_URL)
+            assert.equal(target.pathname, '/sign-in')
+            assert.equal(target.searchParams.get('next'), route)
+          } else assert.equal(denied.status, actor === null ? 401 : 403)
         }
       }
     })
@@ -108,10 +119,14 @@ try {
       await verified(admin.auth.auth.mfa.challengeAndVerify({ factorId: enrollment.id, code: generateTotpCode(enrollment.totp.secret) }))
       const assurance = await verified(admin.auth.auth.mfa.getAuthenticatorAssuranceLevel())
       assert.equal(assurance.currentLevel, 'aal2'); report.authentication = 'PASS_REAL_AUTH_MFA'
+      if (prepareBrowser) await writeFile(`${dir}/browser-operator.private.json`, JSON.stringify({
+        email: admin.user.email, password: env.SUPABASE_E2E_PASSWORD, totpSecret: enrollment.totp.secret,
+      }), { flag: 'wx' })
     })
     await verified(service.from('tournaments').insert({ id: tournament, name: `G2048-09.4 ${suffix}`, is_test: true,
       game_type: '2048_score', tournament_type: 'freeroll', preset_key: 'freeroll_v1', entry_fee_cents: 0,
-      prize_1st_cents: 100, prize_2nd_cents: 50, prize_3rd_cents: 0, min_players: 2, max_players: 2,
+      // Use the governed freeroll contract; is_test keeps all credits synthetic.
+      prize_1st_cents: 500000, prize_2nd_cents: 0, prize_3rd_cents: 0, min_players: 2, max_players: 10,
       registration_opens_at: new Date(Date.now() - 120000).toISOString(), play_window_start: new Date(Date.now() - 60000).toISOString(),
       play_window_end: new Date(Date.now() + 600000).toISOString(), status: 'live', max_game_duration_seconds: 600,
       created_by: admin.user.id }))
@@ -148,7 +163,9 @@ try {
     sql(`BEGIN; UPDATE games SET started_at=clock_timestamp()-interval '90 seconds' WHERE id IN ('${games.join("','")}');
       UPDATE game_moves m SET server_timestamp=g.started_at+(m.move_number-1)*interval '500 milliseconds'
       FROM games g WHERE m.game_id=g.id AND g.id IN ('${games.join("','")}');
-      UPDATE tournaments SET play_window_end=clock_timestamp()-interval '1 second' WHERE id='${tournament}'; COMMIT;`)
+      UPDATE tournaments SET registration_opens_at=clock_timestamp()-interval '1200 seconds',
+        play_window_start=clock_timestamp()-interval '601 seconds',
+        play_window_end=clock_timestamp()-interval '1 second' WHERE id='${tournament}'; COMMIT;`)
     const snapshot = () => sql(`SELECT coalesce(json_agg(r ORDER BY rank),'[]') FROM tournament_results r WHERE tournament_id='${tournament}';
       SELECT coalesce(json_agg(w ORDER BY id),'[]') FROM wallet_transactions w WHERE reference_id='${tournament}';`)
     await check('pending signals block authenticated finalization without ranking or credits', async () => {
@@ -166,6 +183,7 @@ try {
       assert.equal(replay.status, 200)
       report.serverRenderedGui = 'PASS'; report.browserInteraction = 'NOT_RUN'
     })
+    if (!prepareBrowser) {
     const reason = 'Fixture local: revisión del falso positivo confirmada'
     await check('reason validation and tournament membership reject invalid clearances', async () => {
       assert.equal((await call(admin, integrityUrl, { gameId: games[0], code: 'regular_pace', reason: 'short' })).status, 400)
@@ -191,7 +209,7 @@ try {
       assert.equal(result.status, 200); assert.equal(result.payload.ok, true)
       const results = await verified(service.from('tournament_results').select('*').eq('tournament_id', tournament))
       assert.equal(results.length, 1); assert.equal(results[0].user_id, clear.user.id)
-      assert.equal(results[0].rank, 1); assert.equal(Number(results[0].prize_awarded_cents), 100)
+      assert.equal(results[0].rank, 1); assert.equal(Number(results[0].prize_awarded_cents), 500000)
       assert.equal(sql(`SELECT count(*) FROM wallet_transactions WHERE reference_id='${tournament}' AND type='prize_credit'`), '1')
       report.settlementHash = sha256(snapshot())
     })
@@ -203,7 +221,8 @@ try {
       assert.equal(unban.status, 200); assert.equal(sql(`SELECT status FROM games WHERE id='${games[1]}'`), 'invalid')
       assert.equal(snapshot(), before)
     })
-    report.status = 'PASS_AUTHENTICATED_HTTP_SQL'
+    }
+    report.status = prepareBrowser ? 'PASS_PREPARED_BROWSER_REVIEW' : 'PASS_AUTHENTICATED_HTTP_SQL'
     report.fixtureRetention = 'Fresh synthetic users/tournament retained for inspection; existing accounts unchanged'
   }
 } catch (error) {
@@ -213,4 +232,5 @@ try {
 }
 await mkdir(dir, { recursive: true })
 await writeFile(`${dir}/admin-e2e.json`, JSON.stringify(report, null, 2) + '\n')
+await writeFile(`${root}/${prepareBrowser ? 'admin-browser-prepared' : 'admin-e2e'}.json`, JSON.stringify(report, null, 2) + '\n')
 console.log(JSON.stringify(report, null, 2))

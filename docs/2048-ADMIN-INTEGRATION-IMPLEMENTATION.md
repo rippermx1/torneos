@@ -1,6 +1,11 @@
 # G2048-09.4 — integración y recorrido administrativo autenticado
 
-2026-10-05. **En progreso; integración operativa y Auth/MFA NOT_RUN**. Se preparó
+**Actualización posterior: terminado y probado localmente.** Integración, Auth/MFA
+y GUI se completaron en 3081; consultar [cierre E26](2048-ADMIN-INTEGRATION-CLOSURE.md).
+El texto siguiente conserva la preparación y el bloqueo inicial de E22 como
+antecedente histórico; sus pasos pendientes ya se resolvieron en ese cierre.
+
+2026-10-05, preparación inicial. **En progreso; integración operativa y Auth/MFA NOT_RUN**. Se preparó
 la integración conjunta de 09.2/09.3 y un ejecutor de recorrido autenticado.
 Los controles del ejecutor y la transacción conjunta pasaron **8 tests Node**
 (3 controles, 4 escenarios SQL y su suite) y lint sin errores ni advertencias.

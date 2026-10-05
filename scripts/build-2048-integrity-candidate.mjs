@@ -61,7 +61,14 @@ try {
     const dockerfile = path.join(context, 'Dockerfile')
     const original = await fs.readFile(dockerfile, 'utf8')
     assert.match(original, /^FROM .+ AS operative/m)
-    await fs.writeFile(dockerfile, original.replace(/^FROM .+ AS operative/m, `FROM ${instance.Image} AS operative`))
+    // A Docker image ID is not a registry reference usable by BuildKit FROM.
+    // Pin a local tag to the inspected image and verify it before using the base.
+    assert.match(instance.Image, /^sha256:[a-f0-9]{64}$/)
+    const baseTag = `torneos-app:g2048-094-base-${instance.Image.slice(7, 23)}`
+    docker(['image', 'tag', instance.Image, baseTag])
+    assert.equal(docker(['image', 'inspect', baseTag, '--format', '{{.Id}}']), instance.Image)
+    await fs.writeFile(dockerfile, original.replace(/^FROM .+ AS operative/m, `FROM ${baseTag} AS operative`))
+    report.baseTag = baseTag
     const registry = JSON.parse(await fs.readFile(path.join(context, 'lib/game/runtime-builds.json'), 'utf8'))
     const image = `torneos-app:g2048-094-candidate-${Date.now()}`
     const args = ['build', '--tag', image, '--build-arg', `TORNEOS_SNAKE_BUILD=${registry['snake-arena']}`]

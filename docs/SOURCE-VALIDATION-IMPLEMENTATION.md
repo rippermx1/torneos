@@ -70,6 +70,7 @@ usa placeholders: no es una candidata de publicación ni prueba Auth o premios.
 Los tests SQL con PostgreSQL nativo se omiten cuando no existe su runtime aislado;
 el conteo de omitidos queda explícito. No se declara integridad SQL, restauración,
 teléfono ni Unity WebGL a partir de esta CI de fuentes. El diagnóstico local de
-esta entrega mantiene Docker y puertos del stack no disponibles: G2048-09.4 sigue
-pendiente. La comprobación de bundles para empaquetar una imagen sigue perteneciendo
+esta entrega registró Docker y puertos no disponibles. Después, [G2048-09.4/E26](2048-ADMIN-INTEGRATION-CLOSURE.md)
+recuperó e integró el stack local con Auth/MFA/GUI reales; no cierra el ensayo de
+restauración aislada pendiente de WEB-16. La comprobación de bundles sigue perteneciendo
 al guard existente `scripts/check-game-builds.mjs`, que no se elimina ni debilita.

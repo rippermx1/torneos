@@ -31,6 +31,7 @@ async function check(name, changes, shouldStart) {
   for (const key of Object.keys(env)) if (/^(APP_URL$|NEXT_PUBLIC_|TORNEOS_|VERCEL_|SUPABASE_|FLOW_|RESEND_|ALERT_EMAIL$|OPS_ESCALATION_|COMPANY_|CRON_SECRET$|PRODUCTION_SUPABASE_|STAGING_SUPABASE_|LOCAL_)/.test(key)) delete env[key]
   Object.assign(env, fixture, changes, { PORT: String(port), HOSTNAME: '127.0.0.1' })
   for (const [key, value] of Object.entries(env)) if (value === undefined) delete env[key]
+  const startedAt = Date.now()
   const child = spawn(process.execPath, [path.join(root, '.next/standalone/scripts/start-release.mjs')], { env, cwd: root, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] })
   let log = '', ready = false, exited = false, code
   child.stdout.on('data', chunk => { log += chunk.toString(); if (log.includes('Ready in')) ready = true })
@@ -41,9 +42,11 @@ async function check(name, changes, shouldStart) {
     if (shouldStart) {
       if (!ready || exited) throw new Error('Valid fixture did not start')
       const game = JSON.parse(fs.readFileSync(path.join(root, 'lib/game/runtime-builds.json'), 'utf8'))['2048']
-      const response = await fetch(`http://127.0.0.1:${port}/games/2048/${game}/index.html`, { signal: AbortSignal.timeout(5000) })
+      // Next's early Ready log does not mean its handlers are prepared yet.
+      // Bound the first real response independently; this is not a performance SLA.
+      const response = await fetch(`http://127.0.0.1:${port}/games/2048/${game}/index.html`, { signal: AbortSignal.timeout(20000) })
       if (response.status !== 200 || response.headers.get('x-frame-options') !== 'SAMEORIGIN') throw new Error('Static game not served correctly')
-      checks.push({ name, status: 'PASS', http_status: response.status, scope: 'synthetic loopback static request only' })
+      checks.push({ name, status: 'PASS', http_status: response.status, startup_static_request_ms: Date.now() - startedAt, scope: 'synthetic loopback static request only; not a performance SLA' })
     } else {
       if (!exited || code === 0 || ready || !log.includes('Configuración rechazada')) {
         fs.writeFileSync(path.join(root, 'artifacts/release', `${name}.private.log`), log)

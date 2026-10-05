@@ -1,6 +1,6 @@
 {
   "task": "RM-11",
-  "recorded_at": "2026-10-05T19:34:36.437335+00:00",
+  "recorded_at": "2026-10-05T19:38:24.003223+00:00",
   "status": "PASS_LOCAL_IMPLEMENTATION",
   "production_decision": "NO_GO",
   "candidate": {
@@ -15,14 +15,15 @@
       "declared": "npm@11.11.0",
       "lock_sha256": "9d80cf105fb9da071af275f19805ae8f2899b8d3501b821eb067b33b9a885af4"
     },
-    "source_fingerprint": "011ae9ea441f387603b9bca9d5e3072751ea241aea17905b9c538b2b3f22fbe7",
-    "release_fingerprint": "6dd744ffa0e9e504932b7563553b0b304df48ba56849db8610e547a68dba6ed2",
+    "source_fingerprint": "761b24045a7bf6104fd84978906c942c7ef18280889a5d68f26cabf430701ed8",
+    "release_fingerprint": "59cc4782aaddf737fd165b17073df2f2f298060a60265a33897e7511885423be",
     "source_files": 411,
     "application_files": 2716,
     "hashing": {
       "source_and_sql": "UTF-8 text CRLF normalized to LF; binary source bytes exact",
       "application_and_games": "exact bytes"
-    }
+    },
+    "verification_revision": "2f2178859e66a2b57e9fcbcb240fe34c3c274fde"
   },
   "verification": {
     "web": {
@@ -39,11 +40,50 @@
       "cleanup": "PASS_OWN_CLUSTER_STOPPED"
     },
     "runtime": {
-      "status": "FAIL",
+      "status": "PASS",
       "checks": [
         {
-          "status": "FAIL",
-          "error": "The operation was aborted due to timeout"
+          "name": "valid-synthetic-staging",
+          "status": "PASS",
+          "http_status": 200,
+          "startup_static_request_ms": 1034,
+          "scope": "synthetic loopback static request only; not a performance SLA"
+        },
+        {
+          "name": "missing-flow-endpoint",
+          "status": "PASS",
+          "exit_code": 1,
+          "ready": false
+        },
+        {
+          "name": "frozen-public-key-mismatch",
+          "status": "PASS",
+          "exit_code": 1,
+          "ready": false
+        },
+        {
+          "name": "frozen-public-origin-mismatch",
+          "status": "PASS",
+          "exit_code": 1,
+          "ready": false
+        },
+        {
+          "name": "frozen-deployment-target-mismatch",
+          "status": "PASS",
+          "exit_code": 1,
+          "ready": false
+        },
+        {
+          "name": "simulator-outside-local",
+          "status": "PASS",
+          "exit_code": 1,
+          "ready": false
+        },
+        {
+          "name": "private-runtime-credential-missing",
+          "status": "PASS",
+          "exit_code": 1,
+          "ready": false
         }
       ],
       "provider_dispatch": "NOT_INVOKED_BY_VERIFIER",
@@ -228,11 +268,11 @@
     },
     {
       "path": "C:\\Users\\valde\\.codex\\worktrees\\real-money-access\\torneos\\artifacts\\release\\verified-manifest.json",
-      "sha256": "ebd76bd3336dafc10179e24859de416afc6f17c7cb53538b4dd64ff1f177c803"
+      "sha256": "e201578f9cdc9b80ea8e9bcd1fb7b7bed6e677ed32cd0c81625d9f008c9542aa"
     },
     {
       "path": "C:\\Users\\valde\\.codex\\worktrees\\real-money-access\\torneos\\artifacts\\release\\runtime.json",
-      "sha256": "9dc5acca6fc48344977bf2e43aeadc6ccd14667b26a369adf6d6378393da8b9a"
+      "sha256": "eb93078c9b55513aaf001688e0f480058598a1993dfbb07f94eef8dc3af09650"
     },
     {
       "path": "C:\\Users\\valde\\.codex\\worktrees\\real-money-access\\torneos\\artifacts\\release\\audit.json",

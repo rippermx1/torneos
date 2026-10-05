@@ -2,6 +2,8 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Tournament, Game } from '@/types/database'
+import { inspectIntegrity } from '@/lib/anticheat/integrity'
+import { IntegrityReviews } from '@/components/tournament/integrity-reviews'
 
 export default async function TournamentGamesPage({
   params,
@@ -23,6 +25,7 @@ export default async function TournamentGamesPage({
   if (!tData) notFound()
   const tournament = tData as Tournament
   const games = (gamesData ?? []) as Game[]
+  const reviews = await inspectIntegrity(supabase, id).catch(() => null)
 
   const userIds = games.map((g) => g.user_id)
   const { data: profiles } = await supabase
@@ -54,6 +57,8 @@ export default async function TournamentGamesPage({
         </div>
       </div>
 
+      <IntegrityReviews tournamentId={id} reviews={reviews} finalizing={tournament.status === 'finalizing'}
+        users={Object.fromEntries(games.map(g => [g.id, { id: g.user_id, name: usernameMap[g.user_id] ?? 'Jugador' }]))} />
       {games.length === 0 ? (
         <p className="text-muted-foreground text-sm">Nadie ha jugado aún.</p>
       ) : (

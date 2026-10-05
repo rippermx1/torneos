@@ -6,6 +6,7 @@ import { sendTournamentPrizeEmail } from '@/lib/email/tournament-notifications'
 import { sendOpsAlertEmail } from '@/lib/email/ops-notifications'
 import { updateRating } from '@/lib/tournament/rating'
 import { reviewWinnerStats, computeIntervalStats } from '@/lib/anticheat/winner-review'
+import { requireIntegrityClearance } from '@/lib/anticheat/integrity'
 
 export interface TransitionResult {
   tournamentId: string
@@ -229,6 +230,9 @@ async function finalizeTournament(
   data: Record<string, unknown>
   completedByAnotherExecution: boolean
 }> {
+  // Persist the review before calling the existing financial transaction. The
+  // SQL completion guard independently rejects direct calls with open signals.
+  await requireIntegrityClearance(supabase, tournamentId)
   const { data, error } = await supabase.rpc('finalize_tournament', {
     p_tournament_id: tournamentId,
   })

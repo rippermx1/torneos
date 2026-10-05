@@ -120,6 +120,12 @@ describe('concurrent competitive start', () => {
     expect((await start(request(), params())).status).toBe(500)
     expect(fixture.queries.filter(q => q.table === 'games' && !q.write)).toHaveLength(1)
   })
+  it.each(['IDENTITY_ALREADY_PARTICIPATING', 'IDENTITY_STATE_UNCONFIRMED', 'ACCOUNT_SUSPENDED'])('rejects the database eligibility guard %s without recovering an unrelated session', async message => {
+    race(); fixture.insertError = { code: message === 'ACCOUNT_SUSPENDED' ? 'PT403' : 'PT409', message }
+    const response = await start(request(), params()), data = await response.json()
+    expect(response.status).toBe(403); expect(data.code).toBe(message); expect(data.gameId).toBeUndefined()
+    expect(fixture.queries.filter(q => q.table === 'games' && !q.write)).toHaveLength(1)
+  })
 })
 
 describe('atomic movement conflicts', () => {
@@ -127,6 +133,12 @@ describe('atomic movement conflicts', () => {
     fixture.game.started_at = '2026-10-01T15:59:45Z'
     fixture.rpcError = { code, message: 'private RPC diagnostic' }
   }
+  it('rejects a sanction persisted after the API profile precheck', async () => {
+    conflict('PT403')
+    const response = await move(request(), params()), data = await response.json()
+    expect(response.status).toBe(403); expect(data.code).toBe('ACCOUNT_SUSPENDED')
+    expect(data.score).toBeUndefined(); expect(JSON.stringify(data)).not.toContain('private')
+  })
   it('returns a confirmed terminal winner when timeout committed before the RPC', async () => {
     conflict()
     fixture.finalMoveRow = { ...fixture.game, status: 'completed', end_reason: 'timeout', final_score: 16,

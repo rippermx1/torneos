@@ -172,6 +172,12 @@ export async function POST(
     .select('id')
     .single()
 
+  if (insertErr?.code === 'PT403' || insertErr?.message === 'IDENTITY_ALREADY_PARTICIPATING'
+    || insertErr?.message === 'IDENTITY_STATE_UNCONFIRMED') {
+    return Response.json({ error: insertErr.message === 'IDENTITY_ALREADY_PARTICIPATING'
+      ? 'Esta identidad verificada ya tiene una participación en el torneo.'
+      : 'No se pudo autorizar la participación de tu cuenta.', code: insertErr.message }, { status: 403 })
+  }
   // Two tabs can both observe no game before either INSERT commits. The unique
   // constraint picks the winner; recover its owned row rather than retrying.
   if (insertErr?.code === '23505') {

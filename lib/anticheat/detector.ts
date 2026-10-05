@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/server'
 import { getAnticheatConfig } from '@/lib/env'
+import { setAccountSanction } from '@/lib/anticheat/integrity'
 
 // Configurable timing/score heuristics, not proof of human play or identity.
 // Server receipt times can include transport bursts; paced automation can pass.
@@ -13,7 +14,8 @@ export interface AnticheatResult {
 /**
  * Analyze a persisted move. The route schedules this with after(); already
  * accepted or concurrent moves may precede the sanction. autoBanned confirms
- * successful writes, not transactional application or an N+1 cutoff.
+ * atomic account/game/audit persistence. Requests committed before the sanction
+ * can precede it; commits after it are rejected by the database account gate.
  */
 export async function analyzeMove(params: {
   gameId: string
@@ -105,25 +107,12 @@ export async function analyzeMove(params: {
 }
 
 /**
- * Aplica ban automático: marca perfil como baneado e invalida partidas activas.
+ * Apply the existing burst/score policy atomically, including unsettled results.
  */
 async function applyAutoBan(userId: string, reason: string): Promise<void> {
   const supabase = createAdminClient()
 
-  const profile = await supabase
-    .from('profiles')
-    .update({ is_banned: true })
-    .eq('id', userId)
-    .select('id')
-    .single()
-  if (profile.error || !profile.data) throw new Error('No se pudo confirmar la suspensión del perfil')
-
-  const games = await supabase
-    .from('games')
-    .update({ status: 'invalid', end_reason: 'invalid', ended_at: new Date().toISOString() })
-    .eq('user_id', userId)
-    .eq('status', 'active')
-  if (games.error) throw new Error('Perfil suspendido; invalidación de partidas sin confirmar')
+  await setAccountSanction(supabase, { userId, banned: true, reason })
 
   console.warn(`[anticheat] Auto-ban: usuario=${userId} razón="${reason}"`)
 }

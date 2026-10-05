@@ -7,7 +7,7 @@ const fixture = vi.hoisted(() => ({ prev: { client_timestamp: 1000, server_times
 }))
 vi.mock('@/lib/env', () => ({ getAnticheatConfig: () => ({ minHumanMoveMs: 80,
   botBurstThreshold: 5, minMovesForScoreCheck: 20, maxAvgPtsPerMove: 350 }) }))
-vi.mock('@/lib/supabase/server', () => ({ createAdminClient: () => ({ from: (table: string) => {
+vi.mock('@/lib/supabase/server', () => ({ createAdminClient: () => ({ rpc: async (name: string, args: Record<string, unknown>) => { fixture.writes.push({ table: name, filters: [['p_user_id', args.p_user_id]] }); return { data: fixture.profileMissing ? null : { ok: true, banned: true, invalidatedGames: 1, settledGames: 0 }, error: fixture.writeError || fixture.gameWriteError ? { message: 'atomic failure' } : null } }, from: (table: string) => {
   const filters: [string, unknown][] = []; let write = false; let max = Infinity; let limit = Infinity
   const run = async () => {
     if (write) {
@@ -50,8 +50,7 @@ describe('actual detector with adversarial inputs', () => {
   it('uses five positive server intervals, even with a forged slow client clock', async () => {
     burst(6)
     expect(await analyzeMove({ ...input, clientTimestamp: 999999999 })).toMatchObject({ autoBanned: true, reason: 'bot_timing' })
-    expect(fixture.writes).toEqual([{ table: 'profiles', filters: [['id', 'account']] },
-      { table: 'games', filters: [['user_id', 'account'], ['status', 'active']] }])
+    expect(fixture.writes).toEqual([{ table: 'set_2048_account_sanction', filters: [['p_user_id', 'account']] }])
   })
   it.each(['invalid', 'duplicate', 'slow'])('does not ban a broken %s burst', async kind => {
     burst(6); fixture.recent[3].server_timestamp = kind === 'invalid' ? 'bad'

@@ -1,5 +1,19 @@
 # Estado — TorneosPlay
 
+## 2048 G2048-09.3 — 2026-10-05
+
+**Terminado y probado localmente (E21)**: revisión de cadencia regular antes de
+liquidar, participación por identidad verificada y sanción atómica de cuenta,
+partidas sin liquidar y bitácora. Panel administrativo con decisiones motivadas
+y MFA de rutas; resultado ya liquidado preservado y señalado para incidencia.
+3.226 pruebas web / 15 archivos, 22 checks PostgreSQL 17.11 reales, tipos/lint,
+Next 16.3.8 producción (58 páginas) y navegador con componente real/datos
+sintéticos PASS. Sin aplicación de migración ni activación web operativa.
+**G2048-09 padre En progreso; siguiente 09.4**: integrar 09.2/09.3 y comprobar
+recorrido administrativo autenticado. Bot con pausas variables y multicuenta sin
+identidad verificada siguen como límites explícitos.
+[Entrega](2048-INTEGRITY-IMPLEMENTATION.md) · [E21](2048-INTEGRITY-EVIDENCE.json).
+
 ## 2048: revisión adversarial y límites — 2026-10-04
 
 **G2048-09.2 terminado y probado localmente**: 3.180 pruebas web / 14 archivos,

@@ -1,5 +1,21 @@
 # Contexto para continuar — TorneosPlay
 
+## Continuación G2048-09.3 — 2026-10-05
+
+**09.3 cerrado como implementación local validada (E21)**. Leer
+[2048-INTEGRITY-IMPLEMENTATION.md](2048-INTEGRITY-IMPLEMENTATION.md) y
+[evidencia](2048-INTEGRITY-EVIDENCE.json). 3.226 pruebas / 15 archivos, 22 SQL
+reales PostgreSQL 17.11, tipos/lint, Next producción y navegador del componente
+real con datos sintéticos PASS. Sanción y bitácora atómicas; commit bloquea cuenta
+sancionada; review pendiente impide liquidación; identidad KYC comparte un slot.
+No se aplicaron migraciones ni se activó imagen web. **Siguiente 09.4**: integrar
+permisos de semilla 09.2 + migración `20261005131216_guard_2048_integrity_reviews.sql`
+y candidata web conjuntamente en ambiente autorizado. Las RPC nuevas son
+obligatorias: sin ellas sanción/finalización no se confirman. Verificar recorrido
+MFA real, descarte/sanción, reintento de cierre y resultado persistido.
+G2048-09 padre sigue En progreso; el bot con pausas variables y cuentas sin KYC
+no se declaran resueltos. Mantener Unity como cápsula, Flow y WIP paralelo.
+
 ## Continuación G2048-09.2 — 2026-10-04
 
 **G2048-09.2 cerrado como implementación local validada.** Leer

@@ -194,6 +194,9 @@ export async function POST(
   })
 
   if (rpcErr) {
+    if (rpcErr.code === 'PT403') {
+      return Response.json({ error: 'Tu cuenta ha sido suspendida.', code: 'ACCOUNT_SUSPENDED' }, { status: 403 })
+    }
     // The atomic RPC can reject a calculation made before another tab or a
     // timeout committed. Read the owned winner; never replay the direction.
     if (rpcErr.code === 'PT409' || rpcErr.code === '23505') {

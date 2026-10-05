@@ -13,7 +13,7 @@ describe('operations SSR information and failure state',()=>{
   it('shows obligation amount/age and distinguishes bank proof',async()=>{
     const html=renderToStaticMarkup(await OperationsPage())
     expect(html).toContain('Premios retenidos');expect(html).toContain('2 pendientes');expect(html).toContain('Más antiguo:')
-    expect(html).toContain('caja bancaria está pendiente');expect(html).toContain('no sumarlos como exposición total')
+    expect(html).toContain('conciliación bancaria y la reserva de caja');expect(html).toContain('/admin/cash');expect(html).toContain('no sumarlos como exposición total')
   })
   it('query failure cannot render a healthy empty dashboard',async()=>{
     h.load.mockRejectedValue(new Error('DB unavailable'))

@@ -273,6 +273,7 @@ export async function POST(
     .single()
 
   if (attemptError || !attempt) {
+    if (attemptError?.code === 'PT423') return Response.json({ error: 'Inscripciones pagadas temporalmente pausadas mientras se verifica la reserva de caja.' }, { status: 423 })
     if (attemptError?.code === '23505') {
       return Response.json(
         { error: 'Ya tienes un pago pendiente para este torneo. Revisa el estado del pago antes de iniciar otro cobro.', pendingPayment: true },

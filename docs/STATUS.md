@@ -1,5 +1,17 @@
 # Estado — TorneosPlay
 
+## Preparación de dinero real: RM-10 — 2026-10-05
+
+Candidata `codex/real-money-access`, checkout aislado; **implementación local**
+de cortes diarios banco/Flow, evidencia privada y doble revisión. Diferencias
+con responsable/plazo, comisiones reales conciliadas explícitamente y reserva
+consolidada sin duplicar premios, saldo y retiros. Nuevos cobros/publicaciones
+se bloquean por pausa, corte vencido, diferencias, límite o cobertura insuficiente.
+**Sin migración operativa, despliegue, movimientos bancarios ni dinero real.**
+**NO_GO vigente**; siguen ensayo externo/contador y RM-11, configuración efectiva.
+[Entrega](RM10-CONCILIACION-Y-RESERVA-CAJA.md) y
+[evidencia](RM10-CONCILIACION-Y-RESERVA-CAJA-EVIDENCE.json).
+
 ## Preparación de dinero real: RM-09 — 2026-10-05
 
 Candidata `codex/real-money-access`, checkout aislado; **implementación local**

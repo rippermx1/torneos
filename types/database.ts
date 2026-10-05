@@ -515,6 +515,10 @@ export type Database = {
         Update: Partial<Omit<PlayerRating, 'profile_id'>> & DbRecord
         Relationships: []
       }
+      cash_movements: { Row: import('@/lib/cash/model').CashMovement & DbRecord; Insert: never; Update: never; Relationships: [] }
+      cash_reconciliations: { Row: import('@/lib/cash/model').CashReconciliation & DbRecord; Insert: never; Update: never; Relationships: [] }
+      cash_differences: { Row: import('@/lib/cash/model').CashDifference & DbRecord; Insert: never; Update: never; Relationships: [] }
+      cash_events: { Row: import('@/lib/cash/model').CashEvent & DbRecord; Insert: never; Update: never; Relationships: [] }
       ops_incidents: {
         Row: import('@/lib/ops/monitor').OpsIncident & DbRecord
         Insert: never
@@ -634,6 +638,17 @@ export type Database = {
       }
     }
     Functions: {
+      correct_flow_fee_difference: { Args: { p_id: string; p_actor: string; p_note: string } & DbRecord; Returns: undefined }
+      reject_cash_movement: { Args: { p_id: string; p_actor: string; p_note: string } & DbRecord; Returns: undefined }
+      cash_status: { Args: DbRecord; Returns: import('@/lib/cash/model').CashStatus & DbRecord }
+      set_cash_policy: { Args: { p_actor: string; p_paused: boolean; p_max_exposure: number; p_additional_reserve: number; p_note: string } & DbRecord; Returns: undefined }
+      record_cash_movement: { Args: { p_id: string; p_actor: string; p_kind: string; p_amount: number; p_reference: string; p_occurred_at: string; p_proof: string; p_note: string } & DbRecord; Returns: string }
+      approve_cash_movement: { Args: { p_id: string; p_actor: string; p_note: string } & DbRecord; Returns: undefined }
+      capture_cash_reconciliation: { Args: { p_id: string; p_actor: string; p_observed_at: string; p_bank: number; p_bank_held: number; p_flow: number; p_flow_held: number; p_bank_proof: string; p_flow_proof: string; p_note: string } & DbRecord; Returns: string }
+      review_cash_reconciliation: { Args: { p_id: string; p_actor: string; p_decision: string; p_note: string } & DbRecord; Returns: undefined }
+      manage_cash_difference: { Args: { p_id: string; p_actor: string; p_assignee: string | null; p_due_at: string | null; p_replacement: string | null; p_note: string } & DbRecord; Returns: undefined }
+      read_cash_proof: { Args: { p_actor: string; p_path: string } & DbRecord; Returns: string }
+
       record_cron_dispatch_failure: { Args: { p_job: string } & DbRecord; Returns: undefined }
       review_ops_notification: { Args: { p_id: string; p_actor: string; p_action: string; p_note: string } & DbRecord; Returns: undefined }
       record_cron_execution: { Args: { p_job: string; p_status: string; p_detail?: string | null } & DbRecord; Returns: undefined }

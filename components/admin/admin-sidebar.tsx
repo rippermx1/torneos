@@ -83,6 +83,7 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Dinero y control',
     items: [
+      { href: '/admin/cash', label: 'Caja y conciliación', description: 'Reserva, cartolas y diferencias', icon: Landmark },
       {
         href: '/admin/payments',
         label: 'Cobros',

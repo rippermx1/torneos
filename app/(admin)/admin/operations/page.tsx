@@ -18,7 +18,7 @@ export default async function OperationsPage() {
   return <div className="mx-auto max-w-6xl space-y-8">
     <header><h1 className="text-3xl font-bold">Obligaciones y alertas</h1><p className="mt-2 text-muted-foreground">Comprobado {date(data.snapshot.observed_at)}. Los montos corresponden a cada cola y pueden representar etapas de la misma obligación; no sumarlos como exposición total.</p></header>
     {monitorStale && <div role="alert" className="rounded border border-red-400 p-4">Monitor sin éxito registrado en los últimos 15 minutos. Las alertas guardadas pueden estar desactualizadas. Revisar scheduler y respaldo independiente.</div>}
-    <p className="rounded border p-4">La caja bancaria está pendiente de conciliación. Recaudación registrada y asientos equilibrados no prueban fondos disponibles para pagar.</p>
+    <p className="rounded border p-4">Revisa la <Link className="underline" href="/admin/cash">conciliación bancaria y la reserva de caja</Link> antes de admitir nuevos cobros. Los asientos equilibrados requieren respaldo bancario.</p>
     <section><h2 className="mb-3 text-xl font-semibold">Obligaciones pendientes</h2><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{data.snapshot.queues.map(queue => <Link key={queue.key} href={queue.href} className="rounded border p-4">
       <h3 className="font-semibold">{queue.title}</h3><p>{queue.count} pendientes · {formatCLP(queue.amount_cents)}</p><p className="text-sm text-muted-foreground">Más antiguo: {date(queue.oldest_at)}</p>
     </Link>)}</div></section>

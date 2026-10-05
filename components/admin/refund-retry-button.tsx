@@ -9,7 +9,7 @@ export function RefundRetryButton({ refundId }: { refundId: string }) {
   const router = useRouter()
 
   async function handleRetry() {
-    if (!confirm('¿Reintentar esta reversa Flow?')) return
+    if (!confirm('¿Enviar devolución esta reversa Flow?')) return
     setLoading(true)
     setResult(null)
     try {
@@ -18,7 +18,7 @@ export function RefundRetryButton({ refundId }: { refundId: string }) {
       if (!res.ok) {
         setResult(`Error: ${data.error}`)
       } else {
-        setResult('✓ Reintento enviado')
+        setResult('✓ Devolución enviada')
         router.refresh()
       }
     } catch {
@@ -42,7 +42,7 @@ export function RefundRetryButton({ refundId }: { refundId: string }) {
       disabled={loading}
       className="text-xs border border-amber-300 text-amber-700 rounded-lg px-3 py-1.5 hover:bg-amber-50 transition-colors disabled:opacity-50 whitespace-nowrap"
     >
-      {loading ? 'Enviando...' : 'Reintentar'}
+      {loading ? 'Enviando...' : 'Enviar devolución'}
     </button>
   )
 }

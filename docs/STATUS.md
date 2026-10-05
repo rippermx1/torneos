@@ -1,5 +1,17 @@
 # Estado — TorneosPlay
 
+## Preparación de dinero real: RM-05/06/07 — 2026-10-05
+
+Candidata `codex/real-money-access`, checkout aislado; **implementación local** de
+pagos recuperables por orden comercial, obligaciones de devolución dentro de la
+cancelación/settlement, reclamo único de envío y retiros con solicitud/débito
+atómicos e identificador estable. Incertidumbre visible y sin reenvío automático.
+**3.591 pruebas web / 65 archivos, 62 checks PostgreSQL, tipos/lint y build
+Next Webpack PASS**. Sin aplicación operativa, Flow externo o activación de dinero.
+**NO_GO vigente**; siguiente RM-08, retención/revisión de premios y pagos.
+[Entrega](RM05-RM07-DINERO-RECUPERABLE.md) y
+[evidencia](RM05-RM07-DINERO-RECUPERABLE-EVIDENCE.json).
+
 ## 2048: revisión adversarial y límites — 2026-10-04
 
 **G2048-09.2 terminado y probado localmente**: 3.180 pruebas web / 14 archivos,

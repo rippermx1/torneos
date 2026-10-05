@@ -146,26 +146,15 @@ export async function POST(
     return Response.json({ error: 'Ya estás inscrito en este torneo' }, { status: 409 })
   }
 
-  // Evita doble cobro: una inscripcion pagada solo puede tener un intento
-  // activo. Los pendientes antiguos se expiran para permitir reintento.
-  const nowIso = new Date().toISOString()
-  const staleAttemptCutoff = new Date(Date.now() - 60 * 60 * 1000).toISOString()
-  await admin
-    .from('flow_payment_attempts')
-    .update({ status: 'expired', settled_at: nowIso })
-    .eq('user_id', userId)
-    .eq('tournament_id', tournamentId)
-    .eq('intent', 'tournament_registration')
-    .eq('status', 'pending')
-    .lt('created_at', staleAttemptCutoff)
-
+  // Financial uncertainty remains active even after the checkout expires.
+  // Historical expired rows also block a new charge until provider reconciliation.
   const { data: activeAttempt, error: activeAttemptError } = await admin
     .from('flow_payment_attempts')
     .select('id, status, created_at')
     .eq('user_id', userId)
     .eq('tournament_id', tournamentId)
     .eq('intent', 'tournament_registration')
-    .in('status', ['pending', 'paid'])
+    .in('status', ['pending', 'unknown', 'expired', 'paid'])
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle()
@@ -182,9 +171,9 @@ export async function POST(
     )
   }
 
-  if (activeAttempt?.status === 'pending') {
+  if (activeAttempt) {
     return Response.json(
-      { error: 'Ya tienes un pago pendiente para este torneo. Espera la confirmación o reintenta más tarde.', pendingPayment: true },
+      { error: 'Ya tienes un pago pendiente para este torneo. Revisa el estado del pago antes de iniciar otro cobro.', pendingPayment: true },
       { status: 409 }
     )
   }
@@ -260,7 +249,10 @@ export async function POST(
   // El usuario paga exactamente el precio final entry_fee, IVA incluido. La
   // empresa absorbe la comision Flow; el presupuesto interno de premios no
   // reduce el IVA de la venta.
-  const entryFeePesos = Math.ceil(entryFeeCents / 100)
+  if (entryFeeCents % 100 !== 0 || !Number.isSafeInteger(entryFeeCents)) {
+    return Response.json({ error: 'La cuota debe estar expresada en pesos enteros' }, { status: 400 })
+  }
+  const entryFeePesos = entryFeeCents / 100
   const requestOrigin = new URL(req.url).origin
   const appUrl = getAppUrl(requestOrigin) ?? requestOrigin
   const commerceOrder = `tour-${randomUUID()}`
@@ -283,7 +275,7 @@ export async function POST(
   if (attemptError || !attempt) {
     if (attemptError?.code === '23505') {
       return Response.json(
-        { error: 'Ya tienes un pago pendiente para este torneo. Espera la confirmación o reintenta más tarde.', pendingPayment: true },
+        { error: 'Ya tienes un pago pendiente para este torneo. Revisa el estado del pago antes de iniciar otro cobro.', pendingPayment: true },
         { status: 409 }
       )
     }
@@ -307,26 +299,28 @@ export async function POST(
       timeout: 1800,
     })
 
-    await admin
+    const saved = await admin
       .from('flow_payment_attempts')
       .update({
         flow_token: flowResponse.token,
         flow_order: flowResponse.flowOrder,
       })
       .eq('id', attempt.id)
+    if (saved.error) throw new Error(saved.error.message)
 
     return Response.json({
       redirectUrl: buildFlowCheckoutUrl(flowResponse),
     })
   } catch (err) {
-    await admin
+    const uncertain = await admin
       .from('flow_payment_attempts')
-      .update({ status: 'rejected', settled_at: new Date().toISOString() })
-      .eq('id', attempt.id)
+      .update({ status: 'unknown' })
+      .eq('id', attempt.id).eq('status', 'pending')
+    if (uncertain.error) console.error('[checkout] No se pudo guardar incertidumbre:', uncertain.error.message)
 
     console.error('Error creando pago Flow (torneo):', err)
     return Response.json(
-      { error: 'No se pudo iniciar el pago. Intenta nuevamente en unos minutos.' },
+      { error: 'No se pudo confirmar la creación del pago. Estamos verificando su estado; evita iniciar otro cobro.' },
       { status: 500 }
     )
   }

@@ -1,7 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/server'
 import { requireAdminMfaForApi } from '@/lib/supabase/admin-mfa'
 import { recordAdminAction } from '@/lib/admin/audit'
-import { settleFlowPayment } from '@/lib/flow/settlement'
+import { reconcileFlowPayment } from '@/lib/flow/settlement'
 import type { FlowPaymentAttempt } from '@/types/database'
 
 export async function POST(
@@ -21,9 +21,6 @@ export async function POST(
     return Response.json({ error: 'Body JSON inválido' }, { status: 400 })
   }
   const token = body.token?.trim()
-  if (!token) {
-    return Response.json({ error: 'Falta flow_token' }, { status: 400 })
-  }
 
   const supabase = createAdminClient()
   const { data: attemptRow } = await supabase
@@ -37,7 +34,7 @@ export async function POST(
     return Response.json({ error: 'Intento no encontrado' }, { status: 404 })
   }
 
-  if (attempt.flow_token && attempt.flow_token !== token) {
+  if (token && attempt.flow_token && attempt.flow_token !== token) {
     return Response.json(
       { error: 'El token no corresponde con el intento' },
       { status: 422 },
@@ -45,7 +42,7 @@ export async function POST(
   }
 
   try {
-    const result = await settleFlowPayment(token)
+    const result = await reconcileFlowPayment(attempt.commerce_order)
     await recordAdminAction(supabase, {
       adminId,
       action: 'flow.reverify',

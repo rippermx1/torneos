@@ -98,6 +98,7 @@ export async function flowPost<T>(
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: body.toString(),
+    signal: AbortSignal.timeout(8000),
   })
 
   if (!res.ok) throw await parseError(res)
@@ -122,7 +123,7 @@ export async function flowGet<T>(
   }
 
   const url = `${base}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}?${search.toString()}`
-  const res = await fetch(url, { method: 'GET' })
+  const res = await fetch(url, { method: 'GET', signal: AbortSignal.timeout(8000) })
 
   if (!res.ok) throw await parseError(res)
   return (await res.json()) as T

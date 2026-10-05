@@ -27,12 +27,13 @@ export default async function TournamentReturnPage({ params, searchParams }: Pro
     net_amount_cents: number
     charged_amount_cents: number
     settled_at: string | null
+    flow_status_code: number | null
   } | null = null
 
   if (token) {
     const { data } = await admin
       .from('flow_payment_attempts')
-      .select('status, net_amount_cents, charged_amount_cents, settled_at')
+      .select('status, net_amount_cents, charged_amount_cents, settled_at, flow_status_code')
       .eq('flow_token', token)
       .eq('tournament_id', tournamentId)
       .maybeSingle()
@@ -57,7 +58,17 @@ export default async function TournamentReturnPage({ params, searchParams }: Pro
               Ir al torneo
             </Link>
           </>
-        ) : status === 'rejected' || status === 'expired' ? (
+        ) : status === 'cancelled' && attempt?.flow_status_code === 2 ? (
+          <>
+            <h1 className="text-2xl font-semibold">Devolución en proceso</h1>
+            <p className="mt-2 text-sm text-foreground/70">
+              Recibimos tu pago, pero no se pudo completar la inscripción. La devolución quedó registrada y revisaremos su confirmación con Flow.
+            </p>
+            <Link href="/premios" className="mt-6 inline-block w-full rounded-xl border border-foreground/20 px-4 py-3 font-medium">
+              Ver mis premios
+            </Link>
+          </>
+        ) : status === 'rejected' || (status === 'cancelled' && attempt?.flow_status_code === 4) ? (
           <>
             <h1 className="text-2xl font-semibold">Pago no completado</h1>
             <p className="mt-2 text-sm text-foreground/70">
@@ -74,7 +85,7 @@ export default async function TournamentReturnPage({ params, searchParams }: Pro
           <>
             <h1 className="text-2xl font-semibold">Estamos confirmando tu pago…</h1>
             <p className="mt-2 text-sm text-foreground/70">
-              Flow nos está notificando. Esto suele tardar unos segundos. Recarga la página en un momento.
+              Estamos verificando el resultado con Flow. Evita iniciar otro cobro mientras esté pendiente. Recarga la página en un momento.
             </p>
             <Link
               href={`/tournaments/${tournamentId}`}

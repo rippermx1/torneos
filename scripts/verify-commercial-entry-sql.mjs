@@ -8,9 +8,10 @@ import assert from 'node:assert/strict'
 
 const index = process.argv.indexOf('--pg-bin')
 if (index < 0 || !process.argv[index + 1]) throw new Error('Use --pg-bin with PostgreSQL 17 binaries')
-const pgBin = path.resolve(process.argv[index + 1]), dir = path.resolve('artifacts/commercial-entry')
+const financial = process.argv.includes('--financial')
+const pgBin = path.resolve(process.argv[index + 1]), dir = path.resolve(financial ? 'artifacts/financial-operations' : 'artifacts/commercial-entry')
 const cluster = path.join(dir, `pg-${randomUUID()}`)
-const report = { task: 'RM-01/02/03', startedAt: new Date().toISOString(), status: 'NOT_RUN',
+const report = { task: financial ? 'RM-01/02/03 + RM-05/06/07' : 'RM-01/02/03', startedAt: new Date().toISOString(), status: 'NOT_RUN',
   scope: 'fresh loopback PostgreSQL fixture; real SQL roles/claims, not Supabase JWT/Data API', sources: {}, checks: [], cleanup: 'NOT_RUN' }
 let port, started = false, flowSequence = 100
 const run = (binary, args, input, timeout = 15000) => new Promise(resolve => {
@@ -195,10 +196,14 @@ try {
       GROUP BY journal_entry_id HAVING sum(debit_cents) <> sum(credit_cents)) unbalanced;`),'0')
     assert.equal(await checked('SELECT count(*)-count(DISTINCT event_key) FROM accounting_journal_entries;'),'0')
   })
+  if (financial) {
+    const { verifyFinancialCases } = await import('./verify-financial-cases.mjs')
+    await verifyFinancialCases({ checked, denied, check, source, service, fixture, payment, settle, sql })
+  }
   report.status = 'PASS'
 } catch (error) { report.status = 'FAIL'; report.error = error.message; process.exitCode = 1 }
 finally {
   if (started) { const stop = await run('pg_ctl', ['-D',cluster,'-m','fast','-w','stop'],undefined,30000); report.cleanup = stop.code === 0 ? 'PASS_OWN_CLUSTER_STOPPED' : 'FAIL'; if (stop.code !== 0) process.exitCode = 1 }
   report.endedAt = new Date().toISOString(); await fs.writeFile(path.join(dir,'sql.json'),JSON.stringify(report,null,2)+'\n')
-  console.log(JSON.stringify({ status: report.status, checks: report.checks.length, cleanup: report.cleanup, error: report.error, evidence: 'artifacts/commercial-entry/sql.json' }))
+  console.log(JSON.stringify({ status: report.status, checks: report.checks.length, cleanup: report.cleanup, error: report.error, evidence: path.join(dir,'sql.json') }))
 }

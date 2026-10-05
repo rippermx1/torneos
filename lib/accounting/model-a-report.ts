@@ -311,6 +311,7 @@ function addFlowAttempt(row: AccountingPeriodRow, attempt: FlowPaymentAttempt) {
       row.flowPaidCount += 1
       break
     case 'pending':
+    case 'unknown':
       row.flowPendingCount += 1
       break
     case 'rejected':

@@ -128,19 +128,19 @@ export async function loadAdminHealthDashboard(): Promise<AdminHealthDashboard> 
     admin
       .from('flow_payment_attempts')
       .select('created_at', { count: 'exact' })
-      .eq('status', 'pending')
+      .in('status', ['pending', 'unknown', 'expired'])
       .order('created_at', { ascending: true })
       .limit(1),
     admin
       .from('flow_refund_attempts')
       .select('created_at', { count: 'exact' })
-      .eq('status', 'pending')
+      .in('status', ['queued', 'dispatching', 'pending'])
       .order('created_at', { ascending: true })
       .limit(1),
     admin
       .from('flow_refund_attempts')
       .select('created_at', { count: 'exact' })
-      .eq('status', 'rejected')
+      .in('status', ['unknown', 'manual', 'rejected', 'cancelled'])
       .order('created_at', { ascending: true })
       .limit(1),
     admin
@@ -182,7 +182,7 @@ export async function loadAdminHealthDashboard(): Promise<AdminHealthDashboard> 
       'payments',
       'Pagos esperando confirmación',
       'Flow todavía no informa el resultado final. Normalmente se resuelve automáticamente.',
-      '/admin/payments?status=pending',
+      '/admin/payments',
       paymentsResult,
       failures
     ),
@@ -190,15 +190,15 @@ export async function loadAdminHealthDashboard(): Promise<AdminHealthDashboard> 
       'pending-refunds',
       'Reembolsos en proceso',
       'Flow está procesando la devolución. Solo intervén si aparece una alerta.',
-      '/admin/refunds?status=pending',
+      '/admin/refunds',
       pendingRefundsResult,
       failures
     ),
     readQueue(
       'failed-refunds',
       'Reembolsos con error',
-      'Debes reintentarlos o investigar el rechazo informado por Flow.',
-      '/admin/refunds?status=rejected',
+      'Concilia la operación con Flow y completa los datos pendientes antes de volver a enviarla.',
+      '/admin/refunds',
       failedRefundsResult,
       failures
     ),
@@ -296,7 +296,7 @@ export async function loadAdminHealthDashboard(): Promise<AdminHealthDashboard> 
     issues.push({
       level: 'critical',
       title: `${failedRefunds?.count} reembolso${failedRefunds?.count === 1 ? '' : 's'} fallido${failedRefunds?.count === 1 ? '' : 's'}`,
-      detail: 'Flow rechazó la reversa y requiere intervención manual.',
+      detail: 'Hay devoluciones que requieren conciliación o intervención manual.',
       href: failedRefunds?.href ?? '/admin/refunds?status=rejected',
     })
   }

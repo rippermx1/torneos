@@ -211,13 +211,16 @@ export interface KycAuditEvent {
   created_at: string
 }
 
-export type FlowAttemptStatus = 'pending' | 'paid' | 'credited' | 'rejected' | 'cancelled' | 'expired'
-export type FlowRefundStatus = 'pending' | 'completed' | 'rejected' | 'cancelled'
+export type FlowAttemptStatus = 'unknown' | 'pending' | 'paid' | 'credited' | 'rejected' | 'cancelled' | 'expired'
+export type FlowRefundStatus = 'queued' | 'dispatching' | 'unknown' | 'manual' | 'pending' | 'completed' | 'rejected' | 'cancelled'
 export type RefundTaxDocumentStatus = 'not_required' | 'required' | 'issued'
 
 export interface FlowRefundAttempt {
   id: string
-  tournament_id: string
+  operation_key: string | null
+  dispatch_nonce: string | null
+  dispatched_at: string | null
+  tournament_id: string | null
   user_id: string
   flow_payment_attempt_id: string
   refund_commerce_order: string
@@ -465,7 +468,7 @@ export type Database = {
       }
       flow_refund_attempts: {
         Row: FlowRefundAttempt & DbRecord
-        Insert: InsertWithOptional<FlowRefundAttempt, 'id' | 'created_at' | 'flow_refund_token' | 'flow_refund_order' | 'error_message' | 'settled_at' | 'tax_document_status' | 'tax_document_number' | 'tax_document_issued_at' | 'tax_document_notes'>
+        Insert: InsertWithOptional<FlowRefundAttempt, 'operation_key' | 'dispatch_nonce' | 'dispatched_at' | 'id' | 'created_at' | 'flow_refund_token' | 'flow_refund_order' | 'error_message' | 'settled_at' | 'tax_document_status' | 'tax_document_number' | 'tax_document_issued_at' | 'tax_document_notes'>
         Update: Partial<Omit<FlowRefundAttempt, 'id' | 'created_at'>> & DbRecord
         Relationships: []
       }
@@ -614,7 +617,7 @@ export type Database = {
       wallet_mark_flow_attempt_failed: {
         Args: {
           p_commerce_order: string
-          p_flow_token: string
+          p_flow_token: string | null
           p_flow_status_code: number
           p_raw: Record<string, unknown>
         } & DbRecord
@@ -628,10 +631,28 @@ export type Database = {
         } & DbRecord
         Returns: string
       }
+      queue_tournament_refunds: { Args: { p_tournament_id: string } & DbRecord; Returns: number }
+      claim_flow_refund: { Args: { p_refund_id: string; p_nonce: string } & DbRecord; Returns: Record<string, unknown> | null }
+      record_flow_refund_dispatch: {
+        Args: { p_refund_id: string; p_nonce: string; p_token: string | null; p_flow_order: string | null; p_error: string | null } & DbRecord
+        Returns: boolean
+      }
+      record_verified_refund: {
+        Args: { p_refund_id: string; p_token: string; p_flow_order: string; p_amount_pesos: number; p_status: string } & DbRecord
+        Returns: boolean
+      }
+      queue_unsupported_flow_payment_refund: {
+        Args: { p_commerce_order: string; p_flow_token: string | null; p_flow_order: number; p_amount_cents: number; p_payer_email: string | null; p_raw: Record<string, unknown> } & DbRecord
+        Returns: string
+      }
+      request_withdrawal: {
+        Args: { p_request_id: string; p_user_id: string; p_amount_cents: number; p_bank_name: string; p_bank_account: string; p_account_rut: string; p_account_holder: string; p_verified_full_name: string } & DbRecord
+        Returns: string
+      }
       settle_tournament_registration: {
         Args: {
           p_commerce_order: string
-          p_flow_token: string
+          p_flow_token: string | null
           p_flow_order: number
           p_amount_cents: number
           p_payment_method: string | null

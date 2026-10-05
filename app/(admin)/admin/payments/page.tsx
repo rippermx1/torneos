@@ -7,15 +7,17 @@ import { FlowReverifyButton } from '@/components/admin/flow-reverify-button'
 export const revalidate = 0
 
 const STATUS_LABEL: Record<FlowAttemptStatus, string> = {
+  unknown: 'Por conciliar',
   pending: 'Pendiente',
   paid: 'Pagado',
   credited: 'Acreditado',
   rejected: 'Rechazado',
   cancelled: 'Cancelado',
-  expired: 'Expirado',
+  expired: 'Vencido; por conciliar',
 }
 
 const STATUS_TONE: Record<FlowAttemptStatus, string> = {
+  unknown: 'bg-red-100 text-red-700',
   pending: 'bg-amber-100 text-amber-700',
   paid: 'bg-green-100 text-green-700',
   credited: 'bg-emerald-100 text-emerald-700',
@@ -24,7 +26,7 @@ const STATUS_TONE: Record<FlowAttemptStatus, string> = {
   expired: 'bg-slate-100 text-slate-700',
 }
 
-const ALL_STATUSES: FlowAttemptStatus[] = ['pending', 'paid', 'credited', 'rejected', 'cancelled', 'expired']
+const ALL_STATUSES: FlowAttemptStatus[] = ['unknown', 'pending', 'paid', 'credited', 'rejected', 'cancelled', 'expired']
 
 export default async function AdminPaymentsPage({
   searchParams,
@@ -58,6 +60,7 @@ export default async function AdminPaymentsPage({
 
   // Conteos por estado para los chips
   const counts: Record<FlowAttemptStatus, number> = {
+    unknown: 0,
     pending: 0, paid: 0, credited: 0, rejected: 0, cancelled: 0, expired: 0,
   }
   const { data: countRows } = await supabase
@@ -137,11 +140,8 @@ export default async function AdminPaymentsPage({
                 </p>
               </div>
               <div className="text-right shrink-0 space-y-2">
-                {a.status === 'pending' && a.flow_token && (
+                {['pending', 'unknown', 'expired'].includes(a.status) && (
                   <FlowReverifyButton attemptId={a.id} token={a.flow_token} />
-                )}
-                {a.status === 'pending' && !a.flow_token && (
-                  <span className="text-xs text-muted-foreground">Sin token</span>
                 )}
               </div>
             </div>

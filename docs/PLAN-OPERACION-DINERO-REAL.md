@@ -1,6 +1,6 @@
 # Plan de preparación para operar torneos con dinero real
 
-Fecha del plan: **2026-10-04**. Actualización: **2026-10-05**. Estado: **en ejecución; primer incremento validado localmente**. Decisión vigente: **NO_GO para lanzamiento pagado** hasta demostrar los cierres definidos aquí.
+Fecha del plan: **2026-10-04**. Actualización: **2026-10-05**. Estado: **en ejecución; acceso y recuperación financiera validados localmente**. Decisión vigente: **NO_GO para lanzamiento pagado** hasta demostrar los cierres definidos aquí.
 
 Este plan convierte los doce hallazgos de la [auditoría operativa](AUDITORIA-OPERATIVA-DINERO-REAL-2026-10-04.md) en entregables técnicos, comerciales y operativos. No habilita cobros, modifica Supabase/Flow ni autoriza un despliegue. La viabilidad jurídica del modelo exacto puede cambiar el alcance antes de invertir en su preparación financiera.
 
@@ -14,8 +14,11 @@ Primera candidata en `codex/real-money-access`, checkout `C:/Users/valde/.codex/
 | RM-02 | Implementación y verificación local | Supabase staging/Auth/Data API y revisión de registros anteriores |
 | RM-03 | Migración existente reutilizada y revalidada localmente | Aplicación seleccionada y permisos/vistas/exportaciones en staging |
 | RM-04 | [Expediente comercial preparado](EXPEDIENTE-MODELO-COMERCIAL.md) | Antecedentes y respuestas de abogado, Flow y contador |
+| RM-05 | Pagos tardíos/desconocidos recuperables, verificados localmente | Flow sandbox HTTPS, históricos y recorrido externo |
+| RM-06 | Obligaciones durables y envío reclamado, verificados localmente | Conciliación manual auditada, alertas y devoluciones externas |
+| RM-07 | Solicitud y débito atómicos con clave estable, verificados localmente | Integración staging y operación bancaria |
 
-El checkout compartido y los juegos en progreso se conservan. Sin cambios a Supabase operativo, Flow, despliegues, premios ni merge a main. El siguiente incremento de implementación es RM-05/06/07; los hallazgos no se dan por cerrados operativamente por estas pruebas locales.
+El checkout compartido y los juegos en progreso se conservan. Sin cambios a Supabase operativo, Flow, despliegues, premios ni merge a main. La [segunda entrega](RM05-RM07-DINERO-RECUPERABLE.md) y su [evidencia](RM05-RM07-DINERO-RECUPERABLE-EVIDENCE.json) registran 3.591 pruebas web, 62 verificaciones SQL, tipos/lint y build Webpack PASS. El siguiente incremento es RM-08; los hallazgos no se dan por cerrados operativamente por estas pruebas locales.
 
 ## 1. Base de trabajo y alcance comercial
 
@@ -242,6 +245,6 @@ Reanudar sólo con causa y afectados identificados, obligaciones conciliadas, re
 
 El primer incremento de ingeniería es **RM-01 + RM-02 + RM-03**: fijar la candidata comercial, restringir inscripciones y secretos, y entregar pruebas reales de acceso que preserven el flujo legítimo. Reutilizar `92ae970` y su SQL revisable; registrar lo que necesita corrección adicional. Validar primero en una base de pruebas; Docker no disponible en la entrega adversarial es una limitación a resolver, no evidencia de PASS ni motivo para probar escrituras en producción.
 
-En paralelo, preparar RM-04 para que el propietario gestione la revisión del modelo. El siguiente incremento financiero es RM-05/06/07, usando la matriz de fallos existente. Al finalizar cada incremento, actualizar sus estados/evidencias y los tickets WEB/G2048 correspondientes sólo según lo demostrado. Mantener el dictamen NO_GO hasta reunir el expediente para RM-15; no cerrar gaps por publicar este plan.
+En paralelo, preparar RM-04 para que el propietario gestione la revisión del modelo. RM-05/06/07 están implementados y verificados localmente. Continuar con RM-08 y completar RM-09; la integración operativa y su matriz de fallos externos siguen pendientes. Al finalizar cada incremento, actualizar sus estados/evidencias y los tickets WEB/G2048 correspondientes sólo según lo demostrado. Mantener el dictamen NO_GO hasta reunir el expediente para RM-15; no cerrar gaps por publicar este plan.
 
 La revisión semanal utiliza una tabla simple: ID RM, responsable nominal, estado, dependencia pendiente, evidencia, costo/plazo actualizado y siguiente acción. Si una decisión externa cambia el modelo, actualizar este documento y el alcance de los tickets afectados antes de continuar con los trabajos dependientes.

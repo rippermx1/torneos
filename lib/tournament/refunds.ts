@@ -1,364 +1,76 @@
-import { randomUUID } from 'crypto'
 import { createAdminClient } from '@/lib/supabase/server'
-import { createFlowRefund, getFlowRefundStatus } from '@/lib/flow/refunds'
+import { dispatchRefund, reconcileRefund } from '@/lib/flow/refund-worker'
 import { getAppUrl } from '@/lib/env'
-import { sendTournamentCancelledEmail } from '@/lib/email/refund-notifications'
 import { rakebackExpiryIso } from '@/lib/wallet/rakeback'
-import type { FlowPaymentAttempt, FlowRefundAttempt, Tournament } from '@/types/database'
-
-// ───────────────────────────────────────────────────────────────
-// Lógica de reembolsos Flow para torneos cancelados.
-//
-// Cada inscrito con pago acreditado recibe una reversa Flow al
-// email con el que se registró. La reversa va a su cuenta Flow
-// o banco registrado — nunca al saldo interno de premios.
-//
-// Si una reversa falla queda registrada con status='rejected'
-// en flow_refund_attempts para reintento manual por el admin.
-// ───────────────────────────────────────────────────────────────
+import type { Tournament } from '@/types/database'
 
 export interface RefundResult {
-  userId: string
-  email: string
-  amountCents: number
-  refundCommerceOrder: string
-  flowRefundToken?: string
-  error?: string
+  userId: string; email: string; amountCents: number; refundCommerceOrder: string
+  flowRefundToken?: string; error?: string
 }
 
-/**
- * Emite reembolsos Flow para todos los inscritos con pago acreditado
- * en un torneo cancelado. Retorna el resultado por cada usuario.
- */
+// The cancellation transaction already records obligations. This also recovers
+// legacy cancellations, before dispatching any external operation.
 export async function issueFlowRefunds(
-  tournamentId: string,
-  entryFeeCents: number,
-  requestOrigin: string,
-  tournamentName?: string
+  tournamentId: string, _entryFeeCents: number, requestOrigin: string, tournamentName?: string
 ): Promise<RefundResult[]> {
-  const supabase = createAdminClient()
-  const appUrl = getAppUrl(requestOrigin) ?? requestOrigin
-  const callbackUrl = `${appUrl}/api/webhooks/flow/refund`
+  void tournamentName // signature retained for lifecycle callers; worker reads stored tournament
+  const admin = createAdminClient()
+  const queued = await admin.rpc('queue_tournament_refunds', { p_tournament_id: tournamentId })
+  if (queued.error) throw new Error(queued.error.message)
+  const { data, error } = await admin.from('flow_refund_attempts').select('*')
+    .eq('tournament_id', tournamentId).eq('status', 'queued').order('created_at', { ascending: true }).limit(50)
+  if (error) throw new Error(error.message)
   const results: RefundResult[] = []
-
-  // Buscar todos los pagos acreditados del torneo
-  type AttemptRow = Pick<FlowPaymentAttempt, 'id' | 'user_id' | 'commerce_order' | 'flow_order'>
-  const { data: rawAttempts } = await supabase
-    .from('flow_payment_attempts')
-    .select('id, user_id, commerce_order, flow_order')
-    .eq('tournament_id', tournamentId)
-    .eq('intent', 'tournament_registration')
-    .eq('status', 'paid')
-  const attempts = rawAttempts as AttemptRow[] | null
-
-  if (!attempts?.length) return results
-
-  // Idempotencia: no reemitir una reversa para un pago que ya tiene un intento
-  // de reembolso (en cualquier estado). Los 'rejected' los reintenta
-  // autoRetryRejectedRefunds; aquí solo emitimos la PRIMERA reversa de cada pago.
-  // Permite llamar issueFlowRefunds tanto en la cancelación inmediata (lifecycle)
-  // como desde la red de seguridad (reconcileCancelledTournamentRefunds) sin duplicar.
-  const { data: existingRefunds } = await supabase
-    .from('flow_refund_attempts')
-    .select('flow_payment_attempt_id')
-    .eq('tournament_id', tournamentId)
-  const alreadyRefunded = new Set(
-    (existingRefunds ?? [])
-      .map((row) => (row as { flow_payment_attempt_id: string | null }).flow_payment_attempt_id)
-      .filter((id): id is string => Boolean(id))
-  )
-
-  for (const attempt of attempts) {
-    if (alreadyRefunded.has(attempt.id)) continue
-    const { data: { user }, error: userErr } = await supabase.auth.admin.getUserById(attempt.user_id)
-
-    if (userErr || !user?.email) {
-      results.push({
-        userId: attempt.user_id,
-        email: '',
-        amountCents: entryFeeCents,
-        refundCommerceOrder: '',
-        error: `email no encontrado: ${userErr?.message ?? 'sin email'}`,
-      })
-      continue
-    }
-
-    const refundCommerceOrder = `ref-${randomUUID()}`
-    const amountPesos = Math.ceil(entryFeeCents / 100)
-
+  for (const row of data ?? []) {
+    const result: RefundResult = { userId: row.user_id, email: row.receiver_email,
+      amountCents: row.amount_cents, refundCommerceOrder: row.refund_commerce_order }
     try {
-      const flowResponse = await createFlowRefund({
-        refundCommerceOrder,
-        receiverEmail: user.email,
-        amountPesos,
-        urlCallBack: callbackUrl,
-        flowTrxId: attempt.flow_order ?? undefined,
-      })
-
-      await supabase.from('flow_refund_attempts').insert({
-        tournament_id: tournamentId,
-        user_id: attempt.user_id,
-        flow_payment_attempt_id: attempt.id,
-        refund_commerce_order: refundCommerceOrder,
-        flow_refund_token: flowResponse.token,
-        flow_refund_order: flowResponse.flowRefundOrder,
-        amount_cents: entryFeeCents,
-        amount_pesos: amountPesos,
-        receiver_email: user.email,
-        status: 'pending',
-      })
-
-      // Notificar al usuario que el reembolso fue iniciado.
-      // Fail-safe: el email no bloquea el flujo si falla.
-      void sendTournamentCancelledEmail({
-        to: user.email,
-        username: user.user_metadata?.username ?? user.email,
-        tournamentName: tournamentName ?? 'torneo',
-        amountPesos,
-      }).catch((e) => console.error('[refunds] Error enviando email cancelación:', e))
-
-      results.push({
-        userId: attempt.user_id,
-        email: user.email,
-        amountCents: entryFeeCents,
-        refundCommerceOrder,
-        flowRefundToken: flowResponse.token,
-      })
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err)
-      console.error(`[refunds] Error reembolsando usuario ${attempt.user_id}:`, message)
-
-      // Registrar intento fallido para reintento manual
-      try {
-        await supabase.from('flow_refund_attempts').insert({
-          tournament_id: tournamentId,
-          user_id: attempt.user_id,
-          flow_payment_attempt_id: attempt.id,
-          refund_commerce_order: refundCommerceOrder,
-          amount_cents: entryFeeCents,
-          amount_pesos: amountPesos,
-          receiver_email: user.email,
-          status: 'rejected',
-          error_message: message,
-        })
-      } catch (insertErr) {
-        console.error('[refunds] Failed to record rejected refund:', insertErr)
-      }
-
-      results.push({
-        userId: attempt.user_id,
-        email: user.email,
-        amountCents: entryFeeCents,
-        refundCommerceOrder,
-        error: message,
-      })
-    }
+      const dispatched = await dispatchRefund(row.id, requestOrigin)
+      if (!dispatched.dispatched && !dispatched.error) continue // another worker owns it
+      result.flowRefundToken = dispatched.token
+      result.error = dispatched.error
+    } catch (e) { result.error = e instanceof Error ? e.message : String(e) }
+    results.push(result)
   }
-
   return results
 }
 
-/**
- * Reintenta automáticamente reembolsos rechazados, hasta `maxAutoRetries` veces.
- * Omite cualquier pago que ya tenga un intento pendiente o completado (evita duplicados).
- * Solo procesa intentos con más de 30 minutos de antigüedad para dar margen a Flow.
- */
-export async function autoRetryRejectedRefunds(maxAutoRetries = 3): Promise<{
-  retried: number
-  skipped: number
-  errors: number
-}> {
-  const supabase = createAdminClient()
-  const cutoff = new Date(Date.now() - 30 * 60 * 1000).toISOString()
-  const appUrl = getAppUrl()
-  if (!appUrl) {
-    console.error('[auto-retry] APP_URL no configurado, omitiendo reintento automático')
-    return { retried: 0, skipped: 0, errors: 0 }
-  }
-  const callbackUrl = `${appUrl}/api/webhooks/flow/refund`
-
-  // Un intento rechazado por pago (el más reciente de cada flow_payment_attempt_id)
-  const { data: rejected } = await supabase
-    .from('flow_refund_attempts')
-    .select('id, flow_payment_attempt_id, tournament_id, user_id, receiver_email, amount_cents, amount_pesos, created_at')
-    .eq('status', 'rejected')
-    .lt('created_at', cutoff)
-    .order('created_at', { ascending: false })
-
-  const rows = (rejected ?? []) as Array<{
-    id: string
-    flow_payment_attempt_id: string
-    tournament_id: string
-    user_id: string
-    receiver_email: string
-    amount_cents: number
-    amount_pesos: number
-    created_at: string
-  }>
-
-  // Deduplicar: un reintento por pago original
-  const seen = new Set<string>()
-  const deduped = rows.filter((r) => {
-    if (seen.has(r.flow_payment_attempt_id)) return false
-    seen.add(r.flow_payment_attempt_id)
-    return true
-  })
-
-  let retried = 0
-  let skipped = 0
-  let errors = 0
-
-  for (const row of deduped) {
-    // Si ya hay un intento pendiente o completado para este pago, no crear otro
-    const { count: activeCount } = await supabase
-      .from('flow_refund_attempts')
-      .select('id', { count: 'exact', head: true })
-      .eq('flow_payment_attempt_id', row.flow_payment_attempt_id)
-      .in('status', ['pending', 'completed'])
-
-    if ((activeCount ?? 0) > 0) { skipped++; continue }
-
-    // Contar intentos totales para respetar el límite de reintentos automáticos
-    const { count: totalCount } = await supabase
-      .from('flow_refund_attempts')
-      .select('id', { count: 'exact', head: true })
-      .eq('flow_payment_attempt_id', row.flow_payment_attempt_id)
-
-    if ((totalCount ?? 0) >= maxAutoRetries) { skipped++; continue }
-
-    const newCommerceOrder = `ref-${randomUUID()}`
-
-    try {
-      const flowResponse = await createFlowRefund({
-        refundCommerceOrder: newCommerceOrder,
-        receiverEmail: row.receiver_email,
-        amountPesos: row.amount_pesos,
-        urlCallBack: callbackUrl,
-      })
-
-      await supabase.from('flow_refund_attempts').insert({
-        tournament_id: row.tournament_id,
-        user_id: row.user_id,
-        flow_payment_attempt_id: row.flow_payment_attempt_id,
-        refund_commerce_order: newCommerceOrder,
-        flow_refund_token: flowResponse.token,
-        flow_refund_order: flowResponse.flowRefundOrder,
-        amount_cents: row.amount_cents,
-        amount_pesos: row.amount_pesos,
-        receiver_email: row.receiver_email,
-        status: 'pending',
-      })
-
-      retried++
-    } catch (err) {
-      console.error('[auto-retry] Error en Flow para refund', row.id, err)
-      errors++
-    }
-  }
-
-  return { retried, skipped, errors }
-}
-
-/**
- * Reconcilia reembolsos en estado 'pending' consultando a Flow.
- * Se llama desde el cron de reconciliación para detectar webhooks perdidos.
- * Solo revisa intentos con más de `minAgeMinutes` (evita condiciones de carrera).
- */
-export async function reconcileStaleRefunds(minAgeMinutes = 10): Promise<{
-  checked: number
-  updated: number
-  errors: number
-}> {
-  const supabase = createAdminClient()
-  const cutoff = new Date(Date.now() - minAgeMinutes * 60 * 1000).toISOString()
-
-  const { data: stale } = await supabase
-    .from('flow_refund_attempts')
-    .select('id, flow_refund_token, receiver_email, amount_pesos, tournament_id')
-    .eq('status', 'pending')
-    .lt('created_at', cutoff)
-    .not('flow_refund_token', 'is', null)
-
-  const rows = (stale ?? []) as Pick<
-    FlowRefundAttempt,
-    'id' | 'flow_refund_token' | 'receiver_email' | 'amount_pesos' | 'tournament_id'
-  >[]
-
-  let updated = 0
-  let errors = 0
-
-  for (const row of rows) {
+export async function reconcileStaleRefunds(minAgeMinutes = 10) {
+  const { data, error } = await createAdminClient().from('flow_refund_attempts')
+    .select('id, flow_refund_token').in('status', ['pending', 'unknown'])
+    .lt('created_at', new Date(Date.now() - minAgeMinutes * 60_000).toISOString())
+    .not('flow_refund_token', 'is', null).order('last_reconciled_at', { ascending: true, nullsFirst: true })
+    .order('created_at', { ascending: true }).limit(50)
+  if (error) throw new Error(error.message)
+  let updated = 0, errors = 0
+  for (const row of data ?? []) {
     if (!row.flow_refund_token) continue
-    try {
-      const status = await getFlowRefundStatus(row.flow_refund_token)
-
-      // Solo actualizamos si Flow dice que ya terminó (no si sigue pendiente)
-      if (!['completed', 'rejected', 'cancelled'].includes(status.status)) continue
-
-      const flowStatus = status.status as 'completed' | 'rejected' | 'cancelled'
-      await supabase
-        .from('flow_refund_attempts')
-        .update({ status: flowStatus, settled_at: new Date().toISOString() })
-        .eq('id', row.id)
-
-      updated++
-    } catch (err) {
-      console.error('[reconcile] Error consultando Flow para refund', row.id, err)
-      errors++
+    try { if (await reconcileRefund(row.id, row.flow_refund_token)) updated++ }
+    catch (e) { console.error('[refund-reconcile]', row.id, e); errors++ }
+    finally {
+      const stamp = await createAdminClient().from('flow_refund_attempts')
+        .update({ last_reconciled_at: new Date().toISOString() }).eq('id', row.id)
+      if (stamp.error) errors++
     }
   }
-
-  return { checked: rows.length, updated, errors }
+  return { checked: data?.length ?? 0, updated, errors }
 }
 
-/**
- * Red de seguridad de reembolsos: emite la reversa Flow para torneos ya
- * CANCELADOS que tengan pagos acreditados sin ninguna reversa emitida.
- *
- * Por qué existe: la emisión inmediata en el lifecycle puede no ocurrir en
- * todos los caminos de cancelación (p. ej. el auto-cancel de game/start llama
- * a cancel_tournament pero no emite reembolsos) o puede fallar parcialmente.
- * Este barrido idempotente garantiza que todo inscrito de un torneo cancelado
- * termine reembolsado. issueFlowRefunds omite los pagos que ya tienen un
- * intento de reembolso, así que reejecutar es seguro.
- *
- * Acotado a torneos recientes (lookbackDays) para mantener el barrido barato.
- */
-export async function reconcileCancelledTournamentRefunds(lookbackDays = 3): Promise<{
-  tournamentsChecked: number
-  refundsIssued: number
-  refundsFailed: number
-  rewardsRestored: number
-}> {
-  const supabase = createAdminClient()
+export async function reconcileCancelledTournamentRefunds() {
+  const admin = createAdminClient()
   const appUrl = getAppUrl()
-  if (!appUrl) {
-    console.error('[refund-reconcile] APP_URL no configurado, omitiendo barrido de cancelados')
-    return { tournamentsChecked: 0, refundsIssued: 0, refundsFailed: 0, rewardsRestored: 0 }
-  }
-
-  const cutoff = new Date(Date.now() - lookbackDays * 24 * 60 * 60 * 1000).toISOString()
-  const { data: cancelled } = await supabase
-    .from('tournaments')
-    .select('id, name, entry_fee_cents')
-    .eq('status', 'cancelled')
-    .gt('entry_fee_cents', 0)
-    .gte('play_window_start', cutoff)
-
-  const tournaments = (cancelled ?? []) as Pick<Tournament, 'id' | 'name' | 'entry_fee_cents'>[]
-  let refundsIssued = 0
-  let refundsFailed = 0
-  let rewardsRestored = 0
-
+  if (!appUrl) throw new Error('APP_URL no configurado')
+  const { data, error } = await admin.from('tournaments').select('id, name, entry_fee_cents')
+    .eq('status', 'cancelled').gt('entry_fee_cents', 0)
+  if (error) throw new Error(error.message)
+  const tournaments = (data ?? []) as Pick<Tournament, 'id' | 'name' | 'entry_fee_cents'>[]
+  let refundsIssued = 0, refundsFailed = 0, rewardsRestored = 0
   for (const t of tournaments) {
-    const refundResults = await issueFlowRefunds(t.id, t.entry_fee_cents, appUrl, t.name)
-    for (const r of refundResults) {
-      if (r.error) refundsFailed++
-      else refundsIssued++
-    }
-    rewardsRestored += await restoreRedeemedRewards(supabase, t.id)
+    const results = await issueFlowRefunds(t.id, t.entry_fee_cents, appUrl, t.name)
+    for (const r of results) { if (r.error) refundsFailed++; else refundsIssued++ }
+    rewardsRestored += await restoreRedeemedRewards(admin, t.id)
   }
-
   return { tournamentsChecked: tournaments.length, refundsIssued, refundsFailed, rewardsRestored }
 }
 

@@ -72,6 +72,7 @@ export default async function CobrarPremiosPage() {
 
   return (
     <CobrarForm
+      userId={user.id}
       payoutCents={payoutCents}
       remainingCents={pendingPrizes - payoutCents}
     />

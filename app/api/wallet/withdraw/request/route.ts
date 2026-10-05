@@ -1,21 +1,11 @@
 import { createAdminClient } from '@/lib/supabase/server'
 import { requireAnyRoleForApi } from '@/lib/supabase/auth'
-import {
-  getBalance,
-  getWithdrawableBalance,
-  getWithdrawnInWindow,
-  insertTransaction,
-} from '@/lib/wallet/transactions'
-import {
-  MIN_WITHDRAWAL_CENTS,
-  MAX_WITHDRAWAL_CENTS,
-  DAILY_WITHDRAWAL_CAP_CENTS,
-  MONTHLY_WITHDRAWAL_CAP_CENTS,
-} from '@/lib/wallet/limits'
+import { MIN_WITHDRAWAL_CENTS, MAX_WITHDRAWAL_CENTS } from '@/lib/wallet/limits'
 import { isValidRut, samePersonName, sameRut } from '@/lib/identity/verification'
 import { checkRateLimit, getRequestIp, rateLimitResponse } from '@/lib/security/rate-limit'
 
 interface WithdrawRequest {
+  requestId: string
   amountCents: number
   bankName: string
   bankAccount: string
@@ -41,12 +31,18 @@ export async function POST(req: Request): Promise<Response> {
   } catch {
     return Response.json({ error: 'Body JSON inválido' }, { status: 400 })
   }
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    return Response.json({ error: 'Body JSON inválido' }, { status: 400 })
+  }
 
-  const { amountCents, bankName, bankAccount, accountRut, accountHolder } = body
+  const { requestId, amountCents, bankName, bankAccount, accountRut, accountHolder } = body
+  if (typeof requestId !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(requestId)) {
+    return Response.json({ error: 'Identificador de solicitud inválido' }, { status: 400 })
+  }
 
   if (
     typeof amountCents !== 'number' ||
-    !Number.isInteger(amountCents) ||
+    !Number.isSafeInteger(amountCents) || amountCents % 100 !== 0 ||
     amountCents < MIN_WITHDRAWAL_CENTS ||
     amountCents > MAX_WITHDRAWAL_CENTS
   ) {
@@ -56,7 +52,7 @@ export async function POST(req: Request): Promise<Response> {
     )
   }
 
-  if (!bankName?.trim() || !bankAccount?.trim() || !accountRut?.trim() || !accountHolder?.trim()) {
+  if ([bankName, bankAccount, accountRut, accountHolder].some(v => typeof v !== 'string' || !v.trim() || v.length > 200)) {
     return Response.json({ error: 'Todos los datos bancarios son obligatorios' }, { status: 400 })
   }
 
@@ -97,142 +93,21 @@ export async function POST(req: Request): Promise<Response> {
     )
   }
 
-  const { data: pendingWithdrawal, error: pendingError } = await supabase
-    .from('withdrawal_requests')
-    .select('id')
-    .eq('user_id', userId)
-    .in('status', ['pending', 'approved'])
-    .limit(1)
-    .maybeSingle()
-
-  if (pendingError) {
-    return Response.json({ error: 'No se pudo validar retiros pendientes' }, { status: 500 })
-  }
-
-  if (pendingWithdrawal) {
-    return Response.json(
-      { error: 'Ya tienes una solicitud de retiro pendiente. Espera su revisión antes de crear otra.' },
-      { status: 409 }
-    )
-  }
-
-  // 1. Saldo retirable: solo lo ganado en torneos puede retirarse.
-  // El saldo total puede ser mayor por saldos legados o ajustes, pero solo
-  // premios + reembolsos de torneo son retirables.
-  const [withdrawable, totalBalance] = await Promise.all([
-    getWithdrawableBalance(userId),
-    getBalance(userId),
-  ])
-
-  if (totalBalance < amountCents) {
-    return Response.json(
-      {
-        error: 'Saldo insuficiente',
-        insufficientFunds: true,
-        balanceCents: totalBalance,
-        requiredCents: amountCents,
-      },
-      { status: 402 }
-    )
-  }
-
-  if (withdrawable < amountCents) {
-    return Response.json(
-      {
-        error:
-          'Solo el saldo ganado en torneos o reembolsos de torneo es retirable.',
-        notWithdrawable: true,
-        withdrawableCents: withdrawable,
-        balanceCents: totalBalance,
-        requiredCents: amountCents,
-      },
-      { status: 403 }
-    )
-  }
-
-  // 2. Anti-fraude: caps en ventana móvil
-  const [withdrawn24h, withdrawn30d] = await Promise.all([
-    getWithdrawnInWindow(userId, '1 day'),
-    getWithdrawnInWindow(userId, '30 days'),
-  ])
-
-  if (withdrawn24h + amountCents > DAILY_WITHDRAWAL_CAP_CENTS) {
-    return Response.json(
-      {
-        error: 'Excede el límite diario de retiros ($500.000 CLP).',
-        capExceeded: 'daily',
-        usedCents: withdrawn24h,
-        capCents: DAILY_WITHDRAWAL_CAP_CENTS,
-      },
-      { status: 429 }
-    )
-  }
-
-  if (withdrawn30d + amountCents > MONTHLY_WITHDRAWAL_CAP_CENTS) {
-    return Response.json(
-      {
-        error: 'Excede el límite mensual de retiros ($2.000.000 CLP).',
-        capExceeded: 'monthly',
-        usedCents: withdrawn30d,
-        capCents: MONTHLY_WITHDRAWAL_CAP_CENTS,
-      },
-      { status: 429 }
-    )
-  }
-
-  // 3. Debitar inmediatamente para evitar doble gasto.
-  // Si la inserción de la solicitud falla, devolvemos crédito compensatorio.
-  const requestId = crypto.randomUUID()
-  let transactionId: string | null = null
   try {
-    const tx = await insertTransaction({
-      userId,
-      type: 'withdrawal',
-      amountCents: -amountCents,
-      referenceType: 'withdrawal_request',
-      referenceId: requestId,
-      metadata: { status: 'pending', withdrawal_request_id: requestId },
+    const { data, error } = await supabase.rpc('request_withdrawal', {
+      p_request_id: requestId, p_user_id: userId, p_amount_cents: amountCents,
+      p_bank_name: bankName.trim(), p_bank_account: bankAccount.trim(),
+      p_account_rut: accountRut.trim(), p_account_holder: accountHolder.trim(),
+      p_verified_full_name: profile.full_name,
     })
-    transactionId = (tx as { id: string }).id
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err)
-    return Response.json({ error: `Error al debitar saldo: ${message}` }, { status: 500 })
-  }
-
-  const { data, error } = await supabase
-    .from('withdrawal_requests')
-    .insert({
-      id: requestId,
-      user_id: userId,
-      amount_cents: amountCents,
-      bank_name: bankName.trim(),
-      bank_account: bankAccount.trim(),
-      account_rut: accountRut.trim(),
-      account_holder: accountHolder.trim(),
-      wallet_transaction_id: transactionId,
-    })
-    .select('id')
-    .single()
-
-  if (error || !data) {
-    // Rollback: devolver el dinero si no se pudo crear la solicitud
-    await insertTransaction({
-      userId,
-      type: 'refund',
-      amountCents,
-      referenceType: 'withdrawal',
-      metadata: { reason: 'withdrawal_request_creation_failed', original_tx: transactionId },
-    }).catch(console.error)
-
-    if (error?.code === '23505') {
-      return Response.json(
-        { error: 'Ya tienes una solicitud de retiro pendiente. Espera su revisión antes de crear otra.' },
-        { status: 409 }
-      )
+    if (error) {
+      const status = /^PT(400|402|403|409|422|429)$/.test(error.code) ? Number(error.code.slice(2)) : 503
+      return Response.json({ error: status === 503 ? 'No se pudo confirmar la solicitud. Reintenta con los mismos datos.' : error.message }, { status })
     }
-
-    return Response.json({ error: 'Error al crear la solicitud' }, { status: 500 })
+    if (data !== requestId) throw new Error('Respuesta de retiro inconsistente')
+    return Response.json({ ok: true, requestId: data })
+  } catch (e) {
+    console.error('[withdraw/request]', e)
+    return Response.json({ error: 'No se pudo confirmar la solicitud. Reintenta con los mismos datos.' }, { status: 503 })
   }
-
-  return Response.json({ ok: true, requestId: data.id })
 }

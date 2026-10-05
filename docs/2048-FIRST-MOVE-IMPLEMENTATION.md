@@ -1,5 +1,10 @@
 # G2048-07.2.1 — guía inicial y anuncios de carga
 
+**Actualización 2026-10-05 / E28:** G2048-07.2 queda terminado bajo el
+[criterio de accesibilidad automatizada aceptado](2048-SIMULATED-ACCEPTANCE.md).
+Guía, semántica, contraste y teclado comprobados; voz de lector real y comprensión
+humana no medidas. El estado pendiente de abajo describe el criterio anterior.
+
 2026-10-05. **Implementado y probado técnicamente en preview local**. La plataforma
 ofrece «Cómo jugar» antes de iniciar, durante la partida y al ampliar. Explica
 una fusión 2 + 2 → 4, las cuatro direcciones, gesto móvil, Tab/Escape, consulta de

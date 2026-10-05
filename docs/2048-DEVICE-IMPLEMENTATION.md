@@ -1,5 +1,10 @@
 # G2048-08.1 — carga, controles táctiles y suspensión física
 
+**Actualización 2026-10-05 / E28:** [terminado bajo el criterio simulado aprobado](2048-SIMULATED-ACCEPTANCE.md).
+Cuatro arrastres, seis combinaciones de GUI y 120 muestras de FPS/memoria en PC
+PASS. No se afirma aceptación física del Xiaomi; el requisito original descrito
+abajo se sustituyó para cerrar el ticket por instrucción explícita del propietario.
+
 **En progreso: medición implementada y probada en PC; resultado del teléfono pendiente.**
 Dispositivo indicado por el propietario: Xiaomi 12 Pro, Android, Chrome
 (`OWNER_REPORTED`; versiones del sistema y navegador pendientes).

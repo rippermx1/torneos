@@ -1,5 +1,11 @@
 # G2048-04.4: recorrido competitivo autenticado
 
+**Cierre 2026-10-05 / E28:** el propietario acepta pruebas simuladas para terminar
+el ticket. [Cierre y criterio revisado](2048-SIMULATED-ACCEPTANCE.md): Auth/API/DB
+reales y suspensión modelada, deadline natural, resultado/GUI/ranking coherentes.
+04.4 queda terminado en ese alcance; no se afirma segundo plano físico real.
+Los estados E16/E27 siguientes son antecedentes anteriores a esa decisión.
+
 Continuación 2026-10-05: [recorrido real y fixture E27](2048-BACKGROUND-VALIDATION.md).
 Unity cargado en Chrome, según el propietario. Se omitió el cambio real de pestaña
 por su respuesta «omite»; G2048-04.4 permanece en progreso. Imagen actual: 094/E26.

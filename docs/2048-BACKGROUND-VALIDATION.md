@@ -1,5 +1,10 @@
 # G2048-04.4 — regreso real desde segundo plano
 
+**Actualización E28:** [cerrado con el criterio simulado aceptado por el propietario](2048-SIMULATED-ACCEPTANCE.md).
+La fixture de esta entrega se consumió una sola vez y quedó cerrada por timeout
+natural, con puntaje 4. La omisión y el estado inicial que se describen abajo son
+el antecedente E27; no representan una prueba física ejecutada después.
+
 Fecha: 2026-10-05. Estado: **en progreso; recorrido real omitido por el propietario**.
 
 Se verifica la plataforma local 3081 y la cápsula `unity-2048-007` sobre la imagen

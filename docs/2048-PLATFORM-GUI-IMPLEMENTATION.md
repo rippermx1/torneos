@@ -1,5 +1,10 @@
 # G2048-06.1 — plataforma accesible alrededor de la cápsula
 
+**Actualización 2026-10-05 / E28:** G2048-06.2 queda terminado bajo el
+[criterio visual automatizado/simulado aceptado](2048-SIMULATED-ACCEPTANCE.md).
+GUI real normal/ampliada en escritorio/vertical/horizontal, fusiones, tablero y
+resultado competitivo PASS. No se afirma aceptación humana de legibilidad.
+
 Fecha: 2026-10-01. Rama: `codex/2048-clean-gameplay`. Base: `850a42e`.
 
 ## Resultado

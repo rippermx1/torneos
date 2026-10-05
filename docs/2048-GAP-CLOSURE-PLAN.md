@@ -1,5 +1,11 @@
 # Plan de cierre: 2048 y plataforma
 
+**Actualización 2026-10-05 / E28:** el propietario acepta simulaciones para cerrar
+04.4/06.2/07.2/08.1. Las cuatro tareas y sus tickets principales quedan terminados
+en ese alcance, con [evidencia y límites](2048-SIMULATED-ACCEPTANCE.md). Las
+exigencias humanas/físicas pendientes descritas abajo son el plan original,
+sustituido para esos tickets por esta decisión explícita. No son pruebas realizadas.
+
 Fecha: 2026-10-01. Basado en [auditoría cruzada](2048-CROSS-AUDIT.md).
 Estado: **G2048-04.1–04.3 implementadas y verificadas en contratos/lógica con fixtures**.
 [Cierre](2048-CLOSURE-IMPLEMENTATION.md), [reloj](2048-CLOCK-IMPLEMENTATION.md) y

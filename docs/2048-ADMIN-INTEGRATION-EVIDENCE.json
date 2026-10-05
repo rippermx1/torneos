@@ -1,0 +1,105 @@
+{
+  "id": "E22",
+  "task": "G2048-09.4",
+  "at": "2026-10-05T14:37:38.193Z",
+  "status": "IN_PROGRESS_ENVIRONMENT_BLOCKED",
+  "featureClosed": false,
+  "scope": "Integration tooling and real Auth/MFA HTTP verifier prepared; no operating integration",
+  "tests": {
+    "status": "PASS",
+    "passed": 8,
+    "failed": 0,
+    "skipped": 0,
+    "sqlScenarios": 4,
+    "scope": "Disposable PostgreSQL 17.11 synthetic tables; not Supabase Auth",
+    "log": {
+      "path": "artifacts/2048-integrity-integration/tests.log",
+      "sha256": "588df86e9bdd78105cd734842c9342b002d3ee77fb28f396a3bea7bb92437a00"
+    },
+    "ownClustersStopped": true
+  },
+  "lint": {
+    "status": "PASS",
+    "warnings": 0,
+    "log": {
+      "path": "artifacts/2048-integrity-integration/lint.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "sourceManifest": {
+    "status": "PASS_SOURCE_MANIFEST_ONLY",
+    "base": "79f5e89",
+    "patches": {
+      "app/(public)/tournaments/[id]/audit/page.tsx": "3417edc7b620f2a6cdde031daffda001fce49623944c2a850584cdf5e0f6dd15",
+      "app/(public)/tournaments/[id]/leaderboard/page.tsx": "e1ae305b6f496c3974d527f2b3eee191c43e6a9c3a93ed56c404fbce0afd9a2d",
+      "app/api/tournaments/[id]/game/start/route.ts": "c171cdc1d4a2853aab8171b854b21650a0ab9dadf939eddfc9bda9ae3a0293ca",
+      "app/api/tournaments/[id]/game/move/route.ts": "9b4549804c5586547b40c5c60c43c7d3d7473930f10330b1b710ae39306c30bd",
+      "app/api/tournaments/[id]/game/timeout/route.ts": "7da4a942e07421ddf220970909ad085f6699ff22bf098187520aed033763c48e",
+      "lib/security/rate-limit.ts": "2d83eee69cb1eb6625a257f53f14e588e41d6e368a9a70cd1f7d179931c047a5",
+      "lib/tournament/game-request.ts": "fb2dc0774ba7dcf1f666e324d9e7c30fe92c3482a375ef241b343ab32975dade",
+      "lib/tournament/helpers.ts": "06d16f85551feef3502f3de40d22d76716f96a25423f110bff4a6b81755cc351",
+      "lib/anticheat/integrity.ts": "abd2cdeb4f7edbb8fd327213d9ef425bde30c4f0c3563920c0051d42c1908557",
+      "lib/anticheat/detector.ts": "aa77ca724bfc99c6b751f958149f84a7f658418405e1d3fcc954c7cff44bff06",
+      "lib/anticheat/winner-review.ts": "a58714fb21adc58ae9c66eaa88023a1c0b276ff1f93b87cfd485aca89f02c6b6",
+      "lib/tournament/lifecycle.ts": "7b1224b138798f3e9e262a6f4a11cd08ddc1c2079b88fceff3bd5007d516880f",
+      "app/api/admin/users/[id]/ban/route.ts": "222f4c8f32f2e2fe1cc51181f7299a480327fbee457718a045296008739f6eb0",
+      "app/api/admin/tournaments/[id]/integrity/route.ts": "8a860180f2a1f77d91316768e834b28e5f483dbce9b04ca10e169fe56180b6d9",
+      "app/api/admin/tournaments/[id]/finalize/route.ts": "cb825e260d369ed9275e7da3c026c4fc00a9b17e61e916bebe495701fabf9556",
+      "app/(admin)/admin/tournaments/[id]/games/page.tsx": "febe3547bec8f82e938877de97e5a9e39fb44afe29b32deac62baba1d99ecf9d",
+      "app/(admin)/admin/tournaments/[id]/games/[gameId]/page.tsx": "b1683a06bd85998f3c1d86c708cb9ca36fe0c6a355cf634a3ca4e6e61af4454e",
+      "components/tournament/integrity-reviews.tsx": "6b437d0a3ff2f49c61e1994e7b17ea252ffc62e5aae817756a67f825e57afac1"
+    }
+  },
+  "candidateBuild": "NOT_RUN_DOCKER_UNAVAILABLE",
+  "operatingMigrationsApplied": false,
+  "webActivated": false,
+  "authentication": "NOT_RUN",
+  "browserInteraction": "NOT_RUN",
+  "acceptanceHuman": "NOT_RUN",
+  "localServices": [
+    {
+      "url": "http://127.0.0.1:3081/play",
+      "status": "UNAVAILABLE"
+    },
+    {
+      "url": "http://127.0.0.1:54321/auth/v1/health",
+      "status": "UNAVAILABLE"
+    }
+  ],
+  "blocker": {
+    "docker": "Inference manager dockerInference socket could not be removed/accessed; engine does not respond",
+    "reset": "User confirmed reset to factory defaults without backup",
+    "recovery": "VHDX files remain; their data and runtime availability are unverified"
+  },
+  "mutations": {
+    "operatingDatabase": false,
+    "existingCredentialsOrMfa": false,
+    "flow": false,
+    "cloud": false,
+    "unity": false,
+    "newIntegrationScripts": true,
+    "isolatedSyntheticPostgres": true,
+    "dockerRestartAttempt": true
+  },
+  "sources": {
+    "scripts/2048-integrity-local.mjs": "54cee9d5d1fd8f50f2da92c1de2a39101db086a45d1fc609ff20d253c35d07ea",
+    "scripts/2048-integrity-local.test.mjs": "c3dc9190fbf1604d8cc208b00d9ea5834b14c57d7c76fdb7e8eccd1201703b88",
+    "scripts/2048-integrity-joint-sql.test.mjs": "0c06520efd03aecb4f7d7240a975269ac6da24f02645088346aad7aaa0f95e97",
+    "scripts/build-2048-integrity-candidate.mjs": "89fa83ec47f2cb35ad46167c5f360a1ee2ce0452af8b907e1e7e1b698a7c4129",
+    "scripts/verify-2048-admin-local.mjs": "37a2085b3201165da967107c90123cee5be7bf2e82114d8f5a7180c96e266da6",
+    "supabase/migrations/20261004184805_guard_2048_seed_visibility.sql": "9bd5e89f8d6ecca3d1b388860554e63566586334afcb1a65cc26913c82c45f7c",
+    "supabase/migrations/20261005131216_guard_2048_integrity_reviews.sql": "d03acc197a1a715f82008d221cba3a5bb63a30499fee9d806ae002543b5ae0b4"
+  },
+  "remaining": [
+    "Recover Docker and audit local data/source/runtime after reset",
+    "Reconstruct only approved local environment if necessary and refresh local keys",
+    "Build and activate audited candidate with both migrations installed",
+    "Run actual Auth/MFA administrative HTTP-SQL journey",
+    "Complete authenticated GUI clicks and record acceptance"
+  ],
+  "limits": [
+    "Controlled cadence fixture is not a measurement of human input or proof of automation",
+    "Variable-pause automation and unverified multicuenta remain outside the closed scope",
+    "No HTTP mock, standalone component or SQL fixture is claimed as authenticated E2E"
+  ]
+}

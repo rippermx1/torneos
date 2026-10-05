@@ -1,6 +1,9 @@
+import { effectiveConfig, firstNonEmpty } from './lib/config/effective.mjs';
+import { assertEnvironment } from './lib/config/validate.mjs';
+import { PHASE_PRODUCTION_BUILD } from 'next/constants';
 import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {
+export const nextConfig: NextConfig = {
   // Genera una salida standalone para el Dockerfile de producción.
   // next build copia solo las dependencias necesarias en .next/standalone.
   output: "standalone",
@@ -44,4 +47,9 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default function config(phase: string): NextConfig {
+  if (phase === PHASE_PRODUCTION_BUILD) assertEnvironment(process.env, { phase: 'public-build' });
+  const c = effectiveConfig(process.env);
+  const aliases = Object.fromEntries(['NEXT_PUBLIC_SITE_URL', 'NEXT_PUBLIC_APP_URL', 'NEXT_PUBLIC_GOOGLE_AUTH_ENABLED'].map(name => [name, firstNonEmpty(process.env[name]) ?? null]));
+  return { ...nextConfig, env: { TORNEOS_BUILD_PUBLIC_CONFIG: JSON.stringify({ url: c.publicUrl, key: c.browserKey, environment: c.environment, aliases }) } };
+}

@@ -1,0 +1,28 @@
+{
+  "reviewed_at": "2026-10-05",
+  "review_before": "2026-11-05",
+  "advisory": "https://github.com/advisories/GHSA-vfj7-8cjw-p6xm",
+  "reason": "No patched braces version exists at review. Dev-only tooling consumes repository-owned globs; no untrusted patterns or production dependency. CI for untrusted PRs has no secrets, restricted permissions and timeout. No downgrade or blanket severity exception.",
+  "packages": [
+    "@next/eslint-plugin-next",
+    "@ts-morph/common",
+    "braces",
+    "eslint-config-next",
+    "fast-glob",
+    "micromatch",
+    "shadcn",
+    "ts-morph"
+  ],
+  "versions": {
+    "node_modules/@next/eslint-plugin-next": "16.3.8",
+    "node_modules/@ts-morph/common": "0.27.0",
+    "node_modules/braces": "3.0.3",
+    "node_modules/eslint-config-next": "16.3.8",
+    "node_modules/@ts-morph/common/node_modules/fast-glob": "3.3.3",
+    "node_modules/fast-glob": "3.3.1",
+    "node_modules/shadcn/node_modules/fast-glob": "3.3.3",
+    "node_modules/micromatch": "4.0.8",
+    "node_modules/shadcn": "4.4.0",
+    "node_modules/ts-morph": "26.0.0"
+  }
+}

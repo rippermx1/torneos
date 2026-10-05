@@ -1,15 +1,4 @@
-function firstNonEmpty(...values: Array<string | undefined | null>) {
-  for (const value of values) {
-    if (typeof value === 'string' && value.trim().length > 0) {
-      return value.trim()
-    }
-  }
-  return undefined
-}
-
-function normalizeUrl(url: string) {
-  return url.replace(/\/+$/, '')
-}
+import { firstNonEmpty, normalizeUrl, resolveFlowBase, deploymentEnvironment } from './config/effective.mjs'
 
 export function getAppUrl(fallback?: string) {
   const value = firstNonEmpty(
@@ -56,10 +45,9 @@ export function getAllowedOrigins() {
   return Array.from(
     new Set(
       [
-        'http://localhost:3000',
-        'http://127.0.0.1:3000',
-        'http://localhost:3001',
-        'http://localhost:3002',
+        ...(['production', 'staging'].includes(deploymentEnvironment(process.env)) ? [] : [
+          'http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:3001', 'http://localhost:3002',
+        ]),
         getAppUrl(),
       ].filter((origin): origin is string => Boolean(origin))
     )
@@ -81,8 +69,7 @@ export function getFlowApiSecret() {
 }
 
 export function getFlowApiBase() {
-  const value = firstNonEmpty(process.env.FLOW_API_BASE)
-  return value ? normalizeUrl(value) : 'https://sandbox.flow.cl/api'
+  return resolveFlowBase(process.env)
 }
 
 // A3: Umbrales del detector anticheat configurables por env. Permite

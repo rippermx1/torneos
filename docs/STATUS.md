@@ -1,5 +1,16 @@
 # Estado — TorneosPlay
 
+## Preparación de dinero real: RM-11 — 2026-10-05
+
+Candidata `codex/real-money-access`, checkout aislado; configuración efectiva
+compartida build/runtime, launcher que rechaza configuración inválida antes de
+iniciar Next, toolchain fijado, manifiesto de fuentes/WebGL/SQL/artefacto y pipeline
+preparado. Auditoría: 8 HIGH dev con excepción limitada hasta 2026-11-05; producción 0.
+**Validación local; NO_GO vigente.** CI remoto/obligatoriedad, Docker Linux y staging
+real no ejecutados. Continúa RM-12, ensayo externo sobre la candidata identificada.
+[Entrega](RM11-CONFIGURACION-Y-RELEASE.md) y
+[evidencia](RM11-CONFIGURACION-Y-RELEASE-EVIDENCE.json).
+
 ## Preparación de dinero real: RM-10 — 2026-10-05
 
 Candidata `codex/real-money-access`, checkout aislado; **implementación local**

@@ -8,6 +8,7 @@
 !tsconfig.json
 !postcss.config.mjs
 !proxy.ts
+!instrumentation.ts
 !app/
 !app/**
 !components/
@@ -20,6 +21,8 @@
 !public/**
 !scripts/
 !scripts/check-game-builds.mjs
+!scripts/prepare-release.mjs
+!scripts/start-release.mjs
 
 # Superseded build; never remove its local copy.
 public/games/2048/unity-2048-001/

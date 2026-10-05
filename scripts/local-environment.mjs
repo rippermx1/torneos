@@ -113,6 +113,7 @@ async function main() {
     let existing = {}
     try { existing = await readEnv() } catch (error) { if (error.code !== 'ENOENT') throw error }
     const env = {
+      TORNEOS_ENVIRONMENT: 'local', NEXT_PUBLIC_SITE_URL: 'http://127.0.0.1:3081',
       TORNEOS_LOCAL_MODE: '1', TORNEOS_RUNTIME_ENV_FILE: '.env.local-stack', APP_URL: 'http://127.0.0.1:3081',
       NEXT_PUBLIC_SUPABASE_URL: 'http://127.0.0.1:54321', SUPABASE_SERVER_URL: 'http://host.docker.internal:54321',
       NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: status.PUBLISHABLE_KEY ?? status.ANON_KEY,

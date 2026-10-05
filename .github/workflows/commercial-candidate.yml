@@ -1,0 +1,87 @@
+name: Commercial candidate checks
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      evidence_run_id:
+        description: Run containing privately prepared candidate-staging-evidence artifact (manifest.json, staging.json and hashed evidence files)
+        required: true
+      evidence_artifact_id:
+        description: Numeric artifact ID; exact candidate sources must match this revision
+        required: true
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: commercial-candidate-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  code:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      TORNEOS_ENVIRONMENT: staging
+      APP_URL: https://candidate.example.org
+      NEXT_PUBLIC_SITE_URL: https://candidate.example.org
+      NEXT_PUBLIC_SUPABASE_URL: https://abcdefghijklmnopqrst.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+      STAGING_SUPABASE_PROJECT_REF: abcdefghijklmnopqrst
+      PRODUCTION_SUPABASE_PROJECT_REF: zyxwvutsrqponmlkjihg
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run release:check -- --code-only
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: code-checks
+          path: |
+            artifacts/release/checks.json
+            artifacts/release/audit-assessment.json
+          if-no-files-found: error
+  sql:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    container:
+      image: postgres:17.11@sha256:d74eeac9a635390a49bc21bd49fccd973de707e2a53a76ac49b552b8712ec46f
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: .nvmrc
+      - name: Verify PostgreSQL financial contracts on a disposable loopback cluster
+        run: |
+          mkdir -p artifacts/cash-reconciliation
+          chown postgres:postgres artifacts/cash-reconciliation
+          runuser -u postgres -- "$(command -v node)" scripts/verify-commercial-entry-sql.mjs --cash --pg-bin /usr/lib/postgresql/17/bin
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: sql-contracts
+          path: artifacts/cash-reconciliation/sql.json
+          if-no-files-found: error
+  staging-required:
+    # External E2E belongs to RM-12. This job cannot pass on code-only evidence.
+    if: github.event_name == 'workflow_dispatch'
+    needs: [code, sql]
+    runs-on: ubuntu-24.04
+    environment: real-money-staging
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version-file: .nvmrc
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ inputs.evidence_run_id }}
+          artifact-ids: ${{ inputs.evidence_artifact_id }}
+          path: artifacts/staging-evidence
+          merge-multiple: true
+      - name: Bind actual staging evidence files to the clean candidate and current sources
+        run: node scripts/verify-staging-evidence.mjs artifacts/staging-evidence/manifest.json artifacts/staging-evidence/staging.json

@@ -47,6 +47,11 @@ const stageFixture = () => {
   return { manifest: candidate, evidence: { release_fingerprint: candidate.release_fingerprint, source_fingerprint: manifest.source_fingerprint, revision: manifest.revision, deployment_id: 'unit-only', artifact_id: 'unit-only', app_url: 'https://staging.example.org', verified_at: '2026-10-05T12:00:00Z', checks } }
 }
 describe('staging evidence is bound to exact inputs without fabricating E2E', () => {
+  it.each(['preflight', 'configuration'])('never accepts blocked provider phase %s as a completed financial rehearsal', phase => {
+    const { manifest, evidence } = stageFixture()
+    Object.assign(manifest.public_build, { staging_phase: phase })
+    expect(verifyStagingEvidence(manifest, evidence, Date.parse('2026-10-05T13:00:00Z')).issues).toContain(`${phase === 'preflight' ? 'Preflight' : 'Configuration'} no constituye aceptación del ensayo financiero`)
+  })
   it('reports only binding scope even with a complete synthetic fixture', () => {
     const { manifest, evidence } = stageFixture()
     const result = verifyStagingEvidence(manifest, evidence, Date.parse('2026-10-05T13:00:00Z'))

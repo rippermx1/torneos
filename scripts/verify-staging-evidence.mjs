@@ -8,6 +8,7 @@ export function verifyStagingEvidence(manifest, evidence, now = Date.now()) {
   const required = ['migration_compatibility', 'grants', 'auth_mfa', 'private_storage', 'flow_https_callback', 'registration_game', 'refund_recovery', 'prize_withdrawal', 'operator_backup']
   const issues = []
   if (manifest.public_build?.staging_phase === 'preflight') issues.push('Preflight no constituye aceptación del ensayo financiero')
+  if (manifest.public_build?.staging_phase === 'configuration') issues.push('Configuration no constituye aceptación del ensayo financiero')
   if (!manifest.application?.length || manifest.release_fingerprint !== sha(JSON.stringify({ source_fingerprint: manifest.source_fingerprint, application: manifest.application })) || evidence?.release_fingerprint !== manifest.release_fingerprint) issues.push('Artefacto compilado distinto o ausente en evidencia staging')
   if (manifest.source_fingerprint !== sha(JSON.stringify({ source: manifest.source, games: manifest.games, migrations: manifest.migrations, public_build: manifest.public_build }))) issues.push('Inventario de candidata alterado o incompleto')
   if (!evidence || evidence.source_fingerprint !== manifest.source_fingerprint || evidence.revision !== manifest.revision || manifest.dirty) issues.push('Staging no corresponde a la revisión limpia y fuentes de la candidata')

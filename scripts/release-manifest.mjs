@@ -43,7 +43,7 @@ export function createManifest(root = process.cwd(), applied) {
   const config = JSON.parse(read('config/commercial-release.json'))
   const migrations = config.migrations.map(file => ({ file, sha256: sourceHash(read(`supabase/migrations/${file}`), file) }))
   const gameArgs = [path.join(root, 'scripts/check-game-builds.mjs')]
-  if (snapshot.stagingPhase === 'preflight') gameArgs.push(path.join(root,'config/staging-published-games.json'))
+  if (['preflight', 'configuration'].includes(snapshot.stagingPhase)) gameArgs.push(path.join(root,'config/staging-published-games.json'))
   const gameOutput = JSON.parse(execFileSync(process.execPath, gameArgs, { cwd: root, encoding: 'utf8' }))
   const source = sourceInventory(root)
   const publicNames = ['NEXT_PUBLIC_SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY', 'NEXT_PUBLIC_SUPABASE_ANON_KEY', 'NEXT_PUBLIC_SITE_URL', 'NEXT_PUBLIC_APP_URL', 'NEXT_PUBLIC_GOOGLE_AUTH_ENABLED']

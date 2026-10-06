@@ -21,12 +21,25 @@ describe('isolated staging preflight', () => {
     expect(validateEnvironment(fixture(), { builtPublic: { stagingPhase: 'financial' } }).ok).toBe(false)
     expect(validateEnvironment(fixture(), { builtPublic: { vercelProjectId: 'prj_prod' } }).ok).toBe(false)
   })
-  it('blocks every outbound provider entry point before any transport, even if credentials leak in', async () => {
-    vi.stubEnv('STAGING_PHASE', 'preflight')
+  it.each(['preflight', 'configuration'])('blocks every outbound provider entry point in %s before any transport, even with credentials', async phase => {
+    vi.stubEnv('STAGING_PHASE', phase)
     vi.stubEnv('FLOW_API_KEY', 'accidental-secret'); vi.stubEnv('FLOW_API_SECRET', 'accidental-secret'); vi.stubEnv('RESEND_API_KEY', 're_accidental-secret')
     const transport = vi.fn(); vi.stubGlobal('fetch', transport)
     const attempts = [() => flowGet('/payment/getStatus', {}), () => flowPost('/payment/create', {}), () => sendEmail({ to: 'test@example.org', subject: 'test', html: '' }), () => sendTemplateEmail({ to: 'test@example.org', templateId: 'test', data: {} }), () => sendOperationalEmail({ id: 'test', recipient: 'test@example.org', subject: 'test', text_body: '' })]
     for (const attempt of attempts) await expect(attempt()).rejects.toThrow('bloqueado')
     expect(transport).not.toHaveBeenCalled()
+  })
+  it('loads production provider credentials on isolated configuration without alert recipients', () => {
+    const env = { ...fixture(), STAGING_PHASE: 'configuration', FLOW_API_KEY: 'actual-source-key', FLOW_API_SECRET: 'actual-source-secret', COMPANY_LEGAL_NAME: 'Empresa de prueba', COMPANY_RUT: '12.345.678-5' }
+    expect(validateEnvironment(env).ok).toBe(true)
+    expect(validateEnvironment({ ...env, STAGING_PHASE: 'financial' }).ok).toBe(false)
+    expect(validateEnvironment({ ...env, TORNEOS_ENVIRONMENT: 'production', VERCEL_PROJECT_ID: 'prj_prod' }).ok).toBe(false)
+    expect(validateEnvironment({ ...env, PRODUCTION_SUPABASE_PROJECT_REF: env.STAGING_SUPABASE_PROJECT_REF }).ok).toBe(false)
+    expect(validateEnvironment(env, { builtPublic: { stagingPhase: 'preflight' } }).ok).toBe(false)
+  })
+  it('rejects malformed optional email configuration and missing Flow credentials', () => {
+    const env = { ...fixture(), STAGING_PHASE: 'configuration', FLOW_API_KEY: 'actual-source-key', FLOW_API_SECRET: 'actual-source-secret', COMPANY_LEGAL_NAME: 'Empresa de prueba', COMPANY_RUT: '12.345.678-5' }
+    for (const change of [{ RESEND_API_KEY: 'invalid' }, { RESEND_FROM_EMAIL: 'invalid' }, { ALERT_EMAIL: 'ops@example.org' }, { FLOW_API_SECRET: '' }]) expect(validateEnvironment({ ...env, ...change }).ok).toBe(false)
+    expect(validateEnvironment({ ...env, RESEND_API_KEY: `re_${'d'.repeat(32)}`, RESEND_FROM_EMAIL: 'Torneos <ops@example.org>' }).ok).toBe(true)
   })
 })

@@ -6,6 +6,7 @@ import { parseUnity2048Input, UNITY_2048_BUILD, UNITY_2048_CHANNEL,
 import { requestGameJson } from '@/lib/game/game-json-request'
 import { focusUnity2048, isolateUnity2048, moveUnity2048Focus, parseUnity2048Navigation } from '@/lib/game/unity-2048-navigation'
 import styles from './unity-2048.module.css'
+import { Game2048Result } from './2048-game-result'
 
 const ENTRY = `/games/2048/${UNITY_2048_BUILD}/index.html`
 export function Unity2048({ tournament }: { tournament?: TournamentUnityConfig }) {
@@ -97,7 +98,8 @@ export function Unity2048({ tournament }: { tournament?: TournamentUnityConfig }
       <button ref={viewControl} type="button" className={`${styles.action} ${styles.viewAction}`} aria-expanded={fullscreen} onClick={() => setFullscreen(value => !value)}>{fullscreen ? 'Volver a la página' : 'Ampliar juego'}</button>
     </div>
     <div ref={viewport} className={styles.viewport} aria-busy={!ready && !failure} aria-describedby={!ready && !failure ? statusId : undefined}>
-      <iframe key={generation} ref={frame} title="2048 · Unity" aria-describedby={controlsId} tabIndex={ready && !failure ? 0 : -1} inert={!ready || !!failure} sandbox="allow-scripts allow-same-origin" allow="fullscreen" className={styles.frame} />
+      <iframe key={generation} ref={frame} title="2048 · Unity" aria-describedby={controlsId} tabIndex={ready && !failure && !state?.game_over ? 0 : -1} inert={!ready || !!failure || !!state?.game_over} sandbox="allow-scripts allow-same-origin" allow="fullscreen" className={styles.frame} />
+      {ready && !failure && state?.game_over && <Game2048Result state={state} tournament={tournament} onRestart={() => { void session.current?.start(); requestAnimationFrame(() => focusUnity2048(frame.current)) }} />}
       {!ready && !failure && <div className="absolute inset-0 flex items-center justify-center text-[#193337]" role="progressbar" aria-label="Carga de 2048" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress}>Cargando Unity… {progress}%</div>}
       {failure && <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-[#f6f5f0] p-8 text-center text-[#193337]"><p role="alert">{failure}</p><button type="button" className="rounded-lg border px-4 py-2" onClick={() => { setFailure(''); setReady(false); setProgress(0); setGeneration(x=>x+1) }}>Reintentar carga</button></div>}
     </div>

@@ -6,6 +6,21 @@ const board = [[2,2,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]]
 const initial = {gameId:'g1',board,score:0,moveNumber:2,deadlineAt:'2099-01-01T00:00:00Z'}
 afterEach(()=>vi.useRealTimers())
 describe('Unity 2048 platform session',()=>{
+  it('finishes a full practice, locks further input and clears the result on restart', async () => {
+    const request = vi.fn(), publish = vi.fn(), session = new Unity2048Session(publish, request)
+    await session.start('practice-end-regression')
+    const directions = ['left','down','right','up'] as const
+    for (let move = 0; move < 2000 && !session.snapshot().game_over; move++) await session.move(directions[move % 4])
+    const final = session.snapshot()
+    expect(final).toMatchObject({ game_over: true, locked: true, can_restart: true, end_reason: 'no_moves' })
+    expect(final.message).toContain('Práctica terminada')
+    expect(final.message).toContain(final.score.toLocaleString('es-CL'))
+    publish.mockClear(); await session.move('left')
+    expect(publish).not.toHaveBeenCalled(); expect(session.snapshot()).toEqual(final)
+    await session.start('practice-end-regression')
+    expect(session.snapshot()).toMatchObject({ game_over: false, locked: false, end_reason: null, score: 0 })
+    expect(request).not.toHaveBeenCalled()
+  })
   it('practice starts and moves without any server requests',async()=>{
     const request=vi.fn(), publish=vi.fn(), s=new Unity2048Session(publish,request)
     await s.start('unity-test'); expect(s.snapshot().cells.filter(x=>x>0)).toHaveLength(2)

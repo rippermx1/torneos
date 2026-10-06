@@ -21,6 +21,6 @@ export default async function UnityTournamentPage({params}:{params:Promise<{id:s
   return <div className="mx-auto max-w-3xl space-y-6 px-4 py-8">
     <h1 className="text-2xl font-bold">{tournament.name}</h1>
     <Link href={`/tournaments/${id}/leaderboard`} className="text-sm underline">Ver ranking</Link>
-    {!registration ? <p>No estás inscrito en este torneo.</p> : gameError ? <p>No se pudo comprobar tu partida. Recarga para consultar su estado.</p> : !window.ok && !existingGame ? <p>{PLAY_WINDOW_ERROR[window.reason]}</p> : <Unity2048 tournament={{startUrl:`/api/tournaments/${id}/game/start`,moveUrl:`/api/tournaments/${id}/game/move`,timeoutUrl:`/api/tournaments/${id}/game/timeout`,existingGameId:existingGame?.id,leaderboardUrl:`/tournaments/${id}/leaderboard`}} />}
+    {!registration ? <p>No estás inscrito en este torneo.</p> : gameError ? <p>No se pudo comprobar tu partida. Recarga para consultar su estado.</p> : !window.ok && !existingGame ? <p>{PLAY_WINDOW_ERROR[window.reason]}</p> : <Unity2048 tournament={{startUrl:`/api/tournaments/${id}/game/start`,moveUrl:`/api/tournaments/${id}/game/move`,timeoutUrl:`/api/tournaments/${id}/game/timeout`,existingGameId:existingGame?.id,resultsUrl:`/api/tournaments/${id}/leaderboard`,leaderboardUrl:`/tournaments/${id}/leaderboard`}} />}
   </div>
 }

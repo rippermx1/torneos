@@ -15,7 +15,7 @@ export interface Unity2048State {
   result_status?: 'completed' | 'abandoned'
   end_reason?: string | null
 }
-export interface TournamentUnityConfig { startUrl: string; moveUrl: string; timeoutUrl: string; existingGameId?: string; leaderboardUrl?: string }
+export interface TournamentUnityConfig { startUrl: string; moveUrl: string; timeoutUrl: string; existingGameId?: string; leaderboardUrl?: string; resultsUrl?: string }
 type JsonRequest = (url: string, body?: unknown) => Promise<Record<string, unknown>>
 const directions = new Set(['up', 'down', 'left', 'right'])
 export function parseUnity2048Input(data: unknown): 'ready' | Direction | null {
@@ -78,7 +78,8 @@ export class Unity2048Session {
     if (!this.config) {
       this.local = createLocalPracticeGame(seed)
       this.state = { ...this.state, cells: this.local.board.flat(), score: 0, move_number: 2,
-        locked: false, game_over: false, started: true, message: 'Une fichas iguales · flechas, WASD o desliza' }
+        locked: false, game_over: false, started: true, end_reason: null, result_status: undefined,
+        message: 'Une fichas iguales · flechas, WASD o desliza' }
       this.emit(); return
     }
     this.busy = true; this.state.locked = true; this.state.message = 'Conectando partida…'; this.emit()
@@ -142,7 +143,8 @@ export class Unity2048Session {
       this.local = { ...this.local, ...next }
       this.state = { ...this.state, cells: next.board.flat(), score: next.score,
         move_number: next.moveNumber, game_over: next.gameOver, locked: next.gameOver,
-        message: next.gameOver ? 'Sin movimientos · prueba una nueva partida' : 'Une fichas iguales · flechas, WASD o desliza' }
+        end_reason: next.gameOver ? 'no_moves' : null,
+        message: next.gameOver ? `Práctica terminada · sin movimientos · puntaje final: ${next.score.toLocaleString('es-CL')}` : 'Une fichas iguales · flechas, WASD o desliza' }
       this.emit(); return
     }
     if (!this.config || !this.gameId) return

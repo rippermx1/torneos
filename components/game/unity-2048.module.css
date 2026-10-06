@@ -44,6 +44,30 @@
 
 .frame { display: block; width: 100%; height: 100%; border: 0; }
 .frame:focus-visible { outline: 3px solid #193337; outline-offset: -3px; }
+.endPanel {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow-y: auto;
+  padding: clamp(1rem, 4vw, 2rem);
+  background: #f6f5f0;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+.endPanel:focus-visible { outline: 3px solid #193337; outline-offset: -3px; }
+.endPanel h2 { font-size: 1.5rem; font-weight: 700; }
+.endPanel > div { width: 100%; }
+.endPanel p { overflow-wrap: anywhere; }
+.finalScore { font-size: 1.25rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.resultTable { max-width: 100%; overflow-x: auto; margin: 0.75rem 0; }
+.resultTable table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+.resultTable th, .resultTable td { padding: 0.5rem; border-bottom: 1px solid #19333740; }
+.resultTable caption { padding: 0.5rem 0; }
+.resultTable tr[data-mine] { background: #e2e9e5; }
+.resultTable th[scope="row"] { overflow-wrap: anywhere; max-width: 12rem; }
 .boardDescription { width: 100%; text-align: center; }
 .boardDescription summary { width: fit-content; margin: auto; padding: 0.5rem; cursor: pointer; min-height: 44px; }
 .boardDescription summary:focus-visible { outline: 2px solid #193337; outline-offset: -2px; border-radius: 0.5rem; }

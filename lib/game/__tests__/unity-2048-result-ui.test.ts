@@ -32,6 +32,34 @@ it('renders the confirmed result and ranking without start or restart controls',
   expect(html).toContain('Sin movimientos · puntaje final: 128'); expect(html).toContain('href="/tournaments/t1/leaderboard"')
   expect(html).not.toMatch(/<button[^>]*>Iniciar partida<\/button>/); expect(html).not.toMatch(/<button[^>]*>Nueva partida<\/button>/); expect(html).not.toContain('Recuperar partida')
 })
+it.each([false, true])('shows a prominent practice result and disables the capsule after no moves, expanded=%s', expanded => {
+  fixture.expanded = expanded
+  fixture.state = { started: true, game_over: true, locked: true, can_restart: true,
+    score: 1024, end_reason: 'no_moves', message: 'Práctica terminada' }
+  const html = renderToStaticMarkup(createElement(Unity2048))
+  expect(html).toContain('Práctica terminada</h2>')
+  expect(html).toContain('No quedan movimientos disponibles.')
+  expect(html).toContain('Puntaje final: 1.024')
+  expect(html).toMatch(/<iframe[^>]*tabindex="-1" inert=""/)
+  expect(html).not.toContain('Cargando tabla de resultados')
+})
+it('does not show an end panel or results for a network-uncertain active game', () => {
+  fixture.state = { started: true, game_over: false, locked: true, can_recover: true,
+    score: 256, message: 'No se confirmó el movimiento.' }
+  const html = renderToStaticMarkup(createElement(Unity2048, { tournament: { ...tournament, resultsUrl: '/api/tournaments/t1/leaderboard' } }))
+  expect(html).not.toContain('Partida terminada</h2>')
+  expect(html).not.toContain('Cargando tabla de resultados')
+  expect(html).toContain('Recuperar partida')
+})
+it('loads tournament results automatically only after the confirmed end', () => {
+  fixture.state = { started: true, game_over: true, locked: true, score: 256,
+    result_status: 'completed', end_reason: 'no_moves', message: 'Sin movimientos' }
+  const html = renderToStaticMarkup(createElement(Unity2048, { tournament: { ...tournament, resultsUrl: '/api/tournaments/t1/leaderboard' } }))
+  expect(html).toContain('Partida terminada</h2>')
+  expect(html).toContain('Puntaje final: 256')
+  expect(html).toContain('Cargando tabla de resultados')
+  expect(html).toContain('Resultado confirmado por el servidor.')
+})
 it('renders recovery for an existing game whose state could not be read', () => {
   fixture.state = { started: false, game_over: false, locked: true, can_recover: true, score: 0, message: 'No se pudo recuperar la partida.' }
   const html = renderToStaticMarkup(createElement(Unity2048, { tournament }))

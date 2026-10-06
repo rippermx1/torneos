@@ -7,10 +7,11 @@ import net from 'node:net'
 import { randomUUID } from 'node:crypto'
 import { docker, localEnv, sql, assertInstalled, sha256 } from './2048-integrity-local.mjs'
 
-const root = 'artifacts/2048-integrity-integration'
+const results = process.argv.includes('--results')
+const root = results ? 'artifacts/2048-result' : 'artifacts/2048-integrity-integration'
 const run = `${root}/activation-${randomUUID()}`
 const name = 'torneos-app-1'
-const report = { task: 'G2048-09.4', at: new Date().toISOString(), status: 'NOT_RUN', activated: false, checks: [] }
+const report = { task: results ? '2048-visible-result' : 'G2048-09.4', at: new Date().toISOString(), status: 'NOT_RUN', activated: false, checks: [] }
 const socketPath = '//./pipe/dockerDesktopLinuxEngine'
 function api(method, route, body) {
   const bytes = body === undefined ? undefined : JSON.stringify(body)
@@ -60,9 +61,9 @@ function settings(instance) {
 }
 let baseline, previewId, createdId, renamed = false, stopped = false
 const disconnected = []
-const backupName = `torneos-app-g2048-094-backup-${Date.now()}`
+const backupName = `torneos-app-g2048-${results ? 'result' : '094'}-backup-${Date.now()}`
 try {
-  assert.ok(process.argv.slice(2).every(argument => argument === '--activate'), 'Use only --activate or a read-only preview run')
+  assert.ok(process.argv.slice(2).every(argument => argument === '--activate' || argument === '--results'), 'Use --results for the result candidate, optionally --activate')
   assert.equal(process.platform, 'win32', 'This activation targets the reviewed Windows Docker Desktop host')
   assert.equal(docker(['context', 'inspect', '--format', '{{.Endpoints.docker.Host}}']), 'npipe:////./pipe/dockerDesktopLinuxEngine', 'Only the local Linux engine is supported')
   const env = await localEnv()
@@ -118,7 +119,19 @@ try {
 
   const arena = await fetch(`${env.APP_URL}/snake-arena/health`, { signal: AbortSignal.timeout(5000) }).then(response => response.json())
   assert.equal(arena.ccu, 0); assert.equal(arena.rooms, 0)
-  assert.equal(sql("SELECT count(*) FROM tournaments WHERE status='live' AND play_window_end>now();"), '0', 'Active tournament; defer local replacement')
+  if (results) {
+    // E27 is our identified single-entry test fixture, already closed in E28.
+    // Do not cancel it or alter its window just to replace a local web image.
+    const fixture = JSON.parse(await fs.readFile('artifacts/2048-background/manifest.json', 'utf8'))
+    assert.equal(fixture.tournamentId, '82f51723-acf1-4676-8d9a-49906a11e47f')
+    assert.equal(sql(`SELECT count(*) FROM tournaments WHERE id='${fixture.tournamentId}' AND is_test=true;`), '1')
+    assert.equal(sql(`SELECT count(*) FROM games WHERE tournament_id='${fixture.tournamentId}' AND status='completed';`), '1')
+    assert.equal(sql(`SELECT count(*) FROM games WHERE tournament_id='${fixture.tournamentId}' AND status='active';`), '0')
+    assert.equal(sql(`SELECT count(*) FROM tournaments WHERE status='live' AND play_window_end>now() AND id<>'${fixture.tournamentId}';`), '0', 'Another active tournament; defer replacement')
+    report.checks.push('only live tournament is the identified E27 test fixture, with its single game already closed')
+  } else {
+    assert.equal(sql("SELECT count(*) FROM tournaments WHERE status='live' AND play_window_end>now();"), '0', 'Active tournament; defer local replacement')
+  }
   const rechecked = await inspect(name)
   assert.equal(rechecked.Id, baseline.Id); assert.equal(rechecked.Image, baseline.Image)
   assert.deepEqual(settings(rechecked), settings(baseline), 'Runtime changed during candidate verification')

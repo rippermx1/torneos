@@ -1,0 +1,35 @@
+{
+  "evidence": "E29",
+  "date": "2026-10-06",
+  "status": "IMPLEMENTED_TESTED_ACTIVE_LOCAL",
+  "implementationCommit": "1848054",
+  "origin": "http://127.0.0.1:3081",
+  "unityBuild": "unity-2048-007",
+  "unityChanged": false,
+  "schemaChanged": false,
+  "flowChanged": false,
+  "publicDeployment": false,
+  "tests": { "passed": 270, "failed": 0, "files": 16, "types": "PASS", "lint": "PASS", "productionBuild": "PASS" },
+  "practice": { "source": "synthetic starting board with actual local engine and Unity capsule", "noMovesPanel": "PASS", "score": 4, "restart": "PASS" },
+  "competitiveSynthetic": { "automaticTable": "PASS", "normalAndExpanded": "PASS", "viewport390x844": "PASS", "rankingFailureAndRetry": "PASS", "officialTable": "PASS", "score": 132 },
+  "competitiveReal": { "source": "existing E27 closed fixture; local Auth/API/PostgreSQL and Unity", "recovery": "PASS", "automaticProvisionalTable": "PASS", "score": 4, "refresh": "PASS", "closedGameAndMoveHistoryUnchanged": true, "newGameCreated": false },
+  "activation": {
+    "status": "PASS_ACTIVATED_LOCAL",
+    "image": "sha256:4be2a7bcdc12e10d887458abfae3fd89112121e88dd4ed677048fa836e51b786",
+    "baseline": "sha256:51412127d028715b658a2921115b39d45a6dc874204728df34add89315312e25",
+    "backup": "torneos-app-g2048-result-backup-1791299679435",
+    "runtimeConfigurationPreserved": true,
+    "capsuleAndSnakeServerHashesPreserved": true,
+    "fixtureException": "only identified E27 test tournament with one completed game; zero active games"
+  },
+  "reports": [
+    "artifacts/2048-result/regressions.json",
+    "artifacts/2048-result/real-ranking.json",
+    "artifacts/2048-result/operative-ranking.json",
+    "artifacts/2048-result/browser.json",
+    "artifacts/2048-result/candidate.json",
+    "artifacts/2048-result/activation-12b2df5e-25ef-4d7a-b9d9-9a5322075f16/report.json"
+  ],
+  "screenshots": ["artifacts/2048-result/practice-ended.png", "artifacts/2048-result/real-candidate-result.png", "artifacts/2048-result/operative-result.png"],
+  "limits": { "physicalPhone": "NOT_RUN", "humanAcceptance": "NOT_RUN", "production": "NOT_RUN", "prizePayment": "NOT_RUN", "2048Capsule404In3090": "PENDING_UNCHANGED" }
+}

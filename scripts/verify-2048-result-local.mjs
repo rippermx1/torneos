@@ -2,11 +2,30 @@
 import assert from 'node:assert/strict'
 import fs from 'node:fs/promises'
 import { createServerClient } from '@supabase/ssr'
-import { localEnv } from './2048-integrity-local.mjs'
+import { createClient } from '@supabase/supabase-js'
+import { localEnv, docker } from './2048-integrity-local.mjs'
 
 async function main() {
-  const env = await localEnv(), origin = 'http://127.0.0.1:65175'
+  const env = await localEnv(), operative = process.argv.includes('--operative')
+  const origin = operative ? env.APP_URL : 'http://127.0.0.1:65175'
+  const candidate = JSON.parse(await fs.readFile('artifacts/2048-result/candidate.json', 'utf8'))
+  if (operative) {
+    const instance = JSON.parse(docker(['inspect', 'torneos-app-1']))[0]
+    assert.equal(instance.Image, candidate.imageId); assert.equal(instance.State.Health.Status, 'healthy')
+  }
   const fixture = JSON.parse(await fs.readFile('artifacts/2048-background/manifest.json', 'utf8'))
+  const closed = JSON.parse(await fs.readFile('artifacts/2048-background/closed-verification.json', 'utf8'))
+  const service = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SECRET_KEY,
+    { auth: { persistSession: false, autoRefreshToken: false } })
+  const assertClosed = async () => {
+    const game = await service.from('games').select('id,status,current_board,final_score,move_count,started_at,ended_at,end_reason')
+      .eq('id', closed.game.id).single()
+    assert.equal(game.error, null); assert.deepEqual(game.data, closed.game)
+    const moves = await service.from('game_moves').select('move_number,direction,server_timestamp')
+      .eq('game_id', closed.game.id).order('move_number')
+    assert.equal(moves.error, null); assert.deepEqual(moves.data, closed.moves)
+  }
+  await assertClosed()
   const credentials = JSON.parse(await fs.readFile('artifacts/2048-background/credentials.private.json', 'utf8'))
   const jar = new Map()
   const auth = createServerClient(env.NEXT_PUBLIC_SUPABASE_URL,
@@ -32,11 +51,12 @@ async function main() {
     const guest = await fetch(url, { redirect: 'manual' })
     assert.ok([307,401].includes(guest.status))
     assert.equal((await fetch(`${origin}/api/tournaments/not-a-uuid/leaderboard`, { headers: { cookie }, redirect: 'manual' })).status, 400)
-    await fs.writeFile('artifacts/2048-result/real-ranking.json', JSON.stringify({ at: new Date().toISOString(),
+    await assertClosed()
+    await fs.writeFile(`artifacts/2048-result/${operative ? 'operative-ranking' : 'real-ranking'}.json`, JSON.stringify({ at: new Date().toISOString(),
       status: 'PASS', origin, data, checks: ['real authenticated local PostgreSQL ranking',
         'same source as public ranking page', 'no private user ids/emails',
         'no cached personalized payload', 'guest still requires sign-in', 'invalid id rejected'],
-      schemaOrGameWrites: false }, null, 2) + '\n')
+      closedGameAndMoveHistoryUnchanged: true, schemaOrGameWrites: false }, null, 2) + '\n')
     console.log(JSON.stringify({ status: 'PASS_REAL_DB_READ_ONLY', phase: data.phase, score: data.rows.find(row => row.isMe).score }))
   } finally { await auth.auth.signOut({ scope: 'local' }) }
 }

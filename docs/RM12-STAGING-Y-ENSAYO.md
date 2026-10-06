@@ -109,8 +109,13 @@ torneos asignados y ventana de ejecución. Los siguientes campos siguen pendient
 | Operador titular y suplente con MFA | PENDIENTE |
 | Aprobación del modelo comercial y condiciones de esta prueba | PENDIENTE; no se fabrica para destrabar tests |
 
-Secuencia propuesta, **máximo dos cobros** y una devolución; el monto final aún
-no está autorizado. No descontar una devolución futura del presupuesto inicial.
+Secuencia propuesta, **tres cobros como mínimo** y una devolución: uno para el
+torneo cancelado y dos participantes distintos para el torneo con premio.
+La regla vigente exige al menos dos jugadores en un torneo pagado y una entrada
+mínima de CLP 2.000: las tres entradas suman al menos CLP 6.000, antes de comisiones,
+premio y cobertura adicional. Esto es un mínimo técnico, **no un presupuesto
+autorizado**. Definir montos, pagadores y límite total antes del cobro; no descontar
+una devolución futura del presupuesto inicial.
 
 1. Preparar DB compatible, permisos, buckets, MFA y caja conciliada con evidencia
    privada. Reconstruir para las variables públicas reales y verificar las nueve
@@ -128,7 +133,8 @@ no está autorizado. No descontar una devolución futura del presupuesto inicial
    durable. Observar callback y estado externo; registrar monto/comisión realmente
    devueltos. No marcar finalizado por enviar la solicitud. Ante timeout o resultado
    incierto, conservar UNKNOWN y conciliar antes de otro envío.
-5. Cobro B, en un torneo separado: completar juego autoritativo, ranking y cierre.
+5. Cobros B y C, de dos participantes distintos en un torneo separado: completar
+   juego autoritativo, ranking y cierre.
    Verificar premio retenido, revisión documentada por operador distinto y saldo
    retirable sólo después de aprobar. El jugador solicita retiro; el segundo
    operador revisa y registra la transferencia/comprobante privado. Una devolución

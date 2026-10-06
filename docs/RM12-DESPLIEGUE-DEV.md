@@ -2,6 +2,10 @@
 
 2026-10-05. IN_PROGRESS. NO_GO para operar con dinero real.
 
+Este documento conserva la evidencia del primer preflight. El estado posterior,
+con variables productivas cargadas y Google habilitado, está en
+[RM12-VALIDACION-DEVELOP.md](RM12-VALIDACION-DEVELOP.md), de 2026-10-06.
+
 El candidato usa el proyecto Vercel `torneos-dev` y Supabase
 `jnoyjewsqbooqaiighcs`. Su origen previsto es
 `https://rm12-torneos-dev.vercel.app`, separado del dominio compartido actual.

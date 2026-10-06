@@ -1,5 +1,19 @@
 # Estado — TorneosPlay
 
+## RM-12: Google y validación operativa develop — 2026-10-06
+
+Candidata `823063c` publicada en el alias RM-12 dentro de torneos-dev.
+Identidad/Flow desde Vercel productivo; Resend desde fuente local autorizada porque
+el secreto Vercel no se puede leer. Supabase dev conservado; proveedores bloqueados,
+caja pausada. Google: sesión/perfil verificados y retorno al alias confirmado por
+el propietario. MFA TOTP/AAL2, paneles y lectura privada de caja/KYC PASS con
+fixtures retiradas; aceptación de titular/suplente pendiente. 3.816 pruebas y
+build/tipos/lint PASS. Scheduler sin heartbeats recientes y callbacks Flow con
+protección Vercel siguen abiertos; correos omitidos a petición del propietario.
+Recuperación completa, conciliación/reserva y ciclo monetario pendientes.
+**RM-12 IN_PROGRESS; NO_GO.** [Informe](RM12-VALIDACION-DEVELOP.md) y
+[evidencia](RM12-VALIDACION-DEVELOP-EVIDENCE.json).
+
 ## Preparación de dinero real: RM-12 — 2026-10-05
 
 Seis migraciones ensayadas y aplicadas sólo en Supabase dev; catálogo, grants,

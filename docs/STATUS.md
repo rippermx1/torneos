@@ -1,5 +1,22 @@
 # Estado — TorneosPlay
 
+## RM-14: cuentas, datos y atención — 2026-10-07
+
+Candidata `aaa39d4` READY en el alias RM de torneos-dev; migración y nueve
+contratos de catálogo verificados sólo en Supabase develop. Recuperación por
+correo, sesiones revocadas/expiradas, suspensión con históricos y soporte,
+documentos auditados y respuestas privadas implementados. Consulta/disputa/
+incidente con referencia, acuse, resolución y escalamiento RM-09. 3.853 pruebas
+/86 archivos, tipos/lint/build cloud, 18 ensayos locales, 36 checks HTTPS nuevos
+y 17 de operación PASS; formulario y estado comprobados en navegador local.
+Fixtures retiradas; seis cuentas originales, ledger y diez jobs conservados.
+Dominio compartido de juegos intacto; integración de su candidata pendiente.
+Protección de contraseñas filtradas omitida por instrucción del propietario.
+**RM-14 IN_PROGRESS; NO_GO**: retención/borrado definitivo, aceptación legal y
+titular/suplente reales pendientes. Caja pausada y proveedores bloqueados.
+[Informe](RM14-CUENTAS-DATOS-Y-ATENCION.md),
+[evidencia](RM14-CUENTAS-DATOS-Y-ATENCION-EVIDENCE.json).
+
 ## RM-13: recuperación y carga — 2026-10-07
 
 Candidata `e2174d8` READY en el alias RM del proyecto torneos-dev. Migración de

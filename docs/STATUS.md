@@ -1,5 +1,21 @@
 # Estado — TorneosPlay
 
+## RM-13: recuperación y carga — 2026-10-07
+
+Candidata `e2174d8` READY en el alias RM del proyecto torneos-dev. Migración de
+equidad aplicada sólo a Supabase dev; dominio y diez jobs compartidos conservados.
+Copia real restaurada con 92 proyecciones iguales; Auth/MFA sintético y bytes
+privados recuperados. Ensayo financiero: base vaciada/restaurada, 96 tablas,
+61 obligaciones y 15 resultados, ledger intacto y dispatch incierto no reenviado.
+Backlog de 61 pagos/devoluciones, 58 torneos vencidos, caída simulada de 25 h y
+reinicios PASS. Carga de 15 jugadores medida, sin SLO aprobado por decisión del
+propietario. 3.838 pruebas/84 archivos, tipos/lint/build cloud y 55 checks HTTPS
+PASS. Caja pausada y proveedores bloqueados; cero operaciones financieras dev.
+**RM-13 IN_PROGRESS; NO_GO**: faltan RPO/custodia fuera de máquina, RTO cloud,
+MFA/OAuth/configuración del operador y conciliación externa real. Continúa RM-14.
+[Informe y alcance](RM13-RECUPERACION-Y-CARGA.md),
+[evidencia](RM13-RECUPERACION-Y-CARGA-EVIDENCE.json).
+
 ## RM-12: Google y validación operativa develop — 2026-10-06
 
 Candidata `823063c` publicada en el alias RM-12 dentro de torneos-dev.

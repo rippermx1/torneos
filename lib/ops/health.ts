@@ -50,7 +50,7 @@ export function assessCronHeartbeats(
     const heartbeat = heartbeats.get(rule.jobName)
     const successAt = heartbeat?.last_success_at ?? null
     const successMs = successAt ? Date.parse(successAt) : NaN
-    const critical = !Number.isFinite(successMs) || nowMs - successMs >= rule.maxAgeMinutes * 60_000 || (heartbeat?.consecutive_failures ?? 0) >= 2 || (heartbeat?.consecutive_dispatch_failures ?? 0) >= 2
+    const critical = !Number.isFinite(successMs) || successMs > nowMs + 60_000 || nowMs - successMs >= rule.maxAgeMinutes * 60_000 || (heartbeat?.consecutive_failures ?? 0) >= 2 || (heartbeat?.consecutive_dispatch_failures ?? 0) >= 2
     const execution = { lastStartedAt: heartbeat?.last_started_at ?? null, lastSuccessAt: successAt,
       consecutiveFailures: heartbeat?.consecutive_failures ?? 0, critical }
 

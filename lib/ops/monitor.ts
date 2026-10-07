@@ -1,6 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/server'
 import { resolveOpsAlertEmail } from '@/lib/email/ops-notifications'
 import { sendOperationalEmail, OperationalEmailError } from '@/lib/email/operational'
+import { providerDispatchBlocked } from '@/lib/config/provider-dispatch.mjs'
 
 export interface OperationalQueue {
   key: string; title: string; href: string; count: number; amount_cents: number; oldest_at: string | null
@@ -25,13 +26,16 @@ export interface OpsNotification {
 
 export async function runOperationalMonitor() {
   const admin = createAdminClient()
-  const recipient = await resolveOpsAlertEmail()
+  const notificationsDeferred = providerDispatchBlocked()
+  const recipient = notificationsDeferred ? undefined : await resolveOpsAlertEmail()
   const { data, error } = await admin.rpc('observe_operations', {
-    p_recipient: recipient ?? null, p_escalation_recipient: process.env.OPS_ESCALATION_EMAIL?.trim() && process.env.OPS_ESCALATION_EMAIL.trim().toLowerCase() !== recipient?.toLowerCase() ? process.env.OPS_ESCALATION_EMAIL.trim() : null,
+    p_recipient: recipient ?? null, p_escalation_recipient: !notificationsDeferred && process.env.OPS_ESCALATION_EMAIL?.trim() && process.env.OPS_ESCALATION_EMAIL.trim().toLowerCase() !== recipient?.toLowerCase() ? process.env.OPS_ESCALATION_EMAIL.trim() : null,
   })
   if (error || !data) throw new Error('No se pudo comprobar y registrar la operación')
   assertOperationalSnapshot(data)
-  const { data: notifications, error: claimError } = await admin.rpc('claim_ops_notifications')
+  // Observe without claiming messages or resolving a fallback recipient during blocked staging.
+  const { data: notifications, error: claimError } = notificationsDeferred
+    ? { data: [], error: null } : await admin.rpc('claim_ops_notifications')
   if (claimError || !notifications) throw new Error('No se pudo tomar la cola de avisos')
   let failed = 0
   for (const notification of notifications as unknown as OpsNotification[]) {
@@ -53,7 +57,7 @@ export async function runOperationalMonitor() {
     .select('id', { count: 'exact', head: true }).not('state', 'in', '(accepted,received_manually)')
   if (countError || unresolvedNotifications === null) throw new Error('No se pudo comprobar el trabajo de notificación pendiente')
   return { snapshot: data as unknown as OperationalSnapshot, accepted: notifications.length - failed,
-    failed, unresolvedNotifications }
+    failed, unresolvedNotifications, notificationsDeferred }
 }
 
 export async function loadOperationalDashboard() {

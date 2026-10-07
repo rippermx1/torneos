@@ -12,10 +12,11 @@ export async function GET(req: Request): Promise<Response> {
     await recordHeartbeat('watchdog', 'started')
     const result = await runOperationalMonitor()
     await recordHeartbeat('watchdog', result.failed ? 'error' : 'ok', result.failed ? `${result.failed} avisos fallaron` : undefined)
-    const ok = result.snapshot.active_incidents === 0 && result.unresolvedNotifications === 0
-    return Response.json({ ok, checkedAt: result.snapshot.observed_at, activeIncidents: result.snapshot.active_incidents,
+    const ok = result.failed === 0 && result.snapshot.active_incidents === 0 && result.unresolvedNotifications === 0 && !result.notificationsDeferred
+    return Response.json({ ok, schedulerHealthy: result.failed === 0, operationalReady: ok,
+      notificationsDeferred: result.notificationsDeferred, checkedAt: result.snapshot.observed_at, activeIncidents: result.snapshot.active_incidents,
       notificationAcceptance: { acceptedThisRun: result.accepted, failedThisRun: result.failed, unresolved: result.unresolvedNotifications },
-      bankCashVerified: false }, { status: ok ? 200 : 503 })
+      bankCashVerified: false }, { status: ok ? 200 : 503, headers: { 'Cache-Control': 'no-store' } })
   } catch (error) {
     console.error('[watchdog] Comprobación incompleta', error)
     await recordHeartbeat('watchdog', 'error', 'Comprobación operativa incompleta').catch(error => console.error('[watchdog] No se pudo registrar el fallo', error))

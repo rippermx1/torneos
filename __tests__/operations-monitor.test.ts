@@ -16,6 +16,15 @@ beforeEach(() => {
 })
 afterEach(() => vi.unstubAllEnvs())
 describe('durable operational monitor boundary', () => {
+  it('blocked staging observes without resolving recipients, claiming messages or sending', async () => {
+    vi.stubEnv('STAGING_PHASE', 'configuration')
+    h.from.mockReturnValue({ select: () => ({ not: async () => ({ count: 2, error: null }) }) })
+    expect(await runOperationalMonitor()).toMatchObject({ notificationsDeferred: true, unresolvedNotifications: 2, failed: 0, accepted: 0 })
+    expect(h.resolve).not.toHaveBeenCalled()
+    expect(h.send).not.toHaveBeenCalled()
+    expect(h.rpc.mock.calls.map(c => c[0])).toEqual(['observe_operations'])
+    expect(h.rpc.mock.calls[0][1]).toEqual({ p_recipient: null, p_escalation_recipient: null })
+  })
   it('provider acceptance is persisted after observation and before claiming success', async () => {
     const result = await runOperationalMonitor()
     expect(result).toMatchObject({ accepted: 1, failed: 0, snapshot: { active_incidents: 1 } })

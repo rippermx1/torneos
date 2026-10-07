@@ -5,6 +5,7 @@ import {
 import { dispatchQueuedRefunds } from '@/lib/flow/refund-worker'
 import { expireStaleCredits } from '@/lib/wallet/credit-expiry'
 import { recordHeartbeat } from '@/lib/ops/heartbeat'
+import { workerDeadline } from '@/lib/ops/worker-budget'
 
 // Programado vía Supabase Cron cada 10 min, con respaldos en GitHub Actions y
 // Vercel. El endpoint es idempotente, así que las corridas pueden coincidir.
@@ -13,7 +14,7 @@ import { recordHeartbeat } from '@/lib/ops/heartbeat'
 // 3. Envía obligaciones queued; nunca reenvía una operación incierta o rechazada.
 // 4. Expira créditos de rakeback vencidos (>30 días, FIFO por usuario).
 
-export const maxDuration = 30
+export const maxDuration = 60
 
 export async function GET(req: Request): Promise<Response> {
   const authHeader = req.headers.get('authorization')
@@ -29,16 +30,17 @@ export async function GET(req: Request): Promise<Response> {
   }
 
   const startedAt = Date.now()
+  const deadlineMs = workerDeadline(startedAt)
 
   try {
     await recordHeartbeat('reconcile-refunds', 'started')
     // El barrido de cancelados va primero: emite las reversas que falten para
     // que los trabajadores recuperen las obligaciones registradas.
-    const cancelledSweep = await reconcileCancelledTournamentRefunds()
+    const cancelledSweep = await reconcileCancelledTournamentRefunds(deadlineMs)
     const creditExpiry = await expireStaleCredits()
     const [reconcile, dispatch] = await Promise.all([
-      reconcileStaleRefunds(10),
-      dispatchQueuedRefunds(),
+      reconcileStaleRefunds(10, deadlineMs),
+      dispatchQueuedRefunds(deadlineMs),
     ])
 
     const errors = cancelledSweep.refundsFailed + reconcile.errors + dispatch.errors

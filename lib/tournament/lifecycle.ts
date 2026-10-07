@@ -6,6 +6,7 @@ import { sendTournamentPrizeEmail } from '@/lib/email/tournament-notifications'
 import { sendOpsAlertEmail } from '@/lib/email/ops-notifications'
 import { updateRating } from '@/lib/tournament/rating'
 import { reviewWinnerStats, computeIntervalStats } from '@/lib/anticheat/winner-review'
+import { workerCanStart, workerDeadline } from '@/lib/ops/worker-budget'
 
 export interface TransitionResult {
   tournamentId: string
@@ -17,17 +18,21 @@ export interface TransitionResult {
 
 // Procesa los torneos que necesitan una transición de estado.
 // Llamado por el scheduler cada cinco minutos y por un respaldo independiente.
-export async function processTournamentTransitions(): Promise<TransitionResult[]> {
+export async function processTournamentTransitions(deadlineMs = workerDeadline()): Promise<TransitionResult[]> {
   const supabase = createAdminClient()
   const results: TransitionResult[] = []
   const nowMs = Date.now()
+  const now = new Date(nowMs).toISOString()
 
   // Obtener torneos que pueden necesitar transición
   const { data: tournaments, error } = await supabase
     .from('tournaments')
     .select('*')
     .in('status', ['scheduled', 'open', 'live', 'finalizing'])
+    .or(`and(status.eq.scheduled,registration_opens_at.lte.${now}),and(status.eq.open,play_window_start.lte.${now}),and(status.eq.live,play_window_end.lte.${now}),status.eq.finalizing`)
+    .order('last_transition_checked_at', { ascending: true, nullsFirst: true })
     .order('play_window_start', { ascending: true })
+    .order('id', { ascending: true })
     .limit(25)
 
   if (error) {
@@ -35,7 +40,13 @@ export async function processTournamentTransitions(): Promise<TransitionResult[]
   }
 
   for (const t of (tournaments ?? []) as Tournament[]) {
-    const result = await processSingleTournament(t, nowMs)
+    if (!workerCanStart(deadlineMs)) break
+    // Stamp before processing so a poisoned first batch cannot starve later work,
+    // including when this process is killed during the transition.
+    const stamp = await supabase.from('tournaments')
+      .update({ last_transition_checked_at: new Date().toISOString() }).eq('id', t.id)
+    if (stamp.error) throw new Error(`No se pudo guardar revisión del torneo: ${stamp.error.message}`)
+    const result = await processSingleTournament(t, nowMs, deadlineMs)
     results.push(result)
   }
 
@@ -44,7 +55,8 @@ export async function processTournamentTransitions(): Promise<TransitionResult[]
 
 async function processSingleTournament(
   tournament: Tournament,
-  nowMs: number
+  nowMs: number,
+  deadlineMs: number
 ): Promise<TransitionResult> {
   const supabase = createAdminClient()
   const base = { tournamentId: tournament.id, name: tournament.name }
@@ -102,7 +114,8 @@ async function processSingleTournament(
             tournament.id,
             cancelData.entry_fee_cents,
             getAppUrl() ?? 'https://torneosplay.cl',
-            tournament.name
+            tournament.name,
+            deadlineMs
           )
         }
 

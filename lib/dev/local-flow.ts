@@ -74,6 +74,20 @@ export async function handleLocalFlow(endpoint: string, params: Record<string, s
     return Response.json({ token: payment.token, flowOrder: payment.flowOrder, url: `${process.env.APP_URL}/dev/flow/payment` })
   }
   if (endpoint === 'payment/getStatus') return Response.json(await readLocalPayment(params.token))
+  if (endpoint === 'payment/getStatusByCommerceId') {
+    const files = await readdir(process.env.LOCAL_FLOW_DATA_DIR ?? '.local-flow')
+    for (const file of files.filter(name => /^payment-[a-f0-9-]{36}\.json$/.test(name))) {
+      const payment = await readLocalPayment(file.slice(8, -5))
+      if (payment.commerceOrder === params.commerceId) {
+        // Faults exist only in locally seeded simulator files, never in an HTTP
+        // parameter or a hosted provider. Exercise the real client's 8s timeout.
+        const delay = Number((payment as Payment & { testDelayMs?: number }).testDelayMs ?? 0)
+        if (Number.isSafeInteger(delay) && delay > 0 && delay <= 10_000) await new Promise(resolve => setTimeout(resolve, delay))
+        return Response.json(payment)
+      }
+    }
+    return Response.json({ message: 'Orden local desconocida' }, { status: 404 })
+  }
   if (endpoint === 'refund/create') {
     localReturn(params.urlCallBack, true)
     const files = await readdir(process.env.LOCAL_FLOW_DATA_DIR ?? '.local-flow')

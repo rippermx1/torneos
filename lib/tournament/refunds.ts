@@ -3,6 +3,7 @@ import { dispatchRefund, reconcileRefund } from '@/lib/flow/refund-worker'
 import { getAppUrl } from '@/lib/env'
 import { rakebackExpiryIso } from '@/lib/wallet/rakeback'
 import type { Tournament } from '@/types/database'
+import { workerCanStart, workerDeadline } from '@/lib/ops/worker-budget'
 
 export interface RefundResult {
   userId: string; email: string; amountCents: number; refundCommerceOrder: string
@@ -12,7 +13,8 @@ export interface RefundResult {
 // The cancellation transaction already records obligations. This also recovers
 // legacy cancellations, before dispatching any external operation.
 export async function issueFlowRefunds(
-  tournamentId: string, _entryFeeCents: number, requestOrigin: string, tournamentName?: string
+  tournamentId: string, _entryFeeCents: number, requestOrigin: string, tournamentName?: string,
+  deadlineMs = workerDeadline()
 ): Promise<RefundResult[]> {
   void tournamentName // signature retained for lifecycle callers; worker reads stored tournament
   const admin = createAdminClient()
@@ -23,6 +25,7 @@ export async function issueFlowRefunds(
   if (error) throw new Error(error.message)
   const results: RefundResult[] = []
   for (const row of data ?? []) {
+    if (!workerCanStart(deadlineMs)) break
     const result: RefundResult = { userId: row.user_id, email: row.receiver_email,
       amountCents: row.amount_cents, refundCommerceOrder: row.refund_commerce_order }
     try {
@@ -36,7 +39,7 @@ export async function issueFlowRefunds(
   return results
 }
 
-export async function reconcileStaleRefunds(minAgeMinutes = 10) {
+export async function reconcileStaleRefunds(minAgeMinutes = 10, deadlineMs = workerDeadline()) {
   const { data, error } = await createAdminClient().from('flow_refund_attempts')
     .select('id, flow_refund_token').in('status', ['pending', 'unknown'])
     .lt('created_at', new Date(Date.now() - minAgeMinutes * 60_000).toISOString())
@@ -44,7 +47,10 @@ export async function reconcileStaleRefunds(minAgeMinutes = 10) {
     .order('created_at', { ascending: true }).limit(50)
   if (error) throw new Error(error.message)
   let updated = 0, errors = 0
+  let checked = 0
   for (const row of data ?? []) {
+    if (!workerCanStart(deadlineMs)) break
+    checked++
     if (!row.flow_refund_token) continue
     try { if (await reconcileRefund(row.id, row.flow_refund_token)) updated++ }
     catch (e) { console.error('[refund-reconcile]', row.id, e); errors++ }
@@ -54,24 +60,33 @@ export async function reconcileStaleRefunds(minAgeMinutes = 10) {
       if (stamp.error) errors++
     }
   }
-  return { checked: data?.length ?? 0, updated, errors }
+  return { checked, updated, errors, deferred: (data?.length ?? 0) - checked }
 }
 
-export async function reconcileCancelledTournamentRefunds() {
+export async function reconcileCancelledTournamentRefunds(deadlineMs = workerDeadline()) {
   const admin = createAdminClient()
   const appUrl = getAppUrl()
   if (!appUrl) throw new Error('APP_URL no configurado')
   const { data, error } = await admin.from('tournaments').select('id, name, entry_fee_cents')
     .eq('status', 'cancelled').gt('entry_fee_cents', 0)
+    .order('last_transition_checked_at', { ascending: true, nullsFirst: true }).order('id', { ascending: true }).limit(25)
   if (error) throw new Error(error.message)
   const tournaments = (data ?? []) as Pick<Tournament, 'id' | 'name' | 'entry_fee_cents'>[]
-  let refundsIssued = 0, refundsFailed = 0, rewardsRestored = 0
+  let refundsEnsured = 0, refundsFailed = 0, rewardsRestored = 0
+  let tournamentsChecked = 0
   for (const t of tournaments) {
-    const results = await issueFlowRefunds(t.id, t.entry_fee_cents, appUrl, t.name)
-    for (const r of results) { if (r.error) refundsFailed++; else refundsIssued++ }
+    if (!workerCanStart(deadlineMs)) break
+    tournamentsChecked++
+    const stamp = await admin.from('tournaments').update({ last_transition_checked_at: new Date().toISOString() }).eq('id', t.id)
+    if (stamp.error) throw new Error(stamp.error.message)
+    // Only persist obligations here; the global worker dispatches with its own
+    // claim and the shared deadline, rather than 25 nested batches of 50 sends.
+    const queued = await admin.rpc('queue_tournament_refunds', { p_tournament_id: t.id })
+    if (queued.error) { refundsFailed++; continue }
+    refundsEnsured += typeof queued.data === 'number' ? queued.data : 0
     rewardsRestored += await restoreRedeemedRewards(admin, t.id)
   }
-  return { tournamentsChecked: tournaments.length, refundsIssued, refundsFailed, rewardsRestored }
+  return { tournamentsChecked, refundsEnsured, refundsFailed, rewardsRestored, deferred: tournaments.length - tournamentsChecked }
 }
 
 // Restituye las recompensas canjeadas en un torneo cancelado: quien usó su

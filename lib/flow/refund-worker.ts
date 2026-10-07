@@ -4,6 +4,7 @@ import { createFlowRefund, getFlowRefundStatus, type FlowRefundResponse } from '
 import { getAppUrl } from '@/lib/env'
 import type { FlowRefundAttempt } from '@/types/database'
 import { sendTournamentCancelledEmail } from '@/lib/email/refund-notifications'
+import { workerCanStart, workerDeadline } from '@/lib/ops/worker-budget'
 
 // Claims never expire into permission to send again. A dispatch can have reached
 // Flow even when this process died before persisting the token.
@@ -67,7 +68,7 @@ export async function reconcileRefund(id: string, token: string): Promise<boolea
   return recordRefundStatus(id, token, await getFlowRefundStatus(token))
 }
 
-export async function dispatchQueuedRefunds(): Promise<{ retried: number; skipped: number; errors: number }> {
+export async function dispatchQueuedRefunds(deadlineMs = workerDeadline()): Promise<{ retried: number; skipped: number; errors: number; deferred: number }> {
   const admin = createAdminClient()
   // A terminated worker leaves dispatching behind. Make the uncertainty visible;
   // preserve its nonce so its late response may still attach correlation safely.
@@ -79,7 +80,10 @@ export async function dispatchQueuedRefunds(): Promise<{ retried: number; skippe
     .eq('status', 'queued').order('created_at', { ascending: true }).limit(50)
   if (error) throw new Error(error.message)
   let retried = 0, skipped = 0, errors = 0
+  let processed = 0
   for (const row of data ?? []) {
+    if (!workerCanStart(deadlineMs)) break
+    processed++
     try {
       const result = await dispatchRefund(row.id)
       if (result.error) errors++
@@ -93,5 +97,5 @@ export async function dispatchQueuedRefunds(): Promise<{ retried: number; skippe
   // Count unresolved obligations too: a scheduler must not report healthy while
   // financial work requires human reconciliation.
   errors += unresolved.count ?? 0
-  return { retried, skipped, errors }
+  return { retried, skipped, errors, deferred: (data?.length ?? 0) - processed }
 }

@@ -1,6 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/server'
 import { reconcileFlowPayment } from '@/lib/flow/settlement'
 import { recordHeartbeat } from '@/lib/ops/heartbeat'
+import { workerCanStart, workerDeadline } from '@/lib/ops/worker-budget'
 
 // Read-only provider recovery, including response loss and legacy checkout expiry.
 // A provider query failure never changes the financial result to expired/rejected.
@@ -23,6 +24,7 @@ export async function GET(req: Request): Promise<Response> {
   }
 
   const startedAt = Date.now()
+  const deadlineMs = workerDeadline(startedAt)
 
   try {
     await recordHeartbeat('flow-reconcile', 'started')
@@ -43,6 +45,7 @@ export async function GET(req: Request): Promise<Response> {
     const results: ReconcileResult[] = []
 
     for (const attempt of pending ?? []) {
+      if (!workerCanStart(deadlineMs)) break
       try {
         const settlement = await reconcileFlowPayment(attempt.commerce_order)
         const code = settlement.status.status
@@ -78,6 +81,7 @@ export async function GET(req: Request): Promise<Response> {
       processedAt: new Date().toISOString(),
       durationMs: Date.now() - startedAt,
       total: results.length,
+      deferred: (pending?.length ?? 0) - new Set(results.map(r => r.commerceOrder)).size,
       errors: errorCount,
       results,
     }, { status: errorCount > 0 ? 500 : 200 })

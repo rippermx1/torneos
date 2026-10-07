@@ -1,5 +1,6 @@
 import { processTournamentTransitions } from '@/lib/tournament/lifecycle'
 import { recordHeartbeat } from '@/lib/ops/heartbeat'
+import { workerDeadline } from '@/lib/ops/worker-budget'
 
 // Endpoint llamado por un scheduler externo o por Vercel Cron.
 // También puede invocarse manualmente con el header Authorization correcto.
@@ -27,7 +28,7 @@ export async function GET(req: Request): Promise<Response> {
 
   try {
     await recordHeartbeat('process-tournaments', 'started')
-    const results = await processTournamentTransitions()
+    const results = await processTournamentTransitions(workerDeadline(startedAt))
 
     const acted = results.filter((r) => r.action !== 'skipped' && !r.error)
     const errors = results.filter((r) => r.error)

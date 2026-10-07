@@ -38,7 +38,7 @@ export function catalogSql() {
 SELECT jsonb_build_object(
   'schema',1,'observed_at',clock_timestamp(),'postgres',current_setting('server_version'),
   'versions',(SELECT coalesce(jsonb_agg(version ORDER BY version),'[]'::jsonb) FROM supabase_migrations.schema_migrations),
-  'migration_records',(SELECT coalesce(jsonb_agg(jsonb_build_object('version',version,'name',name,'sql_sha256',encode(extensions.digest(regexp_replace(replace(array_to_string(statements,E'\\n'),E'\\r\\n',E'\\n'),E'\\n+$','','g'),'sha256'),'hex')) ORDER BY version),'[]'::jsonb) FROM supabase_migrations.schema_migrations WHERE name ~ '^2026100[245][0-9]{6}_'),
+  'migration_records',(SELECT coalesce(jsonb_agg(jsonb_build_object('version',version,'name',name,'sql_sha256',encode(extensions.digest(regexp_replace(replace(array_to_string(statements,E'\\n'),E'\\r\\n',E'\\n'),E'\\n+$','','g'),'sha256'),'hex')) ORDER BY version),'[]'::jsonb) FROM supabase_migrations.schema_migrations WHERE name ~ '^2026100[2457][0-9]{6}_'),
   'tables',(SELECT coalesce(jsonb_agg(jsonb_build_object(
     'name',c.relname,'rls',c.relrowsecurity,
     'browser_write',EXISTS(SELECT 1 FROM pg_roles r WHERE r.rolname IN ('anon','authenticated') AND

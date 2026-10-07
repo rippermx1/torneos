@@ -57,6 +57,14 @@ describe('isolated persistent local payment provider', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2)
     expect(fetchMock.mock.calls[0][0].toString()).toContain('/api/webhooks/flow')
   })
+  it('recovers the same persisted payment by commerce order after losing the create response', async () => {
+    const created = await (await checkout()).json()
+    const payment = await readLocalPayment(created.token)
+    const recovered = await (await handleLocalFlow('payment/getStatusByCommerceId', signed({ commerceId: payment.commerceOrder }))).json()
+    expect(recovered.token).toBe(created.token)
+    expect(recovered.flowOrder).toBe(created.flowOrder)
+    expect((await handleLocalFlow('payment/getStatusByCommerceId', signed({ commerceId: 'missing' }))).status).toBe(404)
+  })
   it('refunds only confirmed payments and refuses excessive amounts', async () => {
     const { token, flowOrder } = await (await checkout()).json()
     const refund = (value: string) => handleLocalFlow('refund/create', signed({ amount: value, flowTrxId: String(flowOrder),

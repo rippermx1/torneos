@@ -317,6 +317,21 @@ export interface Dispute {
   resolved_by: string | null
   resolved_at: string | null
   created_at: string
+  case_kind?: 'consultation' | 'dispute' | 'incident'
+  acknowledged_by?: string | null
+  acknowledged_at?: string | null
+}
+
+export interface DataRequest {
+  id: string
+  user_id: string
+  kind: 'access' | 'erasure'
+  status: 'submitted' | 'reviewing' | 'blocked' | 'completed' | 'rejected'
+  description: string
+  response: string | null
+  response_storage_path: string | null
+  created_at: string
+  updated_at: string
 }
 
 export interface PlayerRating {
@@ -638,6 +653,18 @@ export type Database = {
       }
     }
     Functions: {
+      app_session_live: { Args: { p_user: string; p_session: string }; Returns: boolean }
+      revoke_app_sessions: { Args: { p_user: string }; Returns: number }
+      read_kyc_document: { Args: { p_actor: string; p_submission: string; p_side: string; p_owner_only: boolean }; Returns: string }
+      audit_payout_proof: { Args: { p_actor: string; p_id: string }; Returns: string }
+      open_support_case: { Args: { p_user: string; p_type: string; p_description: string; p_tournament: string | null; p_kind: string }; Returns: string }
+      acknowledge_support_case: { Args: { p_actor: string; p_id: string }; Returns: undefined }
+      open_data_request: { Args: { p_user: string; p_kind: string; p_description: string }; Returns: string }
+      review_data_request: { Args: { p_actor: string; p_id: string; p_status: string; p_reason: string; p_response_path: string | null }; Returns: undefined }
+      read_data_response: { Args: { p_actor: string; p_id: string }; Returns: string }
+      list_data_requests: { Args: { p_actor: string; p_owner_only: boolean }; Returns: DataRequest[] }
+      data_request_for_review: { Args: { p_actor: string; p_id: string }; Returns: Pick<DataRequest, 'user_id' | 'kind' | 'status'> }
+      account_data_export: { Args: { p_user: string }; Returns: Record<string, unknown> }
       correct_flow_fee_difference: { Args: { p_id: string; p_actor: string; p_note: string } & DbRecord; Returns: undefined }
       reject_cash_movement: { Args: { p_id: string; p_actor: string; p_note: string } & DbRecord; Returns: undefined }
       cash_status: { Args: DbRecord; Returns: import('@/lib/cash/model').CashStatus & DbRecord }

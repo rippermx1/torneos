@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/server'
 import { requireAdminMfaForApi } from '@/lib/supabase/admin-mfa'
+import { accountError } from '@/lib/account/requests'
 
 export async function GET(
   _req: Request,
@@ -10,6 +11,8 @@ export async function GET(
 
   const { id: requestId } = await params
   const admin = createAdminClient()
+  const permission = await admin.rpc('audit_payout_proof', { p_actor: auth.access.userId, p_id: requestId })
+  if (permission.error) return accountError(permission.error)
   const { data: payout } = await admin
     .from('withdrawal_requests')
     .select('proof_storage_path, receipt_number')
@@ -29,13 +32,15 @@ export async function GET(
   }
 
   const extension = payout.proof_storage_path.split('.').pop()?.replace(/[^a-z0-9]/gi, '') || 'bin'
-  const filename = `${payout.receipt_number ?? requestId}-evidencia.${extension}`
+  const receipt = String(payout.receipt_number ?? requestId).replace(/[^a-z0-9_-]/gi, '_').slice(0,80)
+  const filename = `${receipt}-evidencia.${extension}`
 
   return new Response(await data.arrayBuffer(), {
     headers: {
       'Content-Type': data.type || 'application/octet-stream',
       'Content-Disposition': `inline; filename="${filename}"`,
       'Cache-Control': 'private, no-store',
+      'Referrer-Policy': 'no-referrer',
       'X-Content-Type-Options': 'nosniff',
       'Content-Security-Policy': "sandbox; default-src 'none'",
     },

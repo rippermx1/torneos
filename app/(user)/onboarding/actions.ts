@@ -11,6 +11,7 @@ import { getOnboardingReturnPath } from '@/lib/auth/redirect'
 
 export async function completeOnboarding(formData: FormData) {
   const access = await requireUserRole()
+  if (access.isSuspended) return { error: 'Cuenta suspendida. Solicita revisión en soporte.' }
 
   const username = (formData.get('username') as string).trim()
   const fullName = (formData.get('fullName') as string).trim()

@@ -82,7 +82,7 @@ export async function loadOperationalDashboard() {
 export function assertOperationalSnapshot(value: unknown): asserts value is OperationalSnapshot {
   const snapshot = value as Partial<OperationalSnapshot> | null
   if (!snapshot || !Number.isFinite(Date.parse(snapshot.observed_at ?? '')) || snapshot.bank_cash_verified !== false ||
-      !Array.isArray(snapshot.queues) || snapshot.queues.length !== 7 || !Array.isArray(snapshot.checks) || snapshot.checks.length !== 5 || !Array.isArray(snapshot.jobs)) {
+      !Array.isArray(snapshot.queues) || snapshot.queues.length !== 9 || !Array.isArray(snapshot.checks) || snapshot.checks.length !== 6 || !Array.isArray(snapshot.jobs)) {
     throw new Error('Comprobación operativa incompleta o inválida')
   }
   for (const entry of [...snapshot.queues, ...snapshot.checks]) {

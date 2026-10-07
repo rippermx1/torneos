@@ -6,7 +6,7 @@ vi.mock('@/lib/email/operational', async importOriginal => ({ ...await importOri
 import { runOperationalMonitor, loadOperationalDashboard } from '@/lib/ops/monitor'
 import { OperationalEmailError } from '@/lib/email/operational'
 
-const snapshot = { observed_at: new Date().toISOString(), bank_cash_verified: false, active_incidents: 1, jobs: [], queues: Array.from({ length: 7 }, (_, n) => ({ key: `queue-${n}`, title: 'Queue', href: '/admin/operations', count: 0, amount_cents: 0, oldest_at: null })), checks: Array.from({ length: 5 }, (_, n) => ({ key: `check-${n}`, title: 'Check', href: '/admin/operations', count: 0, amount_cents: 0 })) }
+const snapshot = { observed_at: new Date().toISOString(), bank_cash_verified: false, active_incidents: 1, jobs: [], queues: Array.from({ length: 9 }, (_, n) => ({ key: `queue-${n}`, title: 'Queue', href: '/admin/operations', count: 0, amount_cents: 0, oldest_at: null })), checks: Array.from({ length: 6 }, (_, n) => ({ key: `check-${n}`, title: 'Check', href: '/admin/operations', count: 0, amount_cents: 0 })) }
 const notification = { id: 'stable-id', claim_token: 'claim-token', recipient: 'ops@example.test', text_body: 'Immutable', subject: 'Alert' }
 beforeEach(() => {
   vi.resetAllMocks(); vi.stubEnv('OPS_ESCALATION_EMAIL', 'backup@example.test')

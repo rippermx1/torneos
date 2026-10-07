@@ -47,6 +47,7 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Operación diaria',
     items: [
+      { href: '/admin/privacy', label: 'Solicitudes de datos', description: 'Acceso, respuestas privadas y retención', icon: UserRoundCheck },
       { href: '/admin/operations', label: 'Obligaciones y alertas', description: 'Montos, antigüedad y atención de incidentes', icon: ScrollText },
       {
         href: '/admin/tournaments',

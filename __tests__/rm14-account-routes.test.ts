@@ -6,6 +6,7 @@ vi.mock('@/lib/security/rate-limit', () => ({ checkRateLimit: h.rate, rateLimitR
 import { POST as password } from '@/app/api/account/password/route'
 import { POST as requests } from '@/app/api/account/data-requests/route'
 import { kycDocument } from '@/lib/account/documents'
+import { nextConfig } from '@/next.config'
 const id = '0ad3bb19-5d38-4bc9-b6d7-d37dbb33c762'
 const req = (body: unknown, origin = 'https://fixture.test') => new Request('https://fixture.test/api/account/password', { method: 'POST', headers: { origin, 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
 beforeEach(() => {
@@ -15,6 +16,9 @@ beforeEach(() => {
   h.update.mockResolvedValue({ error: null }); h.out.mockResolvedValue({ error: null })
 })
 describe('RM14 account boundaries', () => {
+  it('keeps the account support history reachable without the legacy redirect', async () => {
+    expect((await nextConfig.redirects!()).some(r => r.source === '/support')).toBe(false)
+  })
   it('rejects cross origin reset before auth or writes', async () => { expect((await password(req({}, 'https://evil.test'))).status).toBe(403); expect(h.auth).not.toHaveBeenCalled() })
   it.each(['password', 'totp'])('cannot reset with %s alone', async method => { h.claims.mockResolvedValue({ data: { claims: { amr: [{ method, timestamp: Date.now()/1000 }] } } }); expect((await password(req({ password: 'New-password-123!' }))).status).toBe(403); expect(h.update).not.toHaveBeenCalled() })
   it('rejects old email proof', async () => { h.claims.mockResolvedValue({ data: { claims: { amr: [{ method: 'otp', timestamp: Date.now()/1000-601 }] } } }); expect((await password(req({ password: 'New-password-123!' }))).status).toBe(403) })

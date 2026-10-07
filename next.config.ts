@@ -13,7 +13,6 @@ export const nextConfig: NextConfig = {
   async redirects() {
     return [
       { source: '/practice', destination: '/play', permanent: true },
-      { source: '/support', destination: '/support/dispute', permanent: false },
     ]
   },
   async headers() {

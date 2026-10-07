@@ -597,6 +597,13 @@
         "alias": "torneos-dev.vercel.app",
         "deploymentId": "dpl_AYUux1eSdLCDVjuUGWwbkypU4KgX"
       }
+    },
+    "localServiceShutdown": {
+      "runtime": "STOPPED; original PID absent and port 23431 closed",
+      "gateway": "Port 23421 closed",
+      "dockerContainers": "NOT_VERIFIED; Docker Desktop engine unavailable at final shutdown",
+      "sharedDockerRestart": "NOT_ATTEMPTED",
+      "fixtureDeletion": "PASS before engine unavailability"
     }
   },
   "pending": {

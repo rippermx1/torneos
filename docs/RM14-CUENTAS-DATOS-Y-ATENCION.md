@@ -92,3 +92,8 @@ formulario real con cuenta sintética en `artifacts/rm14/browser-local-support.p
 Se mantiene `STAGING_PHASE=configuration`, caja pausada, Flow/Resend bloqueados y
 correos operativos omitidos por instrucción del propietario. No se cobró, devolvió
 ni transfirió dinero. [Evidencia](RM14-CUENTAS-DATOS-Y-ATENCION-EVIDENCE.json).
+
+Al cierre, Docker Desktop dejó de responder. El PID del runtime propio ya no
+existe y los puertos propios 23431/23421 están cerrados; la parada individual de
+contenedores quedó NOT_VERIFIED. Las fixtures se eliminaron antes y no se reinició
+Docker compartido ni se eliminaron volúmenes. El despliegue cloud sigue verificado.

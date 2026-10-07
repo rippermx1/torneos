@@ -16,6 +16,19 @@ Recuperación completa, conciliación/reserva y ciclo monetario pendientes.
 
 ## Preparación de dinero real: RM-12 — 2026-10-05
 
+## RM-12: scheduler y callbacks en develop — 2026-10-07
+
+Candidata `e5e1c78` READY en el alias RM-12, Supabase dev. Cinco jobs propios,
+respuestas HTTP persistidas y éxitos recientes de los cuatro procesadores;
+watchdog cada cinco minutos. Excepción de protección sólo en el alias del ensayo:
+callbacks externos llegan y rechazan entradas inválidas. 3.834 pruebas, tipos,
+lint, build y 50 comprobaciones HTTPS PASS. Monitor Windows independiente
+programado y verificado; cloud continuo y recepción humana de avisos pendientes.
+Proveedores bloqueados; monitor conserva 503 con procesamiento sano y operación
+financiera sin aceptar. Dominio/jobs/Vault compartidos conservados. Cero cobros,
+devoluciones/retiros; caja pausada. **NO_GO; RM-12 IN_PROGRESS**. Sigue RM-13.
+[Entrega y evidencia](RM12-SCHEDULER-Y-CALLBACKS-DEVELOP.md).
+
 Seis migraciones ensayadas y aplicadas sólo en Supabase dev; catálogo, grants,
 semilla y Auth real PASS. Candidata `9548aed` publicada en el proyecto torneos-dev:
 https://rm12-torneos-dev.vercel.app, con proveedores bloqueados y caja pausada.

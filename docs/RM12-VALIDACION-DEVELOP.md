@@ -1,5 +1,7 @@
 # RM-12: validación de develop con configuración productiva
 
+Actualización **2026-10-07**: scheduler y acceso externo de callbacks implementados y verificados; aplicación `e5e1c78`, despliegue READY. Monitor independiente local activo; cloud/avisos y aceptación financiera pendientes. [Entrega y evidencia actuales](RM12-SCHEDULER-Y-CALLBACKS-DEVELOP.md). El detalle del 6 de octubre que sigue conserva su candidata y alcance originales.
+
 2026-10-06. IN_PROGRESS. **NO_GO para operar con dinero real.**
 
 El ensayo está publicado en https://rm12-torneos-dev.vercel.app dentro del proyecto

@@ -1,0 +1,164 @@
+{
+  "id": "E30",
+  "date": "2026-10-07",
+  "status": "PRODUCT_GAPS_PARTIALLY_CLOSED",
+  "sourceHead": "8cf03a4",
+  "unityBuild": "unity-2048-007",
+  "unityRebuilt": false,
+  "cloudJourney": {
+    "status": "PASS",
+    "origin": "https://torneos-dev.vercel.app",
+    "supabaseProjectRef": "jnoyjewsqbooqaiighcs",
+    "tournamentId": "9cc16cff-28bd-409d-8150-0f3783ec718a",
+    "gameId": "1b50a452-3cdf-43a8-90b0-ab0049c6e11b",
+    "realAuthApiDatabaseMfa": true,
+    "signalSource": "CONTROLLED_SYNTHETIC_FIXTURE_NOT_NEW_BOT_DETECTION",
+    "naturalTimeoutSeconds": 300,
+    "confirmedDirections": 1,
+    "score": 0,
+    "lateMoveRejected": true,
+    "aal1AdminDenied": true,
+    "aal2AdminInspection": true,
+    "pendingReviewBlocksFinalization": true,
+    "reasonedReviewResolution": true,
+    "officialRanking": true,
+    "repeatedFinalizationStatus": 400,
+    "closedGameUnchanged": true,
+    "credits": {
+      "count": 1,
+      "cents": 100,
+      "linkedTournamentIsTest": true,
+      "creditMetadataIsTestAsserted": false
+    },
+    "moneyPaymentsWithdrawalsFlow": false,
+    "artifact": "artifacts/2048-gap-closure/cloud-journey.json"
+  },
+  "cloudMigration": {
+    "source": "supabase/migrations/20261005131216_guard_2048_integrity_reviews.sql",
+    "cloudVersion": "20261007152049",
+    "name": "guard_2048_integrity_reviews",
+    "sha256LfNormalized": "d03acc197a1a715f82008d221cba3a5bb63a30499fee9d806ae002543b5ae0b4",
+    "target": "ISOLATED_DEVELOPMENT_ONLY",
+    "existingReviewedMigration": true,
+    "inspectionRpcPresent": true,
+    "privateSchemaPresent": true,
+    "jointSqlTestsPassed": 9
+  },
+  "physical": {
+    "status": "OWNER_REPORTED_PHYSICAL_PASS",
+    "device": "Xiaomi 12 Pro",
+    "os": "Android",
+    "browser": "Chrome",
+    "origin": "https://torneos-dev.vercel.app/play",
+    "mode": "practice",
+    "fluidityQuote": "se ve fluido",
+    "criteriaConfirmationQuote": "Sí, los tres criterios se cumplen",
+    "oneMovePerSwipe": true,
+    "rotationNoOverlap": true,
+    "screenLockSeconds": 25,
+    "sameBoardAndScoreAfterReturnWithoutReload": true,
+    "measuredFpsMemoryNetwork": "NOT_RUN",
+    "competitivePhysicalJourney": "NOT_RUN"
+  },
+  "humanGui": {
+    "status": "OWNER_ACCEPTED",
+    "normalAndExpanded": true,
+    "endMessageScoreAndAutomaticTable": true,
+    "quote": "Sí, las dos vistas son claras",
+    "browserChecks": "PASS",
+    "screenshots": [
+      "artifacts/2048-gap-closure/cloud-official-normal.png",
+      "artifacts/2048-gap-closure/cloud-official-expanded.png"
+    ]
+  },
+  "dependencies": {
+    "changes": {
+      "source-map-js": [
+        "1.2.1",
+        "1.2.2"
+      ],
+      "proxy-addr": [
+        "2.0.7",
+        "2.0.8"
+      ],
+      "postcss-selector-parser": [
+        "7.1.4",
+        "7.1.6"
+      ],
+      "@modelcontextprotocol/sdk": [
+        "1.29.0",
+        "1.32.1"
+      ]
+    },
+    "rootPackageJsonChangedByThisDelivery": false,
+    "sharedNodeModulesChanged": false,
+    "cleanIsolatedInstall": "PASS",
+    "isolatedNextBuildTypecheck": "PASS",
+    "regressions": {
+      "passed": 270,
+      "failed": 0,
+      "files": 16
+    },
+    "productionAudit": {
+      "status": "PASS",
+      "total": 0
+    },
+    "completeAudit": {
+      "status": "OPEN_DEVELOPMENT_TOOLING",
+      "high": 8,
+      "critical": 0,
+      "moderate": 0
+    },
+    "remainingRootAdvisory": "GHSA-vfj7-8cjw-p6xm",
+    "remainingLibrary": "braces",
+    "forceOrBreakingDowngradeUsed": false,
+    "auditArtifacts": [
+      "artifacts/2048-gap-closure/audit-final-production.json",
+      "artifacts/2048-gap-closure/audit-final-full.json"
+    ]
+  },
+  "deployment": {
+    "status": "PUBLISHED_VERIFIED_PASS",
+    "project": "torneos-dev",
+    "projectId": "prj_QHiZYuYkztFToMGmwhPsyOx9nVdG",
+    "previousDeployment": "dpl_DXTdRYRTgfUaCrkh6Y4rtu3c1TFM",
+    "candidateId": "dpl_AYUux1eSdLCDVjuUGWwbkypU4KgX",
+    "candidateUrl": "https://torneos-k6s2viagi-carlos-projects-a9dcfa0f.vercel.app",
+    "packageSource": "FROZEN_PUBLISHED_DEVELOPMENT_PACKAGE_WITH_FOUR_TRANSITIVE_UPDATES",
+    "googleAuth": "DISABLED_IN_CANDIDATE_BUILD_AND_RUNTIME_ONLY",
+    "projectEnvironmentChanged": false,
+    "priorFailedCandidate": "dpl_3xrdiufeJgg12sDE9SvNAHhewL9d",
+    "priorFailure": "PROJECT_GOOGLE_FLAG_TRUE_CONFLICTS_WITH_FROZEN_PACKAGE_GUARD",
+    "productionCommercialProjectChanged": false,
+    "candidateChecks": 22,
+    "publishedChecks": 22,
+    "canonical": "https://torneos-dev.vercel.app",
+    "rollbackAvailable": "dpl_DXTdRYRTgfUaCrkh6Y4rtu3c1TFM",
+    "verificationArtifacts": [
+      "artifacts/2048-gap-closure/candidate-verification.json",
+      "artifacts/2048-gap-closure/published-verification.json"
+    ]
+  },
+  "preview3090": {
+    "status": "IMPLEMENTED_ACTIVATION_NOT_VERIFIED",
+    "standaloneBuild": ".next/snake-sa15-circle-death-014",
+    "filesCopiedAndHashMatched": 6,
+    "automaticRestartAttemptsRejected": 2,
+    "explicitOwnerApprovalReceived": true,
+    "rejectionDetailedReasonProvided": false,
+    "manualScript": "scripts/activate-2048-preview-manual.ps1",
+    "manualScriptSyntax": "PASS",
+    "manualScriptProcessGuardMatch": "PASS",
+    "ownerReportedManualResult": "Ejecutado y aparece PASS",
+    "independentVerification": "FAIL_CAPSULE_HTTP_404_AND_OLD_NEXT_PID_43740_REMAINS",
+    "browserUnity": "LOAD_FAILURE",
+    "snakeProcessPreserved": 20692,
+    "sharedSnakePrepareIntegration": "TWO_LINES_ONLY_REMAINDER_UNRELATED_WIP",
+    "ownerFollowup": "no las tengo"
+  },
+  "remaining": [
+    "Local 3090 activation discrepancy requires actual restart and independent browser verification",
+    "Eight development-tooling audit warnings"
+  ],
+  "scope": "DEVELOPMENT_TESTS_OWNER_REPORTED_PHYSICAL_AND_HUMAN_ACCEPTANCE; NOT_PRODUCTION_OR_REAL_MONEY"
+}

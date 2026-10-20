@@ -1,0 +1,14 @@
+{
+  "name": "torneos-dev",
+  "supabaseProjectRef": "jnoyjewsqbooqaiighcs",
+  "supabaseOrganizationId": "nclptkgsjoxwjtghgslm",
+  "vercelTeamId": "team_PE6bjY2Mkofe3t853KkiDKlM",
+  "vercelScope": "carlos-projects-a9dcfa0f",
+  "protectedSupabaseProjectRefs": ["baeylvoipmazcthnwxmz"],
+  "protectedVercelProjectIds": ["prj_JVade2zbENRvNUxfmXEQtX2QTuIh"],
+  "publishedGames": ["2048", "factory-empire"],
+  "excludedGames": {
+    "alien-run": "AGENTS.md mantiene KayKit y LocalArt locales",
+    "snake-arena": "Servidor autoritativo persistente pendiente de adaptación y prueba cloud"
+  }
+}

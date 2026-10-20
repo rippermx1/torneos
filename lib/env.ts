@@ -26,6 +26,18 @@ export function getSupabaseUrl() {
   return firstNonEmpty(process.env.NEXT_PUBLIC_SUPABASE_URL)
 }
 
+// Docker reaches the host gateway while the browser reaches loopback.
+export function getSupabaseServerUrl() {
+  return firstNonEmpty(process.env.SUPABASE_SERVER_URL, getSupabaseUrl())
+}
+
+export function getSupabaseCookieOptions() {
+  const publicUrl = getSupabaseUrl()
+  if (!publicUrl) return undefined
+  // Both clients must use the same cookie key even with different network URLs.
+  return { name: `sb-${new URL(publicUrl).hostname.split('.')[0]}-auth-token` }
+}
+
 export function getSupabaseBrowserKey() {
   return firstNonEmpty(
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
@@ -70,6 +82,9 @@ export function getFlowApiSecret() {
 
 export function getFlowApiBase() {
   const value = firstNonEmpty(process.env.FLOW_API_BASE)
+  if (process.env.TORNEOS_ENV === 'cloud-development' && value !== 'https://sandbox.flow.cl/api') {
+    throw new Error('El ambiente de desarrollo requiere Flow sandbox')
+  }
   return value ? normalizeUrl(value) : 'https://sandbox.flow.cl/api'
 }
 

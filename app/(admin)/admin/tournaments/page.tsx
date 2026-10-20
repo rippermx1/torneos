@@ -4,6 +4,7 @@ import Link from 'next/link'
 import type { Tournament } from '@/types/database'
 import { TournamentActions } from '@/components/tournament/tournament-actions'
 import { calculateFixedPrizeFinancials, getTournamentPreset } from '@/lib/tournament/finance'
+import { isCommunityFreeTournament } from '@/lib/tournament/community-free'
 
 export const revalidate = 0
 
@@ -147,6 +148,8 @@ export default async function AdminTournamentsPage() {
         </Link>
       </div>
 
+      {process.env.TORNEOS_ENV !== 'cloud-development' && <Link href="/admin/tournaments/snake-arena/new" className="inline-block rounded-lg border px-4 py-3 text-sm font-semibold">+ Crear torneo gratuito de Snake Arena</Link>}
+
       {/* ── Panel de pasivo de premios ── */}
       <div className={`border rounded-xl p-4 space-y-3 ${!coverageOk ? 'border-red-400 bg-red-50' : 'border-border bg-muted/30'}`}>
         <div className="flex items-center justify-between">
@@ -221,6 +224,7 @@ export default async function AdminTournamentsPage() {
           const canFinalize = t.status === 'live' || t.status === 'finalizing'
           const canCancel   = t.status === 'scheduled' || t.status === 'open'
           const paidTournament = t.entry_fee_cents > 0
+          const community = isCommunityFreeTournament(t)
           const financialHealth = getTournamentFinancialHealth(t, Math.max(playerCount, t.min_players))
 
           return (
@@ -241,7 +245,7 @@ export default async function AdminTournamentsPage() {
                   </p>
                 </div>
                 <div className="text-right shrink-0 text-sm">
-                  <p className="font-medium">{formatCLP(t.entry_fee_cents)}</p>
+                  <p className="font-medium">{community ? 'Gratis · un intento' : formatCLP(t.entry_fee_cents)}</p>
                   <p className="text-xs text-muted-foreground">
                     {playerCount} / {t.max_players} jugadores
                     {playerCount < t.min_players && t.status !== 'completed' && t.status !== 'cancelled'
@@ -249,7 +253,7 @@ export default async function AdminTournamentsPage() {
                       : ''}
                   </p>
                   <p className={`text-xs ${!paidTournament ? 'text-amber-700' : financialHealth.ok ? 'text-green-700' : 'text-red-700'}`}>
-                    {!paidTournament
+                    {community ? 'Clasificación sin premios' : !paidTournament
                       ? `Costo promo ${formatCLP(t.prize_1st_cents + t.prize_2nd_cents + t.prize_3rd_cents)}`
                       : financialHealth.label}
                   </p>
@@ -274,6 +278,7 @@ export default async function AdminTournamentsPage() {
                     tournamentId={t.id}
                     canFinalize={canFinalize}
                     canCancel={canCancel}
+                    communityFree={community}
                   />
                 )}
               </div>

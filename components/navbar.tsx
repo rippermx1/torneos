@@ -13,7 +13,6 @@ const navLinks = [
   { href: '/play', label: 'Practicar' },
 ]
 const userLinks = [
-  { href: '/premios', label: 'Mis premios' },
   { href: '/profile', label: 'Mi perfil' },
   { href: '/support/dispute', label: 'Soporte' },
 ]

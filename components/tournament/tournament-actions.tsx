@@ -7,20 +7,21 @@ interface Props {
   tournamentId: string
   canFinalize?: boolean
   canCancel?: boolean
+  communityFree?: boolean
 }
 
-export function TournamentActions({ tournamentId, canFinalize, canCancel }: Props) {
+export function TournamentActions({ tournamentId, canFinalize, canCancel, communityFree = false }: Props) {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<string | null>(null)
   const router = useRouter()
 
   async function handleFinalize() {
-    if (!confirm('¿Finalizar este torneo ahora? Se distribuirán los premios.')) return
+    if (!confirm(communityFree ? '¿Finalizar el reto y publicar su clasificación oficial? No hay premios.' : '¿Finalizar este torneo ahora? Se distribuirán los premios.')) return
     await callAction('finalize', '✓ Finalizado')
   }
 
   async function handleCancel() {
-    if (!confirm('¿Cancelar este torneo? Se reembolsará la inscripción a todos los inscritos.')) return
+    if (!confirm(communityFree ? '¿Cancelar este reto gratuito? No hay cobros ni reembolsos.' : '¿Cancelar este torneo? Se reembolsará la inscripción a todos los inscritos.')) return
     await callAction('cancel', '✓ Cancelado')
   }
 
@@ -35,7 +36,10 @@ export function TournamentActions({ tournamentId, canFinalize, canCancel }: Prop
       if (!res.ok) {
         setResult(`Error: ${data.error}`)
       } else {
-        if (action === 'finalize') {
+        if (communityFree) {
+          const count = data.result?.detail?.ranked_players ?? 0
+          setResult(action === 'finalize' ? `${successPrefix} — ${count} participantes en la clasificación oficial` : `${successPrefix} — reto gratuito cancelado`)
+        } else if (action === 'finalize') {
           const d = data.result?.detail
           setResult(
             `${successPrefix} — ${d?.ranked_players ?? 0} jugadores rankeados, ${d?.prizes_awarded ?? 0} premios acreditados`

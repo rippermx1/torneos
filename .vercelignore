@@ -1,5 +1,7 @@
-.env
-.env.*
-node_modules
+.env*
 .next
-coverage
+node_modules
+.git
+*.tsbuildinfo
+next-env.d.ts
+artifacts

@@ -1,0 +1,7 @@
+{
+  "name": "snake-arena-server", "version": "0.1.0", "private": true, "type": "module",
+  "engines": {"node": ">=22"},
+  "scripts": {"build": "tsc -p tsconfig.json", "start": "node dist/main.js", "test": "npm run build && node --test dist/tests/*.check.js", "bots": "node dist/bots.js", "benchmark:load": "npm run build && node dist/load-benchmark.js"},
+  "dependencies": {"ws": "^8.18.3"},
+  "devDependencies": {"@types/ws": "^8.18.1", "@types/node": "^22.0.0", "typescript": "^5.9.0"}
+}

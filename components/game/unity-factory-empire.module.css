@@ -1,0 +1,36 @@
+.player { display: grid; gap: 12px; }
+.toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; font-size: 12px; }
+.toolbar > span { flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tool { min-height: 44px; padding: 8px 14px; border: 1px solid #8e9caf; border-radius: 10px; color: inherit; }
+.colonyToolbar .tool { min-height: 48px; }
+.tool:focus-visible { outline: 3px solid #238867; outline-offset: 3px; }
+.prestigeDialog { width: min(620px, calc(100vw - 32px)); max-height: calc(100svh - 32px); overflow-y: auto; margin: auto; padding: clamp(18px, 4vw, 30px); border: 1px solid #3e796c; border-radius: 20px; background: #0d1e25; color: #e6f7ef; box-shadow: 0 20px 90px #0009; }
+.prestigeDialog::backdrop { background: #02090ed9; }
+.prestigeDialog h2 { font-size: clamp(23px, 5vw, 30px); line-height: 1.15; margin: 12px 0 20px; }
+.prestigeDialog p { margin: 14px 0; font-size: 15px; line-height: 1.5; }
+.prestigeDialog .prestigeEyebrow { font-size: 11px; letter-spacing: .14em; color: #80cfb9; }
+.prestigeReward { display: grid; gap: 8px; padding: 18px; border-radius: 12px; background: #173d36; }
+.prestigeReward strong { font-size: 30px; color: #84f6c8; }
+.prestigeReward span { font-size: 13px; }
+.prestigeActions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+.prestigeActions > button { flex: 1 1 220px; min-height: 48px; }
+.prestigeConfirm { border-radius: 10px; padding: 10px 14px; background: #80efbf; color: #09251d; font-weight: 700; }
+.prestigeConfirm:disabled { opacity: .45; }
+.prestigeConfirm:focus-visible { outline: 3px solid white; outline-offset: 3px; }
+.game { width: 100%; max-width: 1120px; margin-inline: auto; height: clamp(520px, 76svh, 740px); overflow: hidden; border-radius: 16px; border: 1px solid #334155; background: #080f1d; }
+.colonyGame { max-width: none; height: max(520px, calc(100svh - 260px)); }
+.player:has(option[value='mobile']:checked) .colonyGame { height: clamp(320px, 76svh, 840px); }
+.profile { display: flex; align-items: center; gap: 12px; font-size: 12px; }
+.profile select { min-height: 48px; max-width: 100%; padding: 8px 12px; border: 1px solid #8e9caf; border-radius: 10px; color: inherit; background: var(--background, #080f1d); }
+.profile select:focus-visible { outline: 3px solid #238867; outline-offset: 3px; }
+.expanded { position: fixed; inset: 0; margin: 0; z-index: 80; display: flex; flex-direction: column; gap: 8px; background: #080f1d; color: #e2e8f0; padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left)); }
+.expanded .toolbar { flex: none; }
+.expanded .profile { flex: none; }
+.expanded .profile select { background: #12232d; color: #e2e8f0; color-scheme: dark; }
+.expanded .game { flex: 1; min-height: 0; height: auto; max-width: none; }
+@media (max-width: 640px) {
+  .colonyToolbar > span { flex-basis: 100%; white-space: normal; }
+}
+@media (pointer: coarse) {
+  .colonyGame { height: clamp(320px, 76svh, 840px); }
+}

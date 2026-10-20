@@ -44,7 +44,7 @@ export default async function TournamentReturnPage({ params, searchParams }: Pro
   return (
     <main className="mx-auto max-w-md px-4 py-12">
       <div className="rounded-2xl border border-foreground/10 bg-background p-6 text-center">
-        {status === 'credited' ? (
+        {status === 'paid' || status === 'credited' ? (
           <>
             <h1 className="text-2xl font-semibold">¡Inscripción confirmada!</h1>
             <p className="mt-2 text-sm text-foreground/70">

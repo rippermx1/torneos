@@ -1,7 +1,10 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { getAllowedOrigins, getSupabaseBrowserKey, getSupabaseUrl } from '@/lib/env'
+import { getAllowedOrigins, getAppUrl, getSupabaseBrowserKey, getSupabaseUrl, getSupabaseServerUrl, getSupabaseCookieOptions } from '@/lib/env'
+import { buildAppCsp } from '@/lib/security/csp'
+import { FREE_2048_MONEY_DISABLED_CODE, getFree2048TournamentId, isFree2048MoneyPathBlocked } from '@/lib/release/free-2048'
+import { COMMUNITY_FREE_CONFIG, isCommunityFreeTournament } from '@/lib/tournament/community-free'
 
 // ── CORS ────────────────────────────────────────────────────
 const ALLOWED_ORIGINS = getAllowedOrigins()
@@ -15,32 +18,14 @@ const ALLOWED_ORIGINS = getAllowedOrigins()
 // connect-src: incluye Supabase (HTTPS y WSS para Realtime). Flow se accede
 // solo desde el server (lib/flow/payments.ts), no desde el browser, por eso
 // no esta listado.
-// img-src: Supabase Storage emite URLs en *.supabase.co. data:/blob: para
+// img-src: permite el origen configurado de Supabase Storage. data:/blob: para
 // avatars, screenshots locales, capturas KYC.
 // frame-ancestors 'none': impide que la app sea embebida (clickjacking).
 function buildCsp(nonce: string): string {
-  const isDev = process.env.NODE_ENV === 'development'
-  const supabase = getSupabaseUrl() ?? ''
-  const supabaseHttps = supabase ? supabase.replace(/^http/, 'http').replace(/^http:/, 'https:') : ''
-  const supabaseWss = supabase ? supabase.replace(/^http/, 'ws') : ''
-
-  const csp = [
-    `default-src 'self'`,
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ''}`,
-    // Tailwind/Geist generan algunos estilos inline en runtime; en dev usamos
-    // 'unsafe-inline' para no romper HMR. En prod confiamos en el nonce.
-    `style-src 'self' ${isDev ? "'unsafe-inline'" : `'nonce-${nonce}' 'unsafe-inline'`}`,
-    `img-src 'self' blob: data: ${supabaseHttps}`.trim(),
-    `font-src 'self' data:`,
-    `connect-src 'self' ${supabaseHttps} ${supabaseWss}`.trim(),
-    `object-src 'none'`,
-    `base-uri 'self'`,
-    `form-action 'self'`,
-    `frame-ancestors 'none'`,
-    `upgrade-insecure-requests`,
-  ]
-
-  return csp.join('; ')
+  return buildAppCsp(nonce, {
+    development: process.env.NODE_ENV === 'development',
+    appUrl: getAppUrl(), supabaseUrl: getSupabaseUrl(),
+  })
 }
 
 const CORS_HEADERS = {
@@ -78,10 +63,15 @@ const PUBLIC_PREFIXES = [
   '/api/wallet/deposit/flow/return', // Flow vuelve con POST del browser sin cookies SameSite=Lax
   '/api/webhooks',
   '/api/cron',
+  '/api/local-flow', // Disabled outside the explicitly configured local simulator.
+  '/api/snake-arena/tournaments', // Public reads; mutations enforce roles and origin in handlers.
 ]
+// The daily definition is free; activity checks its own Auth and Origin.
+// Exact paths keep other 2048 APIs behind the existing session guard.
+const PUBLIC_EXACT_PATHS = new Set(['/api/2048/daily', '/api/2048/activity'])
 
 function isPublicPath(pathname: string): boolean {
-  return PUBLIC_PREFIXES.some(
+  return PUBLIC_EXACT_PATHS.has(pathname) || PUBLIC_PREFIXES.some(
     (p) => pathname === p || pathname.startsWith(p + '/') || pathname.startsWith(p + '?')
   )
 }
@@ -90,7 +80,19 @@ function isAdminPath(pathname: string): boolean {
   return pathname.startsWith('/admin')
 }
 
+function moneyDisabledResponse() {
+  return NextResponse.json({ error: 'El dinero real no está disponible en esta versión gratuita.',
+    code: FREE_2048_MONEY_DISABLED_CODE }, { status: 423, headers: {
+    'Cache-Control': 'private, no-store', 'Pragma': 'no-cache', 'Expires': '0',
+  } })
+}
+
 export async function proxy(req: NextRequest) {
+  // Fixed free release: financial routes never reach Auth, DB, providers or CORS preflight.
+  if (isFree2048MoneyPathBlocked(req.nextUrl.pathname, req.method)) {
+    return moneyDisabledResponse()
+  }
+
   // ── Preflight OPTIONS ────────────────────────────────────────
   if (req.method === 'OPTIONS') {
     const origin = getCorsOrigin(req)
@@ -120,7 +122,7 @@ export async function proxy(req: NextRequest) {
   res.headers.set('Expires', '0')
   res.headers.set('Content-Security-Policy', csp)
 
-  const supabaseUrl = getSupabaseUrl()
+  const supabaseUrl = getSupabaseServerUrl()
   const supabaseBrowserKey = getSupabaseBrowserKey()
 
   if (!supabaseUrl || !supabaseBrowserKey) {
@@ -133,6 +135,7 @@ export async function proxy(req: NextRequest) {
     supabaseUrl,
     supabaseBrowserKey,
     {
+      cookieOptions: getSupabaseCookieOptions(),
       cookies: {
         getAll() {
           return req.cookies.getAll()
@@ -155,10 +158,24 @@ export async function proxy(req: NextRequest) {
   // getUser() verifica el token con Supabase Auth (no decodifica localmente)
   const { data: { user } } = await supabase.auth.getUser()
 
+  const tournamentId = getFree2048TournamentId(req.nextUrl.pathname)
+  if (tournamentId) {
+    // A preset name or zero entry alone is insufficient: legacy freerolls have prizes.
+    // Read through the caller's SSR client/RLS; never use service_role or mutate here.
+    try {
+      const fields = ['id', ...Object.keys(COMMUNITY_FREE_CONFIG), 'registration_opens_at', 'play_window_start', 'play_window_end'].join(',')
+      const { data, error } = await supabase.from('tournaments').select(fields).eq('id', tournamentId).maybeSingle()
+      const tournament: unknown = data
+      if (error || !isCommunityFreeTournament(tournament) || !('id' in tournament) || tournament.id !== tournamentId) return moneyDisabledResponse()
+    } catch { return moneyDisabledResponse() }
+  }
+
   // ── Proteger rutas privadas ───────────────────────────────────
   if (!isPublicPath(req.nextUrl.pathname) && !user) {
-    const url = req.nextUrl.clone()
+    const url = new URL('/sign-in', getAppUrl(req.url))
     url.pathname = '/sign-in'
+    url.search = ''
+    url.searchParams.set('next', req.nextUrl.pathname + req.nextUrl.search)
     return withCors(NextResponse.redirect(url), req)
   }
 
@@ -167,7 +184,7 @@ export async function proxy(req: NextRequest) {
   // En el middleware solo bloqueamos si no hay sesión en absoluto;
   // el check de is_admin ocurre en admin/layout.tsx.
   if (isAdminPath(req.nextUrl.pathname) && !user) {
-    const url = req.nextUrl.clone()
+    const url = new URL('/', getAppUrl(req.url))
     url.pathname = '/'
     return withCors(NextResponse.redirect(url), req)
   }
@@ -177,7 +194,9 @@ export async function proxy(req: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    '/((?!_next|games/|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
     '/(api|trpc)(.*)',
+    // Encoded API segments must still reach the denial guard, including file-like suffixes.
+    '/([^?]*%[^?]*)',
   ],
 }

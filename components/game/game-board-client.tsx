@@ -6,6 +6,8 @@ import Link from 'next/link'
 import { getTileVisual } from './tile-colors'
 import { applyLocalPracticeMove, applyTournamentMove, createLocalPracticeGame } from '@/lib/game/local-practice'
 import type { Direction } from '@/types/game'
+import { gameResultLabel, parseGameSnapshot, type GameSnapshot } from '@/lib/game/game-snapshot'
+import { ServerGameClock } from '@/lib/game/server-game-clock'
 
 export interface GameConfig {
   mode?: 'local' | 'remote'
@@ -30,6 +32,9 @@ interface GameState {
   bestScore: number
   timedOut: boolean
   deadlineAt?: string
+  resultStatus?: string
+  endReason?: string | null
+  serverNow?: string
 }
 
 // Cada celda sabe exactamente cuánto y en qué dirección se desplaza
@@ -168,6 +173,8 @@ export function GameBoardClient({ config }: { config: GameConfig }) {
   const scoreFloatTimeoutRef = useRef<number | null>(null)
   const shakeTimeoutRef = useRef<number | null>(null)
   const timeoutReportedRef = useRef(false)
+  const confirmedTerminalRef = useRef<GameSnapshot | null>(null)
+  const knownGameIdRef = useRef<string | undefined>(undefined)
 
   // Queue FIFO para requests al servidor (modo torneo).
   // Garantiza que cada request llega solo después de que el anterior fue confirmado,
@@ -187,10 +194,13 @@ export function GameBoardClient({ config }: { config: GameConfig }) {
 
   // Temporizador
   useEffect(() => {
+    if (state?.gameOver) return
     const deadlineAt = state?.deadlineAt ?? config.playWindowEnd
     if (!deadlineAt) return
     const end = new Date(deadlineAt).getTime()
     if (!Number.isFinite(end)) return
+    const clock = new ServerGameClock()
+    clock.synchronize({ deadlineAt, ...(state?.serverNow ? { serverNow: state.serverNow } : {}) })
 
     const reportTimeout = () => {
       if (isLocalMode || !config.timeoutUrl || !state?.gameId || timeoutReportedRef.current) return
@@ -199,23 +209,36 @@ export function GameBoardClient({ config }: { config: GameConfig }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ gameId: state.gameId }),
+      }).then(async response => {
+        const data = await response.json(), snapshot = parseGameSnapshot(data)
+        if (!response.ok || !snapshot || snapshot.gameId !== state.gameId) throw new Error('Estado no confirmado')
+        if (snapshot.gameOver) {
+          confirmedTerminalRef.current = snapshot; serverQueueRef.current = []; prevBoardRef.current = snapshot.board
+          setCellAnims(new Map())
+          setState(p => p ? { ...p, board: snapshot.board, score: snapshot.score, moveNumber: snapshot.moveNumber,
+            gameOver: true, timedOut: snapshot.endReason === 'timeout', resultStatus: snapshot.status, endReason: snapshot.endReason } : p)
+        } else {
+          timeoutReportedRef.current = false
+          setState(p => p ? { ...p, serverNow: snapshot.serverNow, deadlineAt: snapshot.deadlineAt ?? undefined } : p)
+        }
       }).catch(() => {
-        timeoutReportedRef.current = false
+        if (confirmedTerminalRef.current) return
+        setError('No se confirmó el cierre. Recupera la partida antes de continuar.')
       })
     }
 
     const tick = () => {
-      const left = Math.max(0, Math.floor((end - Date.now()) / 1000))
+      const left = clock.remainingSeconds()
       setTimeLeft(left)
       if (left === 0) {
-        setState((p) => p ? { ...p, timedOut: true, gameOver: true } : p)
+        if (isLocalMode) setState((p) => p ? { ...p, timedOut: true, gameOver: true } : p)
         reportTimeout()
       }
     }
     tick()
     const id = setInterval(tick, 1000)
     return () => clearInterval(id)
-  }, [config.playWindowEnd, config.timeoutUrl, isLocalMode, state?.deadlineAt, state?.gameId])
+  }, [config.playWindowEnd, config.timeoutUrl, isLocalMode, state?.deadlineAt, state?.gameId, state?.gameOver, state?.serverNow])
 
   const triggerAnims = useCallback(
     (prev: number[][] | null, next: number[][], dir: Direction | null) => {
@@ -287,7 +310,7 @@ export function GameBoardClient({ config }: { config: GameConfig }) {
   )
 
   const drainServerQueue = useCallback(async () => {
-    if (serverBusyRef.current || serverQueueRef.current.length === 0) return
+    if (serverBusyRef.current || serverQueueRef.current.length === 0 || confirmedTerminalRef.current) return
     serverBusyRef.current = true
 
     const { direction, displayBoard, moveNumber, gameId } = serverQueueRef.current[0]
@@ -313,12 +336,24 @@ export function GameBoardClient({ config }: { config: GameConfig }) {
 
       serverQueueRef.current.shift()
       const data = await res.json()
+      if (confirmedTerminalRef.current) return
+
+      const snapshot = parseGameSnapshot(data)
+      if (snapshot && snapshot.gameId !== gameId) throw new Error('Estado de otra partida')
+      if (snapshot?.gameOver && (res.ok || res.status === 400 || res.status === 409) && snapshot.gameId === gameId) {
+        confirmedTerminalRef.current = snapshot
+        serverQueueRef.current = []; prevBoardRef.current = snapshot.board; setCellAnims(new Map())
+        lastServerBoardRef.current = { board: snapshot.board, score: snapshot.score, moveNumber: snapshot.moveNumber }
+        setState(prev => prev ? { ...prev, board: snapshot.board, score: snapshot.score, moveNumber: snapshot.moveNumber,
+          gameOver: true, timedOut: snapshot.endReason === 'timeout', resultStatus: snapshot.status, endReason: snapshot.endReason } : prev)
+        config.onGameOver?.(snapshot.score)
+        return
+      }
 
       if (!res.ok) {
         serverQueueRef.current = []
-        if (data.timeout) {
-          setState((p) => p ? { ...p, timedOut: true, gameOver: true } : p)
-        } else if (lastServerBoardRef.current) {
+        setError(data.error ?? 'No se confirmó el movimiento. Recupera la partida antes de continuar.')
+        if (lastServerBoardRef.current) {
           const s = lastServerBoardRef.current
           prevBoardRef.current = s.board
           setCellAnims(new Map())
@@ -412,7 +447,9 @@ export function GameBoardClient({ config }: { config: GameConfig }) {
       }
       // else: cola con pendientes y juego activo → no tocar visual, esperar a vaciar.
     } catch {
+      if (confirmedTerminalRef.current) return
       serverQueueRef.current = []
+      setError('No se confirmó el movimiento. Recupera la partida antes de continuar.')
       if (lastServerBoardRef.current) {
         const s = lastServerBoardRef.current
         prevBoardRef.current = s.board
@@ -457,9 +494,14 @@ export function GameBoardClient({ config }: { config: GameConfig }) {
         return
       }
 
-      const res = await fetch(config.startUrl, { method: 'POST' })
+      const res = await fetch(config.startUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: knownGameIdRef.current && config.timeoutUrl ? JSON.stringify({ recoverOnly: true, gameId: knownGameIdRef.current }) : undefined })
       const data = await res.json()
       if (!res.ok) { setError(data.error ?? 'Error al iniciar partida'); return }
+      const snapshot = parseGameSnapshot(data)
+      if (snapshot && knownGameIdRef.current && snapshot.gameId !== knownGameIdRef.current) throw new Error('Estado de otra partida')
+      confirmedTerminalRef.current = snapshot?.gameOver ? snapshot : null
+      knownGameIdRef.current = data.gameId
 
       const newBoard = data.board as number[][]
       triggerAnims(null, newBoard, null)
@@ -480,8 +522,11 @@ export function GameBoardClient({ config }: { config: GameConfig }) {
         seed: '',
         moveNumber: data.moveNumber,
         gameId: data.gameId,
-        gameOver: false,
-        timedOut: false,
+        gameOver: snapshot?.gameOver ?? false,
+        timedOut: snapshot?.endReason === 'timeout',
+        resultStatus: snapshot?.status,
+        endReason: snapshot?.endReason,
+        serverNow: typeof data.serverNow === 'string' ? data.serverNow : undefined,
         deadlineAt: typeof data.deadlineAt === 'string' ? data.deadlineAt : config.playWindowEnd,
         bestScore: prev?.bestScore ?? 0,
       }))
@@ -490,7 +535,7 @@ export function GameBoardClient({ config }: { config: GameConfig }) {
     } finally {
       setLoading(false)
     }
-  }, [config.playWindowEnd, config.startUrl, isLocalMode, triggerAnims])
+  }, [config.playWindowEnd, config.startUrl, config.timeoutUrl, isLocalMode, triggerAnims])
 
   const startGame = useCallback(() => {
     setLoading(true)
@@ -502,7 +547,7 @@ export function GameBoardClient({ config }: { config: GameConfig }) {
   }, [loadGame])
 
   const sendMove = useCallback((direction: Direction) => {
-    if (!state || state.gameOver || state.timedOut || loading) return
+    if (!state || state.gameOver || state.timedOut || loading || confirmedTerminalRef.current || timeoutReportedRef.current) return
 
     // ── Modo práctica (local) ──────────────────────────────────
     if (isLocalMode) {
@@ -720,6 +765,7 @@ export function GameBoardClient({ config }: { config: GameConfig }) {
           timedOut={timedOut}
           leaderboardUrl={config.leaderboardUrl}
           tournamentUrl={config.tournamentUrl}
+          resultLabel={gameResultLabel(state?.resultStatus, state?.endReason ?? (timedOut ? 'timeout' : 'no_moves'))}
         />
       )}
     </div>
@@ -961,11 +1007,13 @@ function TournamentEndModal({
   timedOut,
   leaderboardUrl,
   tournamentUrl,
+  resultLabel,
 }: {
   score: number
   timedOut: boolean
   leaderboardUrl?: string
   tournamentUrl?: string
+  resultLabel: string
 }) {
   const router = useRouter()
   const [countdown, setCountdown] = useState(8)
@@ -996,7 +1044,7 @@ function TournamentEndModal({
 
         <div>
           <h2 className="text-xl font-bold leading-tight">
-            {timedOut ? '¡Se acabó el tiempo!' : '¡Sin más movimientos!'}
+            {resultLabel}
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
             Tu puntaje ha quedado registrado

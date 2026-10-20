@@ -7,6 +7,7 @@ import { redirect } from 'next/navigation'
 import { sendWelcomeEmail } from '@/lib/email/account-notifications'
 import { isAdult } from '@/lib/identity/verification'
 import { CURRENT_TERMS_VERSION } from '@/lib/legal/terms'
+import { getOnboardingReturnPath } from '@/lib/auth/redirect'
 
 export async function completeOnboarding(formData: FormData) {
   const access = await requireUserRole()
@@ -69,5 +70,5 @@ export async function completeOnboarding(formData: FormData) {
     }
   })
 
-  redirect('/tournaments')
+  redirect(getOnboardingReturnPath(formData.get('next')))
 }

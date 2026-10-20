@@ -19,7 +19,7 @@ export function checkPlayWindow(tournament: PlayWindowTournament | null | undefi
   const end = new Date(tournament.play_window_end).getTime()
 
   if (now < start) return { ok: false, reason: 'window_not_open' }
-  if (now > end) return { ok: false, reason: 'window_closed' }
+  if (now >= end) return { ok: false, reason: 'window_closed' }
 
   return { ok: true }
 }

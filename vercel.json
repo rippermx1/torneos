@@ -1,12 +1,18 @@
 {
-  "crons": [
+  "framework": "nextjs",
+  "installCommand": "npm ci && npm ci --prefix games/snake-arena/server",
+  "buildCommand": "node scripts/check-2048-free-release.mjs && next build --webpack",
+  "git": { "deploymentEnabled": false },
+  "crons": [],
+  "headers": [
     {
-      "path": "/api/cron/reconcile-refunds",
-      "schedule": "0 12 * * *"
-    },
-    {
-      "path": "/api/cron/watchdog",
-      "schedule": "0 13 * * *"
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
     }
   ]
 }

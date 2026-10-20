@@ -6,6 +6,8 @@ import { sendTournamentPrizeEmail } from '@/lib/email/tournament-notifications'
 import { sendOpsAlertEmail } from '@/lib/email/ops-notifications'
 import { updateRating } from '@/lib/tournament/rating'
 import { reviewWinnerStats, computeIntervalStats } from '@/lib/anticheat/winner-review'
+import { requireIntegrityClearance } from '@/lib/anticheat/integrity'
+import { isCommunityFreePresetKey } from '@/lib/tournament/community-free'
 
 export interface TransitionResult {
   tournamentId: string
@@ -166,7 +168,7 @@ async function processSingleTournament(
       // terminen antes de dar por exitosa esta corrida.
       await Promise.all([
         notifyPrizeWinners(supabase, tournament.id, tournament.name),
-        updatePlayerRatings(supabase, tournament.id),
+        ...(isCommunityFreePresetKey(tournament.preset_key) ? [] : [updatePlayerRatings(supabase, tournament.id)]),
         reviewPrizeWinners(supabase, tournament.id, tournament.name),
       ])
 
@@ -229,6 +231,9 @@ async function finalizeTournament(
   data: Record<string, unknown>
   completedByAnotherExecution: boolean
 }> {
+  // Persist the review before calling the existing financial transaction. The
+  // SQL completion guard independently rejects direct calls with open signals.
+  await requireIntegrityClearance(supabase, tournamentId)
   const { data, error } = await supabase.rpc('finalize_tournament', {
     p_tournament_id: tournamentId,
   })
@@ -339,7 +344,7 @@ export async function forceFinalizeTournament(tournamentId: string): Promise<Tra
 
   await Promise.all([
     notifyPrizeWinners(supabase, tournament.id, tournament.name),
-    updatePlayerRatings(supabase, tournament.id),
+    ...(isCommunityFreePresetKey(tournament.preset_key) ? [] : [updatePlayerRatings(supabase, tournament.id)]),
     reviewPrizeWinners(supabase, tournament.id, tournament.name),
   ])
 

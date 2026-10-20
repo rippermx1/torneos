@@ -4,6 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:games": "node scripts/dev-unity-preview.mjs",
+    "games:build:2048": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-build-2048.ps1",
+    "games:build:snake-arena": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-build-snake-arena.ps1",
+    "snake:server": "npm run build --prefix games/snake-arena/server && npm start --prefix games/snake-arena/server",
+    "snake:test": "npm test --prefix games/snake-arena/server",
+    "games:publish": "node scripts/publish-unity.mjs",
     "build": "next build",
     "start": "node scripts/start-standalone.mjs",
     "check:production-env": "node scripts/check-production-env.mjs",
@@ -22,7 +28,12 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "local:up": "node scripts/local-environment.mjs up",
+    "local:setup": "node scripts/local-environment.mjs setup",
+    "local:seed": "node scripts/local-environment.mjs seed",
+    "local:smoke": "node scripts/local-environment.mjs smoke",
+    "local:snake:smoke": "node scripts/smoke-snake-tournaments.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
@@ -31,7 +42,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.8.0",
-    "next": "16.2.10",
+    "next": "16.3.8",
     "react": "19.2.7",
     "react-dom": "19.2.7",
     "resend": "^6.12.3",
@@ -43,12 +54,13 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@vitest/coverage-v8": "^4.1.5",
+    "@vitest/coverage-v8": "4.1.11",
     "eslint": "^9",
-    "eslint-config-next": "16.2.10",
+    "eslint-config-next": "16.3.8",
     "shadcn": "^4.4.0",
+    "supabase": "2.119.0",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vitest": "^4.1.5"
+    "vitest": "4.1.11"
   }
 }

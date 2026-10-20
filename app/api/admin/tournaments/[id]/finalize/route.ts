@@ -31,6 +31,14 @@ export async function POST(
     return Response.json({ ok: true, result })
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
+    if (message === 'INTEGRITY_REVIEW_REQUIRED') {
+      return Response.json({ ok: false, error: 'Revisa las señales pendientes en Partidas antes de finalizar el torneo.',
+        code: message }, { status: 409 })
+    }
+    if (message === 'INTEGRITY_STATE_UNCONFIRMED') {
+      return Response.json({ ok: false, error: 'No se pudo comprobar la integridad. La finalización no fue confirmada.',
+        code: message }, { status: 503 })
+    }
     return Response.json({ ok: false, error: message }, { status: 400 })
   }
 }

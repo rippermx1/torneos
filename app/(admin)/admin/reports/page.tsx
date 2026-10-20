@@ -32,6 +32,11 @@ export default async function AdminReportsPage({
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Link href="/admin/reports/2048-trial" className="text-sm border rounded-lg px-3 py-2 hover:bg-muted transition-colors">Ensayo de 2048</Link>
+          <Link href="/admin/reports/2048" className="text-sm border rounded-lg px-3 py-2 hover:bg-muted transition-colors">Retorno de 2048</Link>
+          <Link href="/admin/reports/2048-community" className="text-sm border rounded-lg px-3 py-2 hover:bg-muted transition-colors">Retos comunitarios de 2048</Link>
+          <Link href="/admin/accounting" className="text-sm border rounded-lg px-3 py-2 hover:bg-muted">Gastos, banco y cierres</Link>
+          <Link href="/admin/reports/snake-funnel" className="text-sm border rounded-lg px-3 py-2 hover:bg-muted transition-colors">Embudo de Snake</Link>
           <a
             href="/api/admin/reports/accounting.csv"
             className="text-sm border rounded-lg px-3 py-2 hover:bg-muted transition-colors"
@@ -169,7 +174,7 @@ export default async function AdminReportsPage({
                   <MetricRow label="Usuarios únicos" value={selected.uniqueUsers.toLocaleString('es-CL')} />
                   <MetricRow label="Presupuesto interno de premios" value={formatCLP(selected.prizeFundCents)} />
                   <MetricRow label="Premios acreditados" value={formatCLP(selected.prizeCreditsCents)} />
-                  <MetricRow label="Ventas netas después de devoluciones" value={formatCLP(selected.netSalesAfterRefundsCents)} />
+                  <MetricRow label="Ingreso neto devengado (journal)" value={formatCLP(selected.netSalesAfterRefundsCents)} />
                   <MetricRow label="Contribución devengada estimada" value={formatCLP(selected.accruedContributionCents)} tone={selected.accruedContributionCents >= 0 ? 'green' : 'red'} />
                 </div>
               </section>
@@ -282,7 +287,7 @@ function ReconciliationBanner({ reconciliation }: { reconciliation: Reconciliati
   if (reconciliation.ok) {
     return (
       <div className="rounded-xl border border-green-300 bg-green-50 px-4 py-3 text-sm text-green-900">
-        Conciliación: invariantes contables OK.
+        Comprobaciones internas OK. La conciliación con banco, Flow y RCV se revisa en Gastos, banco y cierres.
       </div>
     )
   }

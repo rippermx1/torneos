@@ -1,0 +1,13 @@
+import {SNAKE_MISSIONS,type SnakeProgress} from '@/lib/game/snake-arena-missions'
+export function SnakeMissions({progress,notice,active,accountXp,xpState='saved',pendingXp=0}:{progress:SnakeProgress|null;notice:string;active:boolean;accountXp?:number;xpState?:string;pendingXp?:number}){
+  const xp=accountXp??progress?.xp??0,level=Math.floor(xp/100)+1,within=xp%100,done=progress?.missions.filter(m=>m.complete).length??0
+  return <div className={`border border-violet-300/20 text-white ${active?'rounded-xl bg-[#091b29]/90 p-3':'rounded-2xl bg-gradient-to-br from-[#192039] to-[#091b29] p-4'}`} aria-label="Misiones de práctica">
+    <div className="flex flex-wrap items-center justify-between gap-2"><h2 className="text-sm font-semibold text-violet-100">{active?'Misiones':'Misiones de esta partida'} · {done}/3</h2><p className="text-sm font-semibold text-teal-200">Nivel {level} · {xp} XP</p></div>
+    <div role="progressbar" aria-label="XP hacia el siguiente nivel" aria-valuemin={0} aria-valuemax={100} aria-valuenow={within} aria-valuetext={`${within} de 100 XP hacia nivel ${level+1}`} className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10"><div style={{width:`${within}%`}} className="h-full rounded-full bg-gradient-to-r from-violet-400 to-teal-300 transition-all duration-500 motion-reduce:transition-none" /></div>
+    <div className={`grid grid-cols-3 gap-2 ${active?'mt-2':'mt-3'}`}>{SNAKE_MISSIONS.map((m,i)=>{const state=progress?.missions[i];return <div key={m.id} title={m.label} aria-label={`${m.label}: ${state?.complete?'completada':`${state?.value??0} de ${m.target}`}, ${m.xp} XP`} className={`rounded-xl border ${active?'px-2 py-1':'p-2 sm:p-3'} ${state?.complete?'border-teal-300/40 bg-teal-300/10':'border-white/10 bg-white/5'}`}>
+      <p className="text-xs text-white/80"><span aria-hidden="true" className="mr-1 text-teal-200">{state?.complete?'✓':m.icon}</span>{active?['Luces','Tamaño','Núcleo'][i]:m.label}</p><p className="mt-1 text-xs font-semibold text-violet-100">{state?.complete?'Completada':`${state?.value??0}/${m.target}`} {!active&&<span className="text-white/55">· {m.xp} XP</span>}</p>
+    </div>})}</div>
+    <p role="status" className="mt-2 text-[11px] text-white/60">{accountXp!==undefined?(xpState==='saved'?'XP de cuenta guardada':`${pendingXp} XP pendientes · ${xpState==='retrying'?'reintentando guardado':'guardando…'}`):'XP temporal de invitado'}{!active&&' · Cada nueva partida renueva los tres objetivos. Los niveles son de práctica.'}</p>
+    {notice&&<p key={notice} role="status" className="mt-3 rounded-lg border border-teal-200/35 bg-teal-300/15 px-3 py-2 text-sm font-semibold text-teal-100 shadow-lg shadow-teal-400/10 motion-safe:animate-pulse">✦ {notice}</p>}
+  </div>
+}

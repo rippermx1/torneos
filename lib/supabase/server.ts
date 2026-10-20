@@ -1,13 +1,13 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
-import { getSupabaseBrowserKey, getSupabaseServiceKey, getSupabaseUrl } from '@/lib/env'
+import { getSupabaseBrowserKey, getSupabaseServiceKey, getSupabaseServerUrl, getSupabaseCookieOptions } from '@/lib/env'
 import type { Database } from '@/types/database'
 
 // Tipo genérico omitido hasta generar tipos con `supabase gen types typescript`.
 // Usar los helpers de tipos de /types/database.ts para tipiear resultados.
 
 export async function createClient() {
-  const supabaseUrl = getSupabaseUrl()
+  const supabaseUrl = getSupabaseServerUrl()
   const supabaseBrowserKey = getSupabaseBrowserKey()
 
   if (!supabaseUrl || !supabaseBrowserKey) {
@@ -23,6 +23,7 @@ export async function createClient() {
     supabaseBrowserKey,
     {
       db: { schema: 'public' },
+      cookieOptions: getSupabaseCookieOptions(),
       cookies: {
         getAll() {
           return cookieStore.getAll()
@@ -44,7 +45,7 @@ export async function createClient() {
 // Cliente con service role — bypasea RLS.
 // NUNCA exponer este cliente al browser ni a inputs del usuario.
 export function createAdminClient() {
-  const supabaseUrl = getSupabaseUrl()
+  const supabaseUrl = getSupabaseServerUrl()
   const supabaseServiceKey = getSupabaseServiceKey()
 
   if (!supabaseUrl || !supabaseServiceKey) {

@@ -27,7 +27,8 @@ export default async function TournamentAuditPage({
       .eq('tournament_id', id)
       .order('final_score', { ascending: false })
       .order('highest_tile', { ascending: false })
-      .order('move_count', { ascending: true }),
+      .order('move_count', { ascending: true })
+      .order('user_id', { ascending: true }),
   ])
 
   if (!tData) notFound()

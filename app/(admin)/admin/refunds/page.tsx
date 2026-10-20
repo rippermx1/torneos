@@ -174,7 +174,7 @@ export default async function AdminRefundsPage({
                     {a.tax_document_issued_at ? formatDateTimeCL(a.tax_document_issued_at) : 'fecha registrada'}
                   </p>
                 )}
-                {a.status === 'completed' && a.tax_document_status === 'required' && (
+                {a.status === 'completed' && !a.tax_document_verified_at && (
                   <RefundCreditNoteForm refundId={a.id} />
                 )}
               </div>

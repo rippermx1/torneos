@@ -1,4 +1,5 @@
 import { Resend } from 'resend'
+import { isLocalEnvironment } from '@/lib/dev/local-environment'
 
 let _client: Resend | null = null
 
@@ -27,6 +28,19 @@ export interface SendEmailParams {
 }
 
 export async function sendEmail(params: SendEmailParams): Promise<void> {
+  if (isLocalEnvironment()) {
+    const url = new URL(process.env.LOCAL_EMAIL_API_URL ?? 'http://127.0.0.1:54324/api/v1/send')
+    const internalMailpit = url.hostname === 'supabase_inbucket_torneos' && url.port === '8025'
+    if (url.protocol !== 'http:' || (!['127.0.0.1', 'localhost', 'host.docker.internal'].includes(url.hostname) && !internalMailpit) ||
+        url.pathname !== '/api/v1/send') throw new Error('Correo local mal configurado')
+    const response = await fetch(url, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(10_000),
+      body: JSON.stringify({ From: { Email: 'system@torneos.local', Name: 'Torneos local' },
+        To: [{ Email: params.to }], Subject: `[LOCAL] ${params.subject}`, HTML: params.html, Text: params.text }),
+    })
+    if (!response.ok) throw new Error(`Mailpit respondió ${response.status}`)
+    return
+  }
   const client = getClient()
   if (!client) return
 
@@ -49,6 +63,12 @@ export async function sendTemplateEmail(params: {
   from?: string
   data: Record<string, string | number | boolean>
 }): Promise<void> {
+  if (isLocalEnvironment()) {
+    // Provider-hosted templates are unavailable offline. Preserve their variables in a local preview.
+    const text = `Plantilla local: ${params.templateId}\n${JSON.stringify(params.data, null, 2)}`
+    const escaped = text.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
+    return sendEmail({ to: params.to, subject: params.templateId, text, html: `<pre>${escaped}</pre>` })
+  }
   const client = getClient()
   if (!client) return
 

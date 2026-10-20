@@ -7,6 +7,7 @@ import { sendTournamentRegistrationEmail } from '@/lib/email/tournament-notifica
 import { isAdult } from '@/lib/identity/verification'
 import { canRegisterForTier, DEFAULT_SKILL_TIER, SKILL_TIER_LABELS } from '@/lib/tournament/rating'
 import { hasAcceptedCurrentTerms } from '@/lib/legal/terms'
+import { isCommunityFreePresetKey } from '@/lib/tournament/community-free'
 import type { SkillTier } from '@/types/database'
 
 // ───────────────────────────────────────────────────────────────
@@ -42,7 +43,7 @@ export async function POST(
       .single(),
     supabase
       .from('tournaments')
-      .select('id, name, entry_fee_cents, max_players, registration_opens_at, play_window_start, play_window_end, status, skill_tier')
+      .select('id, name, preset_key, entry_fee_cents, max_players, registration_opens_at, play_window_start, play_window_end, status, skill_tier')
       .eq('id', tournamentId)
       .single(),
   ])
@@ -71,6 +72,10 @@ export async function POST(
   }
 
   if (!tournament) return Response.json({ error: 'Torneo no encontrado' }, { status: 404 })
+  const community = isCommunityFreePresetKey(tournament.preset_key)
+  if (community && !auth.access.user.email_confirmed_at) {
+    return Response.json({ error: 'Confirma tu correo para participar en el reto gratuito.' }, { status: 403 })
+  }
 
   if (tournament.entry_fee_cents > 0) {
     return Response.json(
@@ -127,7 +132,7 @@ export async function POST(
     return Response.json({ error: 'No se pudo completar la inscripción.' }, { status: 500 })
   }
 
-  after(async () => {
+  if (!community) after(async () => {
     try {
       const { data: authUser } = await supabase.auth.admin.getUserById(auth.access.userId)
       const email = authUser?.user?.email

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { isFree2048MoneyPathBlocked } from '@/lib/release/free-2048'
 import {
   ChartNoAxesCombined,
   CircleHelp,
@@ -74,8 +75,9 @@ const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    label: 'Dinero y control',
+    label: 'Reportes y control',
     items: [
+      { href: '/admin/accounting', label: 'Contabilidad y cierres', description: 'Gastos, cartola y aprobación mensual', icon: Landmark },
       {
         href: '/admin/payments',
         label: 'Cobros',
@@ -90,8 +92,8 @@ const NAV_GROUPS: NavGroup[] = [
       },
       {
         href: '/admin/reports',
-        label: 'Finanzas y reportes',
-        description: 'Conciliación y documentos tributarios',
+        label: 'Informes',
+        description: 'Actividad, retorno y resumen operativo',
         icon: ChartNoAxesCombined,
       },
     ],
@@ -107,7 +109,9 @@ const NAV_GROUPS: NavGroup[] = [
       },
     ],
   },
-]
+].map(group => ({ ...group, items: group.items.filter(item =>
+  item.href !== '/admin/accounting' && !isFree2048MoneyPathBlocked(item.href, 'GET')) }))
+  .filter(group => group.items.length > 0)
 
 function isCurrentPath(pathname: string, href: string): boolean {
   return href === '/admin'

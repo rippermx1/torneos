@@ -10,7 +10,7 @@ export default async function PublicLayout({ children }: { children: React.React
   return (
     <>
       <Navbar initialIsSignedIn={isSignedIn} initialHasUserRole={isSignedIn} />
-      <main className="flex-1">{children}</main>
+      <main id="main-content" className="flex-1">{children}</main>
       <Footer isSignedIn={isSignedIn} />
     </>
   )

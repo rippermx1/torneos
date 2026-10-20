@@ -4,6 +4,7 @@ interface RateLimitOptions {
   key: string
   limit: number
   windowMs: number
+  onError?: 'allow' | 'deny'
 }
 
 export interface RateLimitResult {
@@ -12,6 +13,7 @@ export interface RateLimitResult {
   remaining: number
   resetAt: number
   retryAfterSeconds: number
+  unavailable?: boolean
 }
 
 export function getRequestIp(req: Request) {
@@ -28,14 +30,12 @@ export function getRequestIp(req: Request) {
 // public.rate_limit_buckets accedida via RPC atomica rate_limit_consume.
 // Antes habia un Map en memoria por proceso, evadible escalando lambdas.
 //
-// Fail-open: si la RPC falla (DB caida, latencia extrema), permitimos la
-// request pero registramos el incidente. Bloquear todo el trafico durante
-// un incidente de DB es peor que tolerar un breve rebase de los limites.
+// Existing callers allow requests during an outage. Competitive game routes
+// explicitly deny them: a missing quota cannot authorize another mutation.
 export async function checkRateLimit(options: RateLimitOptions): Promise<RateLimitResult> {
   const now = Date.now()
-  const supabase = createAdminClient()
-
   try {
+    const supabase = createAdminClient()
     const { data, error } = await supabase.rpc('rate_limit_consume', {
       p_key: options.key,
       p_limit: options.limit,
@@ -43,8 +43,8 @@ export async function checkRateLimit(options: RateLimitOptions): Promise<RateLim
     })
 
     if (error || !data) {
-      console.error('[rate-limit] RPC error, fail-open', { key: options.key, error })
-      return failOpen(options, now)
+      console.error('[rate-limit] RPC unavailable', { key: options.key, error })
+      return unavailable(options, now)
     }
 
     const payload = data as {
@@ -57,6 +57,11 @@ export async function checkRateLimit(options: RateLimitOptions): Promise<RateLim
     }
 
     const resetAt = Date.parse(payload.expires_at)
+    if (typeof payload.ok !== 'boolean' || !Number.isSafeInteger(payload.limit) || payload.limit !== options.limit
+      || !Number.isSafeInteger(payload.remaining) || payload.remaining < 0 || payload.remaining > options.limit
+      || !Number.isFinite(resetAt) || !Number.isSafeInteger(payload.retry_after_seconds) || payload.retry_after_seconds < 0) {
+      return unavailable(options, now)
+    }
 
     return {
       ok: payload.ok,
@@ -66,14 +71,16 @@ export async function checkRateLimit(options: RateLimitOptions): Promise<RateLim
       retryAfterSeconds: payload.retry_after_seconds,
     }
   } catch (err) {
-    console.error('[rate-limit] unexpected error, fail-open', { key: options.key, err })
-    return failOpen(options, now)
+    console.error('[rate-limit] unexpected error', { key: options.key, err })
+    return unavailable(options, now)
   }
 }
 
-function failOpen(options: RateLimitOptions, now: number): RateLimitResult {
+function unavailable(options: RateLimitOptions, now: number): RateLimitResult {
+  const deny = options.onError === 'deny'
   return {
-    ok: true,
+    ok: !deny,
+    unavailable: deny,
     limit: options.limit,
     remaining: options.limit,
     resetAt: now + options.windowMs,
@@ -84,11 +91,13 @@ function failOpen(options: RateLimitOptions, now: number): RateLimitResult {
 export function rateLimitResponse(result: RateLimitResult) {
   return Response.json(
     {
-      error: 'Demasiadas solicitudes. Intenta nuevamente más tarde.',
+      error: result.unavailable ? 'No se pudo comprobar el límite de solicitudes. Intenta nuevamente más tarde.'
+        : 'Demasiadas solicitudes. Intenta nuevamente más tarde.',
+      ...(result.unavailable ? { code: 'RATE_LIMIT_UNAVAILABLE' } : {}),
       retryAfterSeconds: result.retryAfterSeconds,
     },
     {
-      status: 429,
+      status: result.unavailable ? 503 : 429,
       headers: {
         'Retry-After': String(result.retryAfterSeconds),
         'X-RateLimit-Limit': String(result.limit),

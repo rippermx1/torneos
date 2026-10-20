@@ -1,0 +1,172 @@
+{
+  "version": "colony-3",
+  "sectors": 5,
+  "cellsPerSector": 6,
+  "initialSector": 2,
+  "veinStart": 14,
+  "veinSize": 2,
+  "manualCooldownMs": 250,
+  "offlineCapMs": 28800000,
+  "maxBuildings": 200,
+  "maxLevel": 50,
+  "maxAmountDigits": 60,
+  "prestigeThresholdMilli": "1000000",
+  "prestigeCorePercent": 1,
+  "purchaseNumerator": 115,
+  "purchaseDenominator": 100,
+  "upgradeNumerator": 155,
+  "upgradeDenominator": 100,
+  "levelNumerator": 125,
+  "levelDenominator": 100,
+  "landBase": 250,
+  "landNumerator": 160,
+  "landDenominator": 100,
+  "buildings": [
+    {
+      "id": "mining-drone",
+      "name": "Drone minero",
+      "width": 1,
+      "depth": 1,
+      "baseCost": 15,
+      "rateMilli": 200
+    },
+    {
+      "id": "surface-drill",
+      "name": "Taladro de superficie",
+      "width": 1,
+      "depth": 1,
+      "baseCost": 100,
+      "rateMilli": 1500
+    },
+    {
+      "id": "drilling-platform",
+      "name": "Plataforma perforadora",
+      "width": 2,
+      "depth": 2,
+      "baseCost": 750,
+      "rateMilli": 10000
+    },
+    {
+      "id": "industrial-beacon",
+      "name": "Baliza industrial",
+      "width": 1,
+      "depth": 1,
+      "baseCost": 600,
+      "rateMilli": 0,
+      "supportRadius": 2,
+      "supportPercent": 10
+    }
+  ],
+  "technologies": [
+    {
+      "id": "mining-drone-10",
+      "name": "Drone minero I",
+      "familyId": "mining-drone",
+      "requiredOwned": 10,
+      "requiredSectors": 1,
+      "cost": 300,
+      "numerator": 3,
+      "denominator": 2
+    },
+    {
+      "id": "mining-drone-25",
+      "name": "Drone minero II",
+      "familyId": "mining-drone",
+      "requiredOwned": 25,
+      "requiredSectors": 1,
+      "cost": 1500,
+      "numerator": 3,
+      "denominator": 2
+    },
+    {
+      "id": "mining-drone-50",
+      "name": "Drone minero III",
+      "familyId": "mining-drone",
+      "requiredOwned": 50,
+      "requiredSectors": 1,
+      "cost": 7500,
+      "numerator": 2,
+      "denominator": 1
+    },
+    {
+      "id": "surface-drill-10",
+      "name": "Taladro de superficie I",
+      "familyId": "surface-drill",
+      "requiredOwned": 10,
+      "requiredSectors": 1,
+      "cost": 2000,
+      "numerator": 3,
+      "denominator": 2
+    },
+    {
+      "id": "surface-drill-25",
+      "name": "Taladro de superficie II",
+      "familyId": "surface-drill",
+      "requiredOwned": 25,
+      "requiredSectors": 1,
+      "cost": 10000,
+      "numerator": 3,
+      "denominator": 2
+    },
+    {
+      "id": "surface-drill-50",
+      "name": "Taladro de superficie III",
+      "familyId": "surface-drill",
+      "requiredOwned": 50,
+      "requiredSectors": 1,
+      "cost": 50000,
+      "numerator": 2,
+      "denominator": 1
+    },
+    {
+      "id": "drilling-platform-10",
+      "name": "Plataforma perforadora I",
+      "familyId": "drilling-platform",
+      "requiredOwned": 10,
+      "requiredSectors": 1,
+      "cost": 15000,
+      "numerator": 3,
+      "denominator": 2
+    },
+    {
+      "id": "drilling-platform-25",
+      "name": "Plataforma perforadora II",
+      "familyId": "drilling-platform",
+      "requiredOwned": 25,
+      "requiredSectors": 1,
+      "cost": 75000,
+      "numerator": 3,
+      "denominator": 2
+    },
+    {
+      "id": "drilling-platform-50",
+      "name": "Plataforma perforadora III",
+      "familyId": "drilling-platform",
+      "requiredOwned": 50,
+      "requiredSectors": 1,
+      "cost": 375000,
+      "numerator": 2,
+      "denominator": 1
+    },
+    {
+      "id": "colony-efficiency",
+      "name": "Eficiencia de colonia",
+      "familyId": "",
+      "requiredOwned": 0,
+      "requiredSectors": 2,
+      "cost": 2500,
+      "numerator": 110,
+      "denominator": 100
+    },
+    {
+      "id": "colony-coordination",
+      "name": "Coordinación industrial",
+      "familyId": "",
+      "requiredOwned": 0,
+      "requiredSectors": 3,
+      "cost": 10000,
+      "numerator": 125,
+      "denominator": 100
+    }
+  ]
+}

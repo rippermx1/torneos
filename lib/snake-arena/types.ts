@@ -1,0 +1,5 @@
+export type SnakeTournament={id:string;name:string;starts_at:string;duration_seconds:number;max_players:number;rules_version:string;status:'open'|'locked'|'live'|'completed'|'cancelled';cancel_reason:string|null;created_by:string;created_at:string}
+export type SnakeEntry={tournament_id:string;user_id:string;display_name:string;registered_at:string}
+export type SnakeResult={tournament_id:string;user_id:string;display_name:string;score:number;kills:number;survived_ms:number;rank:number;reason:string}
+type Table<R>={Row:R;Insert:Partial<R>;Update:Partial<R>;Relationships:[]}
+export type SnakeDatabase={public:{Tables:{snake_tournaments:Table<SnakeTournament>;snake_entries:Table<SnakeEntry>;snake_results:Table<SnakeResult>};Views:Record<string,never>;Functions:{snake_register:{Args:{p_tournament:string;p_user:string;p_terms:string};Returns:undefined};snake_competitive_snapshot:{Args:{p_owner:string|null};Returns:Record<string,unknown>}};Enums:Record<string,never>;CompositeTypes:Record<string,never>}}

@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "scope": "Minimal original Unity sources for portable native parity and bridge regression tests; no runtime builds or licensed art.",
+  "factoryBuild": "factory-empire-3d-035",
+  "snakeBuild": "snake-arena-014",
+  "originalWorkspace": "C:/torneos (provenance only; never used at test runtime)",
+  "publishedSourceManifest": {
+    "originalRelativePath": "artifacts/factory-empire-3d/fe17/source-before-035.json",
+    "sha256": "86c450e00e3712514169b438c72f9cd23cdfea9b400670a4f5b067135018fb7f",
+    "colonySha256": "a14ae71ef5bdfe923504ffb4b0b53584fcca0e67cdcb1500f90c11a719bd5f17",
+    "typescriptDomainSha256": "4b9252956b2a06a473c0e486b156098b00663c7b49de49f267cc8a9394f26e8d"
+  },
+  "files": [
+    {
+      "path": "games/factory-empire/UnityProject/Assets/FactoryEmpire3D/Domain/Colony.cs",
+      "sha256": "a14ae71ef5bdfe923504ffb4b0b53584fcca0e67cdcb1500f90c11a719bd5f17",
+      "originalRelativePath": "artifacts/factory-empire-3d/industrial-047/baseline-046/Colony.cs",
+      "evidence": "Factory 035 source hash matches fe17/source-before-035.json"
+    },
+    {
+      "path": "games/factory-empire/UnityProject/Assets/FactoryEmpire3D/Domain/Colony.cs.meta",
+      "sha256": "f891dd2aae374b85fe3aa1e0f57a71fbacc735db3edc3d89bee4ae46abc6164c",
+      "originalRelativePath": "games/factory-empire/UnityProject/Assets/FactoryEmpire3D/Domain/Colony.cs.meta",
+      "evidence": "Original Unity metadata retained"
+    },
+    {
+      "path": "games/factory-empire/UnityProject/Assets/FactoryEmpire3D/Domain/ColonyAchievements.cs",
+      "sha256": "6193c0428715c13d1f43b42745fc78208eb2efdac371d04c459d2cfac924527a",
+      "originalRelativePath": "artifacts/factory-empire-3d/industrial-047/baseline-046/ColonyAchievements.cs",
+      "evidence": "Original schema4 companion retained in baseline046"
+    },
+    {
+      "path": "games/factory-empire/UnityProject/Assets/FactoryEmpire3D/Domain/ColonyAchievements.cs.meta",
+      "sha256": "cf38836ad6a7e08c6d57dd6d3007ed757c5d6a772e22fa5bdf250398c3deb7d3",
+      "originalRelativePath": "games/factory-empire/UnityProject/Assets/FactoryEmpire3D/Domain/ColonyAchievements.cs.meta",
+      "evidence": "Original Unity metadata retained"
+    },
+    {
+      "path": "games/snake-arena/UnityProject/Assets/Plugins/WebGL/SnakeArena.jslib",
+      "sha256": "9c1b5b8c634a74edcd15d5f89330ac034948628055aba1383a37da7042fb8fec",
+      "originalRelativePath": "games/snake-arena/UnityProject/Assets/Plugins/WebGL/SnakeArena.jslib",
+      "evidence": "Original Snake 014 Unity integration source"
+    },
+    {
+      "path": "games/snake-arena/UnityProject/Assets/Plugins/WebGL/SnakeArena.jslib.meta",
+      "sha256": "b98e0149d6ee0be6beca1e7fc3bfa5529465e61856a474aa5a3c8e6f6d9bd0b2",
+      "originalRelativePath": "games/snake-arena/UnityProject/Assets/Plugins/WebGL/SnakeArena.jslib.meta",
+      "evidence": "Original Unity metadata retained"
+    },
+    {
+      "path": "games/snake-arena/UnityProject/Assets/WebGLTemplates/SnakeArena/index.html",
+      "sha256": "d15fc726fcb4daff15a4d58d05b845e0a0709659ae494069506af1b5f808b296",
+      "originalRelativePath": "games/snake-arena/UnityProject/Assets/WebGLTemplates/SnakeArena/index.html",
+      "evidence": "Original Snake 014 Unity integration source"
+    },
+    {
+      "path": "games/snake-arena/UnityProject/Assets/WebGLTemplates/SnakeArena/index.html.meta",
+      "sha256": "5922b13a99827f802d33293724bf6515fa05a95e9f2aab011256f2ab74503953",
+      "originalRelativePath": "games/snake-arena/UnityProject/Assets/WebGLTemplates/SnakeArena/index.html.meta",
+      "evidence": "Original Unity metadata retained"
+    }
+  ]
+}

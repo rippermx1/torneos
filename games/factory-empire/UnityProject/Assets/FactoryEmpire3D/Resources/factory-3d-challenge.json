@@ -1,0 +1,10 @@
+{
+  "version": "nereida-24h-v1",
+  "seed": 73421,
+  "durationMs": 86400000,
+  "startingBalanceMilli": "0",
+  "prestigeAllowed": false,
+  "offlineCapMs": 86400000,
+  "score": "historical",
+  "tieBreak": "production"
+}

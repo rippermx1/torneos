@@ -1,8 +1,10 @@
-import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import { formatCLP, formatDateTimeCL } from '@/lib/utils'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Tournament } from '@/types/database'
+import { loadTournamentLeaderboard } from '@/lib/tournament/leaderboard'
+import { isCommunityFreeTournament } from '@/lib/tournament/community-free'
 
 export const revalidate = 30 // refresca el leaderboard cada 30s
 
@@ -30,81 +32,21 @@ export default async function LeaderboardPage({
   const { data: { user } } = await supabaseAuth.auth.getUser()
   const userId = user?.id ?? null
 
-  // Admin client para leer games y profiles sin restricciones RLS
-  const supabase = createAdminClient()
-
-  const { data: tData } = await supabase
-    .from('tournaments')
-    .select('*')
-    .eq('id', id)
-    .single()
-
-  if (!tData) notFound()
-  const tournament = tData as Tournament
-
-  const isCompleted  = tournament.status === 'completed'
-  const isLive       = tournament.status === 'live'
+  const ranking = await loadTournamentLeaderboard(id)
+  if (!ranking) notFound()
+  const { tournament, rows, usernameMap } = ranking
+  const community = isCommunityFreeTournament(tournament)
+  const isCompleted = tournament.status === 'completed'
+  const isLive = tournament.status === 'live'
   const isFinalizing = tournament.status === 'finalizing'
-
-  // Para torneos completados, usar tournament_results (fuente oficial)
-  let rows: Array<{
-    user_id: string
-    final_score: number
-    highest_tile: number
-    move_count?: number
-    status?: string
-    prize_awarded_cents?: number
-    rank?: number
-  }> = []
-
-  if (isCompleted) {
-    const { data: results } = await supabase
-      .from('tournament_results')
-      .select('user_id, rank, final_score, prize_awarded_cents')
-      .eq('tournament_id', id)
-      .order('rank', { ascending: true })
-      .limit(50)
-
-    rows = (results ?? []).map((r) => ({
-      user_id: r.user_id,
-      rank: r.rank,
-      final_score: r.final_score,
-      highest_tile: 0,
-      prize_awarded_cents: r.prize_awarded_cents,
-    }))
-  } else {
-    // Live / open: usar games en curso y completadas
-    const { data: games } = await supabase
-      .from('games')
-      .select('user_id, final_score, highest_tile, move_count, status')
-      .eq('tournament_id', id)
-      .in('status', ['completed', 'active'])
-      .order('final_score', { ascending: false })
-      .order('highest_tile', { ascending: false })
-      .order('move_count', { ascending: true })
-      .limit(50)
-
-    rows = games ?? []
-  }
-
-  // Obtener usernames con admin client
-  const userIds = [...new Set(rows.map((r) => r.user_id))]
-  const { data: profiles } = userIds.length
-    ? await supabase.from('profiles').select('id, username').in('id', userIds)
-    : { data: [] }
-
-  const usernameMap = Object.fromEntries(
-    (profiles ?? []).map((p: { id: string; username: string }) => [p.id, p.username])
-  )
-
   return (
     <div className="max-w-2xl mx-auto px-4 py-10 space-y-6">
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-xl">{MODALITY_BADGE[tournament.tournament_type] ?? '🏆'}</span>
-            <h1 className="text-2xl font-bold">Ranking</h1>
+            <span className="text-xl">{community ? '🏁' : MODALITY_BADGE[tournament.tournament_type] ?? '🏆'}</span>
+            <h1 className="text-2xl font-bold">{community ? 'Clasificación del reto' : 'Ranking'}</h1>
             {isLive && (
               <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 text-xs font-semibold px-2 py-0.5 rounded-full">
                 <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
@@ -140,7 +82,7 @@ export default async function LeaderboardPage({
         </p>
       )}
 
-      {isCompleted && (
+      {isCompleted && !community && (
         <Link
           href={`/tournaments/${id}/audit`}
           className="inline-flex text-sm font-medium underline underline-offset-4 hover:text-muted-foreground"
@@ -150,7 +92,7 @@ export default async function LeaderboardPage({
       )}
 
       {/* Premios rápidos */}
-      <div className="grid grid-cols-3 gap-2">
+      {!community && <div className="grid grid-cols-3 gap-2">
         {[
           { label: '🥇', amount: tournament.prize_1st_cents },
           { label: '🥈', amount: tournament.prize_2nd_cents },
@@ -163,7 +105,8 @@ export default async function LeaderboardPage({
               <p className="text-sm font-semibold">{formatCLP(amount)}</p>
             </div>
           ))}
-      </div>
+      </div>}
+      {community && <p className="text-sm text-muted-foreground">Reto gratuito · un intento por cuenta · clasificación sin premios. {isCompleted ? 'Resultados oficiales.' : 'Clasificación provisional; puede cambiar hasta completar la revisión.'}</p>}
 
       {/* Tabla */}
       {rows.length === 0 ? (
@@ -175,16 +118,12 @@ export default async function LeaderboardPage({
       ) : (
         <div className="border rounded-xl divide-y overflow-hidden">
           {/* Cabecera */}
-          <div
-            className={`grid gap-x-3 px-4 py-2 text-xs text-muted-foreground uppercase tracking-wide bg-muted/40 ${
-              isCompleted ? 'grid-cols-[2rem_1fr_auto_auto]' : 'grid-cols-[2rem_1fr_auto_auto_auto]'
-            }`}
-          >
+          <div className="grid grid-cols-[2rem_1fr_auto_auto] gap-x-3 px-4 py-2 text-xs text-muted-foreground uppercase tracking-wide bg-muted/40">
             <span>#</span>
             <span>Jugador</span>
             <span className="text-right">Puntaje</span>
-            {!isCompleted && <span className="text-right">Tile</span>}
-            {isCompleted && <span className="text-right">Premio</span>}
+            {(!isCompleted || community) && <span className="text-right">Ficha máxima</span>}
+            {isCompleted && !community && <span className="text-right">Premio</span>}
           </div>
 
           {rows.map((g, i) => {
@@ -200,11 +139,7 @@ export default async function LeaderboardPage({
                 key={g.user_id}
                 className={`gap-x-3 px-4 py-3 items-center text-sm ${
                   isMe ? 'bg-amber-50' : place <= 3 ? 'bg-muted/20' : ''
-                } ${
-                  isCompleted
-                    ? 'grid grid-cols-[2rem_1fr_auto_auto]'
-                    : 'grid grid-cols-[2rem_1fr_auto_auto_auto]'
-                }`}
+                } grid grid-cols-[2rem_1fr_auto_auto]`}
               >
                 {/* Posición */}
                 <span className="font-mono text-muted-foreground text-base leading-none">
@@ -228,14 +163,14 @@ export default async function LeaderboardPage({
                 </span>
 
                 {/* Tile (solo live) */}
-                {!isCompleted && (
+                {(!isCompleted || community) && (
                   <span className="text-right text-muted-foreground">
                     {g.highest_tile || '—'}
                   </span>
                 )}
 
                 {/* Premio (solo completado) */}
-                {isCompleted && (
+                {isCompleted && !community && (
                   <span
                     className={`text-right font-semibold ${
                       prizeAmt > 0 ? 'text-green-700' : 'text-muted-foreground'
@@ -249,11 +184,11 @@ export default async function LeaderboardPage({
           })}
         </div>
       )}
+      {community && <Link href="/play" className="block rounded-xl border p-4 text-center text-sm font-medium hover:bg-muted">Practicar y consultar el próximo reto</Link>}
 
       {/* Aviso competencia habilidad */}
       <p className="text-xs text-muted-foreground text-center">
-        TorneosPlay es una competencia de habilidad. El ranking refleja el puntaje obtenido en
-        tiempo real. Los resultados son públicos y auditables.{' '}
+        {community ? '2048 incorpora azar. El servidor calcula puntajes y desempates; esta clasificación no concede premios. ' : 'El ranking refleja los puntajes confirmados por el servidor. Los resultados son públicos y auditables. '}
         <Link href="/legal/terminos" className="underline underline-offset-2 hover:text-foreground">
           Términos y condiciones
         </Link>

@@ -16,8 +16,8 @@ export function Footer({ isSignedIn = false }: FooterProps) {
           <div className="space-y-1.5">
             <p className="font-bold text-base">TorneosPlay</p>
             <p className="text-xs text-muted-foreground max-w-xs leading-relaxed">
-              Plataforma de competencias de habilidad con premios reales en pesos chilenos.
-              Reglas, premios fijos y ranking auditables.
+              Practica 2048 gratis y participa en retos comunitarios sin premios.
+              El entrenamiento es una demostración y el ticket sigue siendo informativo.
             </p>
           </div>
 
@@ -27,7 +27,6 @@ export function Footer({ isSignedIn = false }: FooterProps) {
               <FooterLink href="/tournaments">Torneos</FooterLink>
               {isSignedIn ? (
                 <>
-                  <FooterLink href="/premios">Mis premios</FooterLink>
                   <FooterLink href="/profile">Mi perfil</FooterLink>
                 </>
               ) : (

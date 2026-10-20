@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <RestoreIgnoreFailedSources>true</RestoreIgnoreFailedSources>
+    <NuGetAudit>false</NuGetAudit>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+    <Compile Include="../../games/factory-empire/UnityProject/Assets/FactoryEmpire3D/Domain/Colony.cs" Link="Colony.cs" />
+    <Compile Include="../../games/factory-empire/UnityProject/Assets/FactoryEmpire3D/Domain/ColonyAchievements.cs" Link="ColonyAchievements.cs" />
+  </ItemGroup>
+</Project>

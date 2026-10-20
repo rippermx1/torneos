@@ -1,0 +1,155 @@
+.shell {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+  color: #193337;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #19333740;
+  border-radius: 0.75rem;
+  background: #fff;
+  color: #193337;
+  text-align: center;
+}
+
+.action:disabled { opacity: 0.5; }
+.action:hover:enabled { background: #e9eeeb; }
+.action:focus-visible { outline: 2px solid #193337; outline-offset: 3px; }
+.viewAction { margin-left: auto; }
+.clock { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.viewport {
+  position: relative;
+  width: min(100%, 680px, max(240px, calc((100svh - 18rem) * 0.8)));
+  aspect-ratio: 4 / 5;
+  margin: 0 auto;
+  overflow: hidden;
+  border-radius: 1rem;
+  background: #f6f5f0;
+}
+
+.frame { display: block; width: 100%; height: 100%; border: 0; }
+.frame:focus-visible { outline: 3px solid #193337; outline-offset: -3px; }
+.endPanel {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow-y: auto;
+  padding: clamp(1rem, 4vw, 2rem);
+  background: #f6f5f0;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+.endPanel:focus-visible { outline: 3px solid #193337; outline-offset: -3px; }
+.endPanel h2 { font-size: 1.5rem; font-weight: 700; }
+.endPanel > div { width: 100%; }
+.endPanel p { overflow-wrap: anywhere; }
+.finalScore { font-size: 1.25rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.resultTable { max-width: 100%; overflow-x: auto; margin: 0.75rem 0; }
+.resultTable table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+.resultTable th, .resultTable td { padding: 0.5rem; border-bottom: 1px solid #19333740; }
+.resultTable caption { padding: 0.5rem 0; }
+.resultTable tr[data-mine] { background: #e2e9e5; }
+.resultTable th[scope="row"] { overflow-wrap: anywhere; max-width: 12rem; }
+.boardDescription { width: 100%; text-align: center; }
+.boardDescription summary { width: fit-content; margin: auto; padding: 0.5rem; cursor: pointer; min-height: 44px; }
+.boardDescription summary:focus-visible { outline: 2px solid #193337; outline-offset: -2px; border-radius: 0.5rem; }
+.boardDescription table { margin: 0.5rem auto; border-collapse: collapse; max-width: 100%; }
+.boardDescription th, .boardDescription td { padding: 0.4rem; border: 1px solid #19333740; }
+.boardDescription caption { padding: 0.25rem; }
+.instructions { width: 100%; }
+.instructions summary { width: fit-content; margin: auto; padding: 0.5rem; cursor: pointer; min-height: 44px; }
+.instructions summary:focus-visible { outline: 2px solid #193337; outline-offset: -2px; border-radius: 0.5rem; }
+.instructions > div { max-width: 60ch; margin: 0.25rem auto; text-align: left; }
+.instructions p + p { margin-top: 0.5rem; }
+.personalProgress { width: 100%; border: 1px solid #19333730; border-radius: 0.75rem; background: #f6f5f0; }
+.personalProgress summary { padding: 0.75rem; cursor: pointer; min-height: 44px; }
+.personalProgress summary:focus-visible { outline: 2px solid #193337; outline-offset: -2px; border-radius: 0.75rem; }
+.personalProgress > div { padding: 0 0.75rem 0.75rem; max-width: 60ch; margin: auto; }
+.personalProgress p { margin-bottom: 0.5rem; }
+.personalProgress h3 { font-weight: 700; margin-top: 1rem; }
+.practiceHistory { list-style: none; padding: 0; }
+.practiceHistory li { display: grid; gap: 0.2rem; padding: 0.6rem 0; border-bottom: 1px solid #19333730; }
+.practiceHistory li span { font-size: 0.8rem; }
+.resultProgress { padding: 0.75rem; border-radius: 0.75rem; background: #e2e9e5; }
+.resultProgress p + p { margin-top: 0.5rem; }
+.dailyChallenge { width: 100%; padding: 0.75rem 1rem; border: 1px solid #19333740; border-radius: 0.75rem; background: #e2e9e5; }
+.dailyChallenge h2 { font-size: 1rem; font-weight: 700; }
+.dailyChallenge p { margin-top: 0.4rem; }
+.trainingBadge { display: inline-flex; align-items: center; border-radius: 0.75rem; padding: 0.4rem 0.65rem; background: #dce8f0; color: #193337; font-size: 0.875rem; font-weight: 700; }
+.trainingDemo { font-size: 0.8rem; }
+.trainingPanel { width: 100%; max-width: 60ch; border: 1px solid #19333740; border-radius: 0.75rem; padding: 0.75rem 1rem; background: #edf2f5; text-align: left; }
+.trainingPanel h2 { font-size: 1rem; font-weight: 700; }
+.trainingPanel p, .trainingOffer p { margin: 0.4rem 0; }
+.trainingOriginal { width: 100%; padding: 0.65rem; border-radius: 0.5rem; background: #fff; font-variant-numeric: tabular-nums; }
+.trainingDirections { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.5rem 0; }
+.trainingOffer { width: 100%; border-top: 1px solid #19333740; padding-top: 0.75rem; }
+.trainingOffer .action { margin-top: 0.5rem; }
+.trainingHistoryNote { width: 100%; font-size: 0.8rem; text-align: center; }
+.rewardedInformation { margin-top: 0.75rem; font-size: 0.875rem; }
+.rewardedPanel { margin-top: 0.75rem; padding: 0.75rem; border: 2px solid #193337; border-radius: 0.75rem; background: #edf2f5; text-align: left; }
+.rewardedPanel h3 { font-weight: 700; }
+.rewardedPanel:focus-visible { outline: 2px solid #193337; outline-offset: 3px; }
+.rewardedActions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem; }
+
+.feedback {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem 1rem;
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+}
+
+.expanded {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  height: 100dvh;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  padding: max(0.75rem, env(safe-area-inset-top)) max(0.75rem, env(safe-area-inset-right)) max(0.75rem, env(safe-area-inset-bottom)) max(0.75rem, env(safe-area-inset-left));
+  overflow: hidden;
+  background: #f6f5f0;
+}
+
+.expanded .viewport {
+  container-type: size;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  aspect-ratio: auto;
+}
+
+.expanded .frame {
+  width: min(100cqw, 80cqh, 680px);
+  height: min(125cqw, 100cqh, 850px);
+  border-radius: 1rem;
+}
+
+.expanded .feedback { max-height: 25dvh; overflow-y: auto; }
+
+@media (max-height: 450px) {
+  .expanded { gap: 0.25rem; }
+  .expanded .feedback { font-size: 0.75rem; }
+}

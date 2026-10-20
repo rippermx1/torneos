@@ -18,6 +18,7 @@ export type TournamentPresetKey =
   | 'commercial_v1'
   | 'freeroll_v1'
   | 'internal_test_v1'
+  | 'community_free_v1'
 export type PrizeModel = 'fixed'
 export type SkillTier = 'novato' | 'intermedio' | 'pro'
 export type TournamentStatus =
@@ -232,6 +233,9 @@ export interface FlowRefundAttempt {
   tax_document_number: string | null
   tax_document_issued_at: string | null
   tax_document_notes: string | null
+  tax_document_evidence?: string | null
+  tax_document_verified_by?: string | null
+  tax_document_verified_at?: string | null
   created_at: string
   settled_at: string | null
 }
@@ -373,6 +377,42 @@ export interface AccountingPosting {
 export type Database = {
   public: {
     Tables: {
+      snake_competitive_preferences: {
+        Row: {user_id:string;participating:boolean} & DbRecord
+        Insert: {user_id:string;participating:boolean} & DbRecord
+        Update: {participating?:boolean} & DbRecord
+        Relationships: []
+      }
+      snake_practice_leaderboard_preferences: {
+        Row: {user_id:string;participating:boolean} & DbRecord
+        Insert: {user_id:string;participating:boolean} & DbRecord
+        Update: {participating?:boolean} & DbRecord
+        Relationships: []
+      }
+      snake_practice_daily_contributions: {
+        Row: {round_id:string;day:string;user_id:string;lights:number;growth:number;stars:number;observed_at:string} & DbRecord
+        Insert: {round_id:string;day:string;user_id:string;lights:number;growth:number;stars:number;observed_at:string} & DbRecord
+        Update: {lights?:number;growth?:number;stars?:number;observed_at?:string} & DbRecord
+        Relationships: []
+      }
+      snake_practice_daily_rewards: {
+        Row: {user_id:string;day:string;mission_id:string;xp:number;earned_at:string} & DbRecord
+        Insert: never
+        Update: never
+        Relationships: []
+      }
+      snake_practice_rewards: {
+        Row: {round_id:string;mission_id:string;user_id:string;xp:number;earned_at:string} & DbRecord
+        Insert: {round_id:string;mission_id:string;user_id:string;xp:number;earned_at:string} & DbRecord
+        Update: never
+        Relationships: []
+      }
+      snake_practice_runs: {
+        Row: {id:string;user_id:string;score:number;rank:number;kills:number;survived_seconds:number;max_size:number;reason:string;ended_at:string} & DbRecord
+        Insert: {id:string;user_id:string;score:number;rank:number;kills:number;survived_seconds:number;max_size:number;reason:string;ended_at:string} & DbRecord
+        Update: never
+        Relationships: []
+      }
       profiles: {
         Row: Profile & DbRecord
         Insert: InsertWithOptional<Profile, 'created_at' | 'full_name' | 'rut' | 'birth_date' | 'phone' | 'city' | 'kyc_status' | 'kyc_verified_at' | 'is_admin' | 'is_banned' | 'terms_accepted_at' | 'terms_version'>
@@ -507,6 +547,14 @@ export type Database = {
       }
     }
     Views: {
+      snake_practice_daily_progress: {
+        Row: {user_id:string;day:string;lights:number;growth:number;stars:number} & DbRecord
+        Relationships: []
+      }
+      snake_practice_progress: {
+        Row: {user_id:string;xp:number} & DbRecord
+        Relationships: []
+      }
       prize_liability: {
         Row: {
           committed_cents: number
@@ -576,6 +624,26 @@ export type Database = {
       }
     }
     Functions: {
+      accounting_workspace: {
+        Args: { p_period: string | null } & DbRecord
+        Returns: Record<string, unknown>
+      }
+      accounting_operate: {
+        Args: { p_action: string; p_payload: Record<string, unknown>; p_actor: string } & DbRecord
+        Returns: Record<string, unknown>
+      }
+      snake_practice_weekly_snapshot: {
+        Args: {p_owner?:string|null;p_previous?:boolean} & DbRecord
+        Returns: Record<string,unknown>
+      }
+      snake_practice_week_window: {
+        Args: {p_at:string;p_previous?:boolean} & DbRecord
+        Returns: {day:string;starts_at:string;ends_at:string;server_now:number}[]
+      }
+      snake_practice_leaderboard_snapshot: {
+        Args: {p_owner?:string|null} & DbRecord
+        Returns: Record<string,unknown>
+      }
       wallet_insert_transaction: {
         Args: {
           p_user_id: string

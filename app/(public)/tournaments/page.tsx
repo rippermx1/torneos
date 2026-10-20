@@ -1,85 +1,34 @@
-import { createClient } from '@/lib/supabase/server'
-import { formatCLP, formatDateTimeCL } from '@/lib/utils'
-import type { Tournament } from '@/types/database'
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { getPublicTournaments } from '@/lib/tournament/public-catalog'
+import { TournamentCard } from '@/components/tournament/tournament-card'
+import { CatalogFeedback } from '@/components/tournament/catalog-feedback'
+import { SnakeCatalog } from '@/components/tournament/snake-catalog'
 
 export const metadata: Metadata = {
   title: 'Torneos — TorneosPlay',
-  description: 'Explora los torneos de 2048 disponibles y compite por premios en pesos chilenos.',
-}
-
-const STATUS_LABEL: Record<Tournament['status'], string> = {
-  scheduled: 'Próximamente',
-  open: 'Inscripciones abiertas',
-  live: 'En curso',
-  finalizing: 'Finalizando',
-  completed: 'Finalizado',
-  cancelled: 'Cancelado',
-}
-
-const STATUS_COLOR: Record<Tournament['status'], string> = {
-  scheduled: 'bg-slate-100 text-slate-700',
-  open: 'bg-green-100 text-green-700',
-  live: 'bg-amber-100 text-amber-700',
-  finalizing: 'bg-orange-100 text-orange-700',
-  completed: 'bg-slate-100 text-slate-500',
-  cancelled: 'bg-red-100 text-red-700',
+  description: 'Explora torneos de 2048 y rondas gratuitas de Snake Arena con reglas y resultados publicados.',
 }
 
 export default async function TournamentsPage() {
-  const supabase = await createClient()
-
-  const { data, error } = await supabase
-    .from('tournaments')
-    .select('*')
-    .in('status', ['scheduled', 'open', 'live'])
-    .eq('is_test', false)
-    .order('play_window_start', { ascending: true })
-
-  if (error) {
-    return (
-      <div className="max-w-5xl mx-auto px-4 py-10">
-        <p className="text-red-600">Error al cargar los torneos. Intenta de nuevo.</p>
-      </div>
-    )
-  }
-
-  const tournaments = (data ?? []) as Tournament[]
-
+  const { tournaments, error, asOf } = await getPublicTournaments()
   return (
-    <div className="max-w-5xl mx-auto px-4 py-10 space-y-6">
-      <h1 className="text-2xl font-bold">Torneos activos</h1>
-
-      {tournaments.length === 0 && (
-        <p className="text-muted-foreground">No hay torneos activos por ahora. Vuelve pronto.</p>
-      )}
-
-      <div className="grid gap-4 sm:grid-cols-2">
-        {tournaments.map((t) => (
-          <Link
-            key={t.id}
-            href={`/tournaments/${t.id}`}
-            className="border rounded-xl p-5 space-y-3 hover:border-foreground transition-colors"
-          >
-            <div className="flex items-start justify-between gap-2">
-              <h2 className="font-semibold leading-tight">{t.name}</h2>
-              <span className={`text-xs px-2 py-0.5 rounded-full whitespace-nowrap ${STATUS_COLOR[t.status]}`}>
-                {STATUS_LABEL[t.status]}
-              </span>
-            </div>
-
-            <div className="text-sm text-muted-foreground space-y-1">
-              <p>Inscripción: <span className="text-foreground font-medium">{formatCLP(t.entry_fee_cents)}</span></p>
-              <p>
-                1° premio fijo:{' '}
-                <span className="text-foreground font-medium">{formatCLP(t.prize_1st_cents)}</span>
-              </p>
-              <p>Inicio: {formatDateTimeCL(t.play_window_start)}</p>
-            </div>
-          </Link>
-        ))}
+    <div className="mx-auto max-w-5xl space-y-6 px-4 py-10">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Elige tu torneo</h1>
+          <p className="mt-2 text-sm text-muted-foreground">Consulta los retos comunitarios gratuitos y los demás formatos. Cada actividad publica sus horarios, reglas y resultados.</p>
+        </div>
+        <Link href="/play" className="shrink-0 text-sm font-medium underline underline-offset-4">Explorar juegos y practicar</Link>
       </div>
+      <SnakeCatalog />
+      <h2 className="text-2xl font-bold">2048</h2>
+      <p className="text-xs text-muted-foreground">Horarios de Chile (Santiago). Los cupos se confirman al inscribirte.</p>
+      {error || tournaments.length === 0 ? <CatalogFeedback error={error} /> : (
+        <div className="grid gap-4 sm:grid-cols-2">
+          {tournaments.map((t) => <TournamentCard key={t.id} tournament={t} now={asOf} />)}
+        </div>
+      )}
     </div>
   )
 }

@@ -6,6 +6,8 @@ import { useState } from 'react'
 export function RefundCreditNoteForm({ refundId }: { refundId: string }) {
   const router = useRouter()
   const [number, setNumber] = useState('')
+  const [evidence, setEvidence] = useState('')
+  const [verified, setVerified] = useState(false)
   const [issuedOn, setIssuedOn] = useState(() => new Date().toISOString().slice(0, 10))
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -19,7 +21,7 @@ export function RefundCreditNoteForm({ refundId }: { refundId: string }) {
       const response = await fetch(`/api/admin/refunds/${refundId}/credit-note`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ number, issuedOn }),
+        body: JSON.stringify({ number, issuedOn, evidence, verified }),
       })
       const body = (await response.json().catch(() => ({}))) as { error?: string }
       if (!response.ok) throw new Error(body.error ?? 'No se pudo registrar la nota de crédito')
@@ -34,6 +36,8 @@ export function RefundCreditNoteForm({ refundId }: { refundId: string }) {
   return (
     <form onSubmit={submit} className="space-y-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
       <p className="text-xs font-medium text-amber-900">Nota de crédito pendiente</p>
+      <input aria-label="Respaldo de N/C" className="w-full rounded-md border bg-white px-2 py-1 text-xs" placeholder="Referencia al documento original SII / RCV" value={evidence} onChange={(e) => setEvidence(e.target.value)} minLength={3} maxLength={500} required />
+      <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={verified} onChange={(e) => setVerified(e.target.checked)} required />Verifiqué documento y correspondencia contra SII / RCV</label>
       <div className="flex flex-wrap gap-2">
         <input
           aria-label="Folio de nota de crédito"

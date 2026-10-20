@@ -1,0 +1,19 @@
+{
+  "version": "achievements-1",
+  "achievements": [
+    {"id":"first-ferrita","name":"Primer mineral","description":"Extrae tu primera ferrita, con la veta o una máquina.","category":"Extracción","metric":"historical","target":"1000","title":"Prospector"},
+    {"id":"first-extractor","name":"La fábrica despierta","description":"Construye un extractor automático en una celda elegida.","category":"Automatización","metric":"extractors","target":"1","title":"Automatizador"},
+    {"id":"first-upgrade","name":"Más por máquina","description":"Mejora un extractor hasta nivel 2.","category":"Mejoras","metric":"max-level","target":"2","title":"Técnico de colonia"},
+    {"id":"ferrita-100","name":"Cien ferritas","description":"Acumula 100 ferrita extraída; gastar no resta progreso.","category":"Extracción","metric":"historical","target":"100000","title":"Minero de Nereida"},
+    {"id":"first-drill","name":"Hacia la superficie","description":"Construye un taladro de superficie.","category":"Automatización","metric":"owned","familyId":"surface-drill","target":"1","title":"Perforador"},
+    {"id":"first-expansion","name":"Nueva frontera","description":"Compra tu primer sector contiguo; posee dos sectores.","category":"Expansión","metric":"sectors","target":"2","title":"Explorador"},
+    {"id":"ferrita-1000","name":"Mil ferritas","description":"Extrae 1.000 ferrita histórica, también durante la ausencia.","category":"Campaña","metric":"historical","target":"1000000","title":"Veterano de Nereida"},
+    {"id":"first-platform","name":"Industria pesada","description":"Coloca una plataforma perforadora de 2 × 2 celdas.","category":"Automatización","metric":"owned","familyId":"drilling-platform","target":"1","title":"Constructor industrial"},
+    {"id":"drone-fleet","name":"Flota minera","description":"Posee diez drones mineros en tu colonia.","category":"Automatización","metric":"owned","familyId":"mining-drone","target":"10","title":"Comandante de drones"},
+    {"id":"first-beacon","name":"Red de apoyo","description":"Construye una baliza; consulta su alcance para colocarla.","category":"Optimización","metric":"owned","familyId":"industrial-beacon","target":"1","title":"Coordinador"},
+    {"id":"level-five","name":"Especialista","description":"Lleva un extractor a nivel 5.","category":"Mejoras","metric":"max-level","target":"5","title":"Especialista industrial"},
+    {"id":"five-sectors","name":"Colonia extendida","description":"Posee cinco sectores conectados.","category":"Expansión","metric":"sectors","target":"5","title":"Pionero"},
+    {"id":"first-technology","name":"Conocimiento aplicado","description":"Compra una tecnología; desbloquearla no basta.","category":"Mejoras","metric":"technologies","target":"1","title":"Investigador"},
+    {"id":"global-technology","name":"Toda la colonia","description":"Compra una tecnología global para tu industria.","category":"Optimización","metric":"global-technologies","target":"1","title":"Director de Nereida"}
+  ]
+}

@@ -12,7 +12,7 @@ export default function PrivacidadPage() {
       <div>
         <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">← Inicio</Link>
         <h1 className="text-3xl font-bold mt-4">Política de Privacidad</h1>
-        <p className="text-sm text-muted-foreground mt-1">Última actualización: 15 de mayo de 2026</p>
+        <p className="text-sm text-muted-foreground mt-1">Última actualización: 20 de octubre de 2026</p>
       </div>
 
       <Section title="1. Responsable del tratamiento">
@@ -31,6 +31,7 @@ export default function PrivacidadPage() {
           <li><strong>Datos de verificación (KYC):</strong> RUT, fecha de nacimiento, teléfono, ciudad, documentos de identidad, número de documento y estado de revisión.</li>
           <li><strong>Datos bancarios:</strong> banco, número de cuenta, nombre y RUT del titular, usados para verificar titularidad y procesar retiros.</li>
           <li><strong>Datos de juego:</strong> semillas de partida, movimientos, puntajes, tableros, historial de partidas y resultados (auditoría de competencia).</li>
+          <li><strong>Actividad de 2048 gratuito:</strong> si juegas con una cuenta iniciada, registramos los días con al menos un movimiento válido, la primera y última observación de ese día y si jugaste práctica libre o desafío diario. Este registro de retorno no recibe tu tablero, semilla ni puntuación.</li>
           <li><strong>Datos de auditoría:</strong> eventos de envío, aprobación o rechazo de KYC y notas de revisión administrativa.</li>
           <li><strong>Datos técnicos:</strong> dirección IP, tipo de dispositivo, navegador, cookies de sesión.</li>
         </ul>
@@ -43,6 +44,7 @@ export default function PrivacidadPage() {
           <li>Gestionar tu cuenta, premios, retiros y transacciones.</li>
           <li>Procesar inscripciones, premios y retiros.</li>
           <li>Auditar la integridad de las competencias y detectar conductas fraudulentas.</li>
+          <li>Medir el regreso a la práctica gratuita de 2048 y al desafío diario mediante reportes agregados de cuentas por día.</li>
           <li>Comunicarte información relevante sobre torneos y la plataforma.</li>
           <li>Cumplir con obligaciones tributarias ante el SII.</li>
         </ul>
@@ -108,6 +110,9 @@ export default function PrivacidadPage() {
           Utilizamos cookies estrictamente necesarias para la autenticación y el funcionamiento
           del sitio. No usamos cookies de seguimiento de terceros ni publicidad comportamental.
         </p>
+        <p>Las marcas personales, el progreso diario y los días de juego de visitantes se conservan en el almacenamiento local del navegador. Puedes borrarlos desde sus ajustes. Las observaciones locales se exportan sólo cuando eliges descargarlas; no se convierten en personas únicas ni se vinculan retrospectivamente a una cuenta.</p>
+        <p>La práctica libre también guarda su tablero, puntuación, semilla y movimientos en este navegador para continuar después de recargar. Este guardado no se sincroniza con tu cuenta ni entre dispositivos, y no se incluye en las métricas de retorno ni en la exportación de observaciones.</p>
+        <p>El diagnóstico local de carga de 2048 conserva intentos, fechas, duración y resultados técnicos, con enlaces a las identidades locales de las partidas para consultar los hitos ya observados. No guarda mensajes de error originales, direcciones web, contactos, tableros o semillas. Puedes descargarlo incluso si falla la carga; no se envía automáticamente ni acredita juego o retorno. Su cobertura comienza cuando se prepara el juego en el navegador.</p>
       </Section>
 
       <Section title="10. Seguridad">

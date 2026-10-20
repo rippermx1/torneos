@@ -1,5 +1,6 @@
 import type { TournamentPresetKey, TournamentType } from '@/types/database'
 import { PLATFORM_BUSINESS_RULES } from '@/lib/business/rules'
+import { COMMUNITY_FREE_CONFIG } from '@/lib/tournament/community-free'
 
 const BPS = 10000
 
@@ -82,6 +83,23 @@ export interface PrizeFundPayouts extends FixedPrize {
 }
 
 export const TOURNAMENT_PRESETS = [
+  {
+    key: COMMUNITY_FREE_CONFIG.preset_key,
+    tournamentType: COMMUNITY_FREE_CONFIG.tournament_type,
+    isTest: COMMUNITY_FREE_CONFIG.is_test,
+    label: 'Reto comunitario gratuito',
+    shortLabel: 'Comunitario',
+    description: 'Una partida de cinco minutos, sin entrada ni premios monetarios y sin modificar tu división pagada.',
+    entryFeePesos: 0,
+    prize1Pesos: 0,
+    prize2Pesos: 0,
+    prize3Pesos: 0,
+    minPlayers: COMMUNITY_FREE_CONFIG.min_players,
+    maxPlayers: COMMUNITY_FREE_CONFIG.max_players,
+    durationMinutes: COMMUNITY_FREE_CONFIG.max_game_duration_seconds / 60,
+    windowHours: 24,
+    strategy: 'acquisition',
+  },
   {
     key: 'commercial_v1',
     tournamentType: 'standard',
@@ -294,7 +312,7 @@ export function calculateFixedPrizeFinancials(input: {
     Math.round((input.entryFeeCents * FLOW_NEXT_DAY_FEE_BPS) / BPS)
   const requiredMinPlayers = availablePerEntry > 0
     ? Math.ceil(totalPrizesCents / availablePerEntry)
-    : Number.POSITIVE_INFINITY
+    : totalPrizesCents === 0 ? 0 : Number.POSITIVE_INFINITY
 
   return {
     totalPrizesCents,

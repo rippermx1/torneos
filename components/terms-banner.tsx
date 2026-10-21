@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { CURRENT_TERMS_VERSION } from '@/lib/legal/terms'
 
 /**
  * Banner que se muestra cuando el usuario autenticado aún no ha aceptado
@@ -44,13 +45,16 @@ export function TermsBanner() {
     >
       <div className="max-w-5xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-start sm:items-center gap-3">
         <div className="flex-1 space-y-1">
-          <p className="text-sm font-semibold">Acepta los Términos y Condiciones para participar</p>
+          <p className="text-sm font-semibold">Condiciones de 2048 gratuito · versión {CURRENT_TERMS_VERSION}</p>
           <p className="text-xs text-muted-foreground">
-            Para inscribirte en torneos necesitas aceptar nuestras{' '}
+            Revisa y acepta los{' '}
             <Link href="/legal/terminos" target="_blank" className="underline underline-offset-2 hover:text-foreground">
-              Bases Legales
+              Términos y Condiciones
             </Link>
-            {' '}(competencia de habilidad, política antifraude, condiciones de pago y retiro).
+            {' '}y la{' '}
+            <Link href="/legal/privacidad" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-foreground">
+              Política de Privacidad
+            </Link> del servicio gratuito. Incluye práctica, diario, entrenamiento demo y ticket informativo sin compra disponible.
           </p>
           {error && <p className="text-xs text-red-600">{error}</p>}
         </div>

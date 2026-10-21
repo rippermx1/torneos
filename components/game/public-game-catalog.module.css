@@ -3,7 +3,7 @@
 .eyebrow { font-size: .75rem; font-weight: 650; letter-spacing: .09em; text-transform: uppercase; }
 .heading h1 { margin: .75rem 0; font-size: clamp(1.8rem, 5vw, 2.6rem); line-height: 1.15; font-weight: 700; }
 .heading > p:last-child { line-height: 1.7; color: var(--muted-foreground); }
-.cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem; }
+.cards { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.5rem; }
 .card { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 1.2rem; overflow: hidden; background: var(--card); }
 .art { height: 10rem; display: flex; align-items: center; justify-content: center; gap: .75rem; }
 .numbers { background: #f1f1e8; color: #193337; }

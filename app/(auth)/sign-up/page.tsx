@@ -19,10 +19,16 @@ function SignUpForm() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [checkEmail, setCheckEmail] = useState(false)
+  const [accountDataAccepted, setAccountDataAccepted] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
+
+    if (!accountDataAccepted) {
+      setError('Confirma el uso de tus datos para crear la cuenta antes de continuar.')
+      return
+    }
 
     if (password.length < 8) {
       setError('La contraseña debe tener al menos 8 caracteres.')
@@ -89,11 +95,44 @@ function SignUpForm() {
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center space-y-1">
           <h1 className="text-2xl font-bold">Crear cuenta</h1>
-          <p className="text-sm text-muted-foreground">Únete a los torneos de 2048</p>
+          <p className="text-sm text-muted-foreground">Cuenta opcional para el servicio gratuito de 2048, para mayores de 18 años.</p>
           {tournamentHref && <p className="pt-2 text-sm text-muted-foreground">Después de completar tus datos volverás al torneo elegido. <Link href={tournamentHref} className="underline">Ver torneo</Link></p>}
         </div>
 
-        <GoogleButton redirectTo={destination} />
+        <section aria-labelledby="account-data-title" className="space-y-3 rounded-xl border p-4 text-sm">
+          <h2 id="account-data-title" className="font-medium">Antes de crear tu cuenta</h2>
+          <p className="text-muted-foreground">
+            Puedes <Link href="/play" className="underline text-foreground">jugar gratis sin cuenta</Link>.
+            Si eliges registrarte, Supabase Auth recibe tu email y contraseña para crear y proteger tu acceso
+            y enviarte los correos necesarios. Si usas Google, recibimos los datos de cuenta que autorices allí.
+            Después confirmarás tu correo y completarás usuario, fecha de nacimiento y aceptación de las condiciones.
+          </p>
+          <p className="text-muted-foreground">
+            Al jugar con sesión iniciada registramos los días con movimientos válidos de práctica o diario.
+            La práctica no exige RUT, documentos de identidad ni datos bancarios. El entrenamiento es una
+            demostración sin anuncios reales y el ticket es informativo, todavía no disponible.
+          </p>
+          <p className="text-muted-foreground">
+            Revisa los <Link href="/legal/terminos" target="_blank" rel="noopener noreferrer" className="underline text-foreground">Términos y Condiciones</Link> y
+            {' '}la <Link href="/legal/privacidad" target="_blank" rel="noopener noreferrer" className="underline text-foreground">Política de Privacidad</Link>,
+            con el contacto del operador y los límites de conservación informados.
+          </p>
+          <label className="flex items-start gap-3">
+            <input
+              id="account-data-accepted"
+              type="checkbox"
+              checked={accountDataAccepted}
+              onChange={(e) => setAccountDataAccepted(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 accent-foreground"
+            />
+            <span>Leí el aviso y autorizo el uso de mis datos para crear y proteger mi cuenta y recibir los correos de acceso. Esto no autoriza publicidad ni operaciones de dinero.</span>
+          </label>
+        </section>
+
+        <fieldset disabled={!accountDataAccepted || loading}>
+          <legend className="sr-only">Crear cuenta con Google después de confirmar el aviso</legend>
+          <GoogleButton redirectTo={destination} />
+        </fieldset>
 
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
@@ -148,21 +187,21 @@ function SignUpForm() {
           </div>
 
           <p className="text-xs text-muted-foreground leading-relaxed">
-            Después de confirmar tu correo podrás revisar y aceptar nuestros{' '}
+            Crear la cuenta envía tus datos de acceso ahora. La aceptación de los{' '}
             <Link href="/legal/terminos" target="_blank" className="underline underline-offset-2 text-foreground">
-              Términos y Condiciones
+              Términos y Condiciones del servicio gratuito
             </Link>{' '}
             y la{' '}
             <Link href="/legal/privacidad" target="_blank" className="underline underline-offset-2 text-foreground">
               Política de Privacidad
-            </Link>.
+            </Link> se registra al completar tus datos después de confirmar el correo.
           </p>
 
           {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !accountDataAccepted}
             className="w-full bg-foreground text-background py-2.5 rounded-xl text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
           >
             {loading ? 'Creando cuenta…' : 'Crear cuenta'}

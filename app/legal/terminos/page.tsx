@@ -1,233 +1,154 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { CURRENT_TERMS_VERSION } from '@/lib/legal/terms'
 
 export const metadata: Metadata = {
   title: 'Términos y Condiciones — TorneosPlay',
-  description: 'Términos y condiciones de uso de la plataforma TorneosPlay.',
+  description: 'Condiciones del servicio gratuito de 2048, entrenamiento de demostración y ticket informativo.',
 }
 
 export default function TerminosPage() {
   return (
     <div className="max-w-3xl mx-auto px-4 py-12 space-y-8">
       <div>
-        <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">← Inicio</Link>
+        <Link href="/play" className="text-sm text-muted-foreground hover:text-foreground">← Práctica gratuita</Link>
         <h1 className="text-3xl font-bold mt-4">Términos y Condiciones</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Versión 1.3 · Última actualización: 5 de agosto de 2026
+          Versión {CURRENT_TERMS_VERSION} · Servicio gratuito de 2048 · 21 de octubre de 2026
         </p>
       </div>
 
-      <Section title="1. Naturaleza del servicio">
+      <Section title="1. Servicio disponible">
         <p>
-          TorneosPlay es una <strong>plataforma de competencias de habilidad</strong> en la que los
-          participantes compiten en el videojuego 2048 bajo reglas comunes, ventanas de juego
-          definidas, control de identidad y registro auditable de movimientos.
+          Esta versión regula la práctica gratuita de 2048, el desafío diario gratuito y los
+          retos comunitarios gratuitos que se publiquen. No ofrece premios en dinero ni cobra
+          por jugar. Puedes practicar y jugar el diario sin crear una cuenta.
         </p>
         <p>
-          La clasificación depende del puntaje obtenido por el jugador, sus decisiones durante la
-          partida y los criterios de desempate publicados. La generación de tableros y nuevas piezas
-          utiliza semillas determinísticas y reproducibles para fines de integridad técnica y
-          auditoría; no se usa para sortear ganadores ni para alterar premios.
-        </p>
-        <p>
-          La cuota de inscripción es el precio por participar en una competencia digital de
-          habilidad, no una apuesta contra la plataforma ni contra otros participantes. La
-          plataforma no ofrece juegos de casino, no recibe apuestas sobre eventos externos y no
-          garantiza ganancias a ningún usuario. Si una autoridad competente exigiera ajustes
-          operativos, la plataforma podrá suspender, modificar o cancelar torneos para mantener el
-          cumplimiento normativo.
+          Las decisiones del jugador y la generación de nuevas fichas influyen en cada partida.
+          El resultado local de práctica o diario no es un resultado oficial de torneo.
+          No se garantizan ganancias, una posición en un ranking ni la disponibilidad permanente del servicio.
         </p>
       </Section>
 
-      <Section title="2. Requisitos de participación">
-        <ul>
-          <li>Ser mayor de 18 años de edad.</li>
-          <li>Ser residente en la República de Chile.</li>
-          <li>Contar con una cuenta verificada en la plataforma (KYC aprobado).</li>
-          <li>Aceptar íntegramente los presentes términos y condiciones.</li>
-        </ul>
+      <Section title="2. Cuenta opcional y participación">
         <p>
-          La plataforma se reserva el derecho de solicitar documentos adicionales para acreditar
-          la identidad del usuario conforme a la normativa vigente.
+          El registro de cuenta es para personas de al menos 18 años. Pide confirmar el correo,
+          elegir un nombre de usuario, indicar la fecha de nacimiento y aceptar esta versión
+          y la Política de Privacidad. El nombre completo es opcional.
+          La práctica gratuita no requiere KYC, RUT, cédula ni datos bancarios.
+        </p>
+        <p>
+          Al jugar con una cuenta iniciada se observan los días con movimientos válidos de
+          práctica o diario. Tener cuenta no sincroniza el tablero ni las marcas locales entre dispositivos.
+          Si se publica un reto comunitario gratuito, su ficha informa los requisitos de cuenta,
+          inscripción, horario, duración e intentos antes de participar.
+        </p>
+        <p>
+          Usa datos de cuenta propios y protege tus credenciales. Elige un nombre de usuario que
+          no revele información privada si vas a participar en una clasificación pública.
         </p>
       </Section>
 
-      <Section title="3. Registro y cuenta">
+      <Section title="3. Práctica, diario y retos comunitarios">
         <p>
-          Cada usuario puede tener una sola cuenta. El uso de múltiples cuentas, scripts
-          automatizados, bots o cualquier herramienta que altere la jugabilidad natural está
-          estrictamente prohibido y resultará en la suspensión permanente de la cuenta y la
-          pérdida del saldo disponible.
+          La práctica permite guardar una marca personal y retomar una partida normal en este
+          navegador cuando el guardado esté disponible. El diario propone una meta por fecha
+          de Chile y admite reintentos. Ninguno entrega dinero, saldo o una inscripción pagada.
+        </p>
+        <p>
+          En un reto comunitario publicado, el servidor valida el resultado según las reglas
+          de su ficha. Su clasificación puede mostrar nombre de usuario, posición, puntaje y
+          ficha máxima. No hay una promesa de calendario ni de cupos antes de publicar el reto.
+        </p>
+        <p>
+          No se permite suplantar a otras personas, alterar resultados competitivos o usar
+          automatización para falsear una clasificación. Una revisión o restricción de cuenta
+          no convierte datos locales en resultados oficiales ni extingue derechos de operaciones anteriores.
         </p>
       </Section>
 
-      <Section title="4. Torneos y reglas de competencia">
+      <Section title="4. Entrenamiento de demostración">
         <p>
-          Cada torneo establece sus propias reglas (duración, cuota de inscripción, premios,
-          ventana de juego). El jugador acepta dichas reglas al momento de inscribirse.
+          Al terminar una práctica normal, cuando existe una alternativa útil, puedes solicitar
+          una demostración para probar otra jugada desde el estado previo al último movimiento válido.
+          El panel permite continuar o cancelar y no reproduce un anuncio real.
         </p>
         <p>
-          En torneos pagados, la cuota de inscripción es el precio del derecho a participar e
-          incluye IVA. La ficha del torneo informa antes del pago la cuota, cupos, mínimo de
-          participantes, reglas y <strong>premios fijos publicados</strong>.
+          Hay una continuación por práctica y hasta dos aplicaciones por día de Chile en este
+          navegador, sujetas a disponibilidad del almacenamiento y a los controles del panel.
+          Cancelar no consume una aplicación. La continuación queda marcada como partida asistida:
+          conserva el resultado original y no mejora la marca personal, el diario, el registro
+          de retorno ni un resultado de torneo. No se ofrece dentro del diario ni de torneos.
         </p>
         <p>
-          El premio total y su distribución por posición quedan fijados al publicar el torneo.
-          No aumentan ni disminuyen según la cantidad final de participantes o la recaudación.
-          Si no se alcanza el mínimo informado, el torneo se cancela y las inscripciones se
-          reembolsan.
-        </p>
-        <p>
-          Para gobernar la solvencia del piloto, la empresa puede presupuestar hasta un{' '}
-          <strong>55% de la recaudación bruta mínima</strong> para financiar los premios publicados.
-          Es una regla interna de presupuesto: no crea un pozo, custodia ni propiedad del
-          participante sobre ese porcentaje. El remanente cubre el IVA de la venta completa,
-          procesamiento, operación y margen de la plataforma.
-        </p>
-        <p>
-          El cobro de la inscripción se realiza directamente a través de Flow.cl al momento de
-          inscribirse. El usuario paga el precio final informado, con IVA incluido. El comprobante
-          de pago electrónico emitido por Flow
-          opera como boleta electrónica del servicio para efectos del Servicio de Impuestos Internos
-          (SII), cuando dicha modalidad se encuentre correctamente habilitada para el comercio.
-        </p>
-        <p>
-          El <strong>puntaje final</strong> es la única métrica de clasificación. En caso de
-          empate, se considera el tile más alto alcanzado y luego la menor cantidad de movimientos.
-          Los resultados son públicos y auditables a través del leaderboard de cada torneo.
-        </p>
-        <p>
-          Los premios publicados se otorgan a los jugadores mejor clasificados que hayan{' '}
-          <strong>completado una partida válida</strong> dentro de la ventana del torneo. Si el
-          número de jugadores que completan una partida es menor a la cantidad de posiciones
-          premiadas, los premios de las posiciones no cubiertas <strong>no se otorgan ni se
-          acumulan</strong> para torneos futuros.
-        </p>
-        <p>
-          Si el torneo no alcanza el número mínimo de participantes inscritos al momento del
-          cierre de inscripciones, será cancelado y <strong>todas las cuotas de inscripción serán
-          reembolsadas</strong> al medio de pago original mediante Flow. La plataforma no convierte
-          esa devolución en saldo interno ni en crédito para otro torneo.
+          La demostración no entrega dinero, saldo, descuentos, entradas ni ventajas competitivas.
+          No supone aceptar publicidad ni habilitar un proveedor de anuncios.
         </p>
       </Section>
 
-      <Section title="5. Premios y recompensas">
+      <Section title="5. Ticket informativo y servicios financieros anteriores">
         <p>
-          La plataforma <strong>no mantiene cuentas ni saldos de dinero de usuarios</strong>, no
-          acepta depósitos prepagados ni recargas. Cada participación se compra de forma individual
-          y se paga en el checkout al momento de inscribirse.
+          Los torneos con ticket están <strong>todavía no disponibles</strong>. La ficha muestra
+          condiciones propuestas para evaluar el producto; no permite reservar, inscribirse ni pagar.
+          Consultarla o iniciar sesión para leerla no crea una compra, una deuda ni un derecho a premios.
+          No hay fecha de lanzamiento ni cupos disponibles anunciados.
         </p>
         <p>
-          Los <strong>premios</strong> obtenidos quedan registrados como{' '}
-          <strong>premios pendientes de pago</strong> a nombre del ganador una vez finalizado y
-          verificado el torneo, y se pagan exclusivamente mediante transferencia bancaria conforme
-          a la sección 6. Los premios no pueden usarse para pagar inscripciones ni convertirse en
-          medios de pago dentro de la plataforma.
+          En este servicio gratuito no se habilitan checkout, depósitos, retiros, pagos de premios,
+          participaciones canjeables ni anuncios reales. Cualquier futura oferta de pago requerirá
+          condiciones y habilitaciones propias antes de aceptar una operación.
         </p>
         <p>
-          <strong>Recompensas por participación:</strong> la plataforma puede otorgar recompensas
-          promocionales por la compra de participaciones, canjeables únicamente por{' '}
-          <strong>participaciones gratuitas</strong> en torneos. Las recompensas no son dinero, no
-          son transferibles, no son canjeables por efectivo ni reembolsables, caducan a los{' '}
-          <strong>30 días</strong> de otorgadas y el programa puede modificarse o terminarse
-          prospectivamente. Su otorgamiento no altera el precio pagado por la participación.
-        </p>
-        <p>
-          Todos los movimientos de premios, pagos y recompensas se registran de forma inmutable
-          para fines de auditoría.
+          Las referencias financieras de versiones anteriores, de la Política de Reembolso o
+          de la Política AML no habilitan nuevas operaciones en este servicio.
+          Esta versión no borra registros ni modifica derechos u obligaciones de operaciones
+          anteriores que pudieran existir. Para consultar un caso anterior, contacta al operador.
         </p>
       </Section>
 
-      <Section title="6. Pago de premios">
+      <Section title="6. Privacidad y conservación">
         <p>
-          Los usuarios con KYC aprobado pueden solicitar el <strong>pago de sus premios
-          pendientes</strong> mediante transferencia bancaria a una cuenta a su nombre en un banco
-          chileno, cuyo titular y RUT deben coincidir con la identidad verificada. El pago se
-          realiza por el total adeudado (con el tope por solicitud publicado), se acepta una
-          solicitud pendiente a la vez, y el plazo de procesamiento es de hasta 3 días hábiles.
-          Ver{' '}
-          <Link href="/legal/reembolso" className="underline underline-offset-2">
-            Política de Reembolso
-          </Link>{' '}
-          para más detalles.
+          Antes de crear una cuenta se informa el uso de los datos de acceso. La aceptación
+          versionada de estas condiciones se registra al completar la cuenta.
+          No es una autorización para publicidad ni para usar datos bancarios.
+          El alcance de los datos locales, de cuenta, técnicos y de soporte se explica en la{' '}
+          <Link href="/legal/privacidad" className="underline underline-offset-2">Política de Privacidad</Link>.
+        </p>
+        <p>
+          Los guardados locales dependen del navegador y pueden perderse al borrar sus datos.
+          Descarga las observaciones que decidas conservar. Esa descarga no envía el archivo al
+          operador ni acredita personas únicas, interés de compra o retención comercial.
         </p>
       </Section>
 
-      <Section title="7. Prohibiciones">
-        <ul>
-          <li>Uso de herramientas automatizadas (bots, scripts, macros).</li>
-          <li>Colusión entre participantes para alterar resultados.</li>
-          <li>Múltiples cuentas o suplantación de identidad.</li>
-          <li>Cualquier conducta que distorsione la competencia leal.</li>
-        </ul>
+      <Section title="7. Operación y contacto">
         <p>
-          Las infracciones a estas prohibiciones serán sancionadas con la expulsión permanente y,
-          en caso de fraude comprobado, serán denunciadas a las autoridades competentes.
+          TorneosPlay es el nombre del servicio administrado por su equipo operador.
+        </p>
+        <p>
+          Para consultas sobre el servicio o un caso anterior utiliza{' '}
+          <a href="mailto:contacto@torneosplay.cl" className="underline underline-offset-2">contacto@torneosplay.cl</a>.
+          No envíes contraseñas, documentos de identidad ni datos bancarios por este canal.
         </p>
       </Section>
 
-      <Section title="8. Prevención de fraude y AML">
+      <Section title="8. Cambios e interrupciones">
         <p>
-          La plataforma aplica controles de identidad, titularidad bancaria, límites de retiro,
-          revisión de patrones de juego, bloqueo de multicuentas y auditoría de movimientos. Las
-          solicitudes de retiro pueden ser retenidas mientras exista una alerta de fraude, disputa,
-          suplantación, uso de automatización, origen de fondos no justificado o inconsistencia de
-          identidad.
+          La plataforma puede interrumpir una función para corregir fallos o proteger cuentas
+          y resultados. Los cambios se informarán en la plataforma; una nueva versión de las
+          condiciones puede requerir una aceptación expresa al volver a usar las funciones de cuenta.
+          Continuar practicando sin cuenta no se presenta como aceptación de nuevas operaciones financieras.
         </p>
         <p>
-          La política operacional completa está disponible en la{' '}
-          <Link href="/legal/aml" className="underline underline-offset-2">
-            Política AML y Antifraude
-          </Link>
-          .
+          Estas condiciones se interpretan conforme a la normativa chilena aplicable y no
+          limitan los derechos que esa normativa reconozca.
         </p>
       </Section>
 
-      <Section title="9. Impuestos">
-        <p>
-          Cada cobro de inscripción incluye el IVA correspondiente al servicio prestado por la
-          plataforma. Cuando dicha modalidad esté habilitada ante el SII, la plataforma puede
-          utilizar el voucher o comprobante electrónico de Flow como boleta electrónica del
-          servicio. La plataforma podrá adoptar otra modalidad de emisión de documentos tributarios
-          si el volumen, la operación o la normativa lo hacen conveniente.
-        </p>
-        <p>
-          Los premios obtenidos en competencias de habilidad pueden estar sujetos a tributación
-          según las normas del SII. El usuario es responsable de declarar sus premios como
-          ingresos cuando corresponda conforme a la ley vigente.
-        </p>
-      </Section>
-
-      <Section title="10. Privacidad">
-        <p>
-          El tratamiento de datos personales se rige por la{' '}
-          <Link href="/legal/privacidad" className="underline underline-offset-2">
-            Política de Privacidad
-          </Link>
-          {' '}y por la normativa chilena aplicable, incluyendo la Ley N.º 19.628 y, desde su
-          entrada en vigencia, la Ley N.º 21.719.
-        </p>
-      </Section>
-
-      <Section title="11. Modificaciones">
-        <p>
-          TorneosPlay puede modificar estos términos con un aviso previo de al menos 7 días
-          hábiles publicado en la plataforma. El uso continuado del servicio tras la entrada en
-          vigor de los cambios implica la aceptación de los nuevos términos.
-        </p>
-      </Section>
-
-      <Section title="12. Jurisdicción y ley aplicable">
-        <p>
-          Estos términos se rigen por las leyes de la República de Chile. Cualquier disputa será
-          sometida a la jurisdicción de los tribunales ordinarios de justicia de Santiago de Chile.
-        </p>
-      </Section>
-
-      <div className="border-t pt-6 flex gap-6 text-sm text-muted-foreground">
-        <Link href="/legal/privacidad" className="hover:text-foreground underline underline-offset-2">Política de Privacidad</Link>
-        <Link href="/legal/reembolso" className="hover:text-foreground underline underline-offset-2">Política de Reembolso</Link>
-        <Link href="/legal/aml" className="hover:text-foreground underline underline-offset-2">Política AML</Link>
+      <div className="border-t pt-6 flex flex-wrap gap-6 text-sm text-muted-foreground">
+        <Link href="/legal/privacidad" className="underline underline-offset-2">Política de Privacidad</Link>
+        <Link href="/play" className="underline underline-offset-2">Jugar gratis</Link>
       </div>
     </div>
   )
@@ -237,7 +158,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   return (
     <section className="space-y-3">
       <h2 className="text-lg font-semibold">{title}</h2>
-      <div className="space-y-2 text-sm text-muted-foreground leading-relaxed [&_ul]:list-disc [&_ul]:list-inside [&_ul]:space-y-1 [&_strong]:text-foreground">
+      <div className="space-y-2 text-sm text-muted-foreground leading-relaxed [&_strong]:text-foreground">
         {children}
       </div>
     </section>

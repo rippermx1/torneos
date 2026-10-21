@@ -54,7 +54,11 @@ test('real authenticated sockets resume same id/ack, replace duplicate tab, isol
     a.send({type:'input',seq:77,angle:0,boost:true,accountXp:999999});await settle();const room=[...service.rooms.values()][0],p=room.players.get(w.id)!;assert.equal(p.ack,77);assert.equal(p.appearance,'solar')
     room.food=[{id:999,x:p.x+defaults.baseSpeed*defaults.boostMultiplier/defaults.simulationHz,y:p.y,kind:'rare',expiresTick:300}];service.tick();assert.equal(p.sessionXp,60);const missionLife=p.life
     await settle();service.tick();await settle();const confirmedXp=80+[...rewards.values()].reduce((n,r)=>n+r.xp,0),rewardCount=rewards.size,sessionXp=p.sessionXp;assert.equal(manager.get(user)!.accountXp,confirmedXp);assert.ok(rewardCount>=1)
-    assert.ok(a.messages.some(m=>m.type==='persistence'&&m.accountXp===confirmedXp&&m.xpState==='saved'))
+    const persisted=()=>a.messages.some(m=>m.type==='persistence'&&m.accountXp===confirmedXp&&m.xpState==='saved')
+    // Server state can settle before its WebSocket frame reaches the client.
+    // Wait for that exact saved acknowledgement; keep the assertion and deadline.
+    for(let attempt=0;attempt<150&&!persisted();attempt++)await settle()
+    assert.ok(persisted())
     assert.ok(a.messages.filter(m=>m.type==='snapshot').every(m=>m.accountXp===undefined))
     a.ws.close(4003,'test');await once(a.ws,'close');await settle();assert.equal(room.players.size,1);assert.equal(p.wantsBoost,false)
     const b=await client(port);b.send({type:'join',ticket:token(now),appearance:'nebula',resumeOnly:true});const bw=await b.wait('welcome');assert.equal(bw.id,w.id);assert.equal(bw.ack,77);assert.equal(bw.resumed,true);assert.equal(p.appearance,'solar');assert.equal(p.sessionXp,sessionXp);assert.equal(p.life,missionLife);assert.equal(p.rarePickups,1)

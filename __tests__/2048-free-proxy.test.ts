@@ -29,7 +29,7 @@ beforeEach(() => {
 })
 
 describe('free release denial before Supabase and preflight', () => {
-  it.each(['/wallet', '/api/wallet/deposit/flow/create', '/api/tournaments/event/checkout/flow/create',
+  it.each(['/wallet', '/premios', '/premios/cobrar', '/api/wallet/deposit/flow/create', '/api/tournaments/event/checkout/flow/create',
     '/api/webhooks/flow', '/api/webhooks/flow/refund', '/admin/payouts', '/api/admin/refunds/event/retry',
     '/api/admin/payments/event/reverify', '/admin/users/user/wallet', '/api/payouts/event/receipt',
     '/api/local-flow/payment/create', '/dev/flow/payment', '/api/cron/process-tournaments',

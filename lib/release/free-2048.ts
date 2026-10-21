@@ -16,6 +16,14 @@ if (Object.keys(profile).length !== Object.keys(expected).length
 
 export const FREE_2048_RELEASE = Object.freeze({ ...expected })
 export const FREE_2048_MONEY_DISABLED_CODE = 'MONEY_DISABLED_FREE_RELEASE' as const
+export const FREE_2048_INTAKE_DISABLED_CODE = 'IDENTITY_INTAKE_DISABLED_FREE_RELEASE' as const
+
+export function free2048IntakeDisabledResponse(): Response {
+  return Response.json({
+    error: '2048 gratuito no solicita documentos de identidad ni datos bancarios.',
+    code: FREE_2048_INTAKE_DISABLED_CODE,
+  }, { status: 423, headers: { 'Cache-Control': 'private, no-store', Pragma: 'no-cache', Expires: '0' } })
+}
 
 /** Used only for denial, never to rewrite a request or widen its authorization. */
 export function canonicalFree2048Path(pathname: string): string | null {
@@ -36,13 +44,28 @@ export function canonicalFree2048Path(pathname: string): string | null {
 }
 
 const monetaryRoots = [
-  '/wallet', '/api/wallet',
+  '/wallet', '/api/wallet', '/premios',
   '/admin/payouts', '/admin/refunds', '/admin/payments',
   '/api/admin/payouts', '/api/admin/refunds', '/api/admin/payments',
   '/api/payouts', '/api/webhooks/flow', '/api/local-flow', '/dev/flow',
   '/api/cron/flow-reconcile', '/api/cron/reconcile-refunds', '/api/cron/process-tournaments',
 ] as const
 const within = (pathname: string, root: string) => pathname === root || pathname.startsWith(root + '/')
+
+export function isFree2048IntakePathBlocked(pathname: string): boolean {
+  const canonical = canonicalFree2048Path(pathname)
+  return canonical !== null && ['/profile/kyc', '/api/profile/kyc'].some(root => within(canonical, root))
+}
+
+/** The release scope is fixed in source, independently of the deployment identity. */
+export function isFree2048OutOfCatalogPath(pathname: string): boolean {
+  const canonical = canonicalFree2048Path(pathname)
+  if (canonical === null) return true
+  if (within(canonical, '/games')) return !within(canonical, '/games/2048')
+  return ['/play/factory-empire', '/play/snake-arena', '/play/ted-runner', '/play/alien-run', '/play/rts-duel',
+    '/tournaments/snake-arena', '/api/snake-arena', '/api/factory-empire', '/api/rts-duel']
+    .some(root => within(canonical, root))
+}
 
 export function isFree2048MoneyPathBlocked(pathname: string, method: string): boolean {
   const canonical = canonicalFree2048Path(pathname)

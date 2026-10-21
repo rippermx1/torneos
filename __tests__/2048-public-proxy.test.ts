@@ -74,7 +74,7 @@ describe('2048 public API admission through the actual Next proxy', () => {
   })
 
   it.each(['/api/2048/daily/extra', '/api/2048/daily-extra', '/api/2048/activity/extra',
-    '/api/2048/private', '/api/admin/reports/2048-retention?from=2026-10-16&to=2026-10-16', '/premios'])(
+    '/api/2048/private', '/api/admin/reports/2048-retention?from=2026-10-16&to=2026-10-16'])(
     'does not grant guest admission to neighbouring/private path %s', async path => {
       const response = await proxy(request(path))
       expect(response.status).toBe(307)

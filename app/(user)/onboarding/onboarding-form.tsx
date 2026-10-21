@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { completeOnboarding } from './actions'
 import { isAdult } from '@/lib/identity/verification'
+import { CURRENT_TERMS_VERSION } from '@/lib/legal/terms'
 
 interface Props {
   defaultUsername: string
@@ -51,7 +52,7 @@ export function OnboardingForm({
       return
     }
     if (!isAdult(birthDate)) {
-      setError('Debes ser mayor de 18 años para usar TorneosPlay.')
+      setError('Debes tener al menos 18 años para completar esta cuenta.')
       return
     }
     if (!acceptedTerms) {
@@ -76,6 +77,12 @@ export function OnboardingForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      <p className="text-sm text-muted-foreground">
+        Tu cuenta es opcional para practicar y jugar el diario gratuito. Este registro de cuenta es para
+        mayores de 18 años; la fecha de nacimiento permite comprobar ese requisito. No necesitas KYC,
+        RUT, documentos de identidad ni datos bancarios para jugar gratis.
+        {' '}<Link href="/play" className="underline text-foreground">Continuar con la práctica gratuita</Link>.
+      </p>
       <div className="space-y-1.5">
         <label htmlFor="username" className="text-sm font-medium">
           Nombre de usuario <span aria-hidden="true">*</span>
@@ -122,7 +129,7 @@ export function OnboardingForm({
           required
           className="w-full border rounded-xl px-3 py-2.5 text-sm bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground"
         />
-        <p className="text-xs text-muted-foreground">Debes ser mayor de 18 años para participar por premios.</p>
+        <p className="text-xs text-muted-foreground">La cuenta requiere al menos 18 años. El servicio gratuito no ofrece premios en dinero.</p>
       </div>
 
       {/* Términos y condiciones */}
@@ -134,10 +141,11 @@ export function OnboardingForm({
           className="mt-0.5 h-4 w-4 shrink-0 rounded border-input accent-foreground"
         />
         <span className="text-sm text-muted-foreground leading-relaxed">
-          Soy mayor de 18 años y acepto los{' '}
+          Tengo al menos 18 años y acepto los{' '}
           <Link
             href="/legal/terminos"
             target="_blank"
+            rel="noopener noreferrer"
             className="underline underline-offset-2 text-foreground"
           >
             Términos y Condiciones
@@ -146,12 +154,15 @@ export function OnboardingForm({
           <Link
             href="/legal/privacidad"
             target="_blank"
+            rel="noopener noreferrer"
             className="underline underline-offset-2 text-foreground"
           >
             Política de Privacidad
           </Link>
           {'. '}
-          Entiendo que TorneosPlay opera como competencia de habilidad, no como apuesta contra la plataforma.
+          Versión {CURRENT_TERMS_VERSION} del servicio gratuito. Entiendo que el entrenamiento es una
+          demostración sin anuncios reales y que el ticket todavía no está disponible. Esta aceptación
+          no autoriza publicidad, cobros ni el uso de datos bancarios.
         </span>
       </label>
 
@@ -166,7 +177,7 @@ export function OnboardingForm({
         disabled={isPending}
         className="w-full bg-foreground text-background py-2.5 rounded-xl text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
       >
-        {isPending ? 'Guardando…' : 'Comenzar a jugar'}
+        {isPending ? 'Guardando…' : 'Completar cuenta gratuita'}
       </button>
     </form>
   )

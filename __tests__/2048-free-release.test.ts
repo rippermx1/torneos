@@ -15,7 +15,7 @@ describe('fixed 2048 free release', () => {
     expect(isFree2048MoneyPathBlocked('/api/wallet/deposit/flow/create', 'POST')).toBe(true)
   })
 
-  it.each(['/wallet', '/wallet/withdraw', '/api/wallet/deposit/flow/return', '/api/wallet/deposit/flow/status',
+  it.each(['/wallet', '/wallet/withdraw', '/premios', '/premios/cobrar', '/api/wallet/deposit/flow/return', '/api/wallet/deposit/flow/status',
     '/tournaments/event/checkout', '/api/tournaments/event/checkout/flow/create', '/api/webhooks/flow/refund',
     '/admin/payouts', '/api/admin/payouts/event/complete', '/admin/refunds', '/api/admin/refunds/event/retry',
     '/admin/payments', '/api/admin/payments/event/reverify', '/admin/users/user/wallet', '/api/admin/users/user/wallet',

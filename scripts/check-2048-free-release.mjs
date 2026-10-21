@@ -19,7 +19,8 @@ export function validateFree2048Release(env, profile, cloud, target = 'developme
   if (!['development', 'production'].includes(target)) throw new Error('Invalid free 2048 release target')
   for (const [key, value] of Object.entries(env)) {
     if (nonempty(value) && (/^FLOW_API_(?:KEY|SECRET)$/i.test(key) || key === 'FLOW_APÏ_KEY'
-      || /^(?:UNITY_ADS|ADMOB|ADSENSE|AD_MANAGER|GAM|H5_GAMES_ADS|REWARDED_PROVIDER)_/.test(key))) {
+      || /^(?:NEXT_PUBLIC_)?(?:MP|MERCADOPAGO|MERCADO_PAGO)_/i.test(key)
+      || /^(?:UNITY_ADS|ADMOB|ADSENSE|AD_MANAGER|GAM|H5_GAMES_ADS|REWARDED_PROVIDER)_/i.test(key))) {
       throw new Error('Free release requires payment and advertising provider credentials absent')
     }
     if (key.startsWith('NEXT_PUBLIC_') && nonempty(value)) {
@@ -39,6 +40,7 @@ export function validateFree2048Release(env, profile, cloud, target = 'developme
       money: 'blocked', rewarded: 'demo', ticket: expected.ticket, flow: 'unconfigured' }
   }
   if (env.TORNEOS_ENV !== 'production-free-2048') throw new Error('Explicit free production identity required')
+  if (env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED !== 'false') throw new Error('Google authentication must be explicitly disabled in the free production profile')
   const appUrl = origin(env.APP_URL)
   if (env.NEXT_PUBLIC_SITE_URL !== appUrl || appUrl === cloud.appUrl
     || new URL(appUrl).hostname.endsWith('.vercel.app')) throw new Error('Free production canonical origin required')

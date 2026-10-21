@@ -8,16 +8,24 @@ export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
   const [sent, setSent] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    setError('')
     setLoading(true)
-    const supabase = createClient()
-    await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/sign-in/reset`,
-    })
-    setSent(true)
-    setLoading(false)
+    try {
+      const supabase = createClient()
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/sign-in/reset`,
+      })
+      if (resetError) throw resetError
+      setSent(true)
+    } catch {
+      setError('No se pudo solicitar el enlace. Inténtalo de nuevo en unos minutos.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   if (sent) {
@@ -59,6 +67,8 @@ export default function ForgotPasswordPage() {
               className="w-full border rounded-xl px-3 py-2.5 text-sm bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground"
             />
           </div>
+
+          {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
 
           <button
             type="submit"

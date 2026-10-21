@@ -11,7 +11,8 @@ import { AvailabilityBadge } from '@/components/tournament/tournament-card'
 import { CatalogFeedback } from '@/components/tournament/catalog-feedback'
 import { withAuthDestination } from '@/lib/auth/redirect'
 import { SKILL_TIER_LABELS } from '@/lib/tournament/rating'
-import { communityFreeLatestStartMs, isCommunityFreePresetKey, isCommunityFreeTournament } from '@/lib/tournament/community-free'
+import { communityFreeLatestStartMs, isCommunityFreeTournament } from '@/lib/tournament/community-free'
+import { isFree2048PublicTournament } from '@/lib/tournament/public-catalog'
 import {
   getParticipationBlocker,
   type ParticipationBlocker,
@@ -27,22 +28,18 @@ export async function generateMetadata({
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('tournaments')
-    .select('name, description, preset_key, prize_1st_cents, prize_2nd_cents, prize_3rd_cents, entry_fee_cents')
+    .select('name,description,preset_key,business_rule_version,game_type,prize_1st_cents,prize_2nd_cents,prize_3rd_cents,entry_fee_cents')
     .eq('id', id)
     .single()
 
   if (error && error.code !== 'PGRST116') return { title: 'Torneo — TorneosPlay' }
-  if (!data) return { title: 'Torneo no encontrado — TorneosPlay' }
+  if (!data || !isFree2048PublicTournament(data)) return { title: 'Reto no encontrado — TorneosPlay', robots: { index: false, follow: false } }
 
   const t = data as Pick<
     Tournament,
     'name' | 'description' | 'preset_key' | 'prize_1st_cents' | 'prize_2nd_cents' | 'prize_3rd_cents' | 'entry_fee_cents'
   >
-  const totalPrize = t.prize_1st_cents + t.prize_2nd_cents + t.prize_3rd_cents
-  const description =
-    t.description || (isCommunityFreePresetKey(t.preset_key)
-      ? 'Reto comunitario gratuito de 2048: un intento de cinco minutos, clasificación por el servidor y sin premios.'
-      : `Premio ${formatCLP(totalPrize)} · Inscripción ${formatCLP(t.entry_fee_cents)}. Compite en el torneo de 2048 con premios reales en CLP.`)
+  const description = t.description || 'Reto comunitario gratuito de 2048: un intento de cinco minutos, clasificación por el servidor y sin premios.'
 
   return {
     title: `${t.name} — TorneosPlay`,
@@ -62,26 +59,23 @@ export default async function TournamentDetailPage({
 }) {
   const { id } = await params
   const supabase = await createClient()   // anon — para datos públicos
+  const { data: tData, error: tournamentError } = await supabase.from('tournaments').select('*').eq('id', id).single()
+  if (tournamentError && tournamentError.code !== 'PGRST116') {
+    return <div className="mx-auto max-w-2xl px-4 py-10"><CatalogFeedback error retryHref={`/tournaments/${id}`} /></div>
+  }
+  if (!tData || !isCommunityFreeTournament(tData)) notFound()
+  const t = tData as Tournament
+  const community = true
+
   let admin: ReturnType<typeof createAdminClient> | null = null
   try { admin = createAdminClient() } catch { /* Availability remains unknown without a service key. */ }
   const { data: { user } } = await supabase.auth.getUser()
   const userId = user?.id ?? null
 
-  const [{ data: tData, error: tournamentError }, { count: playerCount, error: countError }] = await Promise.all([
-    supabase.from('tournaments').select('*').eq('id', id).single(),
-    admin ? admin
+  const { count: playerCount, error: countError } = await (admin ? admin
       .from('registrations')
       .select('*', { count: 'exact', head: true })
-      .eq('tournament_id', id) : Promise.resolve({ count: null, error: true }),
-  ])
-
-  if (tournamentError && tournamentError.code !== 'PGRST116') {
-    return <div className="mx-auto max-w-2xl px-4 py-10"><CatalogFeedback error retryHref={`/tournaments/${id}`} /></div>
-  }
-  if (!tData) notFound()
-  const t = tData as Tournament
-  if (t.game_type !== '2048_score') notFound()
-  const community = isCommunityFreeTournament(t)
+      .eq('tournament_id', id) : Promise.resolve({ count: null, error: true }))
 
   // Verificar si el usuario está inscrito (necesita admin para bypassear RLS)
   let isRegistered = false

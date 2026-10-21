@@ -10,7 +10,7 @@ const geist = Geist({
 
 export const metadata: Metadata = {
   title: 'TorneosPlay',
-  description: 'Compite en torneos de 2048 y gana premios reales en pesos chilenos.',
+  description: 'Juega 2048 gratis, supera el desafío diario y sigue tu progreso. Entrenamiento en demostración y torneos con ticket sólo informativo.',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -70,6 +70,7 @@ const PUBLIC_PREFIXES = [
 // The daily definition is free; activity checks its own Auth and Origin.
 // Exact paths keep other 2048 APIs behind the existing session guard.
 const PUBLIC_EXACT_PATHS = new Set(['/api/2048/daily', '/api/2048/activity'])
+const PUBLIC_METADATA_READ_PATHS = new Set(['/robots.txt'])
 
 function isPublicPath(pathname: string): boolean {
   return PUBLIC_EXACT_PATHS.has(pathname) || PUBLIC_PREFIXES.some(
@@ -100,6 +101,11 @@ export async function proxy(req: NextRequest) {
   if (isFree2048OutOfCatalogPath(req.nextUrl.pathname)) {
     return NextResponse.json({ error: 'Esta versión ofrece 2048 gratuito.', code: 'GAME_OUTSIDE_FREE_RELEASE' },
       { status: 404, headers: { 'Cache-Control': 'private, no-store' } })
+  }
+
+  // Static metadata remains available even when Auth is unavailable; no session refresh or DB.
+  if (PUBLIC_METADATA_READ_PATHS.has(req.nextUrl.pathname) && ['GET', 'HEAD'].includes(req.method)) {
+    return NextResponse.next()
   }
 
   // ── Preflight OPTIONS ────────────────────────────────────────

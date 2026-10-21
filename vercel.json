@@ -3,16 +3,5 @@
   "installCommand": "npm ci && npm ci --prefix games/snake-arena/server",
   "buildCommand": "node scripts/check-2048-free-release.mjs && next build --webpack",
   "git": { "deploymentEnabled": false },
-  "crons": [],
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "X-Robots-Tag",
-          "value": "noindex, nofollow"
-        }
-      ]
-    }
-  ]
+  "crons": []
 }

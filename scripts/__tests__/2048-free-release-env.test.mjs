@@ -12,7 +12,8 @@ const dev = () => ({ TORNEOS_ENV: 'cloud-development', DEVELOPMENT_SUPABASE_PROJ
   FLOW_API_BASE: 'https://sandbox.flow.cl/api', NEXT_PUBLIC_GOOGLE_AUTH_ENABLED: 'false', CRON_SECRET: 'a'.repeat(64) })
 const prod = () => ({ TORNEOS_ENV: 'production-free-2048', APP_URL: 'https://free.example.com', NEXT_PUBLIC_SITE_URL: 'https://free.example.com',
   PRODUCTION_SUPABASE_PROJECT_REF: 'abcdefghijklmnopqrst', NEXT_PUBLIC_SUPABASE_URL: 'https://abcdefghijklmnopqrst.supabase.co',
-  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'public-key', SUPABASE_SECRET_KEY: 'sb_secret_private-test', CRON_SECRET: 'b'.repeat(64) })
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'public-key', SUPABASE_SECRET_KEY: 'sb_secret_private-test',
+  NEXT_PUBLIC_GOOGLE_AUTH_ENABLED: 'false', CRON_SECRET: 'b'.repeat(64) })
 
 test('development identifies its own database, free profile and no provider', () => {
   assert.deepEqual(validateFree2048Release(dev(), profile, cloud), { profile: '2048-free-v1', target: 'development', appUrl: cloud.appUrl,
@@ -27,10 +28,34 @@ test('profile cannot enable money, ads, a purchasable ticket or unknown capabili
   }
 })
 test('payment and ad credentials stop both targets, including inherited credentials and legacy alias', () => {
-  for (const key of ['FLOW_API_KEY', 'FLOW_API_SECRET', 'FLOW_APÏ_KEY', 'UNITY_ADS_KEY', 'ADMOB_ID', 'REWARDED_PROVIDER_SECRET']) {
+  for (const key of ['FLOW_API_KEY', 'FLOW_API_SECRET', 'FLOW_APÏ_KEY', 'UNITY_ADS_KEY', 'ADMOB_ID', 'REWARDED_PROVIDER_SECRET',
+    'MP_ACCESS_TOKEN', 'MP_PUBLIC_KEY', 'MP_WEBHOOK_SECRET', 'MP_CLIENT_ID', 'MP_CLIENT_SECRET', 'MP_FUTURE_CREDENTIAL',
+    'MERCADOPAGO_ACCESS_TOKEN', 'MERCADO_PAGO_ACCESS_TOKEN', 'NEXT_PUBLIC_MP_PUBLIC_KEY', 'NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY',
+    'NEXT_PUBLIC_MERCADO_PAGO_PUBLIC_KEY', 'mp_access_token', 'rewarded_provider_secret']) {
     for (const [env, target] of [[dev(), 'development'], [prod(), 'production']]) {
-      assert.throws(() => validateFree2048Release({ ...env, [key]: 'private-value' }, profile, cloud, target))
+      assert.throws(() => validateFree2048Release({ ...env, [key]: 'private-value' }, profile, cloud, target), error => {
+        assert.equal(error.message, 'Free release requires payment and advertising provider credentials absent')
+        assert.equal(error.message.includes('private-value'), false)
+        return true
+      })
     }
+  }
+})
+test('both targets require Google authentication explicitly false', () => {
+  for (const [env, target] of [[dev(), 'development'], [prod(), 'production']]) {
+    for (const value of [undefined, '', 'true', 'FALSE', '0', false]) {
+      assert.throws(() => validateFree2048Release({ ...env, NEXT_PUBLIC_GOOGLE_AUTH_ENABLED: value }, profile, cloud, target))
+    }
+    assert.equal(validateFree2048Release(env, profile, cloud, target).target, target)
+  }
+})
+test('empty provider variables are absent while credentials cannot hide in surrounding whitespace', () => {
+  for (const [env, target] of [[dev(), 'development'], [prod(), 'production']]) {
+    for (const key of ['FLOW_API_KEY', 'FLOW_API_SECRET', 'MP_ACCESS_TOKEN', 'NEXT_PUBLIC_MP_PUBLIC_KEY', 'REWARDED_PROVIDER_SECRET']) {
+      assert.equal(validateFree2048Release({ ...env, [key]: '' }, profile, cloud, target).target, target)
+      assert.throws(() => validateFree2048Release({ ...env, [key]: '  private-value  ' }, profile, cloud, target))
+    }
+    assert.equal(validateFree2048Release({ ...env, MP_ACCESS_TOKEN: '  ' }, profile, cloud, target).target, target)
   }
 })
 test('production cannot accidentally reuse development URL, project, simulator or provider', () => {
@@ -62,6 +87,18 @@ test('the free production CLI validates configuration without credentials for Fl
   const output = execFileSync(process.execPath, [fileURLToPath(new URL('../check-2048-free-release.mjs', import.meta.url)), '--target', 'production'],
     { env: prod(), encoding: 'utf8', windowsHide: true })
   assert.equal(JSON.parse(output).money, 'blocked')
+})
+test('production CLI fails closed for inherited MP credentials or enabled Google without revealing configuration', () => {
+  for (const patch of [{ MP_ACCESS_TOKEN: 'private-payment-token' }, { NEXT_PUBLIC_GOOGLE_AUTH_ENABLED: 'true' }]) {
+    assert.throws(() => execFileSync(process.execPath, [fileURLToPath(new URL('../check-2048-free-release.mjs', import.meta.url)), '--target', 'production'],
+      { env: { ...prod(), ...patch }, encoding: 'utf8', windowsHide: true, stdio: 'pipe' }), error => {
+      assert.equal(error.status, 1)
+      assert.equal(error.stdout, '')
+      assert.equal(error.stderr.includes('private-payment-token'), false)
+      assert.equal(error.stderr.includes('private-test'), false)
+      return true
+    })
+  }
 })
 test('unknown deployment identity cannot silently skip the preflight', () => {
   assert.throws(() => execFileSync(process.execPath, [fileURLToPath(new URL('../check-2048-free-release.mjs', import.meta.url))],

@@ -83,8 +83,21 @@ describe('onboarding return preserves access requirements', () => {
     expect(mocks.upsert).toHaveBeenCalledOnce()
   })
 
+  it('takes generic signup through email confirmation and saved onboarding before free practice', async () => {
+    const next = getOnboardingPath(undefined)
+    const query = new URLSearchParams({ next, token_hash: 'synthetic', type: 'signup' })
+    const response = await confirm(new NextRequest(`${origin}/auth/confirm?${query}`))
+    expect(response.headers.get('location')).toBe(`${origin}/onboarding`)
+    expect(mocks.auth.verifyOtp).toHaveBeenCalledWith({ type: 'signup', token_hash: 'synthetic' })
+    const data = form()
+    data.delete('next')
+    await expect(completeOnboarding(data)).rejects.toThrow('REDIRECT:/play')
+    expect(mocks.requireUserRole).toHaveBeenCalledOnce()
+    expect(mocks.upsert).toHaveBeenCalledOnce()
+  })
+
   it('revalidates an untrusted form destination on the server', async () => {
-    await expect(completeOnboarding(form('//outside.test'))).rejects.toThrow('REDIRECT:/tournaments')
+    await expect(completeOnboarding(form('//outside.test'))).rejects.toThrow('REDIRECT:/play')
   })
 
   it.each([['2015-01-01', 'true'], ['1990-01-01', 'false']])('does not skip age or terms for a destination', async (birthDate, acceptedTerms) => {

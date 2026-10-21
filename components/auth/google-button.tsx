@@ -51,7 +51,7 @@ export function GoogleButton({ redirectTo = '/onboarding' }: Props) {
         </svg>
         {loading ? 'Redirigiendo…' : 'Continuar con Google'}
       </button>
-      {!enabled && <p className="text-center text-xs text-muted-foreground">En este ambiente local usa email y contraseña.</p>}
+      {!enabled && <p className="text-center text-xs text-muted-foreground">En este lanzamiento usa email y contraseña.</p>}
       {error && <p role="alert" className="text-center text-xs text-red-600">{error}</p>}
     </div>
   )

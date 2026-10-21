@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { NextRequest } from 'next/server'
+import { unstable_doesMiddlewareMatch as doesProxyMatch } from 'next/experimental/testing/server'
 
 const mocks = vi.hoisted(() => ({
   origin: 'https://torneos.example', getUser: vi.fn(), serverFactory: vi.fn(), rpc: vi.fn(), rate: vi.fn(),
@@ -16,7 +17,7 @@ vi.mock('@/lib/supabase/server', () => ({
 vi.mock('@/lib/security/rate-limit', () => ({ checkRateLimit: mocks.rate,
   rateLimitResponse: () => Response.json({ error: 'limited' }, { status: 429 }) }))
 
-import { proxy } from '../proxy'
+import { config, proxy } from '../proxy'
 import { GET as daily } from '../app/api/2048/daily/route'
 import { POST as activity } from '../app/api/2048/activity/route'
 
@@ -35,6 +36,29 @@ beforeEach(() => {
 })
 
 describe('2048 public API admission through the actual Next proxy', () => {
+  it.each([['/robots.txt', 'GET'], ['/robots.txt?check=1', 'GET'], ['/robots.txt', 'HEAD']])(
+    'serves exact public metadata %s %s through its matched proxy without Auth or DB', async (path, method) => {
+      mocks.serverFactory.mockImplementation(() => { throw new Error('Auth unavailable') })
+      expect(doesProxyMatch({ config, nextConfig: {}, url: path })).toBe(true)
+      const response = await proxy(request(path, method))
+      expect(response.headers.get('x-middleware-next')).toBe('1')
+      expect(response.headers.get('location')).toBeNull()
+      expect(response.headers.has('set-cookie')).toBe(false)
+      expect(mocks.serverFactory).not.toHaveBeenCalled()
+      expect(mocks.getUser).not.toHaveBeenCalled()
+      expect(mocks.rpc).not.toHaveBeenCalled()
+    },
+  )
+
+  it.each([['/robots.txt/private', 'GET'], ['/robots.txt-extra', 'GET'], ['/robots.txt', 'POST']])(
+    'does not widen the metadata exception to %s %s', async (path, method) => {
+      const response = await proxy(request(path, method))
+      expect(response.status).toBe(307)
+      expect(new URL(response.headers.get('location')!).pathname).toBe('/sign-in')
+      expect(mocks.serverFactory).toHaveBeenCalledTimes(1)
+    },
+  )
+
   it('lets a guest reach the daily definition without a sign-in redirect', async () => {
     const response = await proxy(request('/api/2048/daily'))
     expect(response.headers.get('x-middleware-next')).toBe('1')

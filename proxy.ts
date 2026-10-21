@@ -3,7 +3,8 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { getAllowedOrigins, getAppUrl, getSupabaseBrowserKey, getSupabaseUrl, getSupabaseServerUrl, getSupabaseCookieOptions } from '@/lib/env'
 import { buildAppCsp } from '@/lib/security/csp'
-import { FREE_2048_MONEY_DISABLED_CODE, getFree2048TournamentId, isFree2048MoneyPathBlocked } from '@/lib/release/free-2048'
+import { FREE_2048_MONEY_DISABLED_CODE, free2048IntakeDisabledResponse, getFree2048TournamentId,
+  isFree2048IntakePathBlocked, isFree2048MoneyPathBlocked, isFree2048OutOfCatalogPath } from '@/lib/release/free-2048'
 import { COMMUNITY_FREE_CONFIG, isCommunityFreeTournament } from '@/lib/tournament/community-free'
 
 // ── CORS ────────────────────────────────────────────────────
@@ -91,6 +92,14 @@ export async function proxy(req: NextRequest) {
   // Fixed free release: financial routes never reach Auth, DB, providers or CORS preflight.
   if (isFree2048MoneyPathBlocked(req.nextUrl.pathname, req.method)) {
     return moneyDisabledResponse()
+  }
+  if (isFree2048IntakePathBlocked(req.nextUrl.pathname)) {
+    const denied = free2048IntakeDisabledResponse()
+    return new NextResponse(denied.body, { status: denied.status, headers: denied.headers })
+  }
+  if (isFree2048OutOfCatalogPath(req.nextUrl.pathname)) {
+    return NextResponse.json({ error: 'Esta versión ofrece 2048 gratuito.', code: 'GAME_OUTSIDE_FREE_RELEASE' },
+      { status: 404, headers: { 'Cache-Control': 'private, no-store' } })
   }
 
   // ── Preflight OPTIONS ────────────────────────────────────────
@@ -196,6 +205,11 @@ export const config = {
   matcher: [
     '/((?!_next|games/|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
     '/(api|trpc)(.*)',
+    '/games/factory-empire/:path*',
+    '/games/snake-arena/:path*',
+    '/games/alien-run/:path*',
+    '/games/ted-runner/:path*',
+    '/games/rts-duel/:path*',
     // Encoded API segments must still reach the denial guard, including file-like suffixes.
     '/([^?]*%[^?]*)',
   ],

@@ -3,131 +3,164 @@ import Link from 'next/link'
 
 export const metadata: Metadata = {
   title: 'Política de Privacidad — TorneosPlay',
-  description: 'Cómo recopilamos, usamos y protegemos tus datos personales.',
+  description: 'Datos de la práctica gratuita de 2048, la cuenta opcional y las demostraciones.',
 }
 
 export default function PrivacidadPage() {
   return (
     <div className="max-w-3xl mx-auto px-4 py-12 space-y-8">
       <div>
-        <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">← Inicio</Link>
+        <Link href="/play" className="text-sm text-muted-foreground hover:text-foreground">← Práctica gratuita</Link>
         <h1 className="text-3xl font-bold mt-4">Política de Privacidad</h1>
-        <p className="text-sm text-muted-foreground mt-1">Última actualización: 20 de octubre de 2026</p>
+        <p className="text-sm text-muted-foreground mt-1">Servicio gratuito de 2048 · 21 de octubre de 2026</p>
       </div>
 
-      <Section title="1. Responsable del tratamiento">
+      <Section title="1. Alcance y operador">
         <p>
-          TorneosPlay (en adelante &quot;la Plataforma&quot;) es responsable del tratamiento de los datos
-          personales recopilados a través de este sitio web, en conformidad con la Ley N.º 19.628
-          sobre protección de la vida privada y, desde su entrada en vigencia, con la Ley N.º 21.719
-          sobre protección y tratamiento de datos personales.
+          Esta política describe la práctica y el diario gratuitos de 2048, los retos comunitarios
+          gratuitos que se publiquen, el entrenamiento de demostración y la ficha informativa de ticket.
+          TorneosPlay es el nombre del servicio, administrado por su equipo operador.
+        </p>
+        <p>
+          El contacto declarado para consultas de privacidad es{' '}
+          <a href="mailto:privacidad@torneosplay.cl" className="underline underline-offset-2">privacidad@torneosplay.cl</a>;
+          para consultas del servicio,{' '}
+          <a href="mailto:contacto@torneosplay.cl" className="underline underline-offset-2">contacto@torneosplay.cl</a>.
         </p>
       </Section>
 
-      <Section title="2. Datos que recopilamos">
-        <p>Recopilamos la siguiente información:</p>
+      <Section title="2. Jugar sin cuenta y datos del navegador">
+        <p>
+          Puedes practicar y jugar el diario sin registrarte. El navegador conserva marcas,
+          últimas partidas, progreso del diario y días de juego. La práctica normal puede
+          guardar tablero, semilla, puntaje y movimientos para continuar tras recargar.
+          Ese guardado no se sincroniza con una cuenta ni entre dispositivos y no se incluye
+          en la exportación de observaciones.
+        </p>
+        <p>
+          También se conservan observaciones locales de sesiones, primeros movimientos e hitos,
+          entrenamiento demo, solicitudes y aplicaciones demo, y consultas de la ficha de ticket.
+          Estas últimas indican una consulta local y su origen, no una reserva, venta o persona única.
+          Los cupos de la demostración se controlan en este navegador.
+        </p>
+        <p>
+          El diagnóstico de carga conserva intentos, fechas, duración y resultados técnicos,
+          con identificadores locales para enlazar los hitos ya observados. No conserva mensajes
+          originales de error, direcciones web, contactos, tableros ni semillas.
+          Su cobertura empieza al preparar el juego; una carga inconclusa no prueba abandono.
+        </p>
+        <p>
+          Las observaciones y diagnósticos se descargan sólo si lo eliges. No se suben automáticamente.
+          Importar un archivo en el informe administrativo lo procesa en memoria; si compartes
+          voluntariamente una exportación con el operador, éste recibe el contenido que compartas.
+          Los datos locales no se vinculan retrospectivamente a una cuenta.
+        </p>
+      </Section>
+
+      <Section title="3. Datos de una cuenta opcional">
         <ul>
-          <li><strong>Datos de registro:</strong> nombre, correo electrónico, nombre de usuario.</li>
-          <li><strong>Datos de verificación (KYC):</strong> RUT, fecha de nacimiento, teléfono, ciudad, documentos de identidad, número de documento y estado de revisión.</li>
-          <li><strong>Datos bancarios:</strong> banco, número de cuenta, nombre y RUT del titular, usados para verificar titularidad y procesar retiros.</li>
-          <li><strong>Datos de juego:</strong> semillas de partida, movimientos, puntajes, tableros, historial de partidas y resultados (auditoría de competencia).</li>
-          <li><strong>Actividad de 2048 gratuito:</strong> si juegas con una cuenta iniciada, registramos los días con al menos un movimiento válido, la primera y última observación de ese día y si jugaste práctica libre o desafío diario. Este registro de retorno no recibe tu tablero, semilla ni puntuación.</li>
-          <li><strong>Datos de auditoría:</strong> eventos de envío, aprobación o rechazo de KYC y notas de revisión administrativa.</li>
-          <li><strong>Datos técnicos:</strong> dirección IP, tipo de dispositivo, navegador, cookies de sesión.</li>
+          <li><strong>Acceso:</strong> email y contraseña enviados a Supabase Auth para crear y proteger el acceso, confirmar el correo y recuperar la cuenta. Si eliges Google cuando esté disponible, se reciben los datos de cuenta que autorices en ese proveedor.</li>
+          <li><strong>Perfil:</strong> nombre de usuario, fecha de nacimiento para comprobar el requisito de al menos 18 años, nombre completo opcional y fecha y versión de aceptación de las condiciones.</li>
+          <li><strong>Actividad gratuita:</strong> con sesión iniciada se registran días con un movimiento válido, primera y última observación del día y si hubo práctica o diario. Este registro central no recibe tablero, semilla ni puntuación. Cargar, exportar o retomar sin mover no acredita juego; una continuación asistida no añade retorno.</li>
+          <li><strong>Reto comunitario:</strong> al inscribirte se registra la participación y, si juegas, los movimientos y el resultado validado necesarios para su clasificación.</li>
+          <li><strong>Soporte:</strong> se recibe la información que envíes voluntariamente al contactar o usar el formulario con cuenta. Comparte sólo lo necesario para explicar el problema.</li>
         </ul>
-      </Section>
-
-      <Section title="3. Finalidad del tratamiento">
-        <p>Usamos tus datos para:</p>
-        <ul>
-          <li>Verificar tu identidad, documentos y titularidad bancaria, y cumplir con requisitos legales (KYC/AML).</li>
-          <li>Gestionar tu cuenta, premios, retiros y transacciones.</li>
-          <li>Procesar inscripciones, premios y retiros.</li>
-          <li>Auditar la integridad de las competencias y detectar conductas fraudulentas.</li>
-          <li>Medir el regreso a la práctica gratuita de 2048 y al desafío diario mediante reportes agregados de cuentas por día.</li>
-          <li>Comunicarte información relevante sobre torneos y la plataforma.</li>
-          <li>Cumplir con obligaciones tributarias ante el SII.</li>
-        </ul>
-      </Section>
-
-      <Section title="4. Base legal">
         <p>
-          El tratamiento de datos se basa en: (a) la ejecución del contrato de uso de la
-          plataforma; (b) el cumplimiento de obligaciones legales; y (c) el consentimiento
-          expreso del usuario al registrarse.
+          Los reportes de actividad de cuentas son observaciones técnicas, no una verificación
+          de personas únicas o de interés comercial. Las pruebas QA se distinguen cuando están identificadas.
         </p>
       </Section>
 
-      <Section title="5. Compartición de datos">
+      <Section title="4. Aviso de alta y finalidades">
         <p>
-          No vendemos ni cedemos tus datos personales a terceros con fines comerciales.
-          Podemos compartir datos con:
-        </p>
-        <ul>
-          <li>Proveedores de servicios de infraestructura, autenticación, base de datos y almacenamiento (por ejemplo, Vercel y Supabase).</li>
-          <li>Proveedores de pago y emisión de comprobantes electrónicos (por ejemplo, Flow.cl).</li>
-          <li>Entidades bancarias para validar titularidad y procesar retiros.</li>
-          <li>El Servicio de Impuestos Internos u otras autoridades competentes cuando sea necesario para cumplir obligaciones legales.</li>
-        </ul>
-      </Section>
-
-      <Section title="6. Publicidad del ranking">
-        <p>
-          Los <strong>nombres de usuario y puntajes</strong> de los participantes en torneos
-          son públicos y visibles en el leaderboard de cada competencia. Esto es esencial para
-          garantizar la transparencia y auditoría de los resultados.
+          Antes de enviar tus datos de registro se muestra el aviso y se solicita tu confirmación
+          para crear y proteger la cuenta y enviar los correos necesarios para el acceso.
+          La aceptación versionada de las condiciones y esta política se registra después,
+          al completar los datos de cuenta. Crear la cuenta ya transmite los datos de acceso;
+          la aceptación posterior no se presenta como si hubiera ocurrido antes.
         </p>
         <p>
-          El nombre real, RUT y datos bancarios nunca se publican. Si deseas cambiar tu nombre
-          de usuario para preservar mayor privacidad, puedes hacerlo desde tu perfil.
+          Los datos descritos se usan para prestar esas funciones gratuitas, proteger el acceso,
+          resolver consultas y observar el uso y regreso a la práctica. No se solicita consentimiento
+          publicitario o financiero. La práctica gratuita no necesita RUT, cédula ni datos bancarios;
+          no los envíes para acceder a ella.
         </p>
       </Section>
 
-      <Section title="7. Retención de datos">
+      <Section title="5. Proveedores y datos técnicos">
         <p>
-          Conservamos los datos de cuenta mientras la cuenta esté activa. Los registros de
-          transacciones y partidas se conservan por 6 años conforme a las obligaciones tributarias
-          chilenas. Los datos de KYC se conservan por el tiempo necesario para soporte, auditoría,
-          prevención de fraude y cumplimiento legal aplicable.
+          La web utiliza Vercel para alojamiento y Supabase para autenticación, base de datos
+          y almacenamiento. Las solicitudes transmiten datos técnicos como IP, navegador y
+          cookies de sesión a la infraestructura que las atiende. El acceso con Google sólo
+          interviene si eliges ese proveedor y está habilitado.
+        </p>
+        <p>
+          Se utilizan cookies necesarias para el acceso y funcionamiento. En este servicio no
+          se carga un SDK de anuncios reales ni se usa la demostración como consentimiento
+          para publicidad comportamental. No se venden datos personales.
+        </p>
+        <p>
+          Los pagos y el envío de datos a un proveedor de cobros no forman parte de este
+          recorrido gratuito. Las regiones efectivas de procesamiento y los plazos de los
+          registros de cada proveedor requieren confirmación del operador; no se presume que
+          todos los datos permanezcan en Chile.
         </p>
       </Section>
 
-      <Section title="8. Derechos del titular">
+      <Section title="6. Información pública y datos históricos">
         <p>
-          Tienes derecho a acceder, rectificar, cancelar y oponerte al tratamiento de tus datos
-          (derechos ARCO). Desde la entrada en vigencia de la Ley N.º 21.719, también podrás ejercer
-          los derechos adicionales que dicha ley establezca, incluyendo portabilidad, bloqueo u
-          oposición cuando correspondan. Para ejercerlos, escríbenos a{' '}
-          <a href="mailto:privacidad@torneosplay.cl" className="underline underline-offset-2">
-            privacidad@torneosplay.cl
-          </a>
-          . Responderemos en un plazo máximo de 30 días hábiles.
+          En un reto comunitario, el nombre de usuario y el resultado pueden aparecer en la
+          clasificación pública. Elige un alias sin datos privados. El perfil permite cambiar
+          el nombre de usuario; la práctica y sus marcas locales no se publican como ranking oficial.
+        </p>
+        <p>
+          Esta versión gratuita no requiere nuevas verificaciones financieras ni habilita pagos.
+          Si existen datos o trámites de versiones anteriores, este texto no afirma que hayan
+          sido eliminados ni que los controles de esas operaciones hayan cambiado.
+          Su finalidad, acceso y conservación deben revisarse por separado; no justifican
+          recopilar nuevos documentos o datos bancarios para jugar gratis.
         </p>
       </Section>
 
-      <Section title="9. Cookies">
+      <Section title="7. Conservación y eliminación">
         <p>
-          Utilizamos cookies estrictamente necesarias para la autenticación y el funcionamiento
-          del sitio. No usamos cookies de seguimiento de terceros ni publicidad comportamental.
+          El almacenamiento local usa límites por tipo de registro: por ejemplo, las últimas
+          cinco partidas personales y hasta 200 intentos de diagnóstico. Puede truncarse o
+          perderse por los ajustes del navegador. No hay un plazo uniforme de conservación
+          para todos estos datos; puedes borrarlos desde los ajustes del sitio en tu navegador.
+          Hacerlo también puede perder una práctica guardada y los límites locales de la demostración.
         </p>
-        <p>Las marcas personales, el progreso diario y los días de juego de visitantes se conservan en el almacenamiento local del navegador. Puedes borrarlos desde sus ajustes. Las observaciones locales se exportan sólo cuando eliges descargarlas; no se convierten en personas únicas ni se vinculan retrospectivamente a una cuenta.</p>
-        <p>La práctica libre también guarda su tablero, puntuación, semilla y movimientos en este navegador para continuar después de recargar. Este guardado no se sincroniza con tu cuenta ni entre dispositivos, y no se incluye en las métricas de retorno ni en la exportación de observaciones.</p>
-        <p>El diagnóstico local de carga de 2048 conserva intentos, fechas, duración y resultados técnicos, con enlaces a las identidades locales de las partidas para consultar los hitos ya observados. No guarda mensajes de error originales, direcciones web, contactos, tableros o semillas. Puedes descargarlo incluso si falla la carga; no se envía automáticamente ni acredita juego o retorno. Su cobertura comienza cuando se prepara el juego en el navegador.</p>
+        <p>
+          No hay borrado automático de cuentas o actividad por antigüedad en esta versión.
+          La cuenta, la actividad gratuita y las consultas de soporte se distinguen de los
+          registros financieros históricos, si existen; su conservación no se trata como si
+          todas las partidas gratuitas fueran transacciones tributarias.
+        </p>
+        <p>
+          Puedes solicitar revisión, acceso, corrección o eliminación por el contacto de privacidad.
+          Una solicitud no borra automáticamente datos que deban conservarse por una razón
+          legal aplicable; el operador debe explicar qué conserva y por qué en el caso concreto.
+        </p>
       </Section>
 
-      <Section title="10. Seguridad">
+      <Section title="8. Consultas y seguridad">
         <p>
-          Implementamos medidas técnicas y organizativas para proteger tus datos: cifrado TLS en
-          tránsito, cifrado en reposo, control de acceso por roles, y auditoría de operaciones
-          sensibles. Sin embargo, ningún sistema es 100% infalible; en caso de brecha de
-          seguridad que afecte tus datos, te notificaremos en el menor tiempo posible.
+          Para pedir información sobre tus datos o ejercer los derechos que correspondan según
+          la normativa aplicable, escribe a{' '}
+          <a href="mailto:privacidad@torneosplay.cl" className="underline underline-offset-2">privacidad@torneosplay.cl</a>.
+          Indica la cuenta o el asunto y la solicitud con los datos mínimos necesarios.
+          No envíes contraseñas ni datos bancarios por correo.
+          La solicitud se revisará según los derechos y plazos legales aplicables.
+        </p>
+        <p>
+          El servicio utiliza autenticación y controles de acceso para proteger las cuentas
+          y restringir la consulta de datos privados.
         </p>
       </Section>
 
-      <div className="border-t pt-6 flex gap-6 text-sm text-muted-foreground">
-        <Link href="/legal/terminos" className="hover:text-foreground underline underline-offset-2">Términos y Condiciones</Link>
-        <Link href="/legal/reembolso" className="hover:text-foreground underline underline-offset-2">Política de Reembolso</Link>
-        <Link href="/legal/aml" className="hover:text-foreground underline underline-offset-2">Política AML</Link>
+      <div className="border-t pt-6 flex flex-wrap gap-6 text-sm text-muted-foreground">
+        <Link href="/legal/terminos" className="underline underline-offset-2">Términos y Condiciones</Link>
+        <Link href="/play" className="underline underline-offset-2">Jugar gratis</Link>
       </div>
     </div>
   )
@@ -137,7 +170,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   return (
     <section className="space-y-3">
       <h2 className="text-lg font-semibold">{title}</h2>
-      <div className="space-y-2 text-sm text-muted-foreground leading-relaxed [&_ul]:list-disc [&_ul]:list-inside [&_ul]:space-y-1 [&_strong]:text-foreground">
+      <div className="space-y-2 text-sm text-muted-foreground leading-relaxed [&_ul]:list-disc [&_ul]:list-inside [&_ul]:space-y-2 [&_strong]:text-foreground">
         {children}
       </div>
     </section>

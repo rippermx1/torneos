@@ -1,110 +1,12 @@
-import { createClient, createAdminClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
-import { KycForm } from './kyc-form'
-import type { KycSubmission, Profile } from '@/types/database'
 import Link from 'next/link'
 
-// Strip OAuth provider display-name artifacts like "(cv)" that come from Google display names.
-function cleanDisplayName(name: string | null): string {
-  return (name ?? '').replace(/\s*\([^)]*\)\s*$/, '').trim()
-}
-
-export default async function KycPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/sign-in')
-
-  const adminSupabase = createAdminClient()
-  const { data } = await adminSupabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
-
-  const profile = data as Profile | null
-  if (!profile) redirect('/onboarding')
-
-  const { data: latestSubmissionRows } = await adminSupabase
-    .from('kyc_submissions')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-    .limit(1)
-
-  const latestSubmission = (latestSubmissionRows?.[0] ?? null) as KycSubmission | null
-
-  if (profile.kyc_status === 'approved') {
-    return (
-      <div className="max-w-lg space-y-4">
-        <div>
-          <Link href="/profile" className="text-sm text-muted-foreground hover:text-foreground">← Mi perfil</Link>
-          <h1 className="text-2xl font-bold mt-3">Verificación KYC</h1>
-        </div>
-        <div className="border rounded-xl p-6 text-center space-y-2">
-          <p className="text-3xl">✅</p>
-          <p className="font-semibold">Identidad verificada</p>
-          <p className="text-sm text-muted-foreground">
-            Tu cuenta está lista para participar en torneos pagados y solicitar retiros sujetos a los límites vigentes.
-          </p>
-        </div>
-      </div>
-    )
-  }
-
+// Defense in depth: never render the historical document-upload form.
+export default function KycPage() {
   return (
-    <div className="max-w-2xl space-y-6">
-      <div>
-        <Link href="/profile" className="text-sm text-muted-foreground hover:text-foreground">← Mi perfil</Link>
-        <h1 className="text-2xl font-bold mt-3">Verificación de identidad</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Completa esta verificación una sola vez para pagar inscripciones, proteger tus premios y solicitar retiros.
-        </p>
-      </div>
-
-      {profile.kyc_status === 'rejected' && (
-        <div className="border border-red-200 bg-red-50 rounded-xl p-4 text-sm text-red-700">
-          Tu verificación anterior fue rechazada. Puedes corregir tus datos y volver a enviarlos.
-        </div>
-      )}
-
-      {latestSubmission?.status === 'pending' && profile.kyc_status === 'pending' ? (
-        <div className="border border-amber-200 bg-amber-50 rounded-xl p-5 text-sm text-amber-800 space-y-3">
-          <div>
-            <p className="font-semibold">Documentación en revisión</p>
-            <p className="mt-1">
-              Recibimos tus datos correctamente. La revisión normalmente toma 1–2 días hábiles y te avisaremos por correo.
-            </p>
-          </div>
-          <Link
-            href="/tournaments"
-            className="inline-flex rounded-lg border border-amber-300 bg-white/70 px-3 py-2 text-xs font-medium hover:bg-white"
-          >
-            Volver a torneos
-          </Link>
-        </div>
-      ) : (
-        <KycForm
-          defaults={{
-            rut:        profile.rut ?? '',
-            birth_date: profile.birth_date ?? '',
-            phone:      profile.phone ?? '',
-            city:       profile.city ?? '',
-            full_name:  cleanDisplayName(profile.full_name),
-            document_type: latestSubmission?.document_type ?? 'cedula_chilena',
-            document_number: latestSubmission?.document_number ?? '',
-            document_front_path: latestSubmission?.document_front_path ?? '',
-            document_back_path: latestSubmission?.document_back_path ?? '',
-            bank_account_holder: latestSubmission?.bank_account_holder ?? cleanDisplayName(profile.full_name),
-            bank_account_rut: latestSubmission?.bank_account_rut ?? profile.rut ?? '',
-          }}
-        />
-      )}
-
-      <p className="text-xs text-muted-foreground leading-relaxed">
-        Tus datos y documentos se usan exclusivamente para verificar tu identidad antes de aceptar pagos o procesar retiros.
-        No se publican y se tratan según la{' '}
-        <Link href="/legal/privacidad" className="underline underline-offset-2">Política de Privacidad</Link>.
-      </p>
+    <div className="max-w-lg space-y-4">
+      <h1 className="text-2xl font-bold">Juega sin verificación financiera</h1>
+      <p>2048 gratuito no solicita RUT, documentos de identidad ni datos bancarios.</p>
+      <Link href="/play" className="underline underline-offset-2">Volver a 2048</Link>
     </div>
   )
 }

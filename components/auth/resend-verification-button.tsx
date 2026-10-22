@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from 'react'
 import { getOnboardingReturnPath } from '@/lib/auth/redirect'
+import { ConfirmationGuidance } from './confirmation-guidance'
 
 const ACCEPTED_MESSAGE = 'Si hay una cuenta pendiente para ese correo, enviaremos un enlace de confirmación. Revisa también spam.'
 const FAILURE_MESSAGE = 'No pudimos procesar la solicitud. Inténtalo nuevamente más tarde.'
@@ -115,6 +116,7 @@ export function ResendVerificationButton({ returnTo = '/play', email: initialEma
   }
 
   return <form onSubmit={handleResend} className="space-y-3 text-left">
+    <ConfirmationGuidance />
     <div className="space-y-1.5">
       <label htmlFor={emailId} className="text-sm font-medium">Email de la cuenta pendiente</label>
       <input id={emailId} type="email" autoComplete="email" required maxLength={254}

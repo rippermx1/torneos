@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { Children, isValidElement, type ReactElement, type ReactNode } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
 
 const fixture = vi.hoisted(() => ({
   stateIndex: 0, refIndex: 0, effectIndex: 0, states: [] as unknown[], refs: [] as { current: unknown }[],
@@ -64,6 +65,14 @@ function unmount() {
 function accepted(seconds?: number) {
   return Response.json({ message: 'Provider text should not be used', ...(seconds === undefined ? {} : { retryAfterSeconds: seconds }) }, { status: 202 })
 }
+function expectConfirmationGuidance() {
+  const html = renderToStaticMarkup(view())
+  expect(html).toContain('aria-label="Ayuda para confirmar el correo"')
+  expect(html).toContain('más reciente en este mismo navegador y perfil')
+  expect(html).toContain('esta misma ventana privada')
+  expect(html).toContain('copia el enlace y pégalo en la barra de direcciones de esta ventana')
+  return html
+}
 function deferred<T>() {
   let resolve!: (value: T) => void
   const promise = new Promise<T>(done => { resolve = done })
@@ -102,6 +111,32 @@ it('posts the email only in the request body and uses the free default destinati
   expect(text(view())).not.toContain('Provider text')
   expect(text(button())).toContain('60s')
   expect(button().props.disabled).toBe(true)
+})
+
+it('explains the latest link, browser profile and private-window recovery before and after an explicit resend', async () => {
+  expectConfirmationGuidance()
+  expect(fixture.fetch).not.toHaveBeenCalled()
+  await submit()
+  const html = expectConfirmationGuidance()
+  expect(html).toContain('Si hay una cuenta pendiente para ese correo')
+  expect(html).not.toContain('Provider text')
+  expect(fixture.fetch).toHaveBeenCalledOnce()
+  await vi.advanceTimersByTimeAsync(60000)
+  expectConfirmationGuidance()
+  expect(fixture.fetch).toHaveBeenCalledOnce()
+})
+
+it.each([429, 503])('retains actionable confirmation guidance after neutral HTTP %s without requesting automatically', async status => {
+  fixture.fetch.mockResolvedValueOnce(Response.json({ error: 'private-provider-account-details', retryAfterSeconds: 2 }, { status }))
+  expectConfirmationGuidance()
+  await submit()
+  const html = expectConfirmationGuidance()
+  expect(html).not.toContain('private-provider-account-details')
+  expect(html).not.toContain('Si hay una cuenta pendiente para ese correo')
+  expect(html).toContain(status === 429 ? 'Espera antes de solicitar otro enlace.' : 'No pudimos procesar la solicitud.')
+  await vi.advanceTimersByTimeAsync(60000)
+  expect(fixture.fetch).toHaveBeenCalledOnce()
+  expect(fixture.fetch.mock.calls[0][0]).toBe('/api/auth/resend-confirmation')
 })
 
 it.each(['/play/2048/ticket?from=practice', '/tournaments/10000000-0000-0000-0000-000000000001'])(

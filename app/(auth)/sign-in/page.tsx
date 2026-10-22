@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { GoogleButton } from '@/components/auth/google-button'
+import { ConfirmationGuidance } from '@/components/auth/confirmation-guidance'
 import { getSafeAuthRedirectPath, getOnboardingReturnPath, getTournamentReturnPath, withAuthDestination } from '@/lib/auth/redirect'
 
 function SignInForm() {
@@ -20,7 +21,7 @@ function SignInForm() {
       return 'Error al iniciar sesión con Google. Intenta nuevamente.'
     }
     if (initialError === 'auth_confirm') {
-      return 'No se pudo confirmar el correo o el enlace expiró. Vuelve a intentarlo.'
+      return 'No pudimos confirmar el correo. El enlace pudo vencer, haberse usado o abrirse en otro navegador.'
     }
     return ''
   })
@@ -99,8 +100,13 @@ function SignInForm() {
           </div>
 
           {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
-          {initialError === 'auth_confirm' && <Link href={withAuthDestination('/verify-email', getOnboardingReturnPath(destination))}
-            className="block text-sm underline underline-offset-4">Solicitar otro enlace de confirmación</Link>}
+          {initialError === 'auth_confirm' && <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">Si ya confirmaste tu correo, inicia sesión aquí con tu email y contraseña.</p>
+            <p className="text-sm text-muted-foreground">Si tu cuenta sigue pendiente, solicita otro enlace desde este navegador. No necesitas registrarte otra vez.</p>
+            <ConfirmationGuidance />
+            <Link href={withAuthDestination('/verify-email', getOnboardingReturnPath(searchParams.get('next')))}
+              className="block text-sm underline underline-offset-4">Solicitar otro enlace de confirmación</Link>
+          </div>}
 
           <button
             type="submit"

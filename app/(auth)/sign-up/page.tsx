@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { GoogleButton } from '@/components/auth/google-button'
+import { ResendVerificationButton } from '@/components/auth/resend-verification-button'
 import { getOnboardingPath, getOnboardingReturnPath, getTournamentReturnPath, withAuthDestination } from '@/lib/auth/redirect'
 
 function SignUpForm() {
@@ -53,9 +54,7 @@ function SignUpForm() {
     })
 
     if (signUpError) {
-      setError(signUpError.message === 'User already registered'
-        ? 'Ya existe una cuenta con ese email.'
-        : 'Error al crear la cuenta. Inténtalo nuevamente.')
+      setError('No pudimos completar la solicitud de registro. Inténtalo nuevamente.')
       setLoading(false)
       return
     }
@@ -79,9 +78,11 @@ function SignUpForm() {
           <p className="text-4xl">📧</p>
           <h1 className="text-xl font-bold">Revisa tu correo</h1>
           <p className="text-sm text-muted-foreground">
-            Te enviamos un enlace de confirmación a <strong>{email}</strong>.
-            Haz clic en el enlace para activar tu cuenta.
+            Si el registro requiere confirmación, recibirás un enlace en <strong>{email}</strong>.
+            Revisa también spam y abre el enlace para activar tu cuenta.
           </p>
+          <ResendVerificationButton email={email} returnTo={getOnboardingReturnPath(destination)} initialCooldownSeconds={60} />
+          <Link href="/play" className="block text-sm underline underline-offset-4">Jugar 2048 gratis mientras esperas</Link>
           <Link href={signInHref} className="inline-block text-sm text-muted-foreground hover:text-foreground transition-colors">
             Ya confirmé → Iniciar sesión
           </Link>

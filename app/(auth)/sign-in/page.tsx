@@ -99,6 +99,8 @@ function SignInForm() {
           </div>
 
           {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
+          {initialError === 'auth_confirm' && <Link href={withAuthDestination('/verify-email', getOnboardingReturnPath(destination))}
+            className="block text-sm underline underline-offset-4">Solicitar otro enlace de confirmación</Link>}
 
           <button
             type="submit"

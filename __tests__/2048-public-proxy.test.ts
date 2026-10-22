@@ -36,6 +36,23 @@ beforeEach(() => {
 })
 
 describe('2048 public API admission through the actual Next proxy', () => {
+  it('admits only the exact resend POST without a session refresh', async () => {
+    mocks.serverFactory.mockImplementation(() => { throw new Error('Auth unavailable') })
+    const result = await proxy(request('/api/auth/resend-confirmation', 'POST'))
+    expect(result.headers.get('x-middleware-next')).toBe('1')
+    expect(result.headers.get('cache-control')).toContain('no-store')
+    expect(mocks.serverFactory).not.toHaveBeenCalled()
+  })
+  it.each(['/api/auth/resend-confirmation/other', '/api/auth/resend-confirmation-extra', '/api/auth/other', '/verify-email/private'])(
+    'does not expose neighboring route %s', async path => {
+      const result = await proxy(request(path, 'POST'))
+      expect(result.status).toBe(307)
+      expect(new URL(result.headers.get('location')!).pathname).toBe('/sign-in')
+    },
+  )
+  it('allows the exact guest verification page', async () => {
+    expect((await proxy(request('/verify-email'))).headers.get('x-middleware-next')).toBe('1')
+  })
   it.each([['/robots.txt', 'GET'], ['/robots.txt?check=1', 'GET'], ['/robots.txt', 'HEAD']])(
     'serves exact public metadata %s %s through its matched proxy without Auth or DB', async (path, method) => {
       mocks.serverFactory.mockImplementation(() => { throw new Error('Auth unavailable') })

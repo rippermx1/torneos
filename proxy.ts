@@ -69,7 +69,7 @@ const PUBLIC_PREFIXES = [
 ]
 // The daily definition is free; activity checks its own Auth and Origin.
 // Exact paths keep other 2048 APIs behind the existing session guard.
-const PUBLIC_EXACT_PATHS = new Set(['/api/2048/daily', '/api/2048/activity'])
+const PUBLIC_EXACT_PATHS = new Set(['/api/2048/daily', '/api/2048/activity', '/verify-email'])
 const PUBLIC_METADATA_READ_PATHS = new Set(['/robots.txt'])
 
 function isPublicPath(pathname: string): boolean {
@@ -104,6 +104,10 @@ export async function proxy(req: NextRequest) {
   }
 
   // Static metadata remains available even when Auth is unavailable; no session refresh or DB.
+  if (req.nextUrl.pathname === '/api/auth/resend-confirmation' && req.method === 'POST') {
+    // This handler owns Origin, body, quota and Auth-provider validation. No session is required.
+    return NextResponse.next({ headers: { 'Cache-Control': 'private, no-store', 'Referrer-Policy': 'no-referrer' } })
+  }
   if (PUBLIC_METADATA_READ_PATHS.has(req.nextUrl.pathname) && ['GET', 'HEAD'].includes(req.method)) {
     return NextResponse.next()
   }

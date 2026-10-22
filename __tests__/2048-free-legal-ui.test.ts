@@ -26,6 +26,7 @@ import { OnboardingForm } from '@/app/(user)/onboarding/onboarding-form'
 import TerminosPage from '@/app/legal/terminos/page'
 import PrivacidadPage from '@/app/legal/privacidad/page'
 import { CURRENT_TERMS_VERSION } from '@/lib/legal/terms'
+import { ResendVerificationButton } from '@/components/auth/resend-verification-button'
 
 type Node = ReactElement<Record<string, unknown>>
 function nodes(value: ReactNode): Node[] {
@@ -118,6 +119,21 @@ it('creates Auth only after confirmation and keeps the safe return destination w
   expect(destination.searchParams.get('next')).toBe('/play/2048/ticket?from=result')
   expect(fixture.complete).not.toHaveBeenCalled()
   expect(textOf(signup())).toContain('Revisa tu correo')
+  const pending = nodes(signup()).find(node => node.type === ResendVerificationButton)!
+  expect(pending.props).toMatchObject({ email: 'owned@example.test', returnTo: '/play/2048/ticket?from=result', initialCooldownSeconds: 60 })
+  const links = nodes(signup()).flatMap(node => typeof node.props.href === 'string' ? [node.props.href] : [])
+  expect(links.every(link => !link.includes('owned') && !link.includes('email='))).toBe(true)
+})
+
+it('keeps a rejected signup neutral instead of confirming an existing account', async () => {
+  fixture.signUp.mockResolvedValueOnce({ data: null, error: { message: 'User already registered' } })
+  change(signup, 'account-data-accepted', true)
+  change(signup, 'email', 'owned@example.test')
+  change(signup, 'password', 'valid-test-password')
+  change(signup, 'confirm', 'valid-test-password')
+  await submit(signup())
+  expect(textOf(signup())).toContain('No pudimos completar la solicitud de registro')
+  expect(textOf(signup())).not.toMatch(/Ya existe|User already registered|Correo reenviado/)
 })
 
 it('keeps password validation and revoking confirmation ahead of Auth', async () => {

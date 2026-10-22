@@ -9,11 +9,7 @@ export default async function VerifyEmailPage({ searchParams }: { searchParams: 
   const signInHref = withAuthDestination('/sign-in', getOnboardingPath(destination))
   const user = await getUser()
 
-  // Sin sesión → al login
-  if (!user) redirect(signInHref)
-
-  // Ya verificado → al inicio (no debería llegar aquí)
-  if (user.email_confirmed_at) redirect(destination)
+  if (user?.email_confirmed_at) redirect(destination)
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
@@ -23,9 +19,8 @@ export default async function VerifyEmailPage({ searchParams }: { searchParams: 
           <p className="text-5xl">📧</p>
           <h1 className="text-2xl font-bold">Verifica tu correo</h1>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            Te enviamos un enlace de activación a{' '}
-            <span className="font-medium text-foreground">{user.email}</span>.
-            Haz clic en el enlace para activar tu cuenta y acceder a los torneos.
+            Si tu cuenta está pendiente, puedes solicitar otro enlace de confirmación con el email que usaste al registrarte.
+            Después de confirmar podrás completar tus datos y volver a 2048 gratuito.
           </p>
         </div>
 
@@ -38,7 +33,7 @@ export default async function VerifyEmailPage({ searchParams }: { searchParams: 
           </ul>
         </div>
 
-        <ResendVerificationButton returnTo={destination} />
+        <ResendVerificationButton returnTo={destination} email={user?.email ?? ''} />
 
         <div className="flex flex-col gap-1.5 items-center pt-2">
           <Link
@@ -48,10 +43,10 @@ export default async function VerifyEmailPage({ searchParams }: { searchParams: 
             Ya confirmé → Iniciar sesión
           </Link>
           <Link
-            href={signInHref}
+            href="/play"
             className="text-xs text-muted-foreground hover:text-foreground transition-colors"
           >
-            Usar otro email
+            Jugar 2048 gratis mientras esperas
           </Link>
         </div>
 

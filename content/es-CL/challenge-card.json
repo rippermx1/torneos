@@ -1,0 +1,23 @@
+{
+  "gameLabel": "2048",
+  "entryFee": { "label": "Inscripción · precio final", "free": "Gratis" },
+  "totalPrize": { "label": "Premio total fijo" },
+  "schedule": {
+    "registrationOpens": "Inscripciones desde: {date}",
+    "registrationCloses": "Inscripción hasta: {date}",
+    "playWindow": "Partidas: {start} — {end}",
+    "format": "Una partida · hasta {minutes} min"
+  },
+  "capacity": {
+    "unknown": "Cupos por confirmar",
+    "closed": "{registered} / {max} inscritos",
+    "open": "{slots} cupos libres · {registered} / {max} inscritos"
+  },
+  "minimum": "Mínimo para jugar: {min} participantes",
+  "availability": {
+    "open": "Inscripciones abiertas", "upcoming": "Próximamente", "full": "Cupos completos",
+    "live": "En curso · inscripción cerrada", "finalizing": "Finalizando resultados", "closed": "Partidas cerradas",
+    "completed": "Finalizado", "cancelled": "Cancelado", "unknown": "Disponibilidad por confirmar"
+  },
+  "cta": { "viewRanking": "Ver torneo y ranking →", "viewRules": "Ver reglas y premios →" }
+}

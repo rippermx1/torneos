@@ -71,7 +71,7 @@ try {
     report.baseTag = baseTag
     const registry = JSON.parse(await fs.readFile(path.join(context, 'lib/game/runtime-builds.json'), 'utf8'))
     const image = `torneos-app:g2048-094-candidate-${Date.now()}`
-    const args = ['build', '--tag', image, '--build-arg', `TORNEOS_SNAKE_BUILD=${registry['snake-arena']}`]
+    const args = ['build', '--tag', image]
     for (const key of ['NEXT_PUBLIC_SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY', 'NEXT_PUBLIC_SUPABASE_ANON_KEY',
       'NEXT_PUBLIC_GOOGLE_AUTH_ENABLED']) if (runtime[key]) args.push('--build-arg', `${key}=${runtime[key]}`)
     args.push(context)

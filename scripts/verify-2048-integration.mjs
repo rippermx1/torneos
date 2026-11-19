@@ -27,7 +27,7 @@ function get(route,headers={}){
   request.setTimeout(30000,()=>request.destroy(Error('HTTP timeout '+route)));request.on('error',reject)
  })
 }
-for(const route of ['/play','/play/ted-runner','/play/snake-arena','/play/factory-empire','/tournaments']){
+for(const route of ['/play','/play/catalog','/tournaments']){
  const result=await get(route);assert.equal(result.status,200,route);assert.equal(result.headers['x-frame-options'],'DENY',route)
  checks.push({route,status:200,framing:'DENY'})
  if(route==='/play'){
@@ -38,8 +38,10 @@ for(const route of ['/play','/play/ted-runner','/play/snake-arena','/play/factor
   checks.push({route,check:'host and capsule version synchronized',scripts:scripts.length})
  }
 }
-const alias=await get('/play/alien-run');assert.equal(alias.status,308);assert.equal(new URL(alias.headers.location,base).pathname,'/play/ted-runner')
-checks.push({route:'/play/alien-run',status:308,destination:'/play/ted-runner'})
+for(const route of ['/play/web','/play/unity']){
+ const result=await get(route);assert.equal(result.status,307,route);assert.equal(new URL(result.headers.location,base).pathname,'/play')
+ checks.push({route,status:307,destination:'/play'})
+}
 for(const game of games)for(const file of game.files){
  const route=`/games/${game.game}/${game.build}/${file.path}`,result=await get(route)
  assert.equal(result.status,200,route);assert.equal(result.bytes,file.bytes,route);assert.equal(result.sha256,file.sha256,route)
@@ -65,10 +67,6 @@ for(const game of games)for(const file of game.files){
   checks.push({route,status:304,check:'conditional cache revalidation'})
  }
 }
-const competition=await get('/games/snake-arena/competition/index.html');assert.equal(competition.status,200)
-checks.push({route:'/games/snake-arena/competition/index.html',status:200})
 const admin=await get('/admin');assert.equal(admin.status,307);assert.ok(admin.headers.location?.includes('/sign-in'))
 checks.push({route:'/admin',status:307,check:'anonymous access remains protected'})
-const health=await get('/snake-arena/health');assert.equal(health.status,200)
-checks.push({route:'/snake-arena/health',status:200,health:JSON.parse(health.body.toString())})
 console.log(JSON.stringify({at:new Date().toISOString(),base:base.origin,games:games.map(({game,build})=>({game,build})),checks},null,2))

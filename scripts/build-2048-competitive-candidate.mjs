@@ -19,7 +19,7 @@ dockerfile=dockerfile.replace(/^FROM .+ AS operative/m,'FROM '+inspect.Config.Im
 await fs.writeFile(path.join(context,'Dockerfile'),dockerfile)
 const image='torneos-app:g2048-044-candidate-'+Date.now(),env=Object.fromEntries(inspect.Config.Env.map(x=>[x.slice(0,x.indexOf('=')),x.slice(x.indexOf('=')+1)]))
 const registry=JSON.parse(await fs.readFile(path.join(context,'lib/game/runtime-builds.json'),'utf8'))
-const args=['build','--tag',image,'--build-arg','TORNEOS_SNAKE_BUILD='+registry['snake-arena']]
+const args=['build','--tag',image]
 for(const key of ['NEXT_PUBLIC_SUPABASE_URL','NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY','NEXT_PUBLIC_SUPABASE_ANON_KEY','NEXT_PUBLIC_GOOGLE_AUTH_ENABLED'])if(env[key])args.push('--build-arg',key+'='+env[key])
 args.push(context)
 const log=await fs.open(dir+'candidate-build.log','w'),child=spawn('docker',args,{windowsHide:true,stdio:['ignore',log.fd,log.fd]})

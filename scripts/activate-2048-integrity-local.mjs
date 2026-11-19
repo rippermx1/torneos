@@ -90,7 +90,7 @@ try {
   report.baseline = baseline.Image; report.candidate = candidate.imageId
   report.backupContainer = backupName; report.artifacts = run
 
-  // Smoke the new web image without the Snake runtime or writable shared volumes.
+  // Smoke the new web image without writable shared volumes.
   await freePort(65164)
   const preview = structuredClone(baseline.Config)
   preview.Image = candidate.imageId; preview.Cmd = ['node', 'server.js']
@@ -109,16 +109,14 @@ try {
     const response = await fetch(`http://127.0.0.1:65164${route}`, { signal: AbortSignal.timeout(15000) })
     assert.equal(response.status, 200, 'Preview route failed')
   }
-  // Verify byte-identical public capsules and Snake server against the accepted image.
+  // Verify byte-identical 2048 public capsule against the accepted image.
   const hashAssets = id => docker(['exec', id, 'sh', '-c',
-    "find /app/public/games /app/games/snake-arena/server -type f -exec sha256sum '{}' ';' | sort"], undefined, 30000)
+    "find /app/public/games/2048 -type f -exec sha256sum '{}' ';' | sort"], undefined, 30000)
   assert.equal(sha256(hashAssets(previewId)), sha256(hashAssets(baseline.Id)), 'Accepted capsules/server changed')
-  report.checks.push('preview healthy; routes load; all capsule and Snake server file hashes preserved')
+  report.checks.push('preview healthy; routes load; 2048 capsule file hashes preserved')
   await api('POST', `/containers/${previewId}/stop?t=10`)
   await api('DELETE', `/containers/${previewId}?v=true`); previewId = null
 
-  const arena = await fetch(`${env.APP_URL}/snake-arena/health`, { signal: AbortSignal.timeout(5000) }).then(response => response.json())
-  assert.equal(arena.ccu, 0); assert.equal(arena.rooms, 0)
   if (results) {
     // E27 is our identified single-entry test fixture, already closed in E28.
     // Do not cancel it or alter its window just to replace a local web image.
@@ -156,8 +154,6 @@ try {
     assert.deepEqual(settings(active), settings(baseline), 'Runtime configuration was not preserved')
     const after = await api('GET', '/containers/json?all=true')
     assert.deepEqual(after.filter(item => ![baseline.Id, createdId].includes(item.Id)).map(item => item.Id).sort(), report.otherContainerIds)
-    const arenaAfter = await fetch(`${env.APP_URL}/snake-arena/health`, { signal: AbortSignal.timeout(5000) }).then(response => response.json())
-    assert.equal(arenaAfter.ccu, 0); assert.equal(arenaAfter.rooms, 0)
     assertInstalled()
     docker(['image', 'tag', candidate.imageId, 'torneos-app:local'])
     candidate.activated = true; candidate.deployedTo3081 = true; candidate.activationReport = `${run}/report.json`

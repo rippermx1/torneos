@@ -79,7 +79,7 @@ async function request(route, headers = {}) {
 const report = { at: new Date().toISOString(), origin, deploymentId: deployment.id, candidate, checks: [],
   writes: 'NONE; OWN AUTH SESSION ONLY', previousDeployment: 'dpl_DXTdRYRTgfUaCrkh6Y4rtu3c1TFM' }
 const passed = check => { report.checks.push(check); console.log(`PASS ${check.route ?? check.name}`) }
-for (const route of ['/sign-in', '/play', '/play/catalog', '/play/factory-empire']) {
+for (const route of ['/sign-in', '/play', '/play/catalog']) {
   const r = await request(route); assert.equal(r.status, 200)
   assert.ok(r.bytes.toString().includes('Ambiente de desarrollo'))
   assert.equal(r.headers['x-robots-tag'], 'noindex, nofollow')

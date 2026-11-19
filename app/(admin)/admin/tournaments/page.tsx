@@ -147,6 +147,7 @@ export default async function AdminTournamentsPage() {
         </Link>
       </div>
 
+
       {/* ── Panel de pasivo de premios ── */}
       <div className={`border rounded-xl p-4 space-y-3 ${!coverageOk ? 'border-red-400 bg-red-50' : 'border-border bg-muted/30'}`}>
         <div className="flex items-center justify-between">

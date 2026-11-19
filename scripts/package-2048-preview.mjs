@@ -1,4 +1,4 @@
-// Complete the 2048 assets referenced by /play in an isolated Snake Next preview.
+// Complete the 2048 assets referenced by /play in an isolated 2048 Next preview.
 import assert from 'node:assert/strict'
 import fs from 'node:fs/promises'
 import path from 'node:path'
@@ -6,7 +6,7 @@ import { createHash } from 'node:crypto'
 import { pathToFileURL } from 'node:url'
 
 export async function package2048Preview(root, buildDir) {
-  assert.match(buildDir, /^\.next\/snake-sa(?:11|12|13|14|15)[-a-z0-9]*$/)
+  assert.match(buildDir, /^\.next\/2048[-a-z0-9]*$/)
   const standalone = path.resolve(root, buildDir, 'standalone')
   await fs.access(path.join(standalone, 'server.js'))
   const build = JSON.parse(await fs.readFile(path.join(root, 'lib/game/runtime-builds.json'), 'utf8'))['2048']

@@ -1,4 +1,4 @@
-// Isolated web preview, no replacement of the operative app, volumes or Snake service.
+// Isolated web preview, no replacement of the operative app or volumes.
 import fs from 'node:fs/promises'
 import { execFileSync } from 'node:child_process'
 import assert from 'node:assert/strict'
@@ -24,5 +24,5 @@ for (const value of live.Config.Env) {
 }
 args.push(candidate.image, 'node', 'server.js')
 const containerId = docker(args)
-await fs.writeFile('artifacts/2048-unity-entry/preview.json', JSON.stringify({ containerId, name, url: 'http://127.0.0.1:3082', image: candidate.image, imageId: candidate.imageId, at: new Date().toISOString(), operativeUnchanged: true, mounts: [], snakeServerStarted: false }, null, 2) + '\n')
+await fs.writeFile('artifacts/2048-unity-entry/preview.json', JSON.stringify({ containerId, name, url: 'http://127.0.0.1:3082', image: candidate.image, imageId: candidate.imageId, at: new Date().toISOString(), operativeUnchanged: true, mounts: [] }, null, 2) + '\n')
 console.log(JSON.stringify({ name, url: 'http://127.0.0.1:3082', image: candidate.image, operativeUnchanged: true }))

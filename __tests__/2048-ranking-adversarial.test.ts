@@ -12,7 +12,7 @@ vi.mock('@/lib/supabase/server', () => ({
     const q = { select: () => q, eq: (key: string, value: unknown) => { query.filters.push([key, value]); return q },
       in: (key: string, value: unknown) => { query.filters.push([key, value]); return q },
       order: (key: string, options: { ascending: boolean }) => { query.orders.push([key, options.ascending]); return q },
-      limit: () => q, single: run, then: (resolve: (value: unknown) => unknown) => run().then(resolve) }
+      limit: () => q, single: run, maybeSingle: run, then: (resolve: (value: unknown) => unknown) => run().then(resolve) }
     return q
   } }),
 }))

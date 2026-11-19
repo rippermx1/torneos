@@ -13,24 +13,23 @@ import { PracticeNavigation } from '@/components/game/practice-navigation'
 import GameCatalogPage from '@/app/(public)/play/catalog/page'
 
 const tournament = '/tournaments/12345678-1234-1234-1234-123456789abc'
-const render = (next?: unknown, tedAvailable = true) => renderToStaticMarkup(createElement(PublicGameCatalog, { next, tedAvailable }))
+const render = (next?: unknown) => renderToStaticMarkup(createElement(PublicGameCatalog, { next }))
 beforeEach(() => { query.value = new URLSearchParams() })
 
-it('explains controls and separates competitive 2048 from free Ted practice without loading a game', () => {
+it('offers only 2048 with its controls without loading a game', () => {
   const html = render()
-  expect(html).toContain('Practicar 2048'); expect(html).toContain('Practicar Ted Runner')
-  expect(html).toContain('flechas o WASD'); expect(html).toContain('Espacio para saltar')
-  const ted = html.slice(html.indexOf('aria-labelledby="catalog-ted"'))
-  expect(ted).toContain('Práctica sin inscripción, torneos ni premios.')
-  expect(ted).not.toContain('href="/tournaments')
+  expect(html).toContain('Practicar 2048')
+  expect(html).toContain('flechas o WASD')
+  expect(html).toContain('La práctica no requiere cuenta ni entrega premios.')
+  expect(html.match(/<article /g)).toHaveLength(1)
+  expect(html).not.toMatch(/Ted Runner|Factory Empire|Snake Arena|FRONTERA RTS/)
   expect(html).not.toContain('<iframe'); expect(html).not.toContain('/games/')
 })
 
-it('preserves a chosen tournament on both practice entries and offers its public detail', () => {
+it('preserves a chosen tournament on the practice entry and offers its public detail', () => {
   const html = render(tournament)
   const next = new URLSearchParams({ next: tournament }).toString()
   expect(html).toContain(`href="/play?${next}"`)
-  expect(html).toContain(`href="/play/alien-run?${next}"`)
   expect(html).toContain(`href="${tournament}"`)
   expect(html).not.toContain('/game/start'); expect(html).not.toContain('/payment')
 })
@@ -39,12 +38,6 @@ it.each(['https://attacker.test', '//attacker.test', '/admin', `${tournament}/pl
   const html = render(next)
   expect(html).toContain('href="/play"'); expect(html).toContain('href="/tournaments"')
   expect(html).not.toContain('?next='); expect(html).not.toContain('Volver al torneo elegido')
-})
-
-it('keeps unavailable Ted discoverable without advertising a broken practice link', () => {
-  const html = render(tournament, false)
-  expect(html).toContain('Ted Runner'); expect(html).toContain('Aún no disponible en este ambiente.')
-  expect(html).not.toContain('href="/play/alien-run'); expect(html).toContain('Practicar 2048')
 })
 
 it('retains the tournament through the shared navigation and recomputes it after navigation', () => {
@@ -62,11 +55,13 @@ it('rejects duplicate next parameters in shared navigation', () => {
   expect(renderToStaticMarkup(createElement(PracticeNavigation))).not.toContain('?next=')
 })
 
-it('applies the existing cloud availability constraint in the actual page', async () => {
-  vi.stubEnv('TORNEOS_ENV', 'cloud-development')
+it.each(['cloud-development', 'production'])('offers only 2048 on the actual page in %s', async environment => {
+  vi.stubEnv('TORNEOS_ENV', environment)
   try {
     const html = renderToStaticMarkup(await GameCatalogPage({ searchParams: Promise.resolve({ next: tournament }) }))
-    expect(html).toContain('Aún no disponible en este ambiente.')
-    expect(html).not.toContain('Practicar Ted Runner')
+    expect(html).toContain('Practicar 2048')
+    expect(html).toContain(`href="${tournament}"`)
+    expect(html.match(/<article /g)).toHaveLength(1)
+    expect(html).not.toMatch(/Ted Runner|Factory Empire|Snake Arena|FRONTERA RTS/)
   } finally { vi.unstubAllEnvs() }
 })

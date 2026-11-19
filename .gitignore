@@ -55,11 +55,10 @@ next-env.d.ts
 **/Assets/ThirdParty/
 **/Assets/KayKit*/
 **/Assets/Kay Lousberg/
-games/alien-run/UnityProject/Assets/Orbit/AlienRun/LocalArt/
-games/alien-run/UnityProject/Assets/Orbit/AlienRun/LocalArt.meta
 public/games/*/*/
-games/alien-run/docs/KAYKIT-PREFABS.csv
 
 .vercel
 .playwright-mcp
 .local-flow/
+
+.fuse_hidden*

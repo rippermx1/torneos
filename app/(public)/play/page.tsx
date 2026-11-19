@@ -20,7 +20,7 @@ export default async function PublicPlayPage({ searchParams }: { searchParams: P
           </p>
         </div>
         <Link
-                href={returnTo ?? '/tournaments'}
+          href={returnTo ?? '/tournaments'}
           className="inline-flex items-center justify-center rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background hover:opacity-90"
         >
           {returnTo ? 'Volver al torneo elegido' : 'Ver torneos'}
@@ -28,11 +28,6 @@ export default async function PublicPlayPage({ searchParams }: { searchParams: P
       </div>
 
       <Unity2048 />
-      <Link href="/play/alien-run" className="block rounded-2xl border p-6 hover:bg-muted">
-        <h2 className="text-lg font-semibold">Alien Run</h2>
-        <p className="mt-2 text-sm text-muted-foreground">Salta, recoge monedas y llega a la meta. Práctica gratuita, sin torneos ni premios.</p>
-        <span className="mt-3 inline-block text-sm underline">Jugar Alien Run</span>
-      </Link>
     </div>
   )
 }

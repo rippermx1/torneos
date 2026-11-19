@@ -6,7 +6,7 @@ import { CatalogFeedback } from '@/components/tournament/catalog-feedback'
 
 export const metadata: Metadata = {
   title: 'Torneos — TorneosPlay',
-  description: 'Explora los torneos de 2048 disponibles y compite por premios en pesos chilenos.',
+  description: 'Explora torneos de 2048 con reglas y resultados publicados.',
 }
 
 export default async function TournamentsPage() {
@@ -16,10 +16,11 @@ export default async function TournamentsPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold">Elige tu torneo</h1>
-          <p className="mt-2 text-sm text-muted-foreground">2048 · una partida por participante · premios fijos publicados antes de inscribirte.</p>
+          <p className="mt-2 text-sm text-muted-foreground">Compara los juegos, horarios y reglas antes de inscribirte. Cada torneo publica su modalidad y resultados.</p>
         </div>
-        <Link href="/play" className="shrink-0 text-sm font-medium underline underline-offset-4">Practicar 2048 gratis</Link>
+        <Link href="/play" className="shrink-0 text-sm font-medium underline underline-offset-4">Explorar juegos y practicar</Link>
       </div>
+      <h2 className="text-2xl font-bold">2048</h2>
       <p className="text-xs text-muted-foreground">Horarios de Chile (Santiago). Los cupos se confirman al inscribirte.</p>
       {error || tournaments.length === 0 ? <CatalogFeedback error={error} /> : (
         <div className="grid gap-4 sm:grid-cols-2">

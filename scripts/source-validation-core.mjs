@@ -7,7 +7,7 @@ export const hash = bytes => createHash('sha256').update(bytes).digest('hex')
 export function validationEnvironment(input = process.env) {
   const allowed = ['PATH', 'Path', 'SystemRoot', 'WINDIR', 'TEMP', 'TMP', 'USERPROFILE', 'HOME', 'APPDATA', 'LOCALAPPDATA', 'ComSpec']
   return { ...Object.fromEntries(allowed.filter(key => input[key]).map(key => [key, input[key]])),
-    CI: '1', TZ: 'UTC', NEXT_TELEMETRY_DISABLED: '1',
+    CI: '1', TZ: 'UTC', NEXT_TELEMETRY_DISABLED: '1', TORNEOS_ENVIRONMENT: 'local',
     NEXT_PUBLIC_SUPABASE_URL: 'http://127.0.0.1:65534', NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'source-validation-placeholder',
     NEXT_PUBLIC_GOOGLE_AUTH_ENABLED: 'false' }
 }

@@ -7,6 +7,7 @@ import { randomUUID } from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import { aggregate, assertSourcePaths, runCommand, safeOutputDirectory, validationEnvironment } from '../source-validation-core.mjs'
 import { portAvailability, writeDiagnostic } from '../source-diagnostics.mjs'
+import { validateEnvironment } from '../../lib/config/validate.mjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const fixture = () => safeOutputDirectory(root, `artifacts/source-validation-tests/${randomUUID()}`)
@@ -15,6 +16,12 @@ test('children receive build placeholders and no credentials or execution inject
   assert.equal(env.PATH, '/bin'); assert.equal(env.NEXT_PUBLIC_SUPABASE_URL, 'http://127.0.0.1:65534')
   assert.equal(env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, 'source-validation-placeholder')
   assert.equal(JSON.stringify(env).includes('private'), false); assert.equal('NODE_OPTIONS' in env, false)
+})
+test('the isolated production build uses local placeholders even when the parent targets production', () => {
+  const env = validationEnvironment({ TORNEOS_ENVIRONMENT: 'production', VERCEL_ENV: 'production' })
+  const result = validateEnvironment({ ...env, NODE_ENV: 'production' }, { phase: 'public-build' })
+  assert.equal(result.environment, 'local')
+  assert.deepEqual(result.issues, [])
 })
 test('private dotenv, licensed art, compiled runtime and traversal stop source validation', () => {
   assert.doesNotThrow(() => assertSourcePaths(['.env.production.example', 'games/2048/UnityProject/Assets/Art/tile.png', 'app/page.tsx']))

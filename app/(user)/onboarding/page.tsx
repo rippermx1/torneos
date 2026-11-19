@@ -5,11 +5,15 @@ import type { Profile } from '@/types/database'
 import { OnboardingForm } from './onboarding-form'
 import { isAdult } from '@/lib/identity/verification'
 import { hasAcceptedCurrentTerms } from '@/lib/legal/terms'
+import { getOnboardingReturnPath, getTournamentReturnPath, withAuthDestination } from '@/lib/auth/redirect'
+import Link from 'next/link'
 
-export default async function OnboardingPage() {
+export default async function OnboardingPage({ searchParams }: { searchParams: Promise<{ next?: string | string[] }> }) {
+  const destination = getOnboardingReturnPath((await searchParams).next)
+  const tournamentHref = getTournamentReturnPath(destination)
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/sign-in')
+  if (!user) redirect(withAuthDestination('/sign-in', withAuthDestination('/onboarding', destination)))
 
   const adminSupabase = createAdminClient()
   const { data } = await adminSupabase
@@ -30,7 +34,7 @@ export default async function OnboardingPage() {
   )
 
   if (hasRealUsername && isAdult(profile?.birth_date) && hasCurrentTerms) {
-    redirect('/tournaments')
+    redirect(destination)
   }
 
   return (
@@ -41,12 +45,14 @@ export default async function OnboardingPage() {
           <p className="text-muted-foreground text-sm">
             Elige tu nombre de usuario para comenzar a competir.
           </p>
+          {tournamentHref && <p className="pt-2 text-sm text-muted-foreground">Al terminar volverás al torneo elegido. <Link href={tournamentHref} className="underline">Ver torneo</Link></p>}
         </div>
         <OnboardingForm
           defaultUsername={profile?.username ?? ''}
           defaultFullName={profile?.full_name ?? ''}
           defaultBirthDate={profile?.birth_date ?? ''}
           defaultAcceptedTerms={hasCurrentTerms}
+          returnTo={destination}
         />
       </div>
     </div>

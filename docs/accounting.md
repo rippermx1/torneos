@@ -6,6 +6,10 @@ qué ofrece técnicamente el módulo administrativo.
 
 ## Fuentes y reportes
 
+- `/admin/accounting`: gastos/aportes, liquidaciones y facturas Flow, cartola,
+  conciliación y cierre versionado. [Backlog](CONTABILIDAD-BACKLOG.md) y
+  [entrega/activación](CONTABILIDAD-IMPLEMENTACION.md).
+
 - `/admin/reports`: F29 interno, contribución, pasivos, conciliaciones y balance
   de comprobación.
 - `/api/admin/reports/accounting.csv`: cierre mensual de ventas, IVA, notas de
@@ -27,6 +31,7 @@ qué ofrece técnicamente el módulo administrativo.
 
 El libro es de doble partida, inmutable e idempotente. Registra cobros, ingreso
 diferido, reconocimiento de ingreso, premios, devoluciones, notas de crédito y
-transferencias. La importación automática de liquidaciones bancarias y facturas
-Flow queda pendiente; por ello el cierre siempre exige conciliación con RCV,
-documentos Flow y cartola bancaria.
+transferencias. La nueva entrega añade documentos generales, cartola CSV,
+conciliación manual y cierres versionados; exige activar su migración junto al código.
+La conexión automática a bancos/Flow/RCV no está implementada. Los cierres requieren
+documentos originales y verificación manual del responsable.

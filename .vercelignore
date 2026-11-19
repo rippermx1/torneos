@@ -3,3 +3,9 @@
 node_modules
 .next
 coverage
+
+# Unity sources and licensed art stay local; only selected WebGL builds are served.
+games
+packages/unity-sdk
+tools
+artifacts

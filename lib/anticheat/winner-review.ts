@@ -1,8 +1,9 @@
 // Revisión post-torneo de GANADORES (los que reciben premio). No bloquea el
 // pago: produce señales para que el operador revise la partida en el admin
 // antes de aprobar el cobro del premio. Complementa al detector en vivo
-// (detector.ts), que banea los casos flagrantes; esto atrapa la zona gris:
-// bots "a velocidad humana" con consistencia imposible.
+// (detector.ts). Estas heurísticas no prueban juego humano: la automatización
+// con pausas variables puede no producir ninguna señal. La cadencia regular
+// requiere revisión humana; no prueba automatización ni aplica un ban.
 
 export interface WinnerGameStats {
   moveCount: number
@@ -13,10 +14,11 @@ export interface WinnerGameStats {
   minIntervalMs: number | null
   /** Intervalo promedio entre movimientos (ms). */
   avgIntervalMs: number | null
+  regularPace?: boolean
 }
 
 export interface WinnerFlag {
-  code: 'high_pts_per_move' | 'fast_pace' | 'burst_present' | 'big_score'
+  code: 'high_pts_per_move' | 'fast_pace' | 'burst_present' | 'big_score' | 'regular_pace'
   detail: string
 }
 
@@ -37,6 +39,9 @@ export const WINNER_REVIEW_THRESHOLDS = {
 export function reviewWinnerStats(stats: WinnerGameStats): WinnerFlag[] {
   const t = WINNER_REVIEW_THRESHOLDS
   const flags: WinnerFlag[] = []
+  if (stats.regularPace) {
+    flags.push({ code: 'regular_pace', detail: '30 intervalos de servidor entre 80 y 2000 ms con variación máxima de 10 ms; requiere revisión' })
+  }
 
   if (stats.moveCount > 0) {
     const ptsPerMove = stats.finalScore / stats.moveCount
@@ -81,13 +86,20 @@ export function computeIntervalStats(serverTimestampsMs: number[]): {
   durationMs: number | null
   minIntervalMs: number | null
   avgIntervalMs: number | null
+  regularPace: boolean
 } {
   if (serverTimestampsMs.length < 2) {
-    return { durationMs: null, minIntervalMs: null, avgIntervalMs: null }
+    return { durationMs: null, minIntervalMs: null, avgIntervalMs: null, regularPace: false }
   }
   let min = Number.POSITIVE_INFINITY
+  const window: number[] = []
+  let regularPace = false
   for (let i = 1; i < serverTimestampsMs.length; i++) {
     const interval = serverTimestampsMs[i]! - serverTimestampsMs[i - 1]!
+    window.push(interval)
+    if (window.length > 30) window.shift()
+    if (window.length === 30 && window.every(ms => Number.isFinite(ms) && ms >= 80 && ms <= 2000)
+      && Math.max(...window) - Math.min(...window) <= 10) regularPace = true
     if (interval > 0 && interval < min) min = interval
   }
   const durationMs = serverTimestampsMs[serverTimestampsMs.length - 1]! - serverTimestampsMs[0]!
@@ -95,5 +107,6 @@ export function computeIntervalStats(serverTimestampsMs: number[]): {
     durationMs,
     minIntervalMs: Number.isFinite(min) ? min : null,
     avgIntervalMs: durationMs / (serverTimestampsMs.length - 1),
+    regularPace,
   }
 }

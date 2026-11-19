@@ -5,13 +5,23 @@ import { useRouter } from 'next/navigation'
 
 interface Props {
   disputeId: string
+  acknowledged?: boolean
 }
 
-export function DisputeResolveForm({ disputeId }: Props) {
+export function DisputeResolveForm({ disputeId, acknowledged = false }: Props) {
   const [notes, setNotes] = useState('')
   const [loading, setLoading] = useState<'resolved' | 'rejected' | null>(null)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
+  async function acknowledge() {
+    setError(null)
+    setLoading('resolved')
+    try {
+      const res = await fetch(`/api/admin/disputes/${disputeId}/acknowledge`, { method: 'POST' })
+      if (!res.ok) { setError((await res.json()).error ?? 'No se pudo registrar el acuse'); return }
+      router.refresh()
+    } catch { setError('Error de conexión') } finally { setLoading(null) }
+  }
 
   async function handle(resolution: 'resolved' | 'rejected') {
     if (!notes.trim()) { setError('Las notas son obligatorias'); return }
@@ -36,7 +46,12 @@ export function DisputeResolveForm({ disputeId }: Props) {
 
   return (
     <div className="space-y-2">
+      {!acknowledged && <button type="button" disabled={!!loading} onClick={acknowledge} className="border rounded px-3 py-2 text-sm">Registrar acuse de atención</button>}
+      <label htmlFor={`case-response-${disputeId}`} className="text-sm">Respuesta visible para el titular</label>
       <textarea
+        id={`case-response-${disputeId}`}
+        minLength={10}
+        maxLength={2000}
         value={notes}
         onChange={(e) => setNotes(e.target.value)}
         placeholder="Notas de resolución (se mostrarán al usuario)"

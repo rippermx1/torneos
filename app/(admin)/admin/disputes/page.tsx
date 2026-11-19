@@ -18,13 +18,12 @@ const STATUS_STYLE: Record<Dispute['status'], string> = {
 export default async function AdminDisputesPage() {
   const supabase = createAdminClient()
 
-  const { data } = await supabase
-    .from('disputes')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .limit(100)
-
-  const disputes = (data ?? []) as Dispute[]
+  const [openResult, closedResult] = await Promise.all([
+    supabase.from('disputes').select('*').eq('status','open').order('created_at').limit(1000),
+    supabase.from('disputes').select('*').neq('status','open').order('created_at',{ascending:false}).limit(100),
+  ])
+  if (openResult.error || closedResult.error) throw new Error('No se pudo cargar soporte')
+  const disputes = [...(openResult.data ?? []), ...(closedResult.data ?? [])] as Dispute[]
 
   const userIds = [...new Set(disputes.map((d) => d.user_id))]
   const { data: profiles } = await supabase
@@ -44,7 +43,7 @@ export default async function AdminDisputesPage() {
       <div>
         <h1 className="text-2xl font-bold">Casos de soporte</h1>
         <p className="text-sm text-muted-foreground mt-0.5">
-          {open.length} abierto{open.length !== 1 ? 's' : ''}. Lee los antecedentes y deja una resolución clara; cada decisión quedará registrada.
+          {open.length} abierto{open.length !== 1 ? 's' : ''}. Se muestran hasta 1000 abiertos, desde el más antiguo, y 100 cerrados recientes. Lee los antecedentes y deja una resolución clara; cada decisión quedará registrada.
         </p>
       </div>
 
@@ -65,7 +64,8 @@ export default async function AdminDisputesPage() {
               <p className="text-sm border rounded-lg p-3 bg-muted/30 whitespace-pre-wrap leading-relaxed">
                 {d.description}
               </p>
-              <DisputeResolveForm disputeId={d.id} />
+              <p className="text-xs">Referencia: {d.id} · {d.acknowledged_at ? 'Atención acusada' : 'Sin acuse'}</p>
+              <DisputeResolveForm disputeId={d.id} acknowledged={!!d.acknowledged_at} />
             </div>
           ))}
         </section>

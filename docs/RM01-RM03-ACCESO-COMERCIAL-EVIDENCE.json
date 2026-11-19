@@ -1,0 +1,251 @@
+{
+  "Date": "2026-10-05",
+  "State": "LOCAL_CANDIDATE_VALIDATED_OPERATIONAL_INTEGRATION_PENDING",
+  "ReleaseReady": false,
+  "BaseCommit": "299075d20ca7d631b3d86782951f3b763ec742d8",
+  "Branch": "codex/real-money-access",
+  "Checkout": "C:\\Users\\valde\\.codex\\worktrees\\real-money-access\\torneos",
+  "CommercialGame": "2048",
+  "Web": {
+    "Passed": 3562,
+    "Failed": 0,
+    "Files": 63,
+    "Report": "artifacts/commercial-entry/web.json",
+    "ReportSha256": "c48c60e8f412345fbab97dfef0ab65938b4d57d7c2a59aabd3d16b4a32b995e3",
+    "Scope": "Tracked candidate only; excludes unrelated untracked games in C:/torneos"
+  },
+  "Sql": {
+    "task": "RM-01/02/03",
+    "startedAt": "2026-10-05T13:39:40.68Z",
+    "status": "PASS",
+    "scope": "fresh loopback PostgreSQL fixture; real SQL roles/claims, not Supabase JWT/Data API",
+    "sources": {
+      "__tests__/fixtures/commercial-entry.sql": "24854d26b4195d85131b95fbe287e58d3f60e54f4bb5a493b262db611b37db62",
+      "supabase/migrations/20260506200000_route1_direct_checkout.sql": "d06cd25d51d37c24a7499592b7d0e801855541b8b148a37bcdcea1539764f774",
+      "supabase/migrations/20260507001033_optimize_rls_policy_performance.sql": "ef333a99ea1584b7974c882614f1f11d4e4efa2beadcb52ecd34272d13f1cfa3",
+      "supabase/migrations/20260805163009_fixed_prize_business_model.sql": "52b52a759d21f01d8ef664a1e3a1dbff0bfc1036a46616bc6847a3470c17e6ea",
+      "supabase/migrations/20261005131208_guard_commercial_entry.sql": "d5a79175d3a9afd3b92308984e593e92b97232aeae7ac2bcae049d81fbfd7eb9",
+      "lib/legal/terms.ts": "412b1ac609cece613b92a1be9a80ed53ba7d3e7e85d3cb71240d41beaa8302a9",
+      "supabase/migrations/20261004184805_guard_2048_seed_visibility.sql": "bca6642aa21d0146e3544a5b2d90101b8986d6927b830f5c8dfa6643d33ca1b6",
+      "supabase/migrations/20261002202731_guard_2048_move_commit.sql": "fbec5d60db689bab2dadf87f976329af417cf6f820abc8ca51910060a6c98a41",
+      "supabase/migrations/20260804223538_accounting_double_entry_ledger.sql": "ff6a8cb5ca17e532d4f4ffcb657aa7e97f1474f0a3bf6a4a3452959f3f87ed5e"
+    },
+    "checks": [
+      {
+        "name": "baseline owned INSERT creates unpaid registration and server game",
+        "status": "PASS"
+      },
+      {
+        "name": "new privileged functions have no client execute and a pinned empty search path",
+        "status": "PASS"
+      },
+      {
+        "name": "anon cannot INSERT registrations including column grants",
+        "status": "PASS"
+      },
+      {
+        "name": "anon cannot UPDATE registrations including column grants",
+        "status": "PASS"
+      },
+      {
+        "name": "anon cannot DELETE registrations including column grants",
+        "status": "PASS"
+      },
+      {
+        "name": "anon cannot invoke authorization, registration, credit or settlement",
+        "status": "PASS"
+      },
+      {
+        "name": "authenticated cannot INSERT registrations including column grants",
+        "status": "PASS"
+      },
+      {
+        "name": "authenticated cannot UPDATE registrations including column grants",
+        "status": "PASS"
+      },
+      {
+        "name": "authenticated cannot DELETE registrations including column grants",
+        "status": "PASS"
+      },
+      {
+        "name": "authenticated cannot invoke authorization, registration, credit or settlement",
+        "status": "PASS"
+      },
+      {
+        "name": "preexisting forged registration/game cannot authorize or mutate score",
+        "status": "PASS"
+      },
+      {
+        "name": "seed/wildcard denied, safe owned state and server seed retained",
+        "status": "PASS"
+      },
+      {
+        "name": "trusted unpaid direct registration denied",
+        "status": "PASS"
+      },
+      {
+        "name": "confirmed payment alone cannot start a game without registration",
+        "status": "PASS"
+      },
+      {
+        "name": "browser cannot mutate game or movement tables",
+        "status": "PASS"
+      },
+      {
+        "name": "browser cannot fabricate confirmed payment through table or column grants",
+        "status": "PASS"
+      },
+      {
+        "name": "payment pending cannot authorize registration",
+        "status": "PASS"
+      },
+      {
+        "name": "payment rejected cannot authorize registration",
+        "status": "PASS"
+      },
+      {
+        "name": "payment wrong amount cannot authorize registration",
+        "status": "PASS"
+      },
+      {
+        "name": "payment unverified status cannot authorize registration",
+        "status": "PASS"
+      },
+      {
+        "name": "payment other owner cannot authorize registration",
+        "status": "PASS"
+      },
+      {
+        "name": "payment other tournament cannot authorize registration",
+        "status": "PASS"
+      },
+      {
+        "name": "ban revocation after checkout rolls back settlement and entry",
+        "status": "PASS"
+      },
+      {
+        "name": "minor revocation after checkout rolls back settlement and entry",
+        "status": "PASS"
+      },
+      {
+        "name": "missing age revocation after checkout rolls back settlement and entry",
+        "status": "PASS"
+      },
+      {
+        "name": "KYC revocation after checkout rolls back settlement and entry",
+        "status": "PASS"
+      },
+      {
+        "name": "old terms revocation after checkout rolls back settlement and entry",
+        "status": "PASS"
+      },
+      {
+        "name": "missing terms revocation after checkout rolls back settlement and entry",
+        "status": "PASS"
+      },
+      {
+        "name": "future acceptance revocation after checkout rolls back settlement and entry",
+        "status": "PASS"
+      },
+      {
+        "name": "application user role required for trusted INSERT",
+        "status": "PASS"
+      },
+      {
+        "name": "eligible free entry needs neither payment nor paid KYC",
+        "status": "PASS"
+      },
+      {
+        "name": "concurrent duplicate settlement is atomic and idempotent; later KYC revocation denies moves",
+        "status": "PASS"
+      },
+      {
+        "name": "concurrent last slot preserves capacity and rolls back losing paid transition",
+        "status": "PASS"
+      },
+      {
+        "name": "registration deadline includes tournament lock wait",
+        "status": "PASS"
+      },
+      {
+        "name": "provider identity mismatch cannot settle a matching amount",
+        "status": "PASS"
+      },
+      {
+        "name": "all original accounting adapter entries balance; no repeated event keys",
+        "status": "PASS"
+      }
+    ],
+    "cleanup": "PASS_OWN_CLUSTER_STOPPED",
+    "engine": "postgres (PostgreSQL) 17.11",
+    "endedAt": "2026-10-05T13:41:01.815Z"
+  },
+  "Types": "PASS_FULL_TSC_NO_EMIT_INCREMENTAL_FALSE",
+  "Lint": "PASS_CHANGED_TYPESCRIPT_AND_SQL_VERIFIER",
+  "Build": {
+    "Next": "16.3.8",
+    "Webpack": "PASS",
+    "WebpackLogSha256": "5d2342abf4e825e4403a0092a215401a67ca30092c68cdc50f955fd6015f5b64",
+    "Turbopack": "FAIL_DEPENDENCY_JUNCTION_OUTSIDE_FILESYSTEM_ROOT",
+    "TurbopackLogSha256": "41919a9462310d47a795f92bb7f0bb00d3bf285c864d841f5846dc39234b6c90",
+    "Config": "Synthetic build-only keys; no environment files copied",
+    "GameAssets": "Not rebuilt or copied"
+  },
+  "Sources": {
+    "app/api/tournaments/[id]/game/move/route.ts": "00a5e45a188ad57caea2f5e5b2478fe2b83a604dbbcb37fa65dde3b8ba62a8a0",
+    "__tests__/competitive-entry.test.ts": "ffe24f99ac3e216a3ef24774177ecfa184c9c63c40eee67b1c266cc559b4ad82",
+    "lib/tournament/competitive-entry.ts": "cecb3b11cde6bfc538d4eba3eaa937e655f783bcda6a86b658e340ab49149052",
+    "app/api/tournaments/[id]/game/start/route.ts": "d7e59a1a452a8a627eb776c37172dde53c7ed4ed1ce872a4a3643429b6d0e149",
+    "package-lock.json": "5777b24270dac60b8b4a20008b10cc64d56c110d125fce54c24ed06e719fd986",
+    "__tests__/game-closure-routes.test.ts": "1a1ca240f9a7b952cc88e6e65ee3a9d445381225023fff8acf217a28fc619763",
+    "types/database.ts": "b4fcb7723488cb05f23e3e54c1b3d180559c4573a2682c941ddd6307c334653e",
+    "supabase/migrations/20261004184805_guard_2048_seed_visibility.sql": "bca6642aa21d0146e3544a5b2d90101b8986d6927b830f5c8dfa6643d33ca1b6",
+    "lib/game/runtime-builds.json": "65078d863f686237b92cd0aa544b56ed4b58e87eaf15e70575205938c6700fff",
+    "supabase/migrations/20261005131208_guard_commercial_entry.sql": "d5a79175d3a9afd3b92308984e593e92b97232aeae7ac2bcae049d81fbfd7eb9",
+    "scripts/verify-commercial-entry-sql.mjs": "32dbfe5e0e199d7b904b7445f9dc7c97cf534a685c035dc207ba6674a4bb640d",
+    "__tests__/fixtures/commercial-entry.sql": "24854d26b4195d85131b95fbe287e58d3f60e54f4bb5a493b262db611b37db62"
+  },
+  "UnityFiles": [
+    {
+      "File": "C:\\torneos\\public\\games\\2048\\unity-2048-007\\build-manifest.json",
+      "Bytes": 190,
+      "Sha256": "50d80863ac03ea51bf270ebaadb8dbdf56eb29ef0e30fd17a1d07b54f9fc5632"
+    },
+    {
+      "File": "C:\\torneos\\public\\games\\2048\\unity-2048-007\\index.html",
+      "Bytes": 2483,
+      "Sha256": "d150a9b7c776d9dd77edefd1a6365b3baeba0d811389055c48b4a55fc7f7956c"
+    },
+    {
+      "File": "C:\\torneos\\public\\games\\2048\\unity-2048-007\\Build\\unity-2048-007.data.gz",
+      "Bytes": 7372283,
+      "Sha256": "1807e6fee033e397c5f836eaff77ee523d28eb25ca5eeca948221d76b74ee6a5"
+    },
+    {
+      "File": "C:\\torneos\\public\\games\\2048\\unity-2048-007\\Build\\unity-2048-007.framework.js.gz",
+      "Bytes": 82989,
+      "Sha256": "69ffb1280d63104d645b4266b6ff5f2d88f8bdc463e96b86e50200d334ec9b18"
+    },
+    {
+      "File": "C:\\torneos\\public\\games\\2048\\unity-2048-007\\Build\\unity-2048-007.loader.js",
+      "Bytes": 26983,
+      "Sha256": "ded3daace7ac1498a2b13729325f9c598200024e86ec8202bc5fc94dcf9ecf37"
+    },
+    {
+      "File": "C:\\torneos\\public\\games\\2048\\unity-2048-007\\Build\\unity-2048-007.wasm.gz",
+      "Bytes": 10077657,
+      "Sha256": "0fcb1743c4a24f4d2ee97049f6573ae0c4e8bef315628ca1f79f61de5f710802"
+    }
+  ],
+  "External": {
+    "SupabaseApplied": false,
+    "FlowMutated": false,
+    "Deployed": false,
+    "RealMoneyCycle": "NOT_RUN",
+    "SupabaseJwtDataApi": "NOT_RUN",
+    "HumanAcceptance": "NOT_RUN",
+    "LoadBenchmark": "NOT_RUN",
+    "LegalFlowTaxApproval": "PENDING",
+    "MainMerged": false
+  }
+}

@@ -34,6 +34,7 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 !.env.production.example
+!.env.docker.example
 
 # vercel
 .vercel
@@ -42,5 +43,22 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# Unity projects: preserve source and metadata, exclude regenerated caches.
+**/[Ll]ibrary/
+**/[Tt]emp/
+**/[Oo]bj/
+**/[Ll]ogs/
+**/[Uu]ser[Ss]ettings/
+**/[Bb]uilds/
+*.csproj
+*.sln
+**/Assets/ThirdParty/
+**/Assets/KayKit*/
+**/Assets/Kay Lousberg/
+public/games/*/*/
+
 .vercel
 .playwright-mcp
+.local-flow/
+
+.fuse_hidden*

@@ -1,0 +1,77 @@
+{
+  "date": "2026-10-01",
+  "workspace": "C:/torneos",
+  "branch": "codex/2048-clean-gameplay",
+  "build": "unity-2048-005",
+  "preview": "http://127.0.0.1:3080/play",
+  "unity": {
+    "editor_version": "6000.3.24f1",
+    "editmode": {
+      "result": "Passed",
+      "passed": 14,
+      "total": 14,
+      "started_utc": "2026-10-01 15:04:02Z"
+    },
+    "playmode": {
+      "result": "Passed",
+      "passed": 4,
+      "total": 4,
+      "started_utc": "2026-10-01 15:04:28Z"
+    },
+    "webgl": "PASS",
+    "build_log": "artifacts/unity-2048/webgl.log",
+    "publish_hashes": "artifacts/published-2048-unity-2048-005.json",
+    "build_size_bytes": 17561639,
+    "existing_scene_and_meta_preserved": true
+  },
+  "platform": {
+    "vitest": {
+      "passed": 315,
+      "total": 315,
+      "success": true,
+      "report": "artifacts/unity-2048/gui-platform-tests.json"
+    },
+    "typescript": "PASS",
+    "eslint_affected": "PASS",
+    "next_dev_render": "PASS",
+    "http": {
+      "checks": 15,
+      "result": "PASS",
+      "report": "artifacts/unity-2048/gui-http.json"
+    }
+  },
+  "browser": {
+    "build_loaded": "unity-2048-005",
+    "platform_explicit_start": "PASS",
+    "initial_score": 0,
+    "keyboard_merge_score": 4,
+    "mobile_viewport": {
+      "width": 390,
+      "height": 844,
+      "gesture": "pointer drag down",
+      "result": "PASS",
+      "observation": "4 and 2 moved to the bottom row; a new 2 appeared"
+    },
+    "platform_new_game_score": 0,
+    "warm_reload": "PASS",
+    "desktop_screenshot": "artifacts/unity-2048/gui-desktop.jpg",
+    "mobile_screenshot": "artifacts/unity-2048/gui-mobile.jpg"
+  },
+  "boundaries": {
+    "competitive_score": "existing authoritative server only",
+    "database_changes": false,
+    "flow_changes": false,
+    "external_deployment": false,
+    "local_3081_container_rebuilt": false,
+    "physical_phone": "NOT_RUN",
+    "human_visual_acceptance": "PENDING"
+  },
+  "files": {
+    "Build/unity-2048-005.data.gz": "f964a64062264f98996078252b8daaa8ab3886bf83eab3757694b89bd1b83a50",
+    "Build/unity-2048-005.framework.js.gz": "1de0f0cb6f48bad014d314efc77e7d6d3c1f4a73d34837bdb4387bf58db522e2",
+    "Build/unity-2048-005.loader.js": "ded3daace7ac1498a2b13729325f9c598200024e86ec8202bc5fc94dcf9ecf37",
+    "Build/unity-2048-005.wasm.gz": "1841375d79b09bd80653e3fb1ee0dce024e820820507f23835c59ca86ab56f3c",
+    "build-manifest.json": "602ba4e7ed6296ea956b6b1b7ea4e5995c1dad306b3a6416268805904cbae6fa",
+    "index.html": "279ae30157fce94200352aec89f69cdfb072c17a71634ae94f9b8e8c2d19b09b"
+  }
+}

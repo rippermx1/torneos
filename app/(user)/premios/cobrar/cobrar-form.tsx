@@ -11,13 +11,14 @@ const BANKS = [
 ]
 
 interface Props {
+  userId: string
   /** Monto a pagar en esta solicitud (total adeudado, con tope por solicitud). */
   payoutCents: number
   /** Remanente que queda pendiente si el total supera el tope por solicitud. */
   remainingCents: number
 }
 
-export function CobrarForm({ payoutCents, remainingCents }: Props) {
+export function CobrarForm({ userId, payoutCents, remainingCents }: Props) {
   const [bankName, setBankName] = useState('')
   const [bankAccount, setBankAccount] = useState('')
   const [accountRut, setAccountRut] = useState('')
@@ -37,19 +38,24 @@ export function CobrarForm({ payoutCents, remainingCents }: Props) {
     setLoading(true)
     setError(null)
     try {
+      const key = `torneos:withdrawal:${userId}`
+      const requestId = sessionStorage.getItem(key) ?? crypto.randomUUID()
+      sessionStorage.setItem(key, requestId) // persist BEFORE sending; preserved on uncertain responses/reload
       const res = await fetch('/api/wallet/withdraw/request', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          amountCents: payoutCents,
+          requestId, amountCents: payoutCents,
           bankName, bankAccount, accountRut, accountHolder,
         }),
       })
       const data = await res.json()
       if (!res.ok) {
+        if ([400, 402, 403, 422].includes(res.status)) sessionStorage.removeItem(key)
         setError(data.error ?? 'Error al solicitar el pago')
         return
       }
+      sessionStorage.removeItem(key)
       setSuccess(true)
     } catch {
       setError('Error de conexión. Intenta de nuevo.')

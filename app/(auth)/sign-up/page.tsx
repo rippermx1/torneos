@@ -1,13 +1,18 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { GoogleButton } from '@/components/auth/google-button'
+import { getOnboardingPath, getOnboardingReturnPath, getTournamentReturnPath, withAuthDestination } from '@/lib/auth/redirect'
 
-export default function SignUpPage() {
+function SignUpForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const destination = getOnboardingPath(searchParams.get('next'))
+  const tournamentHref = getTournamentReturnPath(getOnboardingReturnPath(searchParams.get('next')))
+  const signInHref = withAuthDestination('/sign-in', destination)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
@@ -31,7 +36,7 @@ export default function SignUpPage() {
     setLoading(true)
     const supabase = createClient()
     const confirmUrl = new URL('/auth/confirm', window.location.origin)
-    confirmUrl.searchParams.set('next', '/onboarding')
+    confirmUrl.searchParams.set('next', destination)
 
     const { data, error: signUpError } = await supabase.auth.signUp({
       email,
@@ -51,7 +56,7 @@ export default function SignUpPage() {
 
     // Si Supabase devuelve sesión directamente (confirmación deshabilitada)
     if (data.session) {
-      router.push('/onboarding')
+      router.push(destination)
       router.refresh()
       return
     }
@@ -71,7 +76,7 @@ export default function SignUpPage() {
             Te enviamos un enlace de confirmación a <strong>{email}</strong>.
             Haz clic en el enlace para activar tu cuenta.
           </p>
-          <Link href="/sign-in" className="inline-block text-sm text-muted-foreground hover:text-foreground transition-colors">
+          <Link href={signInHref} className="inline-block text-sm text-muted-foreground hover:text-foreground transition-colors">
             Ya confirmé → Iniciar sesión
           </Link>
         </div>
@@ -85,9 +90,10 @@ export default function SignUpPage() {
         <div className="text-center space-y-1">
           <h1 className="text-2xl font-bold">Crear cuenta</h1>
           <p className="text-sm text-muted-foreground">Únete a los torneos de 2048</p>
+          {tournamentHref && <p className="pt-2 text-sm text-muted-foreground">Después de completar tus datos volverás al torneo elegido. <Link href={tournamentHref} className="underline">Ver torneo</Link></p>}
         </div>
 
-        <GoogleButton redirectTo="/onboarding" />
+        <GoogleButton redirectTo={destination} />
 
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
@@ -165,11 +171,15 @@ export default function SignUpPage() {
 
         <p className="text-center text-sm text-muted-foreground">
           ¿Ya tienes cuenta?{' '}
-          <Link href="/sign-in" className="font-medium text-foreground hover:underline">
+          <Link href={signInHref} className="font-medium text-foreground hover:underline">
             Iniciar sesión
           </Link>
         </p>
       </div>
     </div>
   )
+}
+
+export default function SignUpPage() {
+  return <Suspense><SignUpForm /></Suspense>
 }

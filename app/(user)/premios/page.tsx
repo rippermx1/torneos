@@ -44,6 +44,7 @@ export default async function PremiosPage() {
     { data: creditData },
     { data: pendingPayout },
     { data: paidPayouts },
+    { data: heldPrizes },
   ] = await Promise.all([
     adminSupabase
       .from('wallet_transactions')
@@ -57,7 +58,7 @@ export default async function PremiosPage() {
       .from('withdrawal_requests')
       .select('id, amount_cents, status, created_at')
       .eq('user_id', user.id)
-      .in('status', ['pending', 'approved'])
+      .in('status', ['pending', 'claimed', 'approved', 'transferring', 'reconciling'])
       .maybeSingle(),
     adminSupabase
       .from('withdrawal_requests')
@@ -66,6 +67,7 @@ export default async function PremiosPage() {
       .eq('status', 'paid')
       .order('paid_at', { ascending: false })
       .limit(10),
+    adminSupabase.from('prize_reviews').select('id, amount_cents, status').eq('user_id', user.id).neq('status', 'approved'),
   ])
 
   const transactions = (data ?? []) as WalletTransaction[]
@@ -82,6 +84,10 @@ export default async function PremiosPage() {
         </p>
       </div>
 
+      {(heldPrizes ?? []).length > 0 && <div className="border border-amber-300 rounded-xl p-4">
+        <p className="font-medium">Premios en revisión: {formatCLP((heldPrizes ?? []).reduce((sum, p) => sum + p.amount_cents, 0))}</p>
+        <p className="text-sm text-muted-foreground">La revisión de identidad, partidas y disputas sigue pendiente. Los pagos ya realizados se descuentan del importe disponible para cobrar.</p>
+      </div>}
       <div className="border rounded-xl p-5 space-y-3">
         <div className="flex items-end justify-between gap-4">
           <div>

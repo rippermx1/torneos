@@ -1,15 +1,4 @@
-function firstNonEmpty(...values: Array<string | undefined | null>) {
-  for (const value of values) {
-    if (typeof value === 'string' && value.trim().length > 0) {
-      return value.trim()
-    }
-  }
-  return undefined
-}
-
-function normalizeUrl(url: string) {
-  return url.replace(/\/+$/, '')
-}
+import { firstNonEmpty, normalizeUrl, resolveFlowBase, deploymentEnvironment } from './config/effective.mjs'
 
 export function getAppUrl(fallback?: string) {
   const value = firstNonEmpty(
@@ -24,6 +13,18 @@ export function getAppUrl(fallback?: string) {
 
 export function getSupabaseUrl() {
   return firstNonEmpty(process.env.NEXT_PUBLIC_SUPABASE_URL)
+}
+
+// Docker reaches the host gateway while the browser reaches loopback.
+export function getSupabaseServerUrl() {
+  return firstNonEmpty(process.env.SUPABASE_SERVER_URL, getSupabaseUrl())
+}
+
+export function getSupabaseCookieOptions() {
+  const publicUrl = getSupabaseUrl()
+  if (!publicUrl) return undefined
+  // Both clients must use the same cookie key even with different network URLs.
+  return { name: `sb-${new URL(publicUrl).hostname.split('.')[0]}-auth-token` }
 }
 
 export function getSupabaseBrowserKey() {
@@ -44,10 +45,9 @@ export function getAllowedOrigins() {
   return Array.from(
     new Set(
       [
-        'http://localhost:3000',
-        'http://127.0.0.1:3000',
-        'http://localhost:3001',
-        'http://localhost:3002',
+        ...(['production', 'staging'].includes(deploymentEnvironment(process.env)) ? [] : [
+          'http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:3001', 'http://localhost:3002',
+        ]),
         getAppUrl(),
       ].filter((origin): origin is string => Boolean(origin))
     )
@@ -69,8 +69,11 @@ export function getFlowApiSecret() {
 }
 
 export function getFlowApiBase() {
-  const value = firstNonEmpty(process.env.FLOW_API_BASE)
-  return value ? normalizeUrl(value) : 'https://sandbox.flow.cl/api'
+  const value = resolveFlowBase(process.env)
+  if (process.env.TORNEOS_ENV === 'cloud-development' && value !== 'https://sandbox.flow.cl/api') {
+    throw new Error('El ambiente de desarrollo requiere Flow sandbox')
+  }
+  return value
 }
 
 // A3: Umbrales del detector anticheat configurables por env. Permite

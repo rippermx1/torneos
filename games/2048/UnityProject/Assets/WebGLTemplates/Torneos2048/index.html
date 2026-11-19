@@ -1,0 +1,31 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>2048 · TorneosPlay</title><link rel="icon" href="data:,"><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#f6f5f0}canvas{width:100%;height:100%;display:block;touch-action:none}canvas:focus-visible{outline:3px solid #193337;outline-offset:-3px}</style></head><body><canvas id="unity-canvas" tabindex="0" aria-label="2048: flechas o WASD para mover; Tab para salir del tablero; Escape para volver a la plataforma. También puedes deslizar sobre el tablero."></canvas><script>
+const origin=location.origin;
+const canvas=document.getElementById('unity-canvas');
+const buildId={{{ JSON.stringify(PRODUCT_VERSION) }}};
+let unity=null,pending=null;
+const emit=(type,extra={})=>parent.postMessage({channel:'torneos.2048',version:1,type,...extra},origin);
+window.addEventListener('keydown',event=>{
+  if(event.key!=='Escape' && event.key!=='Tab' || event.altKey || event.ctrlKey || event.metaKey) return;
+  event.preventDefault();event.stopImmediatePropagation();
+  emit('game.navigation',{key:event.key,shift:event.shiftKey,build_id:buildId});
+},true);
+window.addEventListener('message',event=>{
+  const d=event.data;
+  if(event.origin!==origin || event.source!==parent || !d || d.channel!=='torneos.2048' || d.version!==1) return;
+  if(d.type==='platform.focus') { canvas.focus(); return; }
+  if(d.type!=='platform.state') return;
+  if(!d.state || !Array.isArray(d.state.cells) || d.state.cells.length!==16) return;
+  if(unity) unity.SendMessage('Torneos2048','OnPlatformState',JSON.stringify(d.state));
+  else pending=d.state;
+});
+const loader=document.createElement('script');loader.src='Build/{{{ LOADER_FILENAME }}}';
+loader.onload=()=>createUnityInstance(document.getElementById('unity-canvas'),{
+  dataUrl:'Build/{{{ DATA_FILENAME }}}',frameworkUrl:'Build/{{{ FRAMEWORK_FILENAME }}}',codeUrl:'Build/{{{ CODE_FILENAME }}}',
+  streamingAssetsUrl:'StreamingAssets',companyName:{{{ JSON.stringify(COMPANY_NAME) }}},productName:{{{ JSON.stringify(PRODUCT_NAME) }}},productVersion:{{{ JSON.stringify(PRODUCT_VERSION) }}},
+  matchWebGLToCanvasSize:true,devicePixelRatio:Math.min(devicePixelRatio||1,1.5)
+},progress=>emit('game.loading',{progress})).then(instance=>{
+  unity=instance;
+  if(pending) { unity.SendMessage('Torneos2048','OnPlatformState',JSON.stringify(pending));pending=null; }
+}).catch(()=>emit('game.error'));
+loader.onerror=()=>emit('game.error');document.body.appendChild(loader);
+</script></body></html>

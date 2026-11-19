@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { formatCLP, cn } from '@/lib/utils'
+import { withAuthDestination } from '@/lib/auth/redirect'
 
 interface Props {
   tournamentId: string
@@ -11,9 +12,10 @@ interface Props {
   /** Crédito de torneo (rakeback) disponible del usuario, en centavos. */
   creditBalanceCents?: number
   className?: string
+  returnTo?: string
 }
 
-export function RegisterButton({ tournamentId, entryFeeCents, creditBalanceCents = 0, className }: Props) {
+export function RegisterButton({ tournamentId, entryFeeCents, creditBalanceCents = 0, className, returnTo }: Props) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [recovery, setRecovery] = useState<{ href: string; label: string } | null>(null)
@@ -160,7 +162,7 @@ export function RegisterButton({ tournamentId, entryFeeCents, creditBalanceCents
       {error && <p className="text-xs text-red-600 text-center">{error}</p>}
       {recovery && (
         <Link
-          href={recovery.href}
+          href={returnTo && ['/onboarding', '/verify-email'].includes(recovery.href) ? withAuthDestination(recovery.href, returnTo) : recovery.href}
           className="text-center text-xs font-medium underline underline-offset-4"
         >
           {recovery.label}

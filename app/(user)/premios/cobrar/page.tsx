@@ -21,7 +21,7 @@ export default async function CobrarPremiosPage() {
       .from('withdrawal_requests')
       .select('id, amount_cents, status')
       .eq('user_id', user.id)
-      .in('status', ['pending', 'approved'])
+      .in('status', ['pending', 'claimed', 'approved', 'transferring', 'reconciling'])
       .maybeSingle(),
   ])
 
@@ -72,6 +72,7 @@ export default async function CobrarPremiosPage() {
 
   return (
     <CobrarForm
+      userId={user.id}
       payoutCents={payoutCents}
       remainingCents={pendingPrizes - payoutCents}
     />

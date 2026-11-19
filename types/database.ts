@@ -1,6 +1,6 @@
 export type KycStatus = 'pending' | 'approved' | 'rejected'
 export type KycDocumentType = 'cedula_chilena' | 'passport' | 'other'
-export type WithdrawalStatus = 'pending' | 'approved' | 'paid' | 'rejected'
+export type WithdrawalStatus = 'pending' | 'claimed' | 'approved' | 'transferring' | 'reconciling' | 'paid' | 'rejected'
 export type DisputeType = 'payment' | 'tournament_result' | 'technical' | 'other'
 export type DisputeStatus = 'open' | 'resolved' | 'rejected'
 export type AppRole = 'user' | 'admin' | 'owner'
@@ -158,7 +158,21 @@ export interface TournamentResult {
   created_at: string
 }
 
+export interface PrizeReview {
+  id: string; tournament_id: string; user_id: string; amount_cents: number
+  status: 'pending' | 'held' | 'approved'; reason: string; reviewed_by: string | null
+  reviewed_at: string | null; evidence: Record<string, unknown>; created_at: string
+}
+export interface FinancialHold {
+  id: string; user_id: string; reason: string; created_by: string; created_at: string
+  released_by: string | null; released_at: string | null; release_reason: string | null
+}
+
 export interface WithdrawalRequest {
+  claimed_by: string | null
+  claimed_at: string | null
+  transfer_started_at: string | null
+  identity_snapshot: Record<string, unknown> | null
   id: string
   user_id: string
   amount_cents: number
@@ -211,13 +225,16 @@ export interface KycAuditEvent {
   created_at: string
 }
 
-export type FlowAttemptStatus = 'pending' | 'paid' | 'credited' | 'rejected' | 'cancelled' | 'expired'
-export type FlowRefundStatus = 'pending' | 'completed' | 'rejected' | 'cancelled'
+export type FlowAttemptStatus = 'unknown' | 'pending' | 'paid' | 'credited' | 'rejected' | 'cancelled' | 'expired'
+export type FlowRefundStatus = 'queued' | 'dispatching' | 'unknown' | 'manual' | 'pending' | 'completed' | 'rejected' | 'cancelled'
 export type RefundTaxDocumentStatus = 'not_required' | 'required' | 'issued'
 
 export interface FlowRefundAttempt {
   id: string
-  tournament_id: string
+  operation_key: string | null
+  dispatch_nonce: string | null
+  dispatched_at: string | null
+  tournament_id: string | null
   user_id: string
   flow_payment_attempt_id: string
   refund_commerce_order: string
@@ -232,6 +249,9 @@ export interface FlowRefundAttempt {
   tax_document_number: string | null
   tax_document_issued_at: string | null
   tax_document_notes: string | null
+  tax_document_evidence?: string | null
+  tax_document_verified_by?: string | null
+  tax_document_verified_at?: string | null
   created_at: string
   settled_at: string | null
 }
@@ -300,6 +320,21 @@ export interface Dispute {
   resolved_by: string | null
   resolved_at: string | null
   created_at: string
+  case_kind?: 'consultation' | 'dispute' | 'incident'
+  acknowledged_by?: string | null
+  acknowledged_at?: string | null
+}
+
+export interface DataRequest {
+  id: string
+  user_id: string
+  kind: 'access' | 'erasure'
+  status: 'submitted' | 'reviewing' | 'blocked' | 'completed' | 'rejected'
+  description: string
+  response: string | null
+  response_storage_path: string | null
+  created_at: string
+  updated_at: string
 }
 
 export interface PlayerRating {
@@ -315,6 +350,11 @@ export interface CronHeartbeat {
   last_run_at: string
   last_status: 'ok' | 'error'
   detail: string | null
+  last_started_at?: string | null
+  last_success_at?: string | null
+  last_dispatch_failure_at?: string | null
+  consecutive_dispatch_failures?: number
+  consecutive_failures?: number
 }
 
 export interface PlatformBusinessRule {
@@ -373,6 +413,42 @@ export interface AccountingPosting {
 export type Database = {
   public: {
     Tables: {
+      snake_competitive_preferences: {
+        Row: {user_id:string;participating:boolean} & DbRecord
+        Insert: {user_id:string;participating:boolean} & DbRecord
+        Update: {participating?:boolean} & DbRecord
+        Relationships: []
+      }
+      snake_practice_leaderboard_preferences: {
+        Row: {user_id:string;participating:boolean} & DbRecord
+        Insert: {user_id:string;participating:boolean} & DbRecord
+        Update: {participating?:boolean} & DbRecord
+        Relationships: []
+      }
+      snake_practice_daily_contributions: {
+        Row: {round_id:string;day:string;user_id:string;lights:number;growth:number;stars:number;observed_at:string} & DbRecord
+        Insert: {round_id:string;day:string;user_id:string;lights:number;growth:number;stars:number;observed_at:string} & DbRecord
+        Update: {lights?:number;growth?:number;stars?:number;observed_at?:string} & DbRecord
+        Relationships: []
+      }
+      snake_practice_daily_rewards: {
+        Row: {user_id:string;day:string;mission_id:string;xp:number;earned_at:string} & DbRecord
+        Insert: never
+        Update: never
+        Relationships: []
+      }
+      snake_practice_rewards: {
+        Row: {round_id:string;mission_id:string;user_id:string;xp:number;earned_at:string} & DbRecord
+        Insert: {round_id:string;mission_id:string;user_id:string;xp:number;earned_at:string} & DbRecord
+        Update: never
+        Relationships: []
+      }
+      snake_practice_runs: {
+        Row: {id:string;user_id:string;score:number;rank:number;kills:number;survived_seconds:number;max_size:number;reason:string;ended_at:string} & DbRecord
+        Insert: {id:string;user_id:string;score:number;rank:number;kills:number;survived_seconds:number;max_size:number;reason:string;ended_at:string} & DbRecord
+        Update: never
+        Relationships: []
+      }
       profiles: {
         Row: Profile & DbRecord
         Insert: InsertWithOptional<Profile, 'created_at' | 'full_name' | 'rut' | 'birth_date' | 'phone' | 'city' | 'kyc_status' | 'kyc_verified_at' | 'is_admin' | 'is_banned' | 'terms_accepted_at' | 'terms_version'>
@@ -421,9 +497,27 @@ export type Database = {
         Update: Partial<Omit<TournamentResult, 'id' | 'created_at'>> & DbRecord
         Relationships: []
       }
+      prize_reviews: {
+        Row: PrizeReview & DbRecord
+        Insert: PrizeReview & DbRecord
+        Update: Partial<PrizeReview> & DbRecord
+        Relationships: []
+      }
+      financial_holds: {
+        Row: FinancialHold & DbRecord
+        Insert: FinancialHold & DbRecord
+        Update: Partial<FinancialHold> & DbRecord
+        Relationships: []
+      }
+      financial_review_events: {
+        Row: { id: string; target_id: string; action: string; actor_id: string | null; reason: string; details: Record<string, unknown>; created_at: string } & DbRecord
+        Insert: DbRecord
+        Update: DbRecord
+        Relationships: []
+      }
       withdrawal_requests: {
         Row: WithdrawalRequest & DbRecord
-        Insert: InsertWithOptional<WithdrawalRequest, 'id' | 'created_at' | 'status' | 'admin_notes' | 'reviewed_by' | 'reviewed_at' | 'wallet_transaction_id' | 'paid_by' | 'paid_at' | 'bank_transfer_reference' | 'proof_storage_path' | 'receipt_number' | 'payment_notes'>
+        Insert: InsertWithOptional<WithdrawalRequest, 'id' | 'created_at' | 'status' | 'admin_notes' | 'reviewed_by' | 'reviewed_at' | 'wallet_transaction_id' | 'paid_by' | 'paid_at' | 'bank_transfer_reference' | 'proof_storage_path' | 'receipt_number' | 'payment_notes' | 'claimed_by' | 'claimed_at' | 'transfer_started_at' | 'identity_snapshot'>
         Update: Partial<Omit<WithdrawalRequest, 'id' | 'created_at'>> & DbRecord
         Relationships: []
       }
@@ -465,7 +559,7 @@ export type Database = {
       }
       flow_refund_attempts: {
         Row: FlowRefundAttempt & DbRecord
-        Insert: InsertWithOptional<FlowRefundAttempt, 'id' | 'created_at' | 'flow_refund_token' | 'flow_refund_order' | 'error_message' | 'settled_at' | 'tax_document_status' | 'tax_document_number' | 'tax_document_issued_at' | 'tax_document_notes'>
+        Insert: InsertWithOptional<FlowRefundAttempt, 'operation_key' | 'dispatch_nonce' | 'dispatched_at' | 'id' | 'created_at' | 'flow_refund_token' | 'flow_refund_order' | 'error_message' | 'settled_at' | 'tax_document_status' | 'tax_document_number' | 'tax_document_issued_at' | 'tax_document_notes'>
         Update: Partial<Omit<FlowRefundAttempt, 'id' | 'created_at'>> & DbRecord
         Relationships: []
       }
@@ -473,6 +567,28 @@ export type Database = {
         Row: PlayerRating & DbRecord
         Insert: InsertWithOptional<PlayerRating, 'rating' | 'games_rated' | 'tier' | 'updated_at'>
         Update: Partial<Omit<PlayerRating, 'profile_id'>> & DbRecord
+        Relationships: []
+      }
+      cash_movements: { Row: import('@/lib/cash/model').CashMovement & DbRecord; Insert: never; Update: never; Relationships: [] }
+      cash_reconciliations: { Row: import('@/lib/cash/model').CashReconciliation & DbRecord; Insert: never; Update: never; Relationships: [] }
+      cash_differences: { Row: import('@/lib/cash/model').CashDifference & DbRecord; Insert: never; Update: never; Relationships: [] }
+      cash_events: { Row: import('@/lib/cash/model').CashEvent & DbRecord; Insert: never; Update: never; Relationships: [] }
+      ops_incidents: {
+        Row: import('@/lib/ops/monitor').OpsIncident & DbRecord
+        Insert: never
+        Update: never
+        Relationships: []
+      }
+      ops_notifications: {
+        Row: import('@/lib/ops/monitor').OpsNotification & DbRecord
+        Insert: never
+        Update: never
+        Relationships: []
+      }
+      ops_incident_events: {
+        Row: { id: string; incident_id: string; action: string; actor_id: string | null; note: string | null; created_at: string } & DbRecord
+        Insert: never
+        Update: never
         Relationships: []
       }
       cron_heartbeats: {
@@ -507,6 +623,14 @@ export type Database = {
       }
     }
     Views: {
+      snake_practice_daily_progress: {
+        Row: {user_id:string;day:string;lights:number;growth:number;stars:number} & DbRecord
+        Relationships: []
+      }
+      snake_practice_progress: {
+        Row: {user_id:string;xp:number} & DbRecord
+        Relationships: []
+      }
       prize_liability: {
         Row: {
           committed_cents: number
@@ -576,6 +700,62 @@ export type Database = {
       }
     }
     Functions: {
+      accounting_workspace: {
+        Args: { p_period: string | null } & DbRecord
+        Returns: Record<string, unknown>
+      }
+      accounting_operate: {
+        Args: { p_action: string; p_payload: Record<string, unknown>; p_actor: string } & DbRecord
+        Returns: Record<string, unknown>
+      }
+      snake_practice_weekly_snapshot: {
+        Args: {p_owner?:string|null;p_previous?:boolean} & DbRecord
+        Returns: Record<string,unknown>
+      }
+      snake_practice_week_window: {
+        Args: {p_at:string;p_previous?:boolean} & DbRecord
+        Returns: {day:string;starts_at:string;ends_at:string;server_now:number}[]
+      }
+      snake_practice_leaderboard_snapshot: {
+        Args: {p_owner?:string|null} & DbRecord
+        Returns: Record<string,unknown>
+      }
+      app_session_live: { Args: { p_user: string; p_session: string }; Returns: boolean }
+      revoke_app_sessions: { Args: { p_user: string }; Returns: number }
+      read_kyc_document: { Args: { p_actor: string; p_submission: string; p_side: string; p_owner_only: boolean }; Returns: string }
+      audit_payout_proof: { Args: { p_actor: string; p_id: string }; Returns: string }
+      open_support_case: { Args: { p_user: string; p_type: string; p_description: string; p_tournament: string | null; p_kind: string }; Returns: string }
+      acknowledge_support_case: { Args: { p_actor: string; p_id: string }; Returns: undefined }
+      open_data_request: { Args: { p_user: string; p_kind: string; p_description: string }; Returns: string }
+      review_data_request: { Args: { p_actor: string; p_id: string; p_status: string; p_reason: string; p_response_path: string | null }; Returns: undefined }
+      read_data_response: { Args: { p_actor: string; p_id: string }; Returns: string }
+      list_data_requests: { Args: { p_actor: string; p_owner_only: boolean }; Returns: DataRequest[] }
+      data_request_for_review: { Args: { p_actor: string; p_id: string }; Returns: Pick<DataRequest, 'user_id' | 'kind' | 'status'> }
+      account_data_export: { Args: { p_user: string }; Returns: Record<string, unknown> }
+      correct_flow_fee_difference: { Args: { p_id: string; p_actor: string; p_note: string } & DbRecord; Returns: undefined }
+      reject_cash_movement: { Args: { p_id: string; p_actor: string; p_note: string } & DbRecord; Returns: undefined }
+      cash_status: { Args: DbRecord; Returns: import('@/lib/cash/model').CashStatus & DbRecord }
+      set_cash_policy: { Args: { p_actor: string; p_paused: boolean; p_max_exposure: number; p_additional_reserve: number; p_note: string } & DbRecord; Returns: undefined }
+      record_cash_movement: { Args: { p_id: string; p_actor: string; p_kind: string; p_amount: number; p_reference: string; p_occurred_at: string; p_proof: string; p_note: string } & DbRecord; Returns: string }
+      approve_cash_movement: { Args: { p_id: string; p_actor: string; p_note: string } & DbRecord; Returns: undefined }
+      capture_cash_reconciliation: { Args: { p_id: string; p_actor: string; p_observed_at: string; p_bank: number; p_bank_held: number; p_flow: number; p_flow_held: number; p_bank_proof: string; p_flow_proof: string; p_note: string } & DbRecord; Returns: string }
+      review_cash_reconciliation: { Args: { p_id: string; p_actor: string; p_decision: string; p_note: string } & DbRecord; Returns: undefined }
+      manage_cash_difference: { Args: { p_id: string; p_actor: string; p_assignee: string | null; p_due_at: string | null; p_replacement: string | null; p_note: string } & DbRecord; Returns: undefined }
+      read_cash_proof: { Args: { p_actor: string; p_path: string } & DbRecord; Returns: string }
+
+      record_cron_dispatch_failure: { Args: { p_job: string } & DbRecord; Returns: undefined }
+      review_ops_notification: { Args: { p_id: string; p_actor: string; p_action: string; p_note: string } & DbRecord; Returns: undefined }
+      record_cron_execution: { Args: { p_job: string; p_status: string; p_detail?: string | null } & DbRecord; Returns: undefined }
+      operational_snapshot: { Args: DbRecord; Returns: import('@/lib/ops/monitor').OperationalSnapshot & DbRecord }
+      observe_operations: { Args: { p_recipient?: string | null; p_escalation_recipient?: string | null } & DbRecord; Returns: import('@/lib/ops/monitor').OperationalSnapshot & DbRecord }
+      acknowledge_ops_incident: { Args: { p_id: string; p_actor: string; p_note: string } & DbRecord; Returns: undefined }
+      claim_ops_notifications: { Args: DbRecord; Returns: (import('@/lib/ops/monitor').OpsNotification & DbRecord)[] }
+      finish_ops_notification: { Args: { p_id: string; p_token: string; p_provider_id?: string | null; p_error?: string | null; p_retryable?: boolean } & DbRecord; Returns: undefined }
+
+      authorize_competitive_entry: {
+        Args: { p_user_id: string; p_tournament_id: string } & DbRecord
+        Returns: boolean
+      }
       wallet_insert_transaction: {
         Args: {
           p_user_id: string
@@ -610,7 +790,7 @@ export type Database = {
       wallet_mark_flow_attempt_failed: {
         Args: {
           p_commerce_order: string
-          p_flow_token: string
+          p_flow_token: string | null
           p_flow_status_code: number
           p_raw: Record<string, unknown>
         } & DbRecord
@@ -624,10 +804,28 @@ export type Database = {
         } & DbRecord
         Returns: string
       }
+      queue_tournament_refunds: { Args: { p_tournament_id: string } & DbRecord; Returns: number }
+      claim_flow_refund: { Args: { p_refund_id: string; p_nonce: string } & DbRecord; Returns: Record<string, unknown> | null }
+      record_flow_refund_dispatch: {
+        Args: { p_refund_id: string; p_nonce: string; p_token: string | null; p_flow_order: string | null; p_error: string | null } & DbRecord
+        Returns: boolean
+      }
+      record_verified_refund: {
+        Args: { p_refund_id: string; p_token: string; p_flow_order: string; p_amount_pesos: number; p_status: string } & DbRecord
+        Returns: boolean
+      }
+      queue_unsupported_flow_payment_refund: {
+        Args: { p_commerce_order: string; p_flow_token: string | null; p_flow_order: number; p_amount_cents: number; p_payer_email: string | null; p_raw: Record<string, unknown> } & DbRecord
+        Returns: string
+      }
+      request_withdrawal: {
+        Args: { p_request_id: string; p_user_id: string; p_amount_cents: number; p_bank_name: string; p_bank_account: string; p_account_rut: string; p_account_holder: string; p_verified_full_name: string } & DbRecord
+        Returns: string
+      }
       settle_tournament_registration: {
         Args: {
           p_commerce_order: string
-          p_flow_token: string
+          p_flow_token: string | null
           p_flow_order: number
           p_amount_cents: number
           p_payment_method: string | null
@@ -647,6 +845,30 @@ export type Database = {
           p_tournament_id: string
         } & DbRecord
         Returns: Record<string, unknown>
+      }
+      resolve_financial_dispute: {
+        Args: { p_dispute_id: string; p_admin_id: string; p_resolution: string; p_reason: string } & DbRecord
+        Returns: undefined
+      }
+      review_prize: {
+        Args: { p_review_id: string; p_admin_id: string; p_decision: string; p_reason: string; p_evidence: Record<string, unknown> } & DbRecord
+        Returns: undefined
+      }
+      set_financial_hold: {
+        Args: { p_hold_id: string; p_user_id: string; p_admin_id: string; p_release: boolean; p_reason: string } & DbRecord
+        Returns: undefined
+      }
+      claim_withdrawal: {
+        Args: { p_request_id: string; p_admin_id: string } & DbRecord
+        Returns: undefined
+      }
+      begin_withdrawal_transfer: {
+        Args: { p_request_id: string; p_admin_id: string } & DbRecord
+        Returns: Record<string, unknown>
+      }
+      reconcile_withdrawal: {
+        Args: { p_request_id: string; p_admin_id: string; p_outcome: string; p_bank_reference: string | null; p_proof_path: string | null; p_reason: string } & DbRecord
+        Returns: undefined
       }
       approve_withdrawal: {
         Args: {

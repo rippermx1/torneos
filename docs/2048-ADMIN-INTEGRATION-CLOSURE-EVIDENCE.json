@@ -1,0 +1,317 @@
+{
+  "id": "E26",
+  "task": "G2048-09.4",
+  "at": "2026-10-05T20:33:48.995Z",
+  "status": "COMPLETED_LOCAL",
+  "featureClosed": true,
+  "scope": "Local operating integration and real authenticated administrative journey; not public/paid launch readiness",
+  "historicalPreparation": "docs/2048-ADMIN-INTEGRATION-EVIDENCE.json",
+  "recovery": {
+    "status": "PASS_RUNTIME_RECOVERED",
+    "engine": "28.3.0",
+    "action": "Inactive stale IPC directory renamed and Desktop started; VHDX preserved",
+    "factoryReset": false,
+    "restoreFromBackup": false,
+    "existingDataInventory": {
+      "profiles": 74,
+      "games": 22,
+      "results": 22,
+      "versions": 58,
+      "active2048": 0
+    },
+    "privatePreMigrationDump": true,
+    "keysChanged": false
+  },
+  "migration": {
+    "status": "PASS",
+    "applied": true,
+    "migrations": [
+      {
+        "version": "20261004184805",
+        "name": "guard_2048_seed_visibility",
+        "file": "supabase/migrations/20261004184805_guard_2048_seed_visibility.sql",
+        "sha256": "9bd5e89f8d6ecca3d1b388860554e63566586334afcb1a65cc26913c82c45f7c"
+      },
+      {
+        "version": "20261005131216",
+        "name": "guard_2048_integrity_reviews",
+        "file": "supabase/migrations/20261005131216_guard_2048_integrity_reviews.sql",
+        "sha256": "d03acc197a1a715f82008d221cba3a5bb63a30499fee9d806ae002543b5ae0b4"
+      }
+    ],
+    "dataPreserved": true,
+    "installed": {
+      "seedHidden": true,
+      "serviceSeed": true,
+      "serviceInspect": true,
+      "browserInspectDenied": true,
+      "privateSchemaDenied": true,
+      "completionGuard": true,
+      "moveBanGuard": true
+    }
+  },
+  "candidate": {
+    "image": "torneos-app:g2048-094-candidate-1791231240545",
+    "imageId": "sha256:51412127d028715b658a2921115b39d45a6dc874204728df34add89315312e25",
+    "baseline": "sha256:cb0d154790ac90846059a318d5ce395cce30d04ebc55104cb4f86a808dc68f20",
+    "registry": {
+      "2048": "unity-2048-007",
+      "alien-run": "level-030",
+      "snake-arena": "snake-arena-006",
+      "factory-empire": "factory-empire-014"
+    },
+    "reviewedPatches": {
+      "app/(public)/tournaments/[id]/audit/page.tsx": "3417edc7b620f2a6cdde031daffda001fce49623944c2a850584cdf5e0f6dd15",
+      "app/(public)/tournaments/[id]/leaderboard/page.tsx": "e1ae305b6f496c3974d527f2b3eee191c43e6a9c3a93ed56c404fbce0afd9a2d",
+      "app/api/tournaments/[id]/game/start/route.ts": "c171cdc1d4a2853aab8171b854b21650a0ab9dadf939eddfc9bda9ae3a0293ca",
+      "app/api/tournaments/[id]/game/move/route.ts": "9b4549804c5586547b40c5c60c43c7d3d7473930f10330b1b710ae39306c30bd",
+      "app/api/tournaments/[id]/game/timeout/route.ts": "7da4a942e07421ddf220970909ad085f6699ff22bf098187520aed033763c48e",
+      "lib/security/rate-limit.ts": "2d83eee69cb1eb6625a257f53f14e588e41d6e368a9a70cd1f7d179931c047a5",
+      "lib/tournament/game-request.ts": "fb2dc0774ba7dcf1f666e324d9e7c30fe92c3482a375ef241b343ab32975dade",
+      "lib/tournament/helpers.ts": "06d16f85551feef3502f3de40d22d76716f96a25423f110bff4a6b81755cc351",
+      "lib/anticheat/integrity.ts": "abd2cdeb4f7edbb8fd327213d9ef425bde30c4f0c3563920c0051d42c1908557",
+      "lib/anticheat/detector.ts": "aa77ca724bfc99c6b751f958149f84a7f658418405e1d3fcc954c7cff44bff06",
+      "lib/anticheat/winner-review.ts": "a58714fb21adc58ae9c66eaa88023a1c0b276ff1f93b87cfd485aca89f02c6b6",
+      "lib/tournament/lifecycle.ts": "7b1224b138798f3e9e262a6f4a11cd08ddc1c2079b88fceff3bd5007d516880f",
+      "app/api/admin/users/[id]/ban/route.ts": "222f4c8f32f2e2fe1cc51181f7299a480327fbee457718a045296008739f6eb0",
+      "app/api/admin/tournaments/[id]/integrity/route.ts": "8a860180f2a1f77d91316768e834b28e5f483dbce9b04ca10e169fe56180b6d9",
+      "app/api/admin/tournaments/[id]/finalize/route.ts": "cb825e260d369ed9275e7da3c026c4fc00a9b17e61e916bebe495701fabf9556",
+      "app/(admin)/admin/tournaments/[id]/games/page.tsx": "febe3547bec8f82e938877de97e5a9e39fb44afe29b32deac62baba1d99ecf9d",
+      "app/(admin)/admin/tournaments/[id]/games/[gameId]/page.tsx": "b1683a06bd85998f3c1d86c708cb9ca36fe0c6a355cf634a3ca4e6e61af4454e",
+      "components/tournament/integrity-reviews.tsx": "6b437d0a3ff2f49c61e1994e7b17ea252ffc62e5aae817756a67f825e57afac1",
+      "components/game/unity-2048.tsx": "8d90cf16a65edf865406af8791aadceb4e0dd680b61681284669084ce60fa7d7",
+      "components/game/unity-2048.module.css": "deb3d4aa014e3a53232cadcae4d681decaba4a41dda7d683a0d129ada20eee8a"
+    },
+    "nextBuild": "PASS",
+    "typescriptBuild": "PASS",
+    "unityRebuilt": false,
+    "deployedTo3081": true,
+    "healthy": true
+  },
+  "activation": {
+    "status": "PASS_ACTIVATED_LOCAL",
+    "checks": [
+      "preview healthy; routes load; all capsule and Snake server file hashes preserved",
+      "runtime configuration, networks, volumes and other container identities preserved"
+    ],
+    "backupContainer": "torneos-app-g2048-094-backup-1791231446369",
+    "otherContainersPreserved": 10,
+    "configNetworksVolumesPreserved": true,
+    "previewStoppedAndRemoved": true,
+    "rollbackFaultInjection": "NOT_RUN"
+  },
+  "verification": {
+    "web": {
+      "status": "PASS",
+      "tests": 101,
+      "files": 6
+    },
+    "node": {
+      "status": "PASS",
+      "tests": 9,
+      "failed": 0,
+      "skipped": 0,
+      "realDisposablePostgres": true
+    },
+    "lint": "PASS",
+    "authenticatedHttpSql": {
+      "status": "PASS_AUTHENTICATED_HTTP_SQL",
+      "checks": [
+        {
+          "name": "anonymous and non-admin cannot inspect or decide",
+          "status": "PASS"
+        },
+        {
+          "name": "administrator at AAL1 is denied on all mutation and inspection routes",
+          "status": "PASS"
+        },
+        {
+          "name": "real TOTP enrollment and challenge raise the fresh operator session to AAL2",
+          "status": "PASS"
+        },
+        {
+          "name": "authenticated players submit directions and the server persists score and board",
+          "status": "PASS"
+        },
+        {
+          "name": "authenticated browser role can read safe state but cannot select the RNG seed",
+          "status": "PASS"
+        },
+        {
+          "name": "pending signals block authenticated finalization without ranking or credits",
+          "status": "PASS"
+        },
+        {
+          "name": "operator GUI and replay render through authenticated server routes",
+          "status": "PASS"
+        },
+        {
+          "name": "reason validation and tournament membership reject invalid clearances",
+          "status": "PASS"
+        },
+        {
+          "name": "false positive clearance persists actor and reason",
+          "status": "PASS"
+        },
+        {
+          "name": "confirmed sanction atomically bans and invalidates; suspended player is denied",
+          "status": "PASS"
+        },
+        {
+          "name": "retry finalizes only the cleared participant with exactly one prize credit",
+          "status": "PASS"
+        },
+        {
+          "name": "post-settlement sanction preserves result and ledger; unban does not resurrect games",
+          "status": "PASS"
+        }
+      ],
+      "fixtures": {
+        "admin": "11a6b27d-24dc-4172-92f5-80702125b9b7",
+        "clear": "cf647292-16e4-496f-8af4-15d35d18e6c6",
+        "sanction": "f975a743-6698-4b07-9db0-f2728e976983",
+        "tournament": "fa64f09a-0ff5-4f97-9d54-28df2ca0cad1",
+        "games": [
+          "ab4f675e-ed90-4143-bed8-16448a46f1bf",
+          "bfa9adb9-5c33-4d9e-a216-362890b03f82"
+        ]
+      },
+      "artifact": "artifacts/2048-integrity-integration/admin-4e450ad1-fd87-4ba4-a3b7-d085c220c117/admin-e2e.json"
+    },
+    "gui": {
+      "task": "G2048-09.4",
+      "at": "2026-10-05T20:25:28.219Z",
+      "tournament": "9a9b56e4-7e77-4063-933d-54f0fc90dcb5",
+      "checks": [
+        "login through GUI",
+        "AAL1 redirected to MFA challenge",
+        "TOTP through GUI",
+        "review replay and server timestamps",
+        "short reason keeps decision disabled",
+        "clearance visibly confirmed",
+        "sanction visibly confirmed",
+        "reload preserves decisions and invalid game status",
+        "owned tournament completed after Finalizar ahora GUI action",
+        "public official ranking contains only cleared player, score 192",
+        "public audit shows two games, one official result and seed fingerprints only"
+      ],
+      "acceptanceHuman": "NOT_RUN",
+      "status": "PASS_AUTHENTICATED_GUI",
+      "artifact": "artifacts/2048-integrity-integration/gui-report-20261005.json",
+      "preparedFixture": {
+        "admin": "c036c881-c844-468d-8d4e-a67190e17eac",
+        "clear": "7039f6c3-348c-45b9-8318-9a85d64e02d1",
+        "sanction": "5c61dfd4-6ab4-4a91-a2cc-37c9bcc2a6c8",
+        "tournament": "9a9b56e4-7e77-4063-933d-54f0fc90dcb5",
+        "games": [
+          "1f9c23f9-14d4-4bd4-b14f-929abaf68d58",
+          "6a4c6d94-4869-4d82-8088-4319ac0307a3"
+        ]
+      }
+    },
+    "guiPersistence": {
+      "task": "G2048-09.4",
+      "at": "2026-10-05T20:28:52.790Z",
+      "status": "PASS_GUI_PERSISTENCE",
+      "data": {
+        "status": "completed",
+        "ranking": [
+          {
+            "user": "7039f6c3-348c-45b9-8318-9a85d64e02d1",
+            "score": 192,
+            "rank": 1
+          }
+        ],
+        "credits": 1,
+        "banned": true,
+        "games": [
+          {
+            "id": "1f9c23f9-14d4-4bd4-b14f-929abaf68d58",
+            "status": "completed",
+            "score": 192
+          },
+          {
+            "id": "6a4c6d94-4869-4d82-8088-4319ac0307a3",
+            "status": "invalid",
+            "score": 144
+          }
+        ],
+        "reviews": [
+          {
+            "game": "1f9c23f9-14d4-4bd4-b14f-929abaf68d58",
+            "decision": "cleared",
+            "actor": "c036c881-c844-468d-8d4e-a67190e17eac",
+            "reason": "Fixture GUI: replay revisado, descartar señal sintética sin infracción real."
+          },
+          {
+            "game": "6a4c6d94-4869-4d82-8088-4319ac0307a3",
+            "decision": "sanctioned",
+            "actor": "c036c881-c844-468d-8d4e-a67190e17eac",
+            "reason": "Fixture GUI: sanción sintética para verificar invalidación atómica de esta cuenta de prueba."
+          }
+        ]
+      },
+      "cleanup": {
+        "failedFixture": "d4e65894-c295-447a-a180-d820331d0c73",
+        "cancelled": true,
+        "deleted": false
+      },
+      "installed": {
+        "seedHidden": true,
+        "serviceSeed": true,
+        "serviceInspect": true,
+        "browserInspectDenied": true,
+        "privateSchemaDenied": true,
+        "completionGuard": true,
+        "moveBanGuard": true
+      },
+      "health": "healthy"
+    },
+    "unityHttp": {
+      "status": "PASS",
+      "files": 6,
+      "appFraming": "DENY",
+      "artifact": "artifacts/2048-integrity-integration/http-094-20261005.json"
+    },
+    "unityPractice": {
+      "status": "PASS_BROWSER_OBSERVED",
+      "keyboard": true,
+      "score": 8
+    }
+  },
+  "screenshots": [
+    "artifacts/2048-integrity-integration/gui-decisions-20261005.png",
+    "artifacts/2048-integrity-integration/gui-ranking-20261005.png"
+  ],
+  "sources": {
+    "scripts/build-2048-integrity-candidate.mjs": "6da156a4dfa0564e1b89bf022fd4ee6252852437cfc7b0aae0a943dfa0f5600a",
+    "scripts/activate-2048-integrity-local.mjs": "27d15e1a6453c01e3238a677cd0b656920a42b3cb8e65036b378f65153e3bbbd",
+    "scripts/verify-2048-admin-local.mjs": "973feeeab1127cbb1c3ebe296046dd32742bf36d6db23a8d8a7440f6c9e12623",
+    "scripts/2048-integrity-local.mjs": "45ea21b3dd9cb4cea4b396f386d17798d41f29cf94df373e0bf35edddafd74a3",
+    "supabase/migrations/20261004184805_guard_2048_seed_visibility.sql": "9bd5e89f8d6ecca3d1b388860554e63566586334afcb1a65cc26913c82c45f7c",
+    "supabase/migrations/20261005131216_guard_2048_integrity_reviews.sql": "d03acc197a1a715f82008d221cba3a5bb63a30499fee9d806ae002543b5ae0b4"
+  },
+  "mutations": {
+    "localMigrations": true,
+    "localWebActivation": true,
+    "freshSyntheticFixtures": true,
+    "existingCredentialsOrMfa": false,
+    "cloud": false,
+    "flowProvider": false,
+    "realMoney": false,
+    "unityAssets": false
+  },
+  "remaining": [
+    "G2048-04.4 real background return",
+    "G2048-06.2 human visual acceptance",
+    "G2048-07.2 real reader and new player",
+    "G2048-08.1 physical Xiaomi report",
+    "Public/paid platform release readiness"
+  ],
+  "limits": [
+    "Controlled cadence and timestamps are synthetic fixtures, not human observation or universal bot detection",
+    "Variable-pause bots and unverified multiple accounts retain documented limits",
+    "No production deployment, paid transactions, human acceptance or physical phone validation",
+    "Runtime recovery is not a tested database/Storage backup restore; WEB-16 remains open"
+  ]
+}

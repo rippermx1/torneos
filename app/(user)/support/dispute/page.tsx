@@ -17,6 +17,8 @@ export default function DisputePage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [kind, setKind] = useState('consultation')
+  const [reference, setReference] = useState('')
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -29,11 +31,12 @@ export default function DisputePage() {
       const res = await fetch('/api/support/dispute', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type, description }),
+        body: JSON.stringify({ type, description, kind }),
       })
       const data = await res.json()
       if (!res.ok) { setError(data.error ?? 'Error al enviar'); return }
       setSuccess(true)
+      setReference(data.disputeId)
     } catch {
       setError('Error de conexión')
     } finally {
@@ -46,13 +49,13 @@ export default function DisputePage() {
       <div className="max-w-sm space-y-4">
         <div className="border rounded-xl p-6 text-center space-y-3">
           <p className="text-2xl">✓</p>
-          <h2 className="text-lg font-semibold">Disputa enviada</h2>
+          <h2 className="text-lg font-semibold">Caso recibido</h2>
           <p className="text-sm text-muted-foreground">
-            Tu reporte fue recibido. Te responderemos a la brevedad.
+            Referencia: {reference}. Consulta el acuse y la respuesta en Mis casos y datos.
           </p>
         </div>
-        <Link href="/" className="block text-center text-sm underline underline-offset-4">
-          Volver al inicio
+        <Link href="/support" className="block text-center text-sm underline underline-offset-4">
+          Ver mis casos y datos
         </Link>
       </div>
     )
@@ -63,11 +66,16 @@ export default function DisputePage() {
       <div>
         <h1 className="text-2xl font-bold">Reportar un problema</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Describe tu situación con el mayor detalle posible. Respondemos en 1–2 días hábiles.
+          Describe tu situación. Recibirás una referencia para seguir la atención y la respuesta.
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
+        <label className="block text-sm">Motivo del contacto
+          <select value={kind} onChange={e => setKind(e.target.value)} className="block border rounded p-2 mt-2">
+            <option value="consultation">Consulta</option><option value="dispute">Disputa</option><option value="incident">Incidente</option>
+          </select>
+        </label>
         <div className="space-y-2">
           <p className="text-sm font-medium">Tipo de problema</p>
           <div className="space-y-2">
@@ -96,10 +104,11 @@ export default function DisputePage() {
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-sm font-medium">
+          <label htmlFor="case-description" className="text-sm font-medium">
             Descripción <span className="text-muted-foreground font-normal">(mín. 20 caracteres)</span>
           </label>
           <textarea
+            id="case-description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={5}

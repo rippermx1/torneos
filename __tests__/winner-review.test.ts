@@ -78,6 +78,7 @@ describe('computeIntervalStats', () => {
       durationMs: null,
       minIntervalMs: null,
       avgIntervalMs: null,
+      regularPace: false,
     })
   })
 })

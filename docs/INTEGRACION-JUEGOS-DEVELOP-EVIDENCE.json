@@ -1,0 +1,108 @@
+{
+  "at": "2026-10-06T15:23:08.281Z",
+  "status": "READY_PUBLISHED_VERIFIED",
+  "url": "https://torneos-dev.vercel.app/play/catalog",
+  "projectId": "prj_QHiZYuYkztFToMGmwhPsyOx9nVdG",
+  "deploymentId": "dpl_DXTdRYRTgfUaCrkh6Y4rtu3c1TFM",
+  "priorDeployment": "dpl_97VBvufgcoKozhAKLytz7Hjjs7SW",
+  "games": {
+    "2048": "unity-2048-007",
+    "factory-empire": "factory-empire-3d-035"
+  },
+  "localGames": {
+    "2048": "unity-2048-007",
+    "alien-run": "level-030",
+    "snake-arena": "snake-arena-014",
+    "factory-empire": "factory-empire-3d-035"
+  },
+  "excludedGames": {
+    "alien-run": "AGENTS.md mantiene KayKit y LocalArt locales",
+    "snake-arena": "Servidor autoritativo persistente pendiente de adaptación y prueba cloud"
+  },
+  "sourceHead": "2713a203febbb5802adc0c153b7e943beb62bf61",
+  "sourceBranch": "codex/2048-clean-gameplay",
+  "includesWorkingChanges": true,
+  "sourceChangesSinceCapture": [
+    "components/game/unity-factory-empire-3d.tsx"
+  ],
+  "package": {
+    "directory": "C:\\torneos\\artifacts\\games-development\\2026-10-06T15-08-16-363Z-d2a5003d",
+    "packageDirectory": "C:\\torneos\\artifacts\\games-development\\2026-10-06T15-08-16-363Z-d2a5003d\\package",
+    "manifest": "C:\\torneos\\artifacts\\games-development\\2026-10-06T15-08-16-363Z-d2a5003d\\package-manifest.json"
+  },
+  "inventorySha256": "26c5fb1d06410335d6d8727fbd95bd57fd5a59759195d29a2f04efd989bac8b9",
+  "upload": {
+    "uploadedFiles": 447,
+    "emptyDirectories": [
+      {
+        "path": "2026-10-06T14-54-56-053Z-bb10c8ce/package",
+        "size": 0,
+        "mode": 16822
+      }
+    ],
+    "status": "PASS"
+  },
+  "validation": {
+    "webTests": 4252,
+    "webTestFiles": 100,
+    "nodeTests": 16,
+    "nextBuild": "PASS_LOCAL_AND_VERCEL",
+    "typescript": "PASS_LOCAL_AND_VERCEL",
+    "lint": "PASS",
+    "candidateChecks": 32,
+    "publishedChecks": 32,
+    "chunksScannedPerEnvironment": 26,
+    "auth": "REAL_READ_ONLY",
+    "database": "REAL_READ_ONLY",
+    "unityEditor": "NOT_RUN_THIS_DELIVERY",
+    "cloudCompetitiveTournament": "NOT_RUN"
+  },
+  "browser": {
+    "factory": {
+      "loadedBuild": "factory-empire-3d-035",
+      "localColonyRestored": true,
+      "ferrita": 255,
+      "achievements": "2/14",
+      "consoleErrors": 0,
+      "expandedGui": "OBSERVED_CLIPPING_1280x720"
+    },
+    "puzzle": {
+      "loadedBuild": "unity-2048-007",
+      "started": true,
+      "realKeyboardMergeScore": 4,
+      "consoleErrors": 0
+    },
+    "screenshots": [
+      {
+        "path": "C:\\torneos\\artifacts\\games-development\\2026-10-06T15-08-16-363Z-d2a5003d\\catalog-browser.jpg",
+        "sha256": "6e878a2e4bfacaeb5d8ad33d3c1fbc3bb5db2e8b630142c2e5dc000aab8028e4"
+      },
+      {
+        "path": "C:\\torneos\\artifacts\\games-development\\2026-10-06T15-08-16-363Z-d2a5003d\\factory-browser.jpg",
+        "sha256": "0599ceceda5da9e606acbf7f5adb6f5d996498c33375c76cde724bfeef148d73"
+      },
+      {
+        "path": "C:\\torneos\\artifacts\\games-development\\2026-10-06T15-08-16-363Z-d2a5003d\\2048-browser.jpg",
+        "sha256": "4b38601dda2cac60572ccee7b28d3596e7b77a88921d4d8272db4256ff6409f1"
+      }
+    ]
+  },
+  "boundaries": {
+    "productionProjectUntouched": true,
+    "migrationsApplied": false,
+    "cronExecuted": false,
+    "flowCredentials": false,
+    "newGameplayDatabaseWrites": false,
+    "accountOptIn": false,
+    "unitySourcesChanged": false,
+    "licensedArtUploaded": false,
+    "snakeHostingProvisioned": false,
+    "remoteProtectionDisabled": false,
+    "gitPush": false
+  },
+  "knownIssues": [
+    "Factory expanded GUI clips in IAB 1280x720",
+    "npm audit: 11 inherited advisories; omit=dev: one high source-map-js 1.2.1",
+    "Physical-phone and human visual acceptance remain separate"
+  ]
+}

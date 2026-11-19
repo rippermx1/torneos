@@ -13,7 +13,7 @@ export default async function GameDetailPage({
   const supabase = createAdminClient()
 
   const [{ data: gameData }, { data: movesData }] = await Promise.all([
-    supabase.from('games').select('*').eq('id', gameId).single(),
+    supabase.from('games').select('*').eq('id', gameId).eq('tournament_id', tournamentId).single(),
     supabase
       .from('game_moves')
       .select('*')
@@ -27,8 +27,8 @@ export default async function GameDetailPage({
   const moves = (movesData ?? []) as GameMove[]
 
   // Análisis anti-cheat básico
-  const timestamps = moves.map((m) => m.client_timestamp)
-  const intervals = timestamps.slice(1).map((t, i) => t - timestamps[i]!)
+  const timestamps = moves.filter(m => m.direction !== null).map(m => Date.parse(m.server_timestamp))
+  const intervals = timestamps.slice(1).map((t, i) => t - timestamps[i]!).filter(ms => Number.isFinite(ms) && ms > 0)
   const avgInterval = intervals.length > 0
     ? intervals.reduce((a, b) => a + b, 0) / intervals.length
     : 0
@@ -37,7 +37,7 @@ export default async function GameDetailPage({
     ? ((suspiciouslyFast / intervals.length) * 100).toFixed(1)
     : '0'
 
-  const isSuspicious = suspiciouslyFast > 5 || avgInterval < 100
+  const isSuspicious = intervals.length > 0 && (suspiciouslyFast > 5 || avgInterval < 100)
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -69,7 +69,7 @@ export default async function GameDetailPage({
       {/* Análisis anti-cheat */}
       <div className={`border rounded-xl p-4 space-y-2 ${isSuspicious ? 'border-red-300 bg-red-50' : 'bg-muted/20'}`}>
         <h2 className={`text-sm font-semibold ${isSuspicious ? 'text-red-700' : ''}`}>
-          {isSuspicious ? '⚠ Análisis de timing — Posible anomalía' : 'Análisis de timing — Normal'}
+          {isSuspicious ? '⚠ Tiempos de servidor — Posible anomalía' : 'Tiempos de servidor — Sin señal rápida'}
         </h2>
         <div className="grid grid-cols-3 gap-3 text-xs">
           <div>

@@ -1,0 +1,230 @@
+{
+  "id": "E25",
+  "task": "WEB-16.1",
+  "at": "2026-10-05T19:44:00.011Z",
+  "status": "IMPLEMENTED_AND_VERIFIED_LOCAL_SOURCE_CI",
+  "parentWEB16": "IN_PROGRESS",
+  "sources": {
+    ".github/workflows/source-validation.yml": "e49606cfc7c3fb62313ce6d0edd599bfad23ae25a8f05843c9b51f3d0e4098cc",
+    "scripts/source-validation-core.mjs": "a3c213bc4b872d46948d6ec9965e50fab632d6017e4d901fc818646b2c82329f",
+    "scripts/validate-source.mjs": "4064804fece04552269e737c06be1e2e5ce197c66f6ce7d17be7866a0d017732",
+    "scripts/source-diagnostics.mjs": "72e1d62611ed071ce8a6a66429c1d7b674572b70fe50382ddc6c8dbaae752ff5",
+    "scripts/__tests__/source-validation.test.mjs": "c13e7a9c92350c7c2cc8051aa5071a48d480cfa4b9b3938b696258c95c257f5a",
+    "scripts/2048-integrity-local.mjs": "45ea21b3dd9cb4cea4b396f386d17798d41f29cf94df373e0bf35edddafd74a3",
+    "scripts/2048-integrity-local.test.mjs": "32fc25ed6b4b26f2eccea212d4228ff785594ac9190de279bdfde4ee32fabc96"
+  },
+  "validation": {
+    "task": "WEB-16.1",
+    "commit": "9410a33a3e3da195afe0fd7d4e1451b7707c0a0f",
+    "node": "v24.14.1",
+    "platform": "win32",
+    "execution": "LOCAL",
+    "at": "2026-10-05T19:40:03.247Z",
+    "scope": "Committed source only; fresh npm ci, no operating environment or Unity bundles",
+    "checks": [
+      {
+        "name": "install",
+        "status": "PASS",
+        "code": 0,
+        "signal": null,
+        "timedOut": false
+      },
+      {
+        "name": "tests",
+        "status": "PASS",
+        "code": 0,
+        "signal": null,
+        "timedOut": false
+      },
+      {
+        "name": "node-tests",
+        "status": "PASS",
+        "code": 0,
+        "signal": null,
+        "timedOut": false
+      },
+      {
+        "name": "lint-1",
+        "status": "PASS",
+        "code": 0,
+        "signal": null,
+        "timedOut": false
+      },
+      {
+        "name": "lint-2",
+        "status": "PASS",
+        "code": 0,
+        "signal": null,
+        "timedOut": false
+      },
+      {
+        "name": "lint-3",
+        "status": "PASS",
+        "code": 0,
+        "signal": null,
+        "timedOut": false
+      },
+      {
+        "name": "lint-4",
+        "status": "PASS",
+        "code": 0,
+        "signal": null,
+        "timedOut": false
+      },
+      {
+        "name": "build",
+        "status": "PASS",
+        "code": 0,
+        "signal": null,
+        "timedOut": false
+      },
+      {
+        "name": "types",
+        "status": "PASS",
+        "code": 0,
+        "signal": null,
+        "timedOut": false
+      }
+    ],
+    "status": "PASS",
+    "integration": {
+      "auth": "NOT_RUN",
+      "database": "NOT_RUN",
+      "flow": "NOT_RUN",
+      "unityRuntime": "NOT_RUN",
+      "restore": "NOT_RUN",
+      "githubHostedRun": "NOT_RUN"
+    },
+    "lockSha256": "5777b24270dac60b8b4a20008b10cc64d56c110d125fce54c24ed06e719fd986",
+    "dependencies": {
+      "next": "16.3.8",
+      "react": "19.2.7",
+      "vitest": "4.1.11",
+      "typescript": "5.9.3",
+      "eslint": "9.39.4"
+    },
+    "tests": {
+      "passed": 3603,
+      "failed": 0,
+      "pending": 0,
+      "files": 64
+    },
+    "nodeTests": {
+      "tests": 16,
+      "pass": 15,
+      "fail": 0,
+      "skipped": 1
+    }
+  },
+  "finalSummary": {
+    "path": "artifacts/web16-source-final/summary.json",
+    "sha256": "ae77f51dcfc5206f4f33c01a528e15d3036e41cf7033b1c61dfc1cfbe0f2e8c7"
+  },
+  "initialFailure": {
+    "path": "artifacts/web16-source-first/summary.json",
+    "sha256": "a6572f2f942365bcf54409f040ed64a4634db730833894485c7f51270beb7bd0",
+    "reason": "Reviewed SQL guard rejected checkout CRLF bytes; content normalization fixed and independently tested"
+  },
+  "workflow": {
+    "actionlint": "1.7.12",
+    "status": "PASS",
+    "archiveSha256": "6e7241b51e6817ea6a047693d8e6fed13b31819c9a0dd6c5a726e1592d22f6e9",
+    "checksumVerified": true,
+    "source": "https://github.com/rhysd/actionlint/releases/tag/v1.7.12",
+    "githubHostedRun": "NOT_RUN",
+    "pushed": false
+  },
+  "diagnosis": {
+    "task": "WEB-16.1",
+    "at": "2026-10-05T19:37:15.739Z",
+    "commit": "13b7b892da98eb4207e17a1c4d883bfcb687a17a",
+    "node": "v24.14.1",
+    "platform": "win32",
+    "workingTreeDirty": true,
+    "dependencies": {
+      "next": "16.3.8",
+      "react": "19.2.7",
+      "vitest": "4.1.11",
+      "typescript": "5.9.3",
+      "eslint": "9.39.4"
+    },
+    "games": [
+      {
+        "game": "2048",
+        "build": "unity-2048-007",
+        "entry": "PRESENT",
+        "integrity": "NOT_RUN"
+      },
+      {
+        "game": "alien-run",
+        "build": "level-030",
+        "entry": "PRESENT",
+        "integrity": "NOT_RUN"
+      },
+      {
+        "game": "snake-arena",
+        "build": "snake-arena-012",
+        "entry": "PRESENT",
+        "integrity": "NOT_RUN"
+      },
+      {
+        "game": "factory-empire",
+        "build": "factory-empire-3d-023",
+        "entry": "PRESENT",
+        "integrity": "NOT_RUN"
+      }
+    ],
+    "integration": {
+      "auth": "NOT_RUN",
+      "database": "NOT_RUN",
+      "flow": "NOT_RUN",
+      "restore": "NOT_RUN",
+      "unityRuntime": "NOT_RUN"
+    },
+    "lockSha256": "5777b24270dac60b8b4a20008b10cc64d56c110d125fce54c24ed06e719fd986",
+    "localPorts": [
+      {
+        "port": 3081,
+        "status": "UNAVAILABLE"
+      },
+      {
+        "port": 54321,
+        "status": "UNAVAILABLE"
+      },
+      {
+        "port": 54324,
+        "status": "UNAVAILABLE"
+      }
+    ],
+    "docker": "UNAVAILABLE_OR_TIMEOUT",
+    "localScope": "Loopback TCP and Docker version only; does not establish service identity or healthy Auth/data"
+  },
+  "reportPrivacy": {
+    "dotenvRead": false,
+    "dockerInspect": false,
+    "credentialsInherited": false,
+    "rawLogsUploaded": false,
+    "gameSourcesOrAssetsUploaded": false,
+    "uploadedPaths": [
+      "artifacts/ci-source/summary.json",
+      "artifacts/ci-diagnostic.json"
+    ]
+  },
+  "mutations": {
+    "sourceTooling": true,
+    "gitCommits": true,
+    "migrationContent": false,
+    "operatingDb": false,
+    "flow": false,
+    "deployment": false,
+    "remoteWorkflowActivation": false,
+    "unitySource": false
+  },
+  "limits": [
+    "Source-only CI with fresh dependencies and placeholders; no operative image",
+    "Executed locally on Windows; first GitHub Ubuntu run pending",
+    "One isolated PostgreSQL test skipped without its runtime; no SQL/restore PASS claimed",
+    "Docker and loopback stack unavailable; restoration and real incident pending",
+    "Whole shared WIP preserved; only owned tooling changes committed"
+  ]
+}

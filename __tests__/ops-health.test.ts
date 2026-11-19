@@ -15,6 +15,8 @@ function heartbeat(
     last_run_at: new Date(NOW - minutesAgo * 60_000).toISOString(),
     last_status: status,
     detail,
+    last_success_at: new Date(NOW - minutesAgo * 60_000).toISOString(),
+    consecutive_failures: status === 'error' ? 1 : 0,
   }
 }
 
@@ -24,11 +26,23 @@ describe('assessCronHeartbeats', () => {
       heartbeat('process-tournaments', 5),
       heartbeat('flow-reconcile', 10),
       heartbeat('reconcile-refunds', 10),
+      heartbeat('watchdog', 5),
     ], NOW)
 
     expect(result).toHaveLength(CRON_HEALTH_RULES.length)
     expect(result.every((job) => job.state === 'healthy')).toBe(true)
     expect(result.every((job) => job.problem === null)).toBe(true)
+  })
+
+  it('does not infer processing success from a recent completion', () => {
+    const row = heartbeat('flow-reconcile', 1); row.last_success_at = new Date(NOW - 16 * 60_000).toISOString()
+    expect(assessCronHeartbeats([row], NOW)[1]).toMatchObject({ state: 'stale', critical: true })
+  })
+  it('alerts on two consecutive failures despite a recent prior success', () => {
+    const row = heartbeat('flow-reconcile', 1, 'error'); row.consecutive_failures = 2
+    expect(assessCronHeartbeats([row], NOW)[1].critical).toBe(true)
+    row.consecutive_failures = 1
+    expect(assessCronHeartbeats([row], NOW)[1].critical).toBe(false)
   })
 
   it('detecta un job que nunca registró latidos', () => {

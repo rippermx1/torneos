@@ -1,0 +1,110 @@
+{
+  "date": "2026-10-08",
+  "status": "illustrative_not_forecast",
+  "currency": "USD",
+  "days": 30,
+  "assumptions": {
+    "sessionsPerActiveDay": 2,
+    "displayOpportunitiesPerSession": 2,
+    "rewardedOpportunitiesPerSession": 1,
+    "rewardedOptIn": 0.25,
+    "eligible": 0.8,
+    "withoutAdBlock": 0.9,
+    "fill": 0.7,
+    "render": 0.95,
+    "completionForReward": 0.8
+  },
+  "rates": {
+    "low": {
+      "display": 0.5,
+      "rewarded": 2
+    },
+    "base": {
+      "display": 2,
+      "rewarded": 5
+    },
+    "high": {
+      "display": 5,
+      "rewarded": 10
+    }
+  },
+  "rows": [
+    {
+      "dau": 100,
+      "displayMonthlyImpressions": 5745.6,
+      "rewardedMonthlyImpressions": 718.2,
+      "revenues": {
+        "low": {
+          "display": 2.8728000000000002,
+          "rewarded": 1.4364000000000001,
+          "total": 4.3092
+        },
+        "base": {
+          "display": 11.491200000000001,
+          "rewarded": 3.591,
+          "total": 15.0822
+        },
+        "high": {
+          "display": 28.728,
+          "rewarded": 7.182,
+          "total": 35.91
+        }
+      }
+    },
+    {
+      "dau": 1000,
+      "displayMonthlyImpressions": 57456,
+      "rewardedMonthlyImpressions": 7182,
+      "revenues": {
+        "low": {
+          "display": 28.728,
+          "rewarded": 14.364,
+          "total": 43.092
+        },
+        "base": {
+          "display": 114.912,
+          "rewarded": 35.91,
+          "total": 150.822
+        },
+        "high": {
+          "display": 287.28,
+          "rewarded": 71.82,
+          "total": 359.1
+        }
+      }
+    },
+    {
+      "dau": 10000,
+      "displayMonthlyImpressions": 574560,
+      "rewardedMonthlyImpressions": 71820,
+      "revenues": {
+        "low": {
+          "display": 287.28,
+          "rewarded": 143.64,
+          "total": 430.92
+        },
+        "base": {
+          "display": 1149.12,
+          "rewarded": 359.1,
+          "total": 1508.22
+        },
+        "high": {
+          "display": 2872.8,
+          "rewarded": 718.2,
+          "total": 3591
+        }
+      }
+    }
+  ],
+  "baseMonthlyPerDau": 0.150822,
+  "thresholds": [
+    {
+      "incrementalMonthlyCost": 100,
+      "requiredAverageDau": 664
+    },
+    {
+      "incrementalMonthlyCost": 500,
+      "requiredAverageDau": 3316
+    }
+  ]
+}

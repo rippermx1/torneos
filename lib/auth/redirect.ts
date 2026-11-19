@@ -4,7 +4,7 @@ export function getSafeAuthRedirectPath(
   value: string | null | undefined,
   fallback = '/onboarding'
 ): string {
-  if (!value || !value.startsWith('/') || value.startsWith('//') || value.includes('\\')) {
+  if (!value || !value.startsWith('/') || value.startsWith('//') || value.includes('\\') || /[\u0000-\u001f\u007f]/.test(value)) {
     return fallback
   }
 
@@ -15,4 +15,29 @@ export function getSafeAuthRedirectPath(
   } catch {
     return fallback
   }
+}
+
+export function withAuthDestination(path: string, destination: string): string {
+  return `${path}?${new URLSearchParams({ next: getSafeAuthRedirectPath(destination, '/tournaments') })}`
+}
+
+// Unwrap once when switching from login to signup; never redirect onboarding to itself.
+export function getOnboardingReturnPath(value: unknown): string {
+  let destination = getSafeAuthRedirectPath(typeof value === 'string' ? value : null, '/tournaments')
+  if (new URL(destination, SAFE_REDIRECT_BASE).pathname === '/onboarding') {
+    destination = getSafeAuthRedirectPath(new URL(destination, SAFE_REDIRECT_BASE).searchParams.get('next'), '/tournaments')
+    if (new URL(destination, SAFE_REDIRECT_BASE).pathname === '/onboarding') return '/tournaments'
+  }
+  return destination
+}
+
+export function getOnboardingPath(value: unknown): string {
+  const destination = getOnboardingReturnPath(value)
+  return destination === '/tournaments' ? '/onboarding' : withAuthDestination('/onboarding', destination)
+}
+
+// Practice may return only to a tournament's public detail, never a game/payment URL.
+export function getTournamentReturnPath(value: unknown): string | null {
+  const destination = getSafeAuthRedirectPath(typeof value === 'string' ? value : null, '/tournaments')
+  return /^\/tournaments\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(destination) ? destination : null
 }

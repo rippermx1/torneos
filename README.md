@@ -1,112 +1,42 @@
 # TorneosPlay
 
-Plataforma de torneos competitivos de 2048 con Supabase Auth, Flow, billetera
-interna de premios/reembolsos y despliegue en Vercel.
+Plataforma comercial de torneos de **2048**, con clientes Unity WebGL y legado web.
+La web conserva la autoridad de cuentas, inscripciones, resultados y pagos.
+El cliente competitivo envía direcciones; el servidor calcula tablero y puntuación.
 
 ## Stack
 
-- Next.js 16 App Router
-- Supabase Auth + Postgres
-- Flow
-- Vercel
+- Next.js 16 App Router, React y TypeScript.
+- Supabase Auth y PostgreSQL.
+- Flow y billetera de premios/reembolsos.
+- Unity 6000.3.24f1 para `games/2048/UnityProject`.
 
-## Desarrollo local
+## Desarrollo y pruebas
 
-### 1. Instala dependencias
-
-```bash
+```powershell
 npm ci
+npm test
+npm run build -- --webpack
+npm run dev:games
 ```
 
-### 2. Configura el entorno
+La vista aislada abre `/play` en http://127.0.0.1:3080 con credenciales de ejemplo.
+Los componentes web legado se conservan; `/play/web` redirige a Unity. `/play/catalog` ofrece exclusivamente 2048.
+`npm run games:build:2048` compila y prueba Unity; las cápsulas publicadas son inmutables.
 
-La app necesita un proyecto Supabase real para probar:
+Con Docker Desktop y la configuración local preparada, `npm run local:up` inicia
+el stack completo y `npm run local:smoke` comprueba sus flujos. Revisa
+[la guía local](docs/AMBIENTE-LOCAL.md) antes de operar datos o servicios.
+El contenedor de aplicación ejecuta Next standalone y sirve el WebGL de 2048.
 
-- registro con email/password
-- inicio de sesión
-- OAuth con Google
-- rutas protegidas por sesión
+## Continuidad y despliegue
 
-El `docker-compose.yml` del repo solo ofrece Postgres + PostgREST para desarrollo
-de base de datos. No incluye Supabase Auth ni providers OAuth.
+Lee [STATUS](docs/STATUS.md), [contrato Unity](docs/UNITY-GAMES.md) y
+[contexto para continuar](docs/CONTEXTO-PARA-CONTINUAR.md).
+La limpieza del 2026-11-06 retira los demás juegos y conserva el historial SQL
+para no alterar instalaciones existentes. [Alcance y validación](docs/LIMPIEZA-SOLO-2048.md).
 
-Usa `.env.local` con:
-
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` o `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `SUPABASE_SECRET_KEY` o `SUPABASE_SERVICE_ROLE_KEY`
-- `APP_URL=http://localhost:3001`
-
-### 3. Prepara usuarios de prueba
-
-Usa un proyecto Supabase separado de producción y define explícitamente el
-proyecto y la contraseña de las cuentas sintéticas:
-
-Añade a `.env.local`:
-
-```dotenv
-CONFIRM_SUPABASE_PROJECT_REF=tu_project_ref
-SUPABASE_E2E_PASSWORD=una_clave_de_pruebas_unica
-```
-
-Luego ejecuta:
-
-```bash
-npm run setup:test-users
-```
-
-El script deja listos:
-
-- `admin.local.e2e@example.com`
-- `jugador1.local.e2e@example.com`
-- `jugador2.local.e2e@example.com`
-
-Todos usan la contraseña definida en `SUPABASE_E2E_PASSWORD`. El script no
-incluye una contraseña predeterminada y se niega a ejecutarse contra el
-proyecto productivo conocido.
-
-### 4. Levanta la app
-
-```bash
-npm run dev
-```
-
-Abre [http://localhost:3001](http://localhost:3001).
-
-Para una validación rápida completa:
-
-```bash
-npm run smoke:local
-```
-
-Los smoke tests y simuladores aplican la misma confirmación de proyecto y solo
-aceptan un Supabase no productivo.
-
-## Pruebas manuales recomendadas
-
-### Auth
-
-- crear cuenta en `/sign-up`
-- confirmar email con `/auth/confirm`
-- iniciar sesión en `/sign-in`
-- restablecer contraseña en `/sign-in/forgot`
-
-### Admin
-
-- iniciar sesión con el usuario admin
-- crear torneo en `/admin/tournaments/new`
-- revisar listado en `/admin/tournaments`
-
-### Simulación de torneo
-
-- iniciar sesión con 2 o más jugadores
-- inscribir usuarios al mismo torneo con checkout directo o fixtures
-- inscribir usuarios al mismo torneo
-- iniciar partidas desde `/tournaments/[id]/play`
-
-## Producción
-
-- dominio canónico: [https://www.torneosplay.cl](https://www.torneosplay.cl)
-- deploys: Vercel
-- scheduler principal: Supabase Cron; GitHub Actions y Vercel como respaldo
-- checklist: [docs/production.md](/C:/torneos/docs/production.md:1)
+Desarrollo cloud: [torneos-dev](https://torneos-dev.vercel.app), separado de producción.
+La configuración de empaquetado publica sólo 2048. Producción:
+[TorneosPlay](https://www.torneosplay.cl) y [guía de operación](docs/production.md).
+Compilación, pruebas automáticas, aceptación humana y despliegue se registran por separado.

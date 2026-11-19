@@ -1,0 +1,123 @@
+{
+  "date": "2026-10-02",
+  "environment": "cloud-development",
+  "status": "DEPLOYED_VERIFIED",
+  "url": "https://torneos-dev.vercel.app",
+  "deploymentId": "dpl_3VxaPf5t4yAGb2TRX28GjgJpJXFH",
+  "vercelStatus": "READY",
+  "vercelProjectId": "prj_QHiZYuYkztFToMGmwhPsyOx9nVdG",
+  "vercelProjectName": "torneos-dev",
+  "vercelTarget": "production in isolated development project; commercial project not targeted",
+  "supabase": {
+    "name": "torneos-dev",
+    "projectRef": "jnoyjewsqbooqaiighcs",
+    "organization": "nebutechlabs",
+    "region": "us-east-1",
+    "migrationCount": 59,
+    "publicTablesWithoutRls": 0,
+    "authRedirect": "https://torneos-dev.vercel.app/**",
+    "securityAdvisors": {
+      "warning": 0,
+      "error": 0,
+      "infoFindings": 7
+    }
+  },
+  "production": {
+    "vercelProjectId": "prj_JVade2zbENRvNUxfmXEQtX2QTuIh",
+    "observedDeploymentId": "dpl_CTvTHEAXFAXS3oXuRWqpEem38jZT",
+    "supabaseProjectRef": "baeylvoipmazcthnwxmz",
+    "mutationsPerformed": false
+  },
+  "package": {
+    "directory": "artifacts/cloud-development/2026-10-02T22-01-11-197Z/package",
+    "manifest": "artifacts/cloud-development/2026-10-02T22-01-11-197Z/package-manifest.json",
+    "archive": "artifacts/cloud-development/2026-10-02T22-01-11-197Z/torneos-dev-source.zip",
+    "sourceHead": "e7be699",
+    "sourceBranch": "codex/2048-clean-gameplay",
+    "includesWorkingChanges": true,
+    "commitOrPushPerformed": false,
+    "games": {
+      "2048": "unity-2048-007",
+      "factory-empire": "factory-empire-3d-009"
+    },
+    "excludes": [
+      "credentials",
+      "UnityProject",
+      "KayKit",
+      "LocalArt",
+      "Unity caches",
+      "superseded WebGL builds",
+      "Ted Runner",
+      "Snake WebGL"
+    ]
+  },
+  "validation": {
+    "webTests": {
+      "passed": 603,
+      "files": 68
+    },
+    "cloudConfigurationTests": {
+      "passed": 11
+    },
+    "localFlowAfterTracingFix": {
+      "passed": 6
+    },
+    "lint": "PASS",
+    "localNextTypeScriptBuild": "PASS",
+    "vercelNextTypeScriptBuild": "PASS",
+    "npmAudit": "0 vulnerabilities reported during installs",
+    "httpAssetChecks": {
+      "passed": 22,
+      "report": "artifacts/cloud-development/http-smoke.json"
+    },
+    "cronEndpoints": {
+      "passed": 4,
+      "unauthorizedRejected": true,
+      "report": "artifacts/cloud-development/cron-smoke.json"
+    },
+    "clientSecretScan": {
+      "files": 53,
+      "serverSecretLeaks": 0
+    },
+    "browser": {
+      "playerLogin": "PASS",
+      "unity2048": {
+        "load": "PASS",
+        "start": "PASS",
+        "movement": "observed shift/spawn; no competitive tournament E2E"
+      },
+      "factoryEmpire": {
+        "load": "PASS",
+        "extraction": "0 -> 33 ferrite observed"
+      },
+      "humanAcceptance": "NOT_RUN"
+    },
+    "supabaseCron": {
+      "configuredJobs": 4,
+      "report": "artifacts/cloud-development/scheduler.log"
+    }
+  },
+  "accounts": {
+    "player": "jugador.dev@example.com",
+    "operator": "operador.dev@example.com",
+    "passwordFile": ".env.cloud-test-users.local",
+    "operatorMfa": "requires owner enrollment",
+    "kycApproved": false,
+    "syntheticWalletFunds": false
+  },
+  "limitations": {
+    "flow": "sandbox URL; credentials absent; checkout disabled",
+    "resend": "disabled",
+    "google": "disabled",
+    "tedRunner": "excluded under AGENTS.md local-art restriction",
+    "snakeArena": "persistent authoritative room server not adapted or deployed",
+    "competitiveE2E": "NOT_RUN",
+    "physicalPhone": "NOT_RUN"
+  },
+  "artifacts": {
+    "login": "artifacts/cloud-development/login-cloud.png",
+    "unity2048": "artifacts/cloud-development/2048-cloud.png",
+    "factoryEmpire": "artifacts/cloud-development/factory-cloud.png",
+    "deployment": "artifacts/cloud-development/deployment-metadata.json"
+  }
+}

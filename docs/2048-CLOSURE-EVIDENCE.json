@@ -1,0 +1,42 @@
+{
+  "date": "2026-10-01",
+  "task": "G2048-04.1",
+  "finding": "A01",
+  "status": "IMPLEMENTED_API_REGRESSIONS_VERIFIED",
+  "workspace": "C:/torneos",
+  "branch": "codex/2048-clean-gameplay",
+  "report": "docs/2048-CLOSURE-IMPLEMENTATION.md",
+  "behavior": {
+    "confirmation_source": "persisted UPDATE RETURNING or ownership-scoped recovery SELECT",
+    "unknown_result_status": 503,
+    "unknown_result_code": "GAME_CLOSURE_UNCONFIRMED",
+    "blind_write_retries": false,
+    "score_source": "returned persisted row, not initial read",
+    "concurrent_terminal_reason_preserved": true,
+    "ownership_filters": ["id", "tournament_id", "user_id"],
+    "write_condition": "status=active",
+    "routes": ["timeout", "start expiration", "move deadline expiration", "move window expiration"]
+  },
+  "verification": {
+    "route_regressions": {"passed": 27, "total": 27, "file": "__tests__/game-closure-routes.test.ts", "database": "mocked"},
+    "real_supabase_client": {"passed": 3, "total": 3, "file": "__tests__/game-closure-postgrest.test.ts", "transport": "local Node HTTP fixture", "database": "none"},
+    "full_web_suite": {"passed": 355, "total": 355, "success": true, "report": "artifacts/2048-cross-audit/closure-all-tests.json", "scope": "shared checkout including prior work"},
+    "typescript": "PASS",
+    "eslint_affected": "PASS",
+    "unity": "NOT_RERUN_NO_UNITY_EDITS",
+    "next_production_build": "NOT_RUN",
+    "competitive_browser_e2e": "PENDING_G2048_04_4"
+  },
+  "boundaries": {
+    "schema_changes": false,
+    "real_database_changes": false,
+    "rpc_changes": false,
+    "flow_changes": false,
+    "unity_build_changes": false,
+    "local_3081_repackaged": false,
+    "external_deployment": false,
+    "unrelated_wip_preserved": true,
+    "terminal_score_immutability": "NOT_PROVEN: historical record_game_move RPC writes by ID without active-status guard; late in-flight move interleaving remains for 04.4"
+  },
+  "next_task": "G2048-04.2"
+}

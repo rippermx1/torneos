@@ -1,0 +1,52 @@
+{
+  "date": "2026-10-01",
+  "task": "G2048-04.2",
+  "finding": "A02",
+  "status": "IMPLEMENTED_SESSION_API_AND_HOST_FIXTURES_VERIFIED",
+  "workspace": "C:/torneos",
+  "branch": "codex/2048-clean-gameplay",
+  "base_commit": "d2e5d42",
+  "report": "docs/2048-CLOCK-IMPLEMENTATION.md",
+  "behavior": {
+    "server_time_field": "serverNow ISO",
+    "authoritative_deadline_field": "deadlineAt ISO",
+    "elapsed_clock": "performance.now",
+    "resync_events": ["explicit start or recovery", "confirmed move", "visible visibilitychange", "persisted pageshow", "local countdown exhausted"],
+    "live_45_seconds_allows_moves": true,
+    "uncertain_move_remains_locked_on_live_time_response": true,
+    "unknown_timeout_not_retried": true,
+    "one_request_in_flight": true,
+    "queued_resync_coalesced": true,
+    "server_confirms_expiration": true,
+    "legacy_api_without_serverNow": "wall time sampled once per response; initial skew guarantee requires updated API",
+    "lightweight_web_client": "existing consumer fields preserved; its timer implementation unchanged"
+  },
+  "verification": {
+    "new_clock_session_tests": {"passed": 18, "total": 18},
+    "new_host_lifecycle_tests": {"passed": 3, "total": 3, "environment": "React hooks and DOM event targets simulated"},
+    "new_route_clock_tests": {"passed": 5, "total": 5, "database": "mocked"},
+    "updated_session_regression": "45 seconds active response unlocks; next direction accepted",
+    "full_web_suite": {"passed": 382, "total": 382, "files": 48, "success": true, "report": "artifacts/2048-clock/all-tests.json", "scope": "shared checkout including prior work"},
+    "scoped_index_session_host_suite": {"passed": 30, "total": 30, "success": true, "report": "artifacts/2048-clock/index-tests.json", "scope": "isolated copies of staged source and tests; prior GUI deltas excluded"},
+    "typescript": "PASS",
+    "eslint_affected": "PASS",
+    "unity": "NOT_RERUN_NO_UNITY_EDITS",
+    "next_production_build": "NOT_RUN",
+    "browser": "NOT_RUN_THIS_INCREMENT",
+    "competitive_authenticated_e2e": "PENDING_G2048_04_4",
+    "physical_mobile": "PENDING_G2048_08_1"
+  },
+  "boundaries": {
+    "schema_changes": false,
+    "real_database_changes": false,
+    "rpc_changes": false,
+    "flow_changes": false,
+    "unity_build_changes": false,
+    "local_3081_repackaged": false,
+    "external_deployment": false,
+    "unrelated_wip_preserved": true,
+    "terminal_recovery": "PENDING_G2048_04_3",
+    "late_move_rpc_integrity": "NOT_PROVEN_REMAINS_G2048_04_4"
+  },
+  "next_task": "G2048-04.3"
+}

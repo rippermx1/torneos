@@ -1,0 +1,258 @@
+{
+  "date": "2026-10-15",
+  "timezone": "America/Santiago",
+  "scope": "Business/product/controls review with read-only cloud metadata and aggregates; not a financial-statement audit or full penetration test.",
+  "userConfirmed": {
+    "initialMarket": "Chile, expansion later to Latin America",
+    "commercialMetricsMeasured": false
+  },
+  "workspace": {
+    "path": "C:/torneos",
+    "branch": "codex/2048-clean-gameplay",
+    "head": "c8d7e7515d18911de42099d8fe24ac8e7cf10d63",
+    "initialGitStatusEntries": 411,
+    "sharedWIPPreserved": true
+  },
+  "financialCandidate": {
+    "path": "C:/Users/valde/.codex/worktrees/real-money-access/torneos",
+    "branch": "codex/real-money-access",
+    "head": "1005495124a73e761a3f61da5ae7b06f195ed884",
+    "cleanWhenChecked": true
+  },
+  "cloud": {
+    "commercialNamedProject": {
+      "name": "torneos",
+      "ref": "baeylvoipmazcthnwxmz",
+      "status": "ACTIVE_HEALTHY",
+      "checkedAtUTC": "2026-10-15 18:51:20.670058+00",
+      "authenticatedCanInsertRegistrations": true,
+      "authenticatedCanSelectPublicGameSeed": true,
+      "registrationPolicy": [
+        {
+          "cmd": "INSERT",
+          "name": "Usuario se inscribe",
+          "qual": null,
+          "check": "((user_id = ( SELECT auth.uid() AS uid)) AND private.current_user_has_role('user'::app_role))",
+          "roles": [
+            "authenticated"
+          ],
+          "table": "registrations"
+        }
+      ],
+      "businessTriggerNames": [],
+      "counts": {
+        "tournaments": 2,
+        "registrations": 2,
+        "withdrawals": 0,
+        "refundAttempts": 0
+      },
+      "paymentAttempts": 0,
+      "tournamentSummary": [
+        {
+          "count": 2,
+          "status": "completed",
+          "is_test": true,
+          "game_type": "2048_score",
+          "entry_fee_cents": 0
+        }
+      ],
+      "securityAdvisorSummary": [
+        {
+          "name": "rls_enabled_no_policy",
+          "level": "INFO",
+          "count": 7,
+          "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy"
+        },
+        {
+          "name": "auth_leaked_password_protection",
+          "level": "WARN",
+          "count": 1,
+          "remediation": "https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection"
+        }
+      ]
+    },
+    "developmentProject": {
+      "name": "torneos-dev",
+      "ref": "jnoyjewsqbooqaiighcs",
+      "status": "ACTIVE_HEALTHY",
+      "checkedAtUTC": "2026-10-15 18:51:24.690907+00",
+      "authenticatedCanInsertRegistrations": false,
+      "authenticatedCanSelectPublicGameSeed": false,
+      "registrationPolicy": [],
+      "businessTriggerNames": [
+        "guard_commercial_registration",
+        "guard_2048_identity",
+        "guard_competitive_game_entry"
+      ],
+      "counts": {
+        "tournaments": 1,
+        "registrations": 1,
+        "withdrawals": 0,
+        "refundAttempts": 0
+      },
+      "paymentAttempts": 0,
+      "cashPolicy": {
+        "paused": true,
+        "maxExposureCents": null,
+        "additionalReserveCents": null,
+        "updatedAtUTC": "2026-10-05 21:16:53.616093+00"
+      },
+      "securityAdvisorSummary": [
+        {
+          "name": "rls_enabled_no_policy",
+          "level": "INFO",
+          "count": 30,
+          "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy"
+        },
+        {
+          "name": "auth_leaked_password_protection",
+          "level": "WARN",
+          "count": 1,
+          "remediation": "https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection"
+        }
+      ]
+    }
+  },
+  "publicHTTP": [
+    {
+      "url": "https://www.torneosplay.cl",
+      "status": 200,
+      "title": "TorneosPlay",
+      "containsPayRegistrationCopy": true
+    },
+    {
+      "url": "https://www.torneosplay.cl/play",
+      "status": 200,
+      "title": "Práctica gratis — TorneosPlay"
+    },
+    {
+      "url": "https://www.torneosplay.cl/tournaments",
+      "status": 200,
+      "title": "Torneos — TorneosPlay"
+    },
+    {
+      "url": "https://www.torneosplay.cl/legal/privacidad",
+      "status": 200,
+      "title": "Política de Privacidad — TorneosPlay",
+      "statesNoThirdPartyTrackingOrBehavioralAds": true
+    },
+    {
+      "url": "https://www.torneosplay.cl/play/catalog",
+      "status": 404
+    },
+    {
+      "url": "https://rm12-torneos-dev.vercel.app",
+      "status": 200,
+      "title": "TorneosPlay",
+      "containsPayRegistrationCopy": true
+    },
+    {
+      "url": "https://rm12-torneos-dev.vercel.app/play/catalog",
+      "status": 404
+    },
+    {
+      "url": "https://torneos-dev.vercel.app/play/catalog",
+      "status": 200,
+      "title": "Juegos y práctica gratis — TorneosPlay"
+    }
+  ],
+  "httpLimit": "GET and HTML response evidence only; no game runtime, authenticated transaction or performance acceptance.",
+  "localProductionPreflight": {
+    "command": "node scripts/check-production-env.mjs",
+    "exitCode": 1,
+    "issues": [
+      "PRODUCTION_SUPABASE_PROJECT_REF missing",
+      "COMPANY_LEGAL_NAME missing",
+      "COMPANY_RUT missing",
+      "APP_URL not HTTPS and points to localhost",
+      "FLOW_API_BASE points to sandbox"
+    ],
+    "warnings": [
+      "legacy service role key",
+      "SENTRY_DSN missing",
+      "NEXT_PUBLIC_POSTHOG_KEY missing"
+    ],
+    "limit": "Local process configuration only, not Vercel private environment."
+  },
+  "newLocalTests": [
+    {
+      "path": "C:/torneos",
+      "files": 6,
+      "testsPassed": 29,
+      "exitCode": 0,
+      "filesRun": [
+        "tournament-finance",
+        "flow-settlement",
+        "tournament-refunds",
+        "accounting-ledger",
+        "accounting-effective",
+        "2048-ranking-adversarial"
+      ]
+    },
+    {
+      "path": "C:/Users/valde/.codex/worktrees/real-money-access/torneos",
+      "files": 9,
+      "testsPassed": 83,
+      "exitCode": 0,
+      "filesRun": [
+        "tournament-finance",
+        "flow-settlement",
+        "tournament-refunds",
+        "withdrawal-request",
+        "cash-reconciliation",
+        "cash-checkout",
+        "rm12-scheduler-monitor",
+        "rm13-recovery",
+        "rm14-auth"
+      ]
+    }
+  ],
+  "firstRealAccountingClose": {
+    "evidence": "artifacts/accounting/primer-cierre-2026-09/pre-cierre.json",
+    "proposedPeriod": "2026-09",
+    "reviewed": false,
+    "closed": false,
+    "externalBankAndFlowBalances": null,
+    "scope": "Current local file, not external bank/SII validation."
+  },
+  "notPerformed": [
+    "Cloud mutations or migrations",
+    "Provider activation or contract acceptance",
+    "Payments/refunds/transfers",
+    "Messages to third parties",
+    "Deployments",
+    "Unity/Next build or browser gameplay testing",
+    "Financial-statement certification"
+  ],
+  "decisions": {
+    "realMoneyLaunch": "NO_GO",
+    "freeDemandMeasurement": "Proceed within existing authorized scope when implemented",
+    "adsActivation": "Conditional on provider acceptance, privacy and integration verification"
+  },
+  "artifacts": [
+    "docs/AUDITORIA-NEGOCIO-Y-MONETIZACION-2026-10-15.md",
+    "docs/AUDITORIA-NEGOCIO-Y-MONETIZACION-2026-10-15.modelo.json"
+  ],
+  "providerEnvironment": {
+    "source": "docs/RM12-STAGING-Y-ENSAYO.md and docs/PLAN-OPERACION-DINERO-REAL.md:166",
+    "documentedFlowAccountEnvironment": "production_only",
+    "liveProviderAccountConfigurationChecked": false,
+    "requirement": "Confirm available environment and define amounts/payer with concrete authorization before any real-money rehearsal."
+  },
+  "artifactValidation": {
+    "arithmeticAndDocumentChecks": 51,
+    "failures": 0,
+    "localLinksChecked": 20,
+    "externalLinksListed": 19,
+    "independentReviewAreas": [
+      "finance/accounting",
+      "product/marketing/measurement",
+      "advertising policies"
+    ],
+    "materialReviewCorrectionsApplied": [
+      "Flow environment documented as production only; local sandbox configuration is not account availability.",
+      "Calendar Chile D1/D7 maturity and observed identity defined.",
+      "Incremental ad effect requires valid comparison; descriptive pilot permitted."
+    ]
+  }
+}

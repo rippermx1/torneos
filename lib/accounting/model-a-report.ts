@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { buildLedgerSnapshot, type JournalLine } from './ledger'
 import { parseDateTimeLocalToIso } from '@/lib/utils'
 import { calculateIvaIncludedBreakdown } from '@/lib/tournament/finance'
 import { PILOT_BUSINESS_RULES } from '@/lib/business/rules'
@@ -9,6 +10,7 @@ import type {
   Registration,
   WalletTransaction,
   WithdrawalRequest,
+  PrizeReview,
 } from '@/types/database'
 
 const CHILE_TIME_ZONE = 'America/Santiago'
@@ -66,6 +68,7 @@ export interface AccountingPeriodRow {
   platformFeeNetCents: number
   platformFeeIvaCents: number
   prizeCreditsCents: number
+  prizeAccruedCents?: number
   refundsCents: number
   // Reversas Flow COMPLETADAS de pagos asentados (torneos cancelados): devuelven
   // cash al medio de pago original, así que se descuentan del margen efectivo.
@@ -99,6 +102,7 @@ export interface AccountingPeriodRow {
 export interface AccountingSnapshot {
   generatedAt: string
   prizeSubledgerLiabilityCents: number
+  uncreditedPrizeLiabilityCents?: number
   usersWithPrizeMovements: number
   pendingWithdrawalsCount: number
   pendingWithdrawalsCents: number
@@ -280,6 +284,7 @@ async function fetchAll<T>(
     const { data, error } = await supabase
       .from(table)
       .select(select)
+      .order('id', { ascending: true })
       .range(from, from + pageSize - 1)
 
     if (error) throw new Error(`${String(table)}: ${error.message}`)
@@ -304,6 +309,9 @@ function addFlowAttempt(row: AccountingPeriodRow, attempt: FlowPaymentAttempt) {
     row.flowEntryNetCents += attempt.net_amount_cents
     row.flowUserFeeCents += attempt.user_fee_cents
     row.f29GrossSalesCents += attempt.charged_amount_cents
+    const tax = calculateIvaIncludedBreakdown(attempt.charged_amount_cents)
+    row.f29NetSalesCents += tax.netCents
+    row.f29IvaDebitCents += tax.ivaCents
   }
 
   switch (attempt.status) {
@@ -311,6 +319,7 @@ function addFlowAttempt(row: AccountingPeriodRow, attempt: FlowPaymentAttempt) {
       row.flowPaidCount += 1
       break
     case 'pending':
+    case 'unknown':
       row.flowPendingCount += 1
       break
     case 'rejected':
@@ -383,7 +392,7 @@ function addWithdrawal(
   getOrCreatePeriod(periods, periodKey(withdrawal.created_at)).withdrawalRequestedCents +=
     withdrawal.amount_cents
 
-  if (withdrawal.reviewed_at && ['approved', 'paid'].includes(withdrawal.status)) {
+  if (withdrawal.reviewed_at && ['approved', 'transferring', 'reconciling', 'paid'].includes(withdrawal.status)) {
     getOrCreatePeriod(periods, periodKey(withdrawal.reviewed_at)).withdrawalApprovedCents +=
       withdrawal.amount_cents
   }
@@ -402,7 +411,8 @@ function addWithdrawal(
 function finalizePeriod(
   row: AccountingPeriodRow,
   allWalletTransactions: WalletTransaction[],
-  allWithdrawals: WithdrawalRequest[]
+  allWithdrawals: WithdrawalRequest[],
+  reviews: PrizeReview[] = []
 ) {
   // A4: Calcular el bruto Flow (IVA-incluido) en una sola pasada y luego
   // extraer net/IVA con calculateIvaIncludedBreakdown para garantizar
@@ -429,18 +439,15 @@ function finalizePeriod(
     grossSalesCents: row.f29GrossSalesCents,
     creditNoteGrossCents: row.f29CreditNoteGrossCents,
     economicRefundGrossCents: row.flowRefundsCents + row.legacyTournamentRefundsCents,
-    prizesAccruedCents: row.prizeCreditsCents,
+    prizesAccruedCents: row.prizeAccruedCents ?? row.prizeCreditsCents,
     flowFeeNetCents: row.estimatedFlowFeeNetCents,
     refundFeeNetCents: row.estimatedRefundFeeNetCents,
   })
-  row.f29NetSalesCents = canonical.netSalesCents
-  row.f29IvaDebitCents = canonical.ivaDebitCents
-  row.f29CreditNoteNetCents = canonical.creditNoteNetCents
-  row.f29CreditNoteIvaCents = canonical.creditNoteIvaCents
-  row.f29NetIvaDebitCents = canonical.netIvaDebitCents
+  // Sum document rounding; rounding an aggregate month can differ from the journal.
+  row.f29NetIvaDebitCents = row.f29IvaDebitCents - row.f29CreditNoteIvaCents
   // El IVA de las facturas Flow y de otros proveedores se concilia contra el
   // RCV. Las estimaciones de tarifa NO se descuentan automaticamente del F29.
-  row.f29IvaPayableBeforeOtherCreditsCents = canonical.netIvaDebitCents
+  row.f29IvaPayableBeforeOtherCreditsCents = row.f29NetIvaDebitCents
   row.netSalesAfterRefundsCents = canonical.netSalesAfterRefundsCents
   row.accruedContributionCents = canonical.accruedContributionCents
 
@@ -462,11 +469,18 @@ function finalizePeriod(
     0
   )
 
+  // Awards awaiting release remain an obligation; do not count them twice once credited.
+  row.closingWalletLiabilityCents += reviews.filter(r => new Date(r.created_at).getTime() < endMs).reduce((sum, r) => {
+    const credited = allWalletTransactions.filter(tx => tx.type === 'prize_credit' && tx.user_id === r.user_id && tx.reference_id === r.tournament_id && new Date(tx.created_at).getTime() < endMs)
+      .reduce((n, tx) => n + tx.amount_cents, 0)
+    return sum + Math.max(0, r.amount_cents - credited)
+  }, 0)
+
   row.closingPendingWithdrawalsCents = allWithdrawals
     .filter((withdrawal) => {
       const createdMs = new Date(withdrawal.created_at).getTime()
       if (createdMs >= endMs) return false
-      if (withdrawal.status === 'pending' || withdrawal.status === 'approved') return true
+      if (['pending', 'claimed', 'approved', 'transferring', 'reconciling'].includes(withdrawal.status)) return true
       const terminalAt = withdrawal.status === 'paid' ? withdrawal.paid_at : withdrawal.reviewed_at
       if (!terminalAt) return true
       return new Date(terminalAt).getTime() >= endMs
@@ -614,6 +628,21 @@ function runReconciliation(
   }
 }
 
+export function calculateJournalContribution(lines: JournalLine[]) {
+  const result = new Map<string, { revenueCents: number; contributionCents: number }>()
+  for (const line of lines) {
+    const row = result.get(line.period) ?? { revenueCents: 0, contributionCents: 0 }
+    const amount = line.credit_cents - line.debit_cents
+    if (['410100', '410200'].includes(line.account_code)) {
+      row.revenueCents += amount
+      row.contributionCents += amount
+    }
+    if (['510100', '520100', '520200', '520300'].includes(line.account_code)) row.contributionCents += amount
+    result.set(line.period, row)
+  }
+  return result
+}
+
 export async function buildModeloAAccountingReport(
   supabase: AdminSupabase
 ): Promise<AccountingReport> {
@@ -625,6 +654,8 @@ export async function buildModeloAAccountingReport(
     prizeLiabilityResult,
     testTournaments,
     flowRefunds,
+    ledger,
+    prizeReviews,
   ] = await Promise.all([
     fetchAll<FlowPaymentAttempt>(
       supabase,
@@ -655,6 +686,8 @@ export async function buildModeloAAccountingReport(
       'flow_refund_attempts',
       'id, tournament_id, user_id, flow_payment_attempt_id, refund_commerce_order, flow_refund_token, flow_refund_order, amount_cents, amount_pesos, receiver_email, status, error_message, tax_document_status, tax_document_number, tax_document_issued_at, tax_document_notes, created_at, settled_at'
     ),
+    buildLedgerSnapshot(supabase),
+    fetchAll<PrizeReview>(supabase, 'prize_reviews', 'id, tournament_id, user_id, amount_cents, status, created_at'),
   ])
 
   if (prizeLiabilityResult.error) {
@@ -662,12 +695,15 @@ export async function buildModeloAAccountingReport(
   }
 
   const isTestTournamentIds = new Set(testTournaments)
+  const realAttempts = flowAttempts.filter((a) => a.payment_method !== 'simulation' && !isTestTournamentIds.has(a.tournament_id ?? ''))
+  const realAttemptIds = new Set(realAttempts.map((a) => a.id))
+  const realRefunds = flowRefunds.filter((r) => realAttemptIds.has(r.flow_payment_attempt_id ?? '') && !isTestTournamentIds.has(r.tournament_id ?? ''))
 
   const periods = new Map<string, AccountingPeriodRow>()
   const periodUsers = new Map<string, Set<string>>()
   const periodTournaments = new Map<string, Set<string>>()
 
-  for (const attempt of flowAttempts) {
+  for (const attempt of realAttempts) {
     const period = periodKey(attempt.settled_at ?? attempt.created_at)
     addFlowAttempt(getOrCreatePeriod(periods, period), attempt)
   }
@@ -679,15 +715,29 @@ export async function buildModeloAAccountingReport(
     addRegistration(getOrCreatePeriod(periods, period), registration, periodUsers, periodTournaments)
   }
 
-  for (const tx of walletTransactions) {
-    const period = periodKey(tx.created_at)
-    addWalletTransaction(getOrCreatePeriod(periods, period), tx, isTestTournamentIds)
+  const reviewedAwards = new Set(prizeReviews.map(r => `${r.user_id}:${r.tournament_id}`))
+  const uncreditedPrizeLiabilityCents = prizeReviews.reduce((sum, r) => {
+    const credited = walletTransactions.filter(tx => tx.type === 'prize_credit' && tx.user_id === r.user_id && tx.reference_id === r.tournament_id).reduce((n, tx) => n + tx.amount_cents, 0)
+    return sum + Math.max(0, r.amount_cents - credited)
+  }, 0)
+  for (const r of prizeReviews) {
+    const row = getOrCreatePeriod(periods, periodKey(r.created_at))
+    row.prizeAccruedCents = (row.prizeAccruedCents ?? 0) + r.amount_cents
   }
+  for (const tx of walletTransactions) {
+    const row = getOrCreatePeriod(periods, periodKey(tx.created_at))
+    addWalletTransaction(row, tx, isTestTournamentIds)
+    if (tx.type === 'prize_credit' && !isTestTournamentIds.has(tx.reference_id ?? '') && !reviewedAwards.has(`${tx.user_id}:${tx.reference_id}`)) {
+      row.prizeAccruedCents = (row.prizeAccruedCents ?? 0) + tx.amount_cents
+    }
+  }
+  // Release in a later period changes availability, never re-accrues the award.
+  for (const row of periods.values()) row.prizeAccruedCents ??= 0
 
   // La devolucion economica se reconoce cuando Flow la completa. La rebaja del
   // IVA se reconoce en la fecha de la nota de credito, que puede caer en otro mes.
   const refundedAttemptIds = new Set<string>()
-  for (const refund of flowRefunds) {
+  for (const refund of realRefunds) {
     if (refund.status !== 'completed') continue
     if (!refund.flow_payment_attempt_id) continue
     if (refundedAttemptIds.has(refund.flow_payment_attempt_id)) continue
@@ -701,6 +751,9 @@ export async function buildModeloAAccountingReport(
       const taxPeriod = periodKey(refund.tax_document_issued_at)
       const taxRow = getOrCreatePeriod(periods, taxPeriod)
       taxRow.f29CreditNoteGrossCents += refund.amount_cents
+      const tax = calculateIvaIncludedBreakdown(refund.amount_cents)
+      taxRow.f29CreditNoteNetCents += tax.netCents
+      taxRow.f29CreditNoteIvaCents += tax.ivaCents
       taxRow.documentedFlowRefundsCents += refund.amount_cents
     } else {
       refundRow.undocumentedFlowRefundsCents += refund.amount_cents
@@ -711,10 +764,17 @@ export async function buildModeloAAccountingReport(
     addWithdrawal(periods, withdrawal)
   }
 
+  for (const line of ledger.journalLines) getOrCreatePeriod(periods, line.period)
+  const earned = calculateJournalContribution(ledger.journalLines)
+
   for (const [period, row] of periods) {
     row.uniqueUsers = periodUsers.get(period)?.size ?? 0
     row.tournamentsWithRevenue = periodTournaments.get(period)?.size ?? 0
-    finalizePeriod(row, walletTransactions, withdrawals)
+    finalizePeriod(row, walletTransactions, withdrawals, prizeReviews)
+    const result = earned.get(period)
+    // Tax/cash columns retain their own dates. Only the journal defines earned income.
+    row.netSalesAfterRefundsCents = result?.revenueCents ?? 0
+    row.accruedContributionCents = result?.contributionCents ?? 0
   }
 
   const latestBalanceByUser = new Map<string, WalletTransaction>()
@@ -727,14 +787,14 @@ export async function buildModeloAAccountingReport(
 
   const prizeLiability = (prizeLiabilityResult.data ?? {}) as Partial<PrizeLiabilityRow>
   const pendingWithdrawals = withdrawals.filter((withdrawal) =>
-    withdrawal.status === 'pending' || withdrawal.status === 'approved'
+    ['pending', 'claimed', 'approved', 'transferring', 'reconciling'].includes(withdrawal.status)
   )
   const reconciliation = runReconciliation(
-    flowAttempts,
+    realAttempts,
     registrations,
     walletTransactions,
     withdrawals,
-    flowRefunds
+    realRefunds
   )
   const generatedAt = new Date().toISOString()
 
@@ -744,16 +804,17 @@ export async function buildModeloAAccountingReport(
     reconciliation,
     notes: [
       'F29: el total de cada voucher Flow confirmado es venta afecta con precio final IVA incluido. El premio es gasto y no rebaja el debito fiscal.',
-      'Una devolucion reduce el resultado cuando Flow la completa, pero solo reduce el IVA en el periodo de la nota de credito registrada.',
+      'Devengo desde el journal: la devolución previa al servicio reduce ingreso diferido; después del servicio reduce ingreso. El IVA se rebaja con la nota de crédito.',
       'La comision Flow y su IVA son estimaciones de gestion. El credito fiscal se incorpora al F29 unicamente al conciliar la factura real contra el RCV.',
-      'P&L devengado: el premio se reconoce al adjudicarse y crea un pasivo. La transferencia bancaria solo liquida ese pasivo; no vuelve a crear gasto.',
+      'Contribución de torneos desde el journal (incluye provisiones pendientes y sus reversas). Resultado empresarial, gastos y cierres: /admin/accounting. El premio adjudicado crea un pasivo; transferirlo no crea otro gasto.',
       'Las recompensas acumulables estan desactivadas para el piloto. Los movimientos historicos se conservan para respetar obligaciones ya otorgadas.',
       'Torneos is_test y pagos simulation quedan fuera del P&L y del F29 interno.',
     ],
     rows: [...periods.values()].sort((left, right) => right.period.localeCompare(left.period)),
     snapshot: {
       generatedAt,
-      prizeSubledgerLiabilityCents: [...latestBalanceByUser.values()].reduce(
+      uncreditedPrizeLiabilityCents,
+      prizeSubledgerLiabilityCents: uncreditedPrizeLiabilityCents + [...latestBalanceByUser.values()].reduce(
         (total, tx) => total + tx.balance_after_cents,
         0
       ),
@@ -774,7 +835,7 @@ export async function buildModeloAAccountingReport(
 }
 
 export function centsToPesos(cents: number) {
-  return Math.round(cents / 100)
+  return cents / 100
 }
 
 export function accountingReportToCsv(report: AccountingReport): string {
@@ -863,7 +924,7 @@ export function accountingReportToCsv(report: AccountingReport): string {
         centsToPesos(row.platformFeeNetCents),
         centsToPesos(row.platformFeeIvaCents),
         centsToPesos(row.prizeCreditsCents),
-        centsToPesos(row.prizeCreditsCents),
+        centsToPesos(row.prizeAccruedCents ?? row.prizeCreditsCents),
         centsToPesos(row.refundsCents),
         centsToPesos(row.flowRefundsCents),
         centsToPesos(row.documentedFlowRefundsCents),

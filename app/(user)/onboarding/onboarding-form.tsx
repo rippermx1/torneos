@@ -10,6 +10,7 @@ interface Props {
   defaultFullName: string
   defaultBirthDate: string
   defaultAcceptedTerms: boolean
+  returnTo: string
 }
 
 export function OnboardingForm({
@@ -17,6 +18,7 @@ export function OnboardingForm({
   defaultFullName,
   defaultBirthDate,
   defaultAcceptedTerms,
+  returnTo,
 }: Props) {
   const [username, setUsername] = useState(defaultUsername.startsWith('user_') ? '' : defaultUsername)
   const [fullName, setFullName] = useState(defaultFullName)
@@ -62,6 +64,7 @@ export function OnboardingForm({
     fd.append('fullName', fullName.trim())
     fd.append('birthDate', birthDate)
     fd.append('acceptedTerms', 'true')
+    fd.append('next', returnTo)
 
     startTransition(async () => {
       const result = await completeOnboarding(fd)

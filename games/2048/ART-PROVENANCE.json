@@ -1,0 +1,47 @@
+{
+  "generator": "image_gen.imagegen",
+  "mode": "generation",
+  "date": "2026-09-30",
+  "references": [],
+  "assets": [
+    {
+      "path": "UnityProject/Assets/Torneos/2048/Resources/Gpt/tile-face-v1.png",
+      "prompt": "Use case: stylized-concept. Asset type: original 2D UI sprite for a Unity 2048 puzzle. Create one blank premium rounded square tile face, front view, orthographic flat interface art, softly beveled porcelain surface with subtle fine grain and restrained soft edge highlight. Neutral warm ivory and grayscale so Unity can tint the sprite per numeric value. Square tile fills 90 percent of square image, consistent broad rounded corners. Transparent exterior, opaque tile center, no cast shadow outside its bounds. No text, no numbers, no symbols, no logo, no watermark, no additional objects. This is a production game sprite, not a screenshot or mockup. Keep shading quiet so dark numbers drawn by the engine will remain easy to read.",
+      "transparent_background": true
+    },
+    {
+      "path": "UnityProject/Assets/Torneos/2048/Resources/Gpt/background-v1.png",
+      "prompt": "Use case: stylized-concept. Asset type: original 2D game background for a Unity 2048 puzzle, landscape 3:2 composition. A restrained premium arcade ambience made of softly illuminated abstract geometric blocks and fine paper/ceramic textures at the perimeter. Muted midnight teal, charcoal, warm cream, small copper accents. The entire central 65 percent must be a very quiet nearly uniform dark teal field for a legible game board and numbers rendered by the game engine. No board, no tiles laid out in a grid, no text, no numerals, no people, no logos, no watermark, no UI controls. Sophisticated flat 2D illustration with depth suggested by subtle lighting, decorative rounded geometric blocks kept at the outermost left and right edges, low contrast. Production background artwork, not an interface mockup.",
+      "transparent_background": false
+    },
+    {
+      "path": "UnityProject/Assets/Torneos/2048/Resources/Gpt/tile-face-v2.png",
+      "date": "2026-10-01",
+      "generator": "image_gen.imagegen",
+      "prompt": "Use case: stylized-concept. Asset type: production 2D sprite for a clean minimalist Unity 2048 game. One blank square tile face, precisely rounded corners, front view, no perspective, tintable in Unity. Warm ivory-white surface, subtle inner edge highlight and tiny bevel, crisp silhouette. About 96 percent width and height, centered, even transparent margin, opaque face. No text, numbers, symbols, decorations, shadow, colored background or other objects. Single reusable sprite, corner radius approximately 9 percent.",
+      "transparent_background": true,
+      "source": "exec-e25c03af-a691-485e-b4d8-bf1e88b89aec.png"
+    },
+    {
+      "path": "UnityProject/Assets/Torneos/2048/Resources/Gpt/background-v2.png",
+      "date": "2026-10-01",
+      "generator": "image_gen.imagegen",
+      "prompt": "Use case: stylized-concept. Asset type: 2D background for a minimalist 2048 Unity game. Calm near-uniform warm off-white ivory background. Barely perceptible paper texture, subtle ambient light, no visible objects, shapes or edge decorations. Portrait 4:5, low contrast ivory, slightly warmer lower edge, quiet center. No board, UI, text, numbers, logos, watermark, tiles or symbols. Production texture, not a mockup.",
+      "transparent_background": false,
+      "source": "exec-e74a5045-647f-4db9-8804-5455e62025d5.png"
+    },
+    {
+      "path": "UnityProject/Assets/Torneos/2048/Resources/Gpt/tile-face-v3.png",
+      "date": "2026-10-01",
+      "generator": "image_gen.imagegen",
+      "mode": "edit",
+      "references": [
+        "tile-face-v2.png"
+      ],
+      "source": "exec-93fd7c37-1fad-4009-b0ab-681034deaea7.png",
+      "prompt": "Use case: precise-object-edit. Clean this production UI sprite. Keep the warm ivory square tile face, centered placement, rounded corner proportions and soft inner bevel. Replace outer silhouette with a smooth rounded rectangle edge, crisp antialiasing. Remove stray flecks, white noise, jagged pixels, halos, fringes and dirt outside. Exterior transparent, face more flat and near-white uniform, only subtle inside edge highlight. No outside shadow, border, outline, speckles, text, numbers or added objects.",
+      "transparent_background": true,
+      "runtime": "RoundedArtwork UI shader samples the quiet interior and defines a smooth opaque rounded silhouette without changing the PNG. v1/v2 and their metadata are preserved."
+    }
+  ]
+}

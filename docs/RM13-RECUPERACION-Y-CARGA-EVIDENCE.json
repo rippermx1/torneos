@@ -1,0 +1,330 @@
+{
+  "schema": 1,
+  "verifiedAt": "2026-10-07T16:41:46.983Z",
+  "status": "DEVELOPMENT_INCREMENT_VERIFIED",
+  "rm13Acceptance": "IN_PROGRESS",
+  "productionDecision": "NO_GO",
+  "userPerformanceDecision": "Measure without approving an SLO",
+  "application": {
+    "revision": "e2174d8e43816ca553763fcb78d1894a9d48ebb6",
+    "deployment": "dpl_HEaQhWirx1SvgqWiGCVFpa2qn2Sy",
+    "project": "prj_QHiZYuYkztFToMGmwhPsyOx9nVdG",
+    "state": "READY",
+    "alias": "https://rm12-torneos-dev.vercel.app",
+    "supabase": "jnoyjewsqbooqaiighcs",
+    "phase": "configuration",
+    "providerDispatch": "BLOCKED",
+    "uploadedFiles": 288,
+    "sourcePackageSha256": "6d9f6d97b1c3a279e25a4ffcbbce87b8f5072e19800f1ce92729ad9876d8096a",
+    "compiledByteEquality": "NOT_RUN"
+  },
+  "sharedAlias": {
+    "preserved": true,
+    "deployment": "dpl_AYUux1eSdLCDVjuUGWwbkypU4KgX",
+    "concurrentUpdate": true
+  },
+  "tests": {
+    "passed": 3838,
+    "files": 84,
+    "typecheck": "PASS",
+    "lint": "PASS",
+    "cloudBuild": "PASS",
+    "httpsSmoke": 33,
+    "opsHttp": 17,
+    "workersAndSimulator": 5
+  },
+  "migration": {
+    "source": "20261007152409_rm13_recovery_fairness.sql",
+    "cloudVersion": "20261007162953",
+    "sourceEqualsCloud": true,
+    "sqlSha256": "e92ccc26f6e01707ed3b71bfb23b00c531cfb3eb18a4d68d24484f37e5e70f3f"
+  },
+  "finalDevelop": {
+    "cashPaused": true,
+    "payments": 0,
+    "refunds": 0,
+    "storageObjects": 0,
+    "activeJobs": 10,
+    "tournamentRlsEnabled": true,
+    "fairnessIndexPresent": true
+  },
+  "cloudDatasetRecovery": {
+    "engine": "17.11",
+    "source": "jnoyjewsqbooqaiighcs",
+    "target": "torneos-rm13-recovery",
+    "exactCopyProjections": 92,
+    "aggregate": {
+      "authUsers": 6,
+      "identities": 6,
+      "sessions": 3,
+      "mfaFactors": 1,
+      "buckets": 3,
+      "objects": 0,
+      "payments": 0,
+      "refunds": 0,
+      "migrations": 71,
+      "cashPaused": true,
+      "cronActive": 0
+    },
+    "sourceSnapshotMigrationCount": 71,
+    "cloudRto": "NOT_CERTIFIED",
+    "rpo": "NOT_CERTIFIED_NO_AUTOMATED_BACKUP_SCHEDULE"
+  },
+  "authAndStorage": {
+    "status": "PASS",
+    "checks": [
+      {
+        "name": "restored develop password authenticates through real GoTrue",
+        "status": "PASS"
+      },
+      {
+        "name": "synthetic MFA authenticates before recovery",
+        "status": "PASS"
+      },
+      {
+        "name": "private Storage policies and exact bytes before backup",
+        "status": "PASS"
+      },
+      {
+        "name": "password and MFA survive data loss and owned service restart",
+        "status": "PASS"
+      },
+      {
+        "name": "private Storage bytes and access controls survive lost files and restart",
+        "status": "PASS"
+      }
+    ],
+    "recoveryMs": 35019,
+    "syntheticFiles": 3,
+    "passwords": "PASS_REAUTHENTICATION",
+    "mfa": "PASS_SYNTHETIC_TOTP",
+    "originalHumanMfaPortability": "NOT_CERTIFIED",
+    "oldSignedSessionContinuity": "NOT_CERTIFIED",
+    "sourceStorageObjects": 0,
+    "objectImport": {
+      "status": "PASS",
+      "imported": 10,
+      "ownership": "preserved",
+      "objectIds": "preserved",
+      "backendVersion": "recreated by Storage API",
+      "source": "local synthetic objects",
+      "sourceDevelopWrites": 0,
+      "encryptedExport": {
+        "status": "PASS",
+        "buckets": 3,
+        "objects": 10,
+        "totalBytes": 664,
+        "concurrency": "Requires quiescent Storage/DDL window across database and object backup"
+      },
+      "anonymousDenied": true
+    },
+    "backupEncryption": "AES-256-GCM",
+    "custody": "same-machine key; Windows owner ACL; off-machine custody NOT_CERTIFIED"
+  },
+  "backlog": {
+    "status": "PASS",
+    "completedAt": "2026-10-07T16:02:57.007Z",
+    "players": 15,
+    "payments": 61,
+    "refunds": 61,
+    "dueTournaments": 58,
+    "idleControls": 25,
+    "simulatedOutageHours": 25,
+    "appRestart": "PASS",
+    "slowProviderTimeoutMs": 8000,
+    "poisonedBatchSize": 25,
+    "laterTournamentsAdvancedWhilePoisoned": 25,
+    "runs": [
+      {
+        "name": "flow-reconcile",
+        "status": 500,
+        "durationMs": 40158,
+        "total": 5,
+        "errors": 5,
+        "deferred": 45
+      },
+      {
+        "name": "flow-reconcile",
+        "status": 200,
+        "durationMs": 4599,
+        "total": 50,
+        "errors": 0,
+        "deferred": 0
+      },
+      {
+        "name": "flow-reconcile",
+        "status": 200,
+        "durationMs": 909,
+        "total": 11,
+        "errors": 0,
+        "deferred": 0
+      },
+      {
+        "name": "process-tournaments",
+        "status": 500,
+        "durationMs": 376,
+        "total": 25,
+        "errors": 25
+      },
+      {
+        "name": "process-tournaments",
+        "status": 200,
+        "durationMs": 365,
+        "total": 25,
+        "errors": 0
+      },
+      {
+        "name": "process-tournaments",
+        "status": 200,
+        "durationMs": 591,
+        "total": 25,
+        "errors": 0
+      },
+      {
+        "name": "process-tournaments",
+        "status": 200,
+        "durationMs": 140,
+        "total": 8,
+        "errors": 0
+      },
+      {
+        "name": "reconcile-refunds",
+        "status": 200,
+        "durationMs": 3508,
+        "errors": 0
+      },
+      {
+        "name": "reconcile-refunds",
+        "status": 200,
+        "durationMs": 1809,
+        "errors": 0
+      },
+      {
+        "name": "reconcile-refunds",
+        "status": 200,
+        "durationMs": 581,
+        "errors": 0
+      }
+    ],
+    "outcomes": {
+      "completedRefunds": 61,
+      "cancelledTournaments": 33,
+      "completedPoison": 25,
+      "idleUnchanged": 25,
+      "duplicateRefunds": 0
+    },
+    "provider": "local durable simulator",
+    "externalProviderCalls": 0,
+    "realMoney": "NO_GO"
+  },
+  "financialRecovery": {
+    "status": "PASS",
+    "completedAt": "2026-10-07T16:32:22.612Z",
+    "recoveryAndReconciliationMs": 21805,
+    "comparedTables": 96,
+    "backupSha256": "bdcf482aafef607fe9fd633178158ebc4fc13a39601eeeedc7225c45a181ba03",
+    "datasetFingerprintSha256": "6323796efdaea61af59532327ef7f584e56eb86b8e62394a6dbbcda9e9f852c0",
+    "emptyDatabaseConfirmed": true,
+    "authRecovered": true,
+    "gameResultsRecovered": 15,
+    "financialObligationsRecovered": 61,
+    "staleDispatchBecameUnknown": true,
+    "uncertainDispatchNotReclaimed": true,
+    "lateProviderResponseAttachedWithOriginalNonce": true,
+    "ledgerUnchanged": true,
+    "final": {
+      "refunds": 61,
+      "completed": 61,
+      "cashPaused": true,
+      "gameResults": 15
+    },
+    "provider": "persistent local simulator",
+    "externalProviderCalls": 0,
+    "realMoney": "NO_GO"
+  },
+  "load": {
+    "status": "PASS_FUNCTIONAL_PERFORMANCE_MEASURED",
+    "concurrentPlayers": 15,
+    "requests": 240,
+    "metrics": [
+      {
+        "profile": "loopback",
+        "samples": 105,
+        "p95Ms": 2724.17
+      },
+      {
+        "profile": "600ms injected RTT",
+        "samples": 90,
+        "p95Ms": 2562.67
+      }
+    ],
+    "finalizedResults": 15,
+    "responseLossRecovery": "PASS_15_SNAPSHOTS_NO_REPLAY",
+    "loadStageRestarts": 1,
+    "combinedBacklogLoadRestarts": 2,
+    "environment": "isolated Next development runtime and real local Supabase; simulator only",
+    "slo": "NOT_APPROVED",
+    "notMeasured": [
+      "mobile FPS",
+      "real WAN loss/jitter",
+      "Vercel cold-start/capacity",
+      "production SLO"
+    ]
+  },
+  "remoteWorkers": {
+    "status": "PASS",
+    "at": "2026-10-07T16:38:37.650Z",
+    "rows": [
+      {
+        "route": "process-tournaments",
+        "http": 200,
+        "durationMs": 362,
+        "total": 0,
+        "errors": 0
+      },
+      {
+        "route": "flow-reconcile",
+        "http": 200,
+        "durationMs": 211,
+        "total": 0,
+        "errors": 0
+      },
+      {
+        "route": "reconcile-refunds",
+        "http": 200,
+        "durationMs": 500,
+        "errors": 0
+      },
+      {
+        "route": "watchdog",
+        "http": 503,
+        "processingHealthy": true,
+        "operationalReady": false
+      }
+    ],
+    "hostedSimulatorDisabled": true,
+    "providerDispatch": "BLOCKED"
+  },
+  "monitor": {
+    "http": 503,
+    "schedulerHealthy": true,
+    "operationalReady": false,
+    "notificationsDeferred": true
+  },
+  "cleanup": {
+    "status": "PASS",
+    "ownedContainersStopped": 6,
+    "sharedAppRunning": true,
+    "ownedVolumesPreserved": true,
+    "encryptedBackupsPreserved": true,
+    "sharedStackModified": false
+  },
+  "remainingAcceptance": [
+    "off-machine scheduled backup, retention and independent key custody",
+    "effective cloud RPO and infrastructure/configuration RTO",
+    "original human MFA/OAuth/SMTP/Vault recovery with operator and backup",
+    "real Flow/bank reconciliation and bounded authorized money trial",
+    "destination capacity measurement and any future agreed SLO",
+    "RM14 account revocation, retention/deletion and support; legal/financial acceptance"
+  ]
+}

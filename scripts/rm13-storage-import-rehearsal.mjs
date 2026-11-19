@@ -1,0 +1,24 @@
+import { createClient } from '@supabase/supabase-js';
+import { readFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
+import assert from 'node:assert/strict';
+import { backupStorage } from './rm13-storage-backup.mjs';
+import { importStorage } from './rm13-storage-import.mjs';
+import { localKeys, PRIVATE, sql, encryptionKey, decrypt, report } from './rm13-recovery-lib.mjs';
+const keys = await localKeys(), key = await encryptionKey();
+const admin = createClient(keys.API_URL, keys.SECRET_KEY, { auth: { persistSession: false, autoRefreshToken: false } });
+const snapshot = await backupStorage(admin, resolve(PRIVATE, 'local-api-storage-export'), key, 'torneos-rm13-recovery');
+const indexFile = snapshot.files.find(f => f.name === 'storage-index');
+const index = JSON.parse(decrypt(await readFile(indexFile.file), key, indexFile.name));
+assert.ok(index.objects.length >= 3);
+// Only own synthetic documents in the isolated target; no source develop writes.
+assert.ok(index.objects.every(x => /\/rm13-[a-f0-9-]+\.pdf$/.test(x.path)));
+const before = await sql('select json_agg(to_jsonb(o)) from storage.objects o;');
+const columns = await sql("select string_agg(quote_ident(attname),',' order by attnum) from pg_attribute where attrelid='storage.objects'::regclass and attnum>0 and not attisdropped and attgenerated='';");
+for (const object of index.objects) assert.equal((await admin.storage.from(object.bucket).remove([object.path])).error, null);
+const quote = x => "'" + x.replaceAll("'", "''") + "'";
+await sql(`insert into storage.objects (${columns}) select ${columns} from jsonb_populate_recordset(NULL::storage.objects,${quote(before)}::jsonb);`);
+const result = await importStorage(index, key);
+for (const object of index.objects) assert.ok((await createClient(keys.API_URL, keys.PUBLISHABLE_KEY).storage.from(object.bucket).download(object.path)).error);
+await report('artifacts/rm13/storage-import-report.json', { ...result, source: 'local synthetic objects', sourceDevelopWrites: 0, encryptedExport: snapshot.summary, anonymousDenied: true });
+console.log(JSON.stringify(result));

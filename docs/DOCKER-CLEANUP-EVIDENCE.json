@@ -1,0 +1,24 @@
+{
+  "date": "2026-10-01",
+  "workspace": "C:/torneos",
+  "order": "Docker cleanup completed before backlog edits and application rebuild",
+  "before": { "containers": 11, "running": 10, "images": 11, "imageSize": "26.25 GB", "volumes": 5, "buildCache": "20.34 GB" },
+  "removed": {
+    "stoppedContainer": { "id": "a322089afcd7", "name": "factory-empire-test-db_test-1", "status": "Exited 255", "postgresData": "tmpfs /var/lib/postgresql/data; no persistent mounts", "command": "docker rm a322089afcd7" },
+    "danglingImages": { "command": "docker image prune -f", "reportedReclaim": "0 B" },
+    "buildCache": { "command": "docker builder prune -a -f", "reportedReclaim": "20.34 GB" },
+    "unusedImage": { "id": "b0f9560a2de0", "tag": "postgres:17-alpine", "sizeApprox": "417 MB", "containerReferencesBeforeRemoval": 0 },
+    "unusedNetworks": ["factory-empire-test_default"]
+  },
+  "afterCleanupBeforeRebuild": { "containers": 10, "running": 10, "images": 10, "imageSize": "6.804 GB", "volumes": 5, "buildCache": "0 B" },
+  "preservation": {
+    "sameRunningContainerIds": true,
+    "sameVolumeNames": true,
+    "volumes": ["perfil-verificable_db-data", "perfil-verificable_storage-data", "supabase_db_torneos", "supabase_storage_torneos", "torneos_local_flow_data"],
+    "volumePruneExecuted": false,
+    "dockerWslStopped": false,
+    "vhdxCompactionExecuted": false
+  },
+  "artifacts": "artifacts/docker-cleanup (ignored; selected inventory fields exclude environment credentials)",
+  "limits": ["Shared image/cache sizes must not be added as independent reclaimed amounts", "Docker reported reclaim is not a measurement of Windows filesystem/VHDX shrinkage", "The later authorized application rebuild recreates cache and replaces torneos-app-1; ID preservation above refers to the cleanup interval"]
+}

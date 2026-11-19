@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { checkRateLimit, getRequestIp, rateLimitResponse } from '@/lib/security/rate-limit'
+import { getOnboardingPath } from '@/lib/auth/redirect'
 
 // Reenvía el email de confirmación al usuario autenticado.
 // Supabase impone max_frequency=1m por su cuenta; aquí añadimos una
@@ -28,13 +29,15 @@ export async function POST(req: Request): Promise<Response> {
     return Response.json({ error: 'No hay email asociado a esta cuenta' }, { status: 400 })
   }
 
-  const origin = new URL(req.url).origin
-  const redirectTo = `${origin}/auth/confirm?next=/onboarding`
+  const origin = process.env.APP_URL ?? new URL(req.url).origin
+  const body = await req.json().catch(() => null)
+  const redirectTo = new URL('/auth/confirm', origin)
+  redirectTo.searchParams.set('next', getOnboardingPath(body?.next))
 
   const { error } = await supabase.auth.resend({
     type: 'signup',
     email: user.email,
-    options: { emailRedirectTo: redirectTo },
+    options: { emailRedirectTo: redirectTo.toString() },
   })
 
   if (error) {

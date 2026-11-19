@@ -1,9 +1,12 @@
 import { createAdminClient } from '@/lib/supabase/server'
 import { requireAnyRoleForApi } from '@/lib/supabase/auth'
 import { checkPlayWindow } from '@/lib/tournament/helpers'
-import { calculateGameDeadline, isPastGameDeadline } from '@/lib/tournament/game-deadline'
-import { checkRateLimit, getRequestIp, rateLimitResponse } from '@/lib/security/rate-limit'
-import type { Game, Tournament } from '@/types/database'
+import { isPastGameDeadline } from '@/lib/tournament/game-deadline'
+import { closeExpiredGame } from '@/lib/tournament/close-expired-game'
+import { GAME_SNAPSHOT_FIELDS, gameSnapshotResponse, type SnapshotGame } from '@/lib/tournament/game-snapshot-response'
+import { checkRateLimit, rateLimitResponse } from '@/lib/security/rate-limit'
+import { isJsonObject, isGameId } from '@/lib/tournament/game-request'
+import type { Tournament } from '@/types/database'
 
 interface TimeoutRequest {
   gameId?: string
@@ -18,9 +21,10 @@ export async function POST(
 
   const userId = auth.access.userId
   const rateLimit = await checkRateLimit({
-    key: `game:timeout:${userId}:${getRequestIp(req)}`,
+    key: `game:timeout:${userId}`,
     limit: 30,
     windowMs: 60_000,
+    onError: 'deny',
   })
   if (!rateLimit.ok) return rateLimitResponse(rateLimit)
 
@@ -31,7 +35,7 @@ export async function POST(
     return Response.json({ error: 'Body JSON inválido' }, { status: 400 })
   }
 
-  if (!body.gameId) {
+  if (!isJsonObject(body) || !isGameId(body.gameId)) {
     return Response.json({ error: 'gameId requerido' }, { status: 400 })
   }
 
@@ -44,7 +48,7 @@ export async function POST(
   ] = await Promise.all([
     supabase
       .from('games')
-      .select('id, status, final_score, started_at, end_reason')
+      .select(GAME_SNAPSHOT_FIELDS)
       .eq('id', body.gameId)
       .eq('tournament_id', tournamentId)
       .eq('user_id', userId)
@@ -59,17 +63,14 @@ export async function POST(
   if (!gameData) return Response.json({ error: 'Partida no encontrada' }, { status: 404 })
   if (!tournamentData) return Response.json({ error: 'Torneo no encontrado' }, { status: 404 })
 
-  const game = gameData as Pick<Game, 'id' | 'status' | 'final_score' | 'started_at' | 'end_reason'>
+  const game = gameData as SnapshotGame
   const tournament = tournamentData as Pick<
     Tournament,
     'status' | 'play_window_start' | 'play_window_end' | 'max_game_duration_seconds'
   >
 
   if (game.status !== 'active') {
-    return Response.json({
-      timedOut: game.end_reason === 'timeout',
-      score: game.final_score,
-    })
+    return gameSnapshotResponse(game, tournament.play_window_end, tournament.max_game_duration_seconds)
   }
 
   if (!game.started_at) {
@@ -88,31 +89,11 @@ export async function POST(
   )
 
   if (!reachedGameDeadline && !reachedWindowDeadline) {
-    return Response.json({
-      timedOut: false,
-      score: game.final_score,
-      deadlineAt: calculateGameDeadline(
-        game.started_at,
-        tournament.play_window_end,
-        tournament.max_game_duration_seconds
-      ),
-    })
+    return gameSnapshotResponse(game, tournament.play_window_end, tournament.max_game_duration_seconds)
   }
 
-  const endedAt = new Date().toISOString()
-  await supabase
-    .from('games')
-    .update({
-      status: 'completed',
-      end_reason: 'timeout',
-      ended_at: endedAt,
-    })
-    .eq('id', game.id)
-    .eq('status', 'active')
+  const closure = await closeExpiredGame(supabase, { gameId: game.id, tournamentId, userId })
+  if (!closure.ok) return closure.response
 
-  return Response.json({
-    timedOut: true,
-    score: game.final_score,
-    endedAt,
-  })
+  return gameSnapshotResponse(closure.game, tournament.play_window_end, tournament.max_game_duration_seconds)
 }

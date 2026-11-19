@@ -1,0 +1,204 @@
+{
+  "id": "E21",
+  "task": "G2048-09.3",
+  "client_date": "2026-10-05",
+  "status": "IMPLEMENTED_TESTED_LOCAL",
+  "parent_status": "IN_PROGRESS",
+  "branch": "codex/2048-clean-gameplay",
+  "base_commit": "299075d20ca7d631b3d86782951f3b763ec742d8",
+  "scope": "Source and isolated validation only. No operating Supabase mutation, activation, Flow operation or real email.",
+  "verification": {
+    "task": "G2048-09.3",
+    "date": "2026-10-05T13:41:27.994Z",
+    "checks": [
+      {
+        "name": "web-tests",
+        "status": "PASS",
+        "log": "web-tests.log"
+      },
+      {
+        "name": "types",
+        "status": "PASS",
+        "log": "types.log"
+      },
+      {
+        "name": "lint",
+        "status": "PASS",
+        "log": "lint.log"
+      },
+      {
+        "name": "postgres",
+        "status": "PASS",
+        "log": "postgres.log"
+      }
+    ],
+    "web": {
+      "passed": 3226,
+      "failed": 0,
+      "files": 15
+    },
+    "sql": {
+      "task": "G2048-09.3",
+      "date": "2026-10-05T13:41:58.226Z",
+      "status": "PASS",
+      "scope": "synthetic isolated native PostgreSQL; no operating DB, Flow, email or deployment",
+      "checks": [
+        {
+          "name": "service role commits a valid move with the original deadline/board checks",
+          "status": "PASS"
+        },
+        {
+          "name": "suspended account cannot create a session despite stale API eligibility",
+          "status": "PASS"
+        },
+        {
+          "name": "move waiting behind sanction is rejected and creates no move row",
+          "status": "PASS"
+        },
+        {
+          "name": "move committed first is subsequently invalidated, without lock inversion",
+          "status": "PASS"
+        },
+        {
+          "name": "sanction invalidates a completed game before finalization and excludes its rank/prize",
+          "status": "PASS"
+        },
+        {
+          "name": "failing audit rolls back account ban and game invalidation together",
+          "status": "PASS"
+        },
+        {
+          "name": "unban does not resurrect invalid games; repeated ban has no extra invalidations",
+          "status": "PASS"
+        },
+        {
+          "name": "settled result, score, rank and ledger remain immutable after sanction",
+          "status": "PASS"
+        },
+        {
+          "name": "finalizer winning a race records a post-settlement review; no retroactive prize rewrite",
+          "status": "PASS"
+        },
+        {
+          "name": "sanction winning the finalization race excludes the account without a credit",
+          "status": "PASS"
+        },
+        {
+          "name": "normalized verified identity cannot participate through another account",
+          "status": "PASS"
+        },
+        {
+          "name": "concurrent formatted identity claims create exactly one session",
+          "status": "PASS"
+        },
+        {
+          "name": "different verified people are independent and pending identity is not treated as proof",
+          "status": "PASS"
+        },
+        {
+          "name": "leading zero and lowercase check-digit variants cannot renew a verified slot",
+          "status": "PASS"
+        },
+        {
+          "name": "invalid approved identity fails closed instead of skipping the identity claim",
+          "status": "PASS"
+        },
+        {
+          "name": "paced automation at 500 ms persists review and cannot liquidate ranking or credits",
+          "status": "PASS"
+        },
+        {
+          "name": "manual false-positive clearance persists actor/reason and allows original finalizer",
+          "status": "PASS"
+        },
+        {
+          "name": "automatic scan never bans for regular cadence, and insufficient/variable evidence is not flagged",
+          "status": "PASS"
+        },
+        {
+          "name": "legacy verified identity collisions are reviewed after profile approval changes",
+          "status": "PASS"
+        },
+        {
+          "name": "direct finalizer re-scans an old finalizing tournament and cannot bypass review",
+          "status": "PASS"
+        },
+        {
+          "name": "anon cannot read identity/evidence or invoke privileged controls",
+          "status": "PASS"
+        },
+        {
+          "name": "authenticated cannot read identity/evidence or invoke privileged controls",
+          "status": "PASS"
+        }
+      ],
+      "sources": {
+        "supabase/migrations/20260805163009_fixed_prize_business_model.sql": "262fe2dd85123db1f166a7597a487b7e6d6afabcd63929b67b5ec5459ca64d5d",
+        "supabase/migrations/007_supabase_auth.sql": "356a0e5d22b74b656f99bf047ae058fd3c4a938e87150b893460b0f2772cf5b1",
+        "supabase/migrations/20261005131216_guard_2048_integrity_reviews.sql": "d03acc197a1a715f82008d221cba3a5bb63a30499fee9d806ae002543b5ae0b4"
+      },
+      "engine": "postgres (PostgreSQL) 17.11",
+      "cleanup": "PASS: exact disposable cluster stopped"
+    }
+  },
+  "build": {
+    "status": "PASS",
+    "version": "Next.js 16.3.8",
+    "static_pages": 58,
+    "code": 0,
+    "snapshot": "C:\\torneos\\artifacts\\2048-integrity\\web-source-6cb32872-70e4-4e39-91de-3d6b11ab5a6e",
+    "date": "2026-10-05T13:42:25.718Z",
+    "manifest": "build-source-manifest.json",
+    "source_manifest": {
+      "base": "299075d20ca7d631b3d86782951f3b763ec742d8",
+      "scope": "tracked HEAD plus only G2048-09.3 source; no foreign WIP, Unity source or secrets",
+      "snapshot": "C:\\torneos\\artifacts\\2048-integrity\\web-source-6cb32872-70e4-4e39-91de-3d6b11ab5a6e",
+      "files": {
+        "lib/anticheat/integrity.ts": "abd2cdeb4f7edbb8fd327213d9ef425bde30c4f0c3563920c0051d42c1908557",
+        "lib/anticheat/detector.ts": "aa77ca724bfc99c6b751f958149f84a7f658418405e1d3fcc954c7cff44bff06",
+        "lib/anticheat/winner-review.ts": "a58714fb21adc58ae9c66eaa88023a1c0b276ff1f93b87cfd485aca89f02c6b6",
+        "lib/tournament/lifecycle.ts": "7b1224b138798f3e9e262a6f4a11cd08ddc1c2079b88fceff3bd5007d516880f",
+        "app/api/admin/users/[id]/ban/route.ts": "222f4c8f32f2e2fe1cc51181f7299a480327fbee457718a045296008739f6eb0",
+        "app/api/admin/tournaments/[id]/integrity/route.ts": "8a860180f2a1f77d91316768e834b28e5f483dbce9b04ca10e169fe56180b6d9",
+        "app/api/tournaments/[id]/game/start/route.ts": "c171cdc1d4a2853aab8171b854b21650a0ab9dadf939eddfc9bda9ae3a0293ca",
+        "app/api/tournaments/[id]/game/move/route.ts": "9b4549804c5586547b40c5c60c43c7d3d7473930f10330b1b710ae39306c30bd",
+        "app/(admin)/admin/tournaments/[id]/games/page.tsx": "febe3547bec8f82e938877de97e5a9e39fb44afe29b32deac62baba1d99ecf9d",
+        "app/(admin)/admin/tournaments/[id]/games/[gameId]/page.tsx": "b1683a06bd85998f3c1d86c708cb9ca36fe0c6a355cf634a3ca4e6e61af4454e",
+        "components/tournament/integrity-reviews.tsx": "6b437d0a3ff2f49c61e1994e7b17ea252ffc62e5aae817756a67f825e57afac1",
+        "app/api/admin/tournaments/[id]/finalize/route.ts": "cb825e260d369ed9275e7da3c026c4fc00a9b17e61e916bebe495701fabf9556"
+      },
+      "buildOnlyAdjustment": "Turbopack filesystem root C:/torneos to contain dependency junction; isolated application sources retained"
+    }
+  },
+  "browser": {
+    "status": "PASS_COMPONENT_FIXTURE",
+    "component": "components/tournament/integrity-reviews.tsx",
+    "transport": "synthetic HTTP; no authenticated operative E2E",
+    "checks": [
+      "pending state and reason-required buttons",
+      "confirmed clearance",
+      "confirmed sanction",
+      "503 preserves pending state",
+      "unavailable integrity is explicit",
+      "settled sanction preserves history and offers no reversal"
+    ],
+    "screenshots": {
+      "ui-pending.png": "e2d76a0479438e2e80850ca85ff223cdc1fd48d144ac801a52f349ced81dc460",
+      "ui-cleared.png": "b3a9bc781f5fac320b1108dd851972e055b05c1a5e7da37880c59af81c3381fa",
+      "ui-sanctioned.png": "0ec7dcdefc7d7337a67eec9a65c512a2362166ab2feb29a6e7936b92a738e1cd",
+      "ui-failure.png": "f3a212de3b4595320fd4b9882049c4015362151cc884cb1430f66c65a9ce1a01",
+      "ui-unavailable.png": "46be3f5943f4cae4b27428a1587826ce5fec4963205477e810a5cac243575af5",
+      "ui-settled.png": "9b419a0ee65a9ab0f8178be671205f8246ee94e5064e33b14863765d5abb4e6e"
+    }
+  },
+  "limits": [
+    "Variable-pause automation remains an explicit passing counterexample",
+    "Unverified accounts are not linked to the same person",
+    "Regular pacing is review evidence, not proof of a bot; no automatic ban for this signal",
+    "Original automatic burst/score policy remains heuristic",
+    "Settled results and ledger remain unchanged; incident disposition is separate",
+    "Migration and web must be integrated together; missing RPC fails closed",
+    "No human/mobile/full authenticated Supabase acceptance claimed"
+  ],
+  "next": "G2048-09.4: coordinated local DB/web integration and authenticated operator review flow"
+}

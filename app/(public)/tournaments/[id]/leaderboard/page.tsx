@@ -1,8 +1,9 @@
-import { createClient, createAdminClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import { formatCLP, formatDateTimeCL } from '@/lib/utils'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Tournament } from '@/types/database'
+import { loadTournamentLeaderboard } from '@/lib/tournament/leaderboard'
 
 export const revalidate = 30 // refresca el leaderboard cada 30s
 
@@ -30,73 +31,12 @@ export default async function LeaderboardPage({
   const { data: { user } } = await supabaseAuth.auth.getUser()
   const userId = user?.id ?? null
 
-  // Admin client para leer games y profiles sin restricciones RLS
-  const supabase = createAdminClient()
-
-  const { data: tData } = await supabase
-    .from('tournaments')
-    .select('*')
-    .eq('id', id)
-    .single()
-
-  if (!tData) notFound()
-  const tournament = tData as Tournament
-
-  const isCompleted  = tournament.status === 'completed'
-  const isLive       = tournament.status === 'live'
+  const ranking = await loadTournamentLeaderboard(id)
+  if (!ranking) notFound()
+  const { tournament, rows, usernameMap } = ranking
+  const isCompleted = tournament.status === 'completed'
+  const isLive = tournament.status === 'live'
   const isFinalizing = tournament.status === 'finalizing'
-
-  // Para torneos completados, usar tournament_results (fuente oficial)
-  let rows: Array<{
-    user_id: string
-    final_score: number
-    highest_tile: number
-    move_count?: number
-    status?: string
-    prize_awarded_cents?: number
-    rank?: number
-  }> = []
-
-  if (isCompleted) {
-    const { data: results } = await supabase
-      .from('tournament_results')
-      .select('user_id, rank, final_score, prize_awarded_cents')
-      .eq('tournament_id', id)
-      .order('rank', { ascending: true })
-      .limit(50)
-
-    rows = (results ?? []).map((r) => ({
-      user_id: r.user_id,
-      rank: r.rank,
-      final_score: r.final_score,
-      highest_tile: 0,
-      prize_awarded_cents: r.prize_awarded_cents,
-    }))
-  } else {
-    // Live / open: usar games en curso y completadas
-    const { data: games } = await supabase
-      .from('games')
-      .select('user_id, final_score, highest_tile, move_count, status')
-      .eq('tournament_id', id)
-      .in('status', ['completed', 'active'])
-      .order('final_score', { ascending: false })
-      .order('highest_tile', { ascending: false })
-      .order('move_count', { ascending: true })
-      .limit(50)
-
-    rows = games ?? []
-  }
-
-  // Obtener usernames con admin client
-  const userIds = [...new Set(rows.map((r) => r.user_id))]
-  const { data: profiles } = userIds.length
-    ? await supabase.from('profiles').select('id, username').in('id', userIds)
-    : { data: [] }
-
-  const usernameMap = Object.fromEntries(
-    (profiles ?? []).map((p: { id: string; username: string }) => [p.id, p.username])
-  )
-
   return (
     <div className="max-w-2xl mx-auto px-4 py-10 space-y-6">
       {/* Header */}

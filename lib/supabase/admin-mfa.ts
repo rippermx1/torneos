@@ -25,8 +25,9 @@ export async function getAdminMfaState(): Promise<AdminMfaState> {
     )
   }
 
+  const { currentLevel } = assurance
   return {
-    currentLevel: assurance.currentLevel,
+    currentLevel: currentLevel === 'aal2' ? 'aal2' : currentLevel === 'aal1' ? 'aal1' : null,
     verifiedTotpFactorIds: factors.totp.map((factor) => factor.id),
   }
 }

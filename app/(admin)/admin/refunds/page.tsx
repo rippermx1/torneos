@@ -8,6 +8,10 @@ import type { FlowRefundAttempt, FlowRefundStatus } from '@/types/database'
 export const revalidate = 0
 
 const STATUS_LABEL: Record<FlowRefundStatus, string> = {
+  queued: 'Por enviar',
+  dispatching: 'Envío en curso',
+  unknown: 'Requiere conciliación',
+  manual: 'Requiere datos',
   pending: 'Pendiente',
   completed: 'Acreditado',
   rejected: 'Fallido',
@@ -15,13 +19,17 @@ const STATUS_LABEL: Record<FlowRefundStatus, string> = {
 }
 
 const STATUS_TONE: Record<FlowRefundStatus, string> = {
+  queued: 'bg-amber-100 text-amber-700',
+  dispatching: 'bg-amber-100 text-amber-700',
+  unknown: 'bg-red-100 text-red-700',
+  manual: 'bg-red-100 text-red-700',
   pending: 'bg-amber-100 text-amber-700',
   completed: 'bg-emerald-100 text-emerald-700',
   rejected: 'bg-red-100 text-red-700',
   cancelled: 'bg-slate-100 text-slate-700',
 }
 
-const ALL_STATUSES: FlowRefundStatus[] = ['pending', 'completed', 'rejected', 'cancelled']
+const ALL_STATUSES: FlowRefundStatus[] = ['queued', 'dispatching', 'unknown', 'manual', 'pending', 'completed', 'rejected', 'cancelled']
 
 export default async function AdminRefundsPage({
   searchParams,
@@ -39,7 +47,7 @@ export default async function AdminRefundsPage({
   const { data: countRows } = await supabase
     .from('flow_refund_attempts')
     .select('status')
-  const counts: Record<FlowRefundStatus, number> = { pending: 0, completed: 0, rejected: 0, cancelled: 0 }
+  const counts: Record<FlowRefundStatus, number> = { queued: 0, dispatching: 0, unknown: 0, manual: 0, pending: 0, completed: 0, rejected: 0, cancelled: 0 }
   for (const r of (countRows ?? []) as { status: FlowRefundStatus }[]) {
     counts[r.status] = (counts[r.status] ?? 0) + 1
   }
@@ -56,7 +64,7 @@ export default async function AdminRefundsPage({
   const attempts = (data ?? []) as FlowRefundAttempt[]
 
   // Nombres de torneos referenciados
-  const tournamentIds = [...new Set(attempts.map((a) => a.tournament_id))]
+  const tournamentIds = [...new Set(attempts.flatMap((a) => a.tournament_id ? [a.tournament_id] : []))]
   const { data: tournaments } = tournamentIds.length
     ? await supabase.from('tournaments').select('id, name').in('id', tournamentIds)
     : { data: [] }
@@ -73,8 +81,8 @@ export default async function AdminRefundsPage({
     (profiles ?? []).map((p: { id: string; username: string }) => [p.id, p.username])
   )
 
-  const pendingCount = counts.pending
-  const rejectedCount = counts.rejected
+  const pendingCount = counts.pending + counts.queued + counts.dispatching
+  const rejectedCount = counts.rejected + counts.unknown + counts.manual + counts.cancelled
   const pendingCreditNotes = attempts.filter(
     (attempt) => attempt.status === 'completed' && attempt.tax_document_status === 'required'
   ).length
@@ -85,7 +93,7 @@ export default async function AdminRefundsPage({
         <h1 className="text-2xl font-bold">Devoluciones</h1>
         <p className="text-sm text-muted-foreground mt-0.5">
           Cuando se cancela un torneo, el sistema solicita la devolución a Flow. Los pendientes
-          se revisan automáticamente; usa &ldquo;Reintentar&rdquo; solo en devoluciones con error.
+          se revisan automáticamente. Un envío incierto, rechazado o cancelado requiere conciliación con Flow antes de volver a solicitarlo.
         </p>
       </div>
 
@@ -151,7 +159,7 @@ export default async function AdminRefundsPage({
                     {usernameMap[a.user_id] ?? a.user_id.slice(0, 8)}
                   </Link>
                   <span className="text-xs text-muted-foreground">
-                    {tournamentNameMap[a.tournament_id] ?? a.tournament_id.slice(0, 8)}
+                    {a.tournament_id ? tournamentNameMap[a.tournament_id] ?? a.tournament_id.slice(0, 8) : 'Pago legado'}
                   </span>
                 </div>
                 <p className="text-xs text-muted-foreground">
@@ -174,13 +182,13 @@ export default async function AdminRefundsPage({
                     {a.tax_document_issued_at ? formatDateTimeCL(a.tax_document_issued_at) : 'fecha registrada'}
                   </p>
                 )}
-                {a.status === 'completed' && a.tax_document_status === 'required' && (
+                {a.status === 'completed' && !a.tax_document_verified_at && (
                   <RefundCreditNoteForm refundId={a.id} />
                 )}
               </div>
 
               <div className="text-right shrink-0">
-                {a.status === 'rejected' && (
+                {a.status === 'queued' && (
                   <RefundRetryButton refundId={a.id} />
                 )}
               </div>

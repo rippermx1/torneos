@@ -1,0 +1,93 @@
+{
+  "id": "E28",
+  "at": "2026-10-05T21:55:29.172Z",
+  "status": "COMPLETED_OWNER_ACCEPTED_SIMULATED_SCOPE",
+  "acceptanceDecision": {
+    "source": "Direct owner request in this chat",
+    "request": "puedes simular las pruebas? y en base a estar terminar los tickets?",
+    "change": "Automated/simulated checks accepted for closing the four remaining local game tickets",
+    "originalPhysicalAndHumanAcceptanceExecuted": false
+  },
+  "closedTasks": [
+    "G2048-04.4",
+    "G2048-06.2",
+    "G2048-07.2",
+    "G2048-08.1"
+  ],
+  "closedParents": [
+    "G2048-04",
+    "G2048-06",
+    "G2048-07",
+    "G2048-08"
+  ],
+  "runtime": {
+    "target": "http://127.0.0.1:3081",
+    "imageId": "sha256:51412127d028715b658a2921115b39d45a6dc874204728df34add89315312e25",
+    "capsule": "unity-2048-007",
+    "activatedNewImage": false
+  },
+  "verification": {
+    "tests": 151,
+    "testFiles": 12,
+    "competitiveChecks": 7,
+    "authenticatedImmutableResultChecks": 3,
+    "browserChecks": 10,
+    "uniqueViewportAndViewCombinations": 6,
+    "gzipHashMimeEtagFiles": 6,
+    "lint": "PASS",
+    "finalGame": {
+      "id": "4fad83ee-db71-48d4-99c4-67222352798b",
+      "status": "completed",
+      "score": 4,
+      "moves": 2,
+      "startedAt": "2026-10-05T21:46:01.855+00:00",
+      "endedAt": "2026-10-05T21:51:03.487+00:00",
+      "endReason": "timeout"
+    },
+    "leaderboard": "Observed provisional live ranking with the same score 4; no settlement performed"
+  },
+  "measurements": {
+    "deviceClass": "Windows PC, IAB Chromium, mobile viewport simulation",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
+    "readyMs": 3705,
+    "cacheColdControlled": false,
+    "samples": 120,
+    "medianMovingAverageFps": 60,
+    "minimumMovingAverageFps": 58.62,
+    "maximumMovingAverageFps": 60.01,
+    "reservedWasmMiB": 128,
+    "peakUsedWasmMiB": 84.63,
+    "encodedBytes": 17562585,
+    "decodedBytes": 53211103
+  },
+  "unmeasured": [
+    "Physical Xiaomi/Android touch, battery, temperature and memory pressure",
+    "Actual OS suspension or Chrome background tab lifecycle",
+    "Real screen reader speech and human comprehension",
+    "External production release, paid operations and mobile network performance"
+  ],
+  "modifications": {
+    "unityOrPlayerSettings": false,
+    "schemaOrFlow": false,
+    "existingAccounts": false,
+    "externalDeployments": false,
+    "original3083Service": false,
+    "ownFixture": "Previously unused E27 fixture consumed once through real authenticated game APIs"
+  },
+  "artifacts": {
+    "regressions": "artifacts/2048-simulated/vitest.json",
+    "competitive": "artifacts/2048-simulated/competitive.json",
+    "browser": "artifacts/2048-simulated/browser.json",
+    "metrics": "artifacts/2048-simulated/browser-metrics.json",
+    "delivery": "artifacts/2048-simulated/delivery.json",
+    "closure": "artifacts/2048-background/closed-verification.json"
+  },
+  "artifactSha256": {
+    "artifacts/2048-simulated/vitest.json": "1e2c1c205ad641f0f5a60ca18f82d1a654dd80380c3fc25a20243c6249f2fa41",
+    "artifacts/2048-simulated/competitive.json": "dea9c63099e13b66fe69f9fb18077bd4cb1efd723d0104c6e8d62ce99792a646",
+    "artifacts/2048-simulated/browser.json": "3b205afcf92c91962dec02a762478f91113b2e3b88f6405e66bf7d1577f1c8c1",
+    "artifacts/2048-simulated/browser-metrics.json": "94a907f2601864508e074cbd2f5a119e27f52ce1e2ce18512433409a464e8f6d",
+    "artifacts/2048-simulated/delivery.json": "8715771bcdf38391397bd11547a35b63e29caa5850119776b20e78ce294ac8b7",
+    "artifacts/2048-background/closed-verification.json": "659164d1a942e32d756da1879290813ad047e599f87721cca2df4b51f90c3c5e"
+  }
+}

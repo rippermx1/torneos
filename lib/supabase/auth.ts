@@ -44,6 +44,7 @@ export interface AuthAccess {
   isUser: boolean
   isAdmin: boolean
   isOwner: boolean
+  isSuspended: boolean
 }
 
 type ApiAuthResult =
@@ -81,7 +82,7 @@ export function hasPermission(access: AuthAccess, permission: AppPermission): bo
   return access.permissions.includes(permission)
 }
 
-function buildAccess(user: User, roles: AppRole[]): AuthAccess {
+function buildAccess(user: User, roles: AppRole[], isSuspended = false): AuthAccess {
   const uniqueRoles = [...new Set(roles)]
   return {
     user,
@@ -91,6 +92,7 @@ function buildAccess(user: User, roles: AppRole[]): AuthAccess {
     isUser: uniqueRoles.includes('user'),
     isAdmin: uniqueRoles.includes('admin') || uniqueRoles.includes('owner'),
     isOwner: uniqueRoles.includes('owner'),
+    isSuspended,
   }
 }
 
@@ -100,8 +102,14 @@ function buildAccess(user: User, roles: AppRole[]): AuthAccess {
  */
 export async function getUser() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  return user
+  const { data: { user }, error } = await supabase.auth.getUser()
+  if (error || !user) return null
+  const claims = await supabase.auth.getClaims()
+  const sessionId = claims.data?.claims.session_id
+  if (claims.error || claims.data?.claims.sub !== user.id || typeof sessionId !== 'string') return null
+  const live = await createAdminClient().rpc('app_session_live', { p_user: user.id, p_session: sessionId })
+  if (live.error) throw new Error('No se pudo comprobar la vigencia de la sesión')
+  return live.data === true ? user : null
 }
 
 /**
@@ -118,29 +126,15 @@ export async function getCurrentAccess(): Promise<AuthAccess | null> {
     .select('role')
     .eq('profile_id', user.id)
 
-  if (error) {
-    // Fallback operativo mientras se aplica la migracion en un entorno.
-    // No concede admin salvo que el campo historico is_admin ya exista.
-    console.error('[auth] profile_roles lookup failed', {
-      userId: user.id,
-      code: error.code,
-      message: error.message,
-    })
-
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('is_admin')
-      .eq('id', user.id)
-      .single()
-
-    return buildAccess(user, profile?.is_admin ? ['user', 'admin'] : ['user'])
-  }
+  if (error) throw new Error('No se pudieron verificar los permisos actuales')
+  const profile = await supabase.from('profiles').select('is_banned').eq('id', user.id).single()
+  if (profile.error || typeof profile.data?.is_banned !== 'boolean') throw new Error('No se pudo verificar el estado de la cuenta')
 
   const roles = (roleRows ?? [])
     .map((row) => normalizeRole(row.role))
     .filter((role): role is AppRole => role !== null)
 
-  return buildAccess(user, roles)
+  return buildAccess(user, roles, profile.data.is_banned)
 }
 
 /**
@@ -186,6 +180,7 @@ export async function requireAnyRole(
   const access = await getCurrentAccess()
   if (!access) redirect('/sign-in')
   if (!hasAnyRole(access, roles)) redirect(options.deniedRedirectTo ?? '/')
+  if (access.isSuspended && roles.some(r => r !== 'user')) redirect('/support')
   return access
 }
 
@@ -194,8 +189,11 @@ export async function requireAnyRole(
  */
 export async function requireAnyRoleForApi(
   roles: readonly AppRole[],
+  options: { allowSuspended?: boolean } = {},
 ): Promise<ApiAuthResult> {
-  const access = await getCurrentAccess()
+  let access: AuthAccess | null
+  try { access = await getCurrentAccess() }
+  catch { return { ok: false, response: Response.json({ error: 'No se pudo verificar la seguridad de la sesión.' }, { status: 503 }) } }
   if (!access) {
     return {
       ok: false,
@@ -208,6 +206,9 @@ export async function requireAnyRoleForApi(
       ok: false,
       response: Response.json({ error: 'Sin permisos suficientes' }, { status: 403 }),
     }
+  }
+  if (access.isSuspended && !options.allowSuspended) {
+    return { ok: false, response: Response.json({ error: 'Cuenta suspendida. Conservas acceso al historial y a soporte.', accountSuspended: true }, { status: 403 }) }
   }
 
   // Misma restricción de email que requireUserRole(), pero solo en rutas de

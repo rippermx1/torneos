@@ -1,0 +1,46 @@
+{
+  "date_local": "2026-09-30",
+  "branch": "codex/tournament-discovery",
+  "base_commit": "db49046",
+  "status": "implemented_local",
+  "scope": ["public_catalog", "tournament_decision", "practice_return", "account_destination"],
+  "checks": {
+    "platform_tests": { "passed": 295, "failed": 0, "files": 39, "report": "artifacts/tournament-discovery/platform-tests.json" },
+    "typescript": { "exit_code": 0, "command": "node node_modules/typescript/bin/tsc --noEmit --incremental false" },
+    "lint_affected": { "exit_code": 0 },
+    "next_build": { "exit_code": 0, "mode": "webpack/standalone", "log": "artifacts/tournament-discovery/next-build.log", "environment": "loopback_placeholders" },
+    "browser": {
+      "environment": "local_read_only_fixtures",
+      "catalog_order": ["open", "upcoming", "full", "live"],
+      "states_verified": ["ready", "unknown_count", "empty", "catalog_error", "home_error", "detail_error"],
+      "unavailable_registration_hidden": ["upcoming", "full", "live", "unknown_count"],
+      "practice_return": ["Unity2048", "web_lightweight"],
+      "auth_navigation": ["signup_login_signup", "onboarding_without_session_to_login"],
+      "signup_submission": "mocked_auth_response_no_account_or_email_created",
+      "confirmation_next": "onboarding_with_tournament_destination",
+      "external_practice_return_rejected": true,
+      "viewports_without_horizontal_overflow": [1280, 390, 320],
+      "screenshots_visually_reviewed": [
+        "artifacts/tournament-discovery/catalog-desktop.png",
+        "artifacts/tournament-discovery/detail-desktop.png",
+        "artifacts/tournament-discovery/detail-mobile-top.png",
+        "artifacts/tournament-discovery/detail-mobile-actions.png"
+      ]
+    },
+    "auth_server_contracts": "mocked_callbacks_onboarding_and_resend; age_terms_session_and_redirect_validation"
+  },
+  "pending": ["remote_staging_auth_e2e", "physical_phone", "human_product_acceptance", "paid_launch_competitive_equivalence_and_legal_review"],
+  "external_mutations": false,
+  "database_migrations": false,
+  "money_operations": false,
+  "deployment": false,
+  "unity_source_or_asset_changes": false,
+  "documentation_checked": [
+    "node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/page.md",
+    "node_modules/next/dist/docs/01-app/03-api-reference/04-functions/use-search-params.md",
+    "node_modules/next/dist/docs/01-app/03-api-reference/04-functions/redirect.md",
+    "node_modules/next/dist/docs/01-app/02-guides/server-actions.md",
+    "https://supabase.com/docs/reference/javascript/select",
+    "https://supabase.com/docs/guides/auth/redirect-urls"
+  ]
+}

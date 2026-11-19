@@ -12,10 +12,11 @@ export default function PrivacidadPage() {
       <div>
         <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">← Inicio</Link>
         <h1 className="text-3xl font-bold mt-4">Política de Privacidad</h1>
-        <p className="text-sm text-muted-foreground mt-1">Última actualización: 15 de mayo de 2026</p>
+        <p className="text-sm text-muted-foreground mt-1">Información de desarrollo actualizada: 7 de octubre de 2026. Política pendiente de revisión legal para operación con dinero real.</p>
       </div>
 
       <Section title="1. Responsable del tratamiento">
+        <p>Operador: {process.env.COMPANY_LEGAL_NAME?.trim() || 'Pendiente de completar'} · RUT: {process.env.COMPANY_RUT?.trim() || 'Pendiente de completar'}.</p>
         <p>
           TorneosPlay (en adelante &quot;la Plataforma&quot;) es responsable del tratamiento de los datos
           personales recopilados a través de este sitio web, en conformidad con la Ley N.º 19.628
@@ -83,10 +84,9 @@ export default function PrivacidadPage() {
 
       <Section title="7. Retención de datos">
         <p>
-          Conservamos los datos de cuenta mientras la cuenta esté activa. Los registros de
-          transacciones y partidas se conservan por 6 años conforme a las obligaciones tributarias
-          chilenas. Los datos de KYC se conservan por el tiempo necesario para soporte, auditoría,
-          prevención de fraude y cumplimiento legal aplicable.
+          La política por categoría y sus plazos están pendientes de revisión legal. Una solicitud
+          de eliminación debe identificar los datos, las obligaciones vigentes y cualquier excepción
+          de retención aplicable. La recepción de la solicitud no certifica el borrado de archivos ni copias.
         </p>
       </Section>
 
@@ -95,11 +95,9 @@ export default function PrivacidadPage() {
           Tienes derecho a acceder, rectificar, cancelar y oponerte al tratamiento de tus datos
           (derechos ARCO). Desde la entrada en vigencia de la Ley N.º 21.719, también podrás ejercer
           los derechos adicionales que dicha ley establezca, incluyendo portabilidad, bloqueo u
-          oposición cuando correspondan. Para ejercerlos, escríbenos a{' '}
-          <a href="mailto:privacidad@torneosplay.cl" className="underline underline-offset-2">
-            privacidad@torneosplay.cl
-          </a>
-          . Responderemos en un plazo máximo de 30 días hábiles.
+          oposición cuando correspondan. Puedes solicitar acceso o eliminación y seguir su estado en{' '}
+          <Link href="/support" className="underline underline-offset-2">Mis casos y datos</Link>.
+          Para rectificación u otros derechos, envía una consulta desde el mismo portal.
         </p>
       </Section>
 

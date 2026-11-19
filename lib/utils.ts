@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
+import { formatDateTime, formatMoney } from '@shared/lib/format'
 
 const CHILE_TIME_ZONE = 'America/Santiago'
 
@@ -9,8 +10,7 @@ export function cn(...inputs: ClassValue[]) {
 
 // Formatea centavos a pesos chilenos: 500000 → "$5.000"
 export function formatCLP(cents: number | bigint): string {
-  const pesos = Number(cents) / 100
-  return '$' + pesos.toLocaleString('es-CL', { maximumFractionDigits: 0 })
+  return formatMoney(Number(cents))
 }
 
 // Formatea una fecha UTC a timezone Chile para mostrar en UI
@@ -33,13 +33,7 @@ export function formatDateOnlyCL(date: string | Date): string {
 }
 
 export function formatDateTimeCL(date: string | Date): string {
-  return formatDateCL(date, {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+  return formatDateTime(new Date(date).getTime())
 }
 
 function getDateTimeParts(date: Date, timeZone = CHILE_TIME_ZONE) {

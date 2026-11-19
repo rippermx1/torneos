@@ -1,7 +1,8 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { getAllowedOrigins, getSupabaseBrowserKey, getSupabaseUrl } from '@/lib/env'
+import { getAllowedOrigins, getAppUrl, getSupabaseBrowserKey, getSupabaseUrl, getSupabaseServerUrl, getSupabaseCookieOptions } from '@/lib/env'
+import { buildAppCsp } from '@/lib/security/csp'
 
 // ── CORS ────────────────────────────────────────────────────
 const ALLOWED_ORIGINS = getAllowedOrigins()
@@ -15,32 +16,14 @@ const ALLOWED_ORIGINS = getAllowedOrigins()
 // connect-src: incluye Supabase (HTTPS y WSS para Realtime). Flow se accede
 // solo desde el server (lib/flow/payments.ts), no desde el browser, por eso
 // no esta listado.
-// img-src: Supabase Storage emite URLs en *.supabase.co. data:/blob: para
+// img-src: permite el origen configurado de Supabase Storage. data:/blob: para
 // avatars, screenshots locales, capturas KYC.
 // frame-ancestors 'none': impide que la app sea embebida (clickjacking).
 function buildCsp(nonce: string): string {
-  const isDev = process.env.NODE_ENV === 'development'
-  const supabase = getSupabaseUrl() ?? ''
-  const supabaseHttps = supabase ? supabase.replace(/^http/, 'http').replace(/^http:/, 'https:') : ''
-  const supabaseWss = supabase ? supabase.replace(/^http/, 'ws') : ''
-
-  const csp = [
-    `default-src 'self'`,
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ''}`,
-    // Tailwind/Geist generan algunos estilos inline en runtime; en dev usamos
-    // 'unsafe-inline' para no romper HMR. En prod confiamos en el nonce.
-    `style-src 'self' ${isDev ? "'unsafe-inline'" : `'nonce-${nonce}' 'unsafe-inline'`}`,
-    `img-src 'self' blob: data: ${supabaseHttps}`.trim(),
-    `font-src 'self' data:`,
-    `connect-src 'self' ${supabaseHttps} ${supabaseWss}`.trim(),
-    `object-src 'none'`,
-    `base-uri 'self'`,
-    `form-action 'self'`,
-    `frame-ancestors 'none'`,
-    `upgrade-insecure-requests`,
-  ]
-
-  return csp.join('; ')
+  return buildAppCsp(nonce, {
+    development: process.env.NODE_ENV === 'development',
+    appUrl: getAppUrl(), supabaseUrl: getSupabaseUrl(),
+  })
 }
 
 const CORS_HEADERS = {
@@ -78,6 +61,7 @@ const PUBLIC_PREFIXES = [
   '/api/wallet/deposit/flow/return', // Flow vuelve con POST del browser sin cookies SameSite=Lax
   '/api/webhooks',
   '/api/cron',
+  '/api/local-flow', // Disabled outside the explicitly configured local simulator.
 ]
 
 function isPublicPath(pathname: string): boolean {
@@ -120,7 +104,7 @@ export async function proxy(req: NextRequest) {
   res.headers.set('Expires', '0')
   res.headers.set('Content-Security-Policy', csp)
 
-  const supabaseUrl = getSupabaseUrl()
+  const supabaseUrl = getSupabaseServerUrl()
   const supabaseBrowserKey = getSupabaseBrowserKey()
 
   if (!supabaseUrl || !supabaseBrowserKey) {
@@ -133,6 +117,7 @@ export async function proxy(req: NextRequest) {
     supabaseUrl,
     supabaseBrowserKey,
     {
+      cookieOptions: getSupabaseCookieOptions(),
       cookies: {
         getAll() {
           return req.cookies.getAll()
@@ -157,8 +142,17 @@ export async function proxy(req: NextRequest) {
 
   // ── Proteger rutas privadas ───────────────────────────────────
   if (!isPublicPath(req.nextUrl.pathname) && !user) {
-    const url = req.nextUrl.clone()
+    if (req.nextUrl.pathname.startsWith('/api/')) {
+      const denied = NextResponse.json({ error: 'No autenticado' }, { status: 401 })
+      denied.headers.set('Cache-Control', 'private, no-store')
+      denied.headers.set('Content-Security-Policy', csp)
+      for (const cookie of res.cookies.getAll()) denied.cookies.set(cookie)
+      return withCors(denied, req)
+    }
+    const url = new URL('/sign-in', getAppUrl(req.url))
     url.pathname = '/sign-in'
+    url.search = ''
+    url.searchParams.set('next', req.nextUrl.pathname + req.nextUrl.search)
     return withCors(NextResponse.redirect(url), req)
   }
 
@@ -167,7 +161,7 @@ export async function proxy(req: NextRequest) {
   // En el middleware solo bloqueamos si no hay sesión en absoluto;
   // el check de is_admin ocurre en admin/layout.tsx.
   if (isAdminPath(req.nextUrl.pathname) && !user) {
-    const url = req.nextUrl.clone()
+    const url = new URL('/', getAppUrl(req.url))
     url.pathname = '/'
     return withCors(NextResponse.redirect(url), req)
   }
@@ -177,7 +171,7 @@ export async function proxy(req: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    '/((?!_next|games/|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
     '/(api|trpc)(.*)',
   ],
 }

@@ -1,0 +1,209 @@
+{
+  "at": "2026-10-05T21:27:26.380Z",
+  "scope": "Implementacion, activacion Supabase y publicacion acotada en Vercel torneos-dev; sin cambios productivos",
+  "validation": {
+    "vitest": {
+      "status": "PASS",
+      "files": 8,
+      "tests": 27,
+      "new_tests_files": [
+        "__tests__/accounting-operations.test.ts",
+        "__tests__/accounting-api.test.ts"
+      ]
+    },
+    "sql": {
+      "at": "2026-10-05T18:47:34.933Z",
+      "status": "PASS",
+      "scope": "isolated real SQL in PGlite, simplified Auth and operational fixture schema; remote Supabase and browser MFA NOT_RUN",
+      "checks": [
+        "supplier invoice creates debt, payment clears debt without repeating expense; other revenue includes full IVA; isolated scenario rolled back",
+        "atomic balanced documents, exact integers, verified VAT, duplicate replay and conflicting duplicate rejection",
+        "atomic cartola import, idempotent duplicate, matching rejects wrong amount; bank balance and company loss without sales",
+        "real payment and completion triggers: IVA/cash separate from earned income; exact invoice replaces estimated fee once with immutable reversal",
+        "closed package immutable across reopened correction and version2; closed backdating/import/unmatch blocked; balance difference blocks approval",
+        "opening/closing cumulative balances; current-month close rejected",
+        "grouped bank matching handles original + reversal + corrected document; reversing Flow invoice restores provisions until a new verified invoice",
+        "SQL filters real practice payments and simulated refunds/credit notes; real N/C requires trace and manual verification, verified once",
+        "actual SQL full JSON journal exceeds 300 lines, complete and balanced",
+        "browser roles denied; service-only invoker API; immutable journal"
+      ],
+      "hashes": {
+        "20260804223538_accounting_double_entry_ledger.sql": "a22579aa160d0ce8ef71955d1fbbfa30ef29bd0c3bb5029f87eb268aacf5cdf4",
+        "20260804231035_account_for_pre_completion_refunds.sql": "f1f792a00304b0173ce26b8332c6333ed0a0349aab880c7309a2e815a65826f8",
+        "20261005181131_accounting_operations_and_controlled_close.sql": "5a3f7bc062cef36d63e3a2b21f72457f067b705beb7e2b94f89b73206b1e3f01"
+      }
+    },
+    "typescript": {
+      "status": "PASS",
+      "command": "npx tsc --noEmit --incremental false"
+    },
+    "eslint": {
+      "status": "PASS",
+      "scope": "archivos de implementación, APIs, UI, scripts y pruebas contables"
+    },
+    "build": {
+      "status": "PASS",
+      "command": "node scripts/start-accounting-development.mjs --build",
+      "dist": "artifacts/accounting/next-development-real",
+      "typescript": "PASS",
+      "new_routes": [
+        "/admin/accounting",
+        "/api/admin/accounting",
+        "/api/admin/accounting/balances.csv"
+      ],
+      "includesSharedWorkingChanges": true,
+      "publicDeployment": false
+    },
+    "visual": {
+      "status": "PASS",
+      "kind": "React real + CSS producción, fixture estático sintético; sin Auth ni formularios conectados",
+      "desktop": "artifacts/accounting/ui-desktop.png",
+      "mobile": "artifacts/accounting/ui-mobile.png",
+      "viewport": [
+        390,
+        844
+      ],
+      "document_client_width": 375,
+      "document_scroll_width": 375
+    },
+    "operational": {
+      "at": "2026-10-05T19:33:31.933Z",
+      "origin": "http://127.0.0.1:3085",
+      "project": "jnoyjewsqbooqaiighcs",
+      "auth": "REAL",
+      "mfa": "REAL_TOTP",
+      "postgrest": "REAL",
+      "documents": "SYNTHETIC",
+      "publicDeployment": false,
+      "run": "227a1cad-f6ed-4225-9065-72b479be96da",
+      "period": "2026-09",
+      "fixtures": [
+        {
+          "admin": "e433ccab-0d6e-4907-8469-642f1e8fabde",
+          "player": "fcdaa359-6dfd-4ca0-ac82-711972ce388f",
+          "prefix": "PRUEBA-CONTABLE-227a1cad"
+        }
+      ],
+      "checks": [
+        "Anonymous, regular user and real admin AAL1 are denied on reads and writes",
+        "Real TOTP enroll/challenge verifies AAL2 without changing existing accounts",
+        "Real PostgREST refuses browser RPC access, and API validates origin/period",
+        "Concurrent real HTTP duplicate contributions commit once with exact cents",
+        "Supplier invoice and payment persist separate entries without repeating expense",
+        "Atomic cartola import, exact bank match and complete CSV/JSON exports",
+        "Synthetic controlled close freezes its version and blocks backdated writes",
+        "Reopening preserves snapshot; immutable reversals and grouped match restore zero test balances"
+      ],
+      "closedSnapshotDigest": "5217748db8e83d5884a0a24170d16b5d",
+      "final": {
+        "entries": 6,
+        "lines": 12,
+        "balancesZero": true,
+        "controls": {
+          "unmatched_bank": 0,
+          "estimates_cents": 0,
+          "unmatched_journal": 0,
+          "pending_credit_notes": 0
+        },
+        "activeCloses": 0
+      },
+      "status": "PASS_DEVELOPMENT_SYNTHETIC",
+      "passed": 8,
+      "pending": [
+        "documentos y primer cierre real",
+        "aceptación del contador",
+        "presentación tributaria",
+        "intercalados arbitrarios de webhooks y cierre"
+      ]
+    },
+    "security": {
+      "accountingTablePermissions": "PASS",
+      "rlsWithoutPolicies": {
+        "level": "INFO",
+        "count": 12,
+        "explanation": "Server-only operational tables; no browser grants",
+        "remediation": "https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy"
+      },
+      "leakedPasswordProtection": {
+        "level": "WARN",
+        "enabled": false,
+        "changedByDelivery": false,
+        "remediation": "https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection"
+      }
+    }
+  },
+  "source_sha256": {
+    "lib/accounting/ledger.ts": "2e73a69c1d3aa9ecb91141ec888f89c9729119767a0ae6db6578ab1786991443",
+    "lib/accounting/model-a-report.ts": "cf704047990cb59fddbc7969251c9f73044d867602716ef53751590f1a540bdf",
+    "lib/accounting/operations.ts": "c051cfe9753b77d041b6f77018c0df9fd4f2cfe54e21f604caff2a09b0cebbdb",
+    "lib/accounting/bank-import.ts": "9a87dea3e5e18a1c063c8bf5565fac3599553e4fa655cfc19c7d921f4fa110d9",
+    "components/admin/accounting-workspace.tsx": "13fb9fbdf7c8db3552efb97a8f66d9af7cd7a95631c8a963689946f15e952a3e",
+    "components/admin/refund-credit-note-form.tsx": "ae36511b727c5faa37db8d576dfb2700efec98eb3a30d0964114bd981e3e5adc",
+    "components/admin/admin-sidebar.tsx": "10883c5e8ff574a9ca0409db2d5cdb8a3bc7d75c0d3d9e7b720b3a52abaaac31",
+    "app/(admin)/admin/accounting/page.tsx": "039938889e9c953548201e44c044157cb7a131a04d5545116cbd9b2859d87080",
+    "app/(admin)/admin/reports/page.tsx": "3307c4d48c6e04106d347e216f2a3ce807c1b380c305c26e6a506a2f9b15372d",
+    "app/(admin)/admin/refunds/page.tsx": "020fbd204d9e4eebcdf2ce54d9c88e825e78bba41275e8ca69ef4b7a80d2d3bf",
+    "app/api/admin/accounting/route.ts": "b0a5e0621b0f79bf5650b062f0a0148f8c78b73cd7404d586ea74282222e35cc",
+    "app/api/admin/accounting/balances.csv/route.ts": "488156b34f2ae662616afd7d563f42589ae2fad08124220983b1ead72e05fb73",
+    "app/api/admin/reports/journal.csv/route.ts": "08eab3c57bc9737230c50e9e72d555619018379881944548539a23e136a3c720",
+    "app/api/admin/refunds/[id]/credit-note/route.ts": "d5e23b3ec6069f030dbfcfe739a102aad7e60ca5908eff2049947737090c00a3",
+    "supabase/migrations/20261005181131_accounting_operations_and_controlled_close.sql": "5a3f7bc062cef36d63e3a2b21f72457f067b705beb7e2b94f89b73206b1e3f01",
+    "scripts/verify-accounting-sql.mjs": "f412fce8e540d3fa0fb5b4e2c8e2d8d3a59f6ccfc9fccf79b52a3c2d19dd9966",
+    "scripts/preview-accounting-ui.mjs": "1ed91ce4a7cc2abb1047ab50cfafbecdaea5a4f193ed09f0906525f47eceb374",
+    "scripts/analyze-business-model.mjs": "5b9d05c3962752e392e308df6dbb0b7c750c8a09af4c172a6d4e0d5eda1f4a10",
+    "__tests__/accounting-api.test.ts": "cfc1830ae50cd8016dc82117ed870d1cf0117ef365376f97f948876c25a0485f",
+    "__tests__/accounting-operations.test.ts": "4a2ab2159edc23361b23808407bdd3d521699e9107be8291e5c666199a322da6",
+    "scripts/start-accounting-development.mjs": "9cb61bb95a9587780ddf5e0e119dcf3a62ad3d0d4bbac5803382eb6cc45b638b",
+    "scripts/verify-accounting-development.mjs": "7e3734deb8aedca7c2ceb484458819c3971c5c9f45578212624f48cff87ba77c"
+  },
+  "development_migration": {
+    "project": "jnoyjewsqbooqaiighcs",
+    "version": "20261005181131",
+    "applied": true,
+    "initial_mcp_history_version": "20261005191208",
+    "history_aligned_with_local": true,
+    "sha256": "5a3f7bc062cef36d63e3a2b21f72457f067b705beb7e2b94f89b73206b1e3f01",
+    "previousEntries": 0,
+    "previousLines": 0,
+    "newTablesRls": 5,
+    "browserAccess": false,
+    "publicWrappers": "SECURITY INVOKER",
+    "evidence": "artifacts/accounting/development-migration.json"
+  },
+  "preclose_preparation": {
+    "at": "2026-10-05T20:03:06.679Z",
+    "status": "PREPARADO_PENDIENTE_DE_RESPALDOS_Y_REVISION",
+    "proposedPeriod": "2026-09",
+    "ownerStatement": "sin movimientos reales",
+    "artifact": "artifacts/accounting/primer-cierre-2026-09/pre-cierre.json",
+    "document": "docs/CONTABILIDAD-PRIMER-CIERRE.md",
+    "validation": "PASS_JSON_Y_LECTURA_DEV",
+    "realClosingApproved": false,
+    "unknownExternalBalancesRetained": true,
+    "databaseMutated": false,
+    "company_identity": {
+      "status": "EXTRACTED_FROM_PROVIDED_CERTIFICATE",
+      "profile": "artifacts/accounting/company-document-review/company-profile.json",
+      "document_issued_at": "2026-01-30",
+      "source_sha256": "2ddf1f826ffd30c9437927d763b7ee5ac6e535bf8b381013a5ecb833d40e2f9d",
+      "rut_checksum": "PASS",
+      "current_status_verified": false,
+      "reviewer_assigned": false,
+      "accounting_entries_created": false
+    }
+  },
+  "publication": {
+    "status": "READY_PUBLISHED_AND_VERIFIED",
+    "deployment": "dpl_97VBvufgcoKozhAKLytz7Hjjs7SW",
+    "url": "https://torneos-dev.vercel.app/admin/accounting",
+    "evidence": "docs/CONTABILIDAD-PUBLICACION-EVIDENCIA.json",
+    "validation": {
+      "tests": 38,
+      "files": 8,
+      "stagedChecks": 9,
+      "publishedChecks": 9
+    },
+    "commercialProductionChanged": false,
+    "realClosingApproved": false
+  }
+}

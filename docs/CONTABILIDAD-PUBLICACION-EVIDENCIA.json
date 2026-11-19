@@ -1,0 +1,181 @@
+{
+  "at": "2026-10-05T21:27:26.380Z",
+  "status": "READY_PUBLISHED_AND_VERIFIED",
+  "environment": "cloud-development",
+  "projectId": "prj_QHiZYuYkztFToMGmwhPsyOx9nVdG",
+  "teamId": "team_PE6bjY2Mkofe3t853KkiDKlM",
+  "supabaseProjectRef": "jnoyjewsqbooqaiighcs",
+  "deployment": "dpl_97VBvufgcoKozhAKLytz7Hjjs7SW",
+  "url": "https://torneos-dev.vercel.app/admin/accounting",
+  "rollbackDeployment": "dpl_3VxaPf5t4yAGb2TRX28GjgJpJXFH",
+  "manifest": "C:\\torneos\\artifacts\\accounting-cloud\\2026-10-05T21-08-05.398Z\\package-manifest.json",
+  "manifestSha256": "42f91d49c882218d1603b97f225290f81baee02b92c47da08e0a8d02251b2c3e",
+  "uploadFiles": 357,
+  "accountingChanges": [
+    "app/(admin)/admin/accounting/page.tsx",
+    "app/(admin)/admin/refunds/page.tsx",
+    "app/(admin)/admin/reports/page.tsx",
+    "app/api/admin/accounting/balances.csv/route.ts",
+    "app/api/admin/accounting/route.ts",
+    "app/api/admin/refunds/[id]/credit-note/route.ts",
+    "app/api/admin/reports/journal.csv/route.ts",
+    "components/admin/accounting-workspace.tsx",
+    "components/admin/admin-sidebar.tsx",
+    "components/admin/refund-credit-note-form.tsx",
+    "lib/accounting/bank-import.ts",
+    "lib/accounting/ledger.ts",
+    "lib/accounting/model-a-report.ts",
+    "lib/accounting/operations.ts",
+    "types/database.ts"
+  ],
+  "preservedGeneratedConfig": [
+    "vercel.json",
+    ".vercelignore"
+  ],
+  "generatedFiles": [
+    "next-env.d.ts"
+  ],
+  "sourceHead": "a5e67152f9d7025e9d1e20d151dda31063e2f4fd",
+  "sourceIncludesWorkingChanges": true,
+  "sourceScope": "accounting-only overlay on published development source",
+  "validation": {
+    "vitest": {
+      "status": "PASS",
+      "files": 8,
+      "tests": 38
+    },
+    "eslint": "PASS",
+    "typescript": "PASS",
+    "localBuild": "PASS",
+    "remoteBuild": "READY_WITH_DEV_ENV_GUARD",
+    "staged": {
+      "at": "2026-10-05T21:22:42.652Z",
+      "origin": "https://torneos-o1iboz6ep-carlos-projects-a9dcfa0f.vercel.app",
+      "stage": true,
+      "deployment": "dpl_97VBvufgcoKozhAKLytz7Hjjs7SW",
+      "project": "torneos-dev",
+      "supabaseProject": "jnoyjewsqbooqaiighcs",
+      "documents": "existing synthetic fixtures only",
+      "auth": "REAL",
+      "mfa": "REAL_TOTP",
+      "checks": [
+        "Anonymous, regular user and admin AAL1 cannot read or write accounting",
+        "Existing operator TOTP raises the fresh session to AAL2",
+        "Complete JSON ledger, zero balances and controls match the dev fixture",
+        "Journal and balance CSV exports include the complete period and balanced totals",
+        "Saved reopened close retains its original six lines and immutable digest",
+        "Canonical origin supports idempotent replay; invalid origin, period and close are rejected",
+        "Authenticated accounting and finance pages render; public login retains dev headers",
+        "Published WebGL assets retain all baseline hashes",
+        "Publication verification adds no documents, journals, bank moves, audits or closes"
+      ],
+      "final": {
+        "entries": 6,
+        "lines": 12,
+        "balancesZero": true,
+        "controls": {
+          "unmatched_bank": 0,
+          "estimates_cents": 0,
+          "unmatched_journal": 0,
+          "pending_credit_notes": 0
+        }
+      },
+      "clientChunksChecked": 14,
+      "unchangedGameAssets": 13,
+      "games": {
+        "2048": "unity-2048-007",
+        "factory-empire": "factory-empire-3d-009"
+      },
+      "status": "PASS",
+      "passed": 9
+    },
+    "published": {
+      "at": "2026-10-05T21:23:44.369Z",
+      "origin": "https://torneos-dev.vercel.app",
+      "stage": false,
+      "deployment": "dpl_97VBvufgcoKozhAKLytz7Hjjs7SW",
+      "project": "torneos-dev",
+      "supabaseProject": "jnoyjewsqbooqaiighcs",
+      "documents": "existing synthetic fixtures only",
+      "auth": "REAL",
+      "mfa": "REAL_TOTP",
+      "checks": [
+        "Anonymous, regular user and admin AAL1 cannot read or write accounting",
+        "Existing operator TOTP raises the fresh session to AAL2",
+        "Complete JSON ledger, zero balances and controls match the dev fixture",
+        "Journal and balance CSV exports include the complete period and balanced totals",
+        "Saved reopened close retains its original six lines and immutable digest",
+        "Canonical origin supports idempotent replay; invalid origin, period and close are rejected",
+        "Authenticated accounting and finance pages render; public login retains dev headers",
+        "Published WebGL assets retain all baseline hashes",
+        "Publication verification adds no documents, journals, bank moves, audits or closes"
+      ],
+      "final": {
+        "entries": 6,
+        "lines": 12,
+        "balancesZero": true,
+        "controls": {
+          "unmatched_bank": 0,
+          "estimates_cents": 0,
+          "unmatched_journal": 0,
+          "pending_credit_notes": 0
+        }
+      },
+      "clientChunksChecked": 14,
+      "unchangedGameAssets": 13,
+      "games": {
+        "2048": "unity-2048-007",
+        "factory-empire": "factory-empire-3d-009"
+      },
+      "status": "PASS",
+      "passed": 9
+    },
+    "aliases": {
+      "at": "2026-10-05T21:24:24.643Z",
+      "status": "PASS",
+      "aliases": [
+        {
+          "alias": "torneos-dev.vercel.app",
+          "projectId": "prj_QHiZYuYkztFToMGmwhPsyOx9nVdG",
+          "deployment": "dpl_97VBvufgcoKozhAKLytz7Hjjs7SW"
+        },
+        {
+          "alias": "torneos-dev-carlos-projects-a9dcfa0f.vercel.app",
+          "projectId": "prj_QHiZYuYkztFToMGmwhPsyOx9nVdG",
+          "deployment": "dpl_97VBvufgcoKozhAKLytz7Hjjs7SW"
+        }
+      ]
+    },
+    "runtime5xx": {
+      "result": "NO_MATCHES",
+      "from": "2026-10-05T21:09:47.505Z",
+      "to": "2026-10-05T21:24:47.505Z"
+    }
+  },
+  "developmentRobotsHeader": "noindex, nofollow",
+  "vercelProtectionMaintained": true,
+  "temporaryShareAccess": "REVOKED_OR_ABSENT_CONFIRMED_BY_302_SSO_WITHOUT_ACCESS_COOKIE",
+  "temporaryShareFileRemoved": true,
+  "commercialProductionChanged": false,
+  "schemaChangedByPublication": false,
+  "accountingRecordsChanged": false,
+  "existingAccountRolesPasswordsFactorsChanged": false,
+  "realClosingApproved": false,
+  "ownerStatement": "sin movimientos reales",
+  "pending": [
+    "CONT-11: periodo, saldos y respaldos externos y revision del contador",
+    "aceptacion humana del recorrido web",
+    "CONT-12: operacion fiscal"
+  ],
+  "packagingCorrection": {
+    "initialDeployment": "dpl_BqUv1P7RDmXCwesELvyPKWKRJX3C",
+    "issue": "Generated baseline vercel.json and .vercelignore omitted by original manifest-only copy",
+    "rollbackPerformed": true,
+    "fixedInFinalPackage": true
+  },
+  "helperSourceSha256": {
+    "scripts/package-accounting-development.mjs": "b889c83becfdf7e448b9dd90aacbcd887882b086c03afa1291e9db3bb46befcc",
+    "scripts/validate-accounting-package.mjs": "c07f533126f2a9ecbcaa5f5a9bd080c46ae24c9b615b497a171abfa8699679f8",
+    "scripts/verify-accounting-publication.mjs": "87d38be8d9d55195ba1dbf4ce42170d8e1837d03ee681bc6345e225d7e770f7d"
+  }
+}

@@ -76,6 +76,7 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Dinero y control',
     items: [
+      { href: '/admin/accounting', label: 'Contabilidad y cierres', description: 'Gastos, cartola y aprobación mensual', icon: Landmark },
       {
         href: '/admin/payments',
         label: 'Cobros',

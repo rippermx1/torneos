@@ -7,7 +7,8 @@ async function rules(code: string, filePath: string) {
   return result.messages.map((m) => m.ruleId)
 }
 
-describe('architecture rules', () => {
+// The first lintText loads the whole ESLint config; under a parallel suite that exceeds 5 s.
+describe('architecture rules', { timeout: 30_000 }, () => {
   it('shared cannot import a business layer', async () => {
     expect(await rules("import { a } from '@entities/challenge'\nexport const b = a\n", 'src/shared/lib/sample.ts')).toContain('no-restricted-imports')
   })

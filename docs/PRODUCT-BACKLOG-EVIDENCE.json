@@ -1,0 +1,37 @@
+{
+  "date": "2026-10-01",
+  "branch": "codex/product-backlog-ted-runner",
+  "baseCommit": "3f71511",
+  "workspace": "C:/torneos",
+  "scope": ["Docker cleanup first", "Evidence-based backlog split into web, Ted Runner and 2048", "Public Ted Runner rename with backward-compatible route", "Unity product name changed in source; no new Unity binary"],
+  "backlog": {
+    "document": "docs/BACKLOG.md",
+    "web": { "doneAndTested": 6, "inProgress": 4, "pending": 6 },
+    "tedRunner": { "doneAndTested": 2, "inProgress": 4, "pending": 7 },
+    "2048": { "doneAndTested": 3, "inProgress": 3, "pending": 4 },
+    "total": 39,
+    "nextUsefulWebIncrement": "WEB-11: public game catalog with clear modalities and tournament context"
+  },
+  "checks": {
+    "platform": { "passed": 315, "failed": 0, "files": 42, "report": "artifacts/product-backlog/platform-tests.json" },
+    "typescript": "PASS after regenerating current route types and removing obsolete generated files for the moved route",
+    "affectedEslint": "PASS",
+    "applicationBuild": "npm run local:up; Next webpack standalone Docker build exit 0; torneos-app-1 healthy",
+    "buildSnapshot": { "2048": "unity-2048-002", "alien-run": "level-030" },
+    "http": { "passed": 15, "hashesMimeGzipFraming": "PASS", "legacyRoute": { "status": 308, "destination": "/play/ted-runner" }, "report": "artifacts/product-backlog/http.json" },
+    "browser": ["legacy route redirects to /play/ted-runner with next query preserved", "document title Ted Runner — TorneosPlay and heading Ted Runner", "iframe title Ted Runner · Unity", "real WebGL handshake enables Jugar gratis", "click starts practice and shows disabled Partida en curso", "Juegos returns to /play and Ted Runner card links back to the canonical route"],
+    "visualEvidence": "artifacts/product-backlog/ted-runner-header.png; cropped to page header and controls, excluding licensed canvas",
+    "unityEditorOrNewBuild": "NOT_RUN",
+    "humanPlaytestOrPhysicalDevice": "NOT_RUN"
+  },
+  "renameCompatibility": { "publicName": "Ted Runner", "publicRoute": "/play/ted-runner", "technicalId": "alien-run", "sdkChannel": "orbit.arcade", "preservedPublishedBuild": "level-030", "unitySourceProductName": "Ted Runner", "newBrandedBinary": "PENDING TR-03/TR-10" },
+  "parallelWorkPreserved": {
+    "ticket": "G2048-05",
+    "scope": "2048 animation/UI source changes, Unity resources/settings/tests, browser session/component and build registry edits appeared concurrently",
+    "notIncludedInThisDelivery": true,
+    "sharedWorkspaceBranch": "codex/2048-clean-gameplay; backlog committed to its own branch without switching the shared checkout",
+    "registryNote": "Working registry moved to unity-2048-003 after this application's build and HTTP verification; the observed app build in this report uses 002. A later 2048 delivery must validate 003 separately."
+  },
+  "cleanupEvidence": "docs/DOCKER-CLEANUP-EVIDENCE.json",
+  "limits": ["No full Ted Runner playthrough from the new host", "No new Unity compilation or branded binary", "No real payments, external DB changes or deployment", "Prior Auth/MFA/payments E2E evidence cited in backlog was not repeated by this audit", "Platform and HTTP results refer to the checked build snapshot; concurrent 2048 WIP is not certified by this report", "No licensed Ted Runner canvas screenshot or asset sent to AI"]
+}

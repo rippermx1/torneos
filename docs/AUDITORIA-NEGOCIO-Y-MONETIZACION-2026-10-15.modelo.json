@@ -1,0 +1,250 @@
+{
+  "date": "2026-10-15",
+  "timezone": "America/Santiago",
+  "status": "illustrative_not_forecast",
+  "actualCommercialMetrics": null,
+  "sourcePolicy": "lib/business/rules.ts and lib/tournament/finance.ts, current working tree",
+  "cautions": [
+    "No actual demand, budget, cost, eCPM, LTV or provider eligibility established.",
+    "No currency conversion assumed; USD and CLP remain separate.",
+    "Flow fee VAT recovery is conditional on valid tax documents and accountant review.",
+    "Ad estimates are before incremental costs, invalid-traffic adjustments and taxes; assumed rates are not market benchmarks.",
+    "Reward completion affects grants in this model, not revenue again after rendered impressions.",
+    "Ad assumptions reused from 2026-10-08 to expose rewarded-only versus mixed; not refreshed tariffs.",
+    "Monthly sensitivity assumes fixed cancellation count even when solving alternative volume."
+  ],
+  "ticketAssumptions": {
+    "currency": "CLP",
+    "entryFinalPesos": 5000,
+    "prizesPesos": 33000,
+    "minPlayers": 12,
+    "maxPlayers": 15,
+    "vatRate": 0.19,
+    "flowFeeNetRate": 0.0319,
+    "refundFeeNetPesos": 202,
+    "flowVatCreditAssumedRecoverable": true
+  },
+  "ticketRows": [
+    {
+      "players": 12,
+      "grossPesos": 60000,
+      "netSalesPesos": 50420.17,
+      "vatDebitPesos": 9579.83,
+      "flowFeeNetPesos": 1914,
+      "flowFeeVatPesos": 363.66,
+      "prizesPesos": 33000,
+      "contributionPesos": 15506.17,
+      "marginOnGrossPercent": 25.84,
+      "cashAfterFlowAndPrizeBeforeVatPesos": 24722.34,
+      "vatPayableAfterFlowCreditPesos": 9216.17,
+      "contributionWithoutFlowVatCreditPesos": 15142.51
+    },
+    {
+      "players": 13,
+      "grossPesos": 65000,
+      "netSalesPesos": 54621.85,
+      "vatDebitPesos": 10378.15,
+      "flowFeeNetPesos": 2073.5,
+      "flowFeeVatPesos": 393.97,
+      "prizesPesos": 33000,
+      "contributionPesos": 19548.35,
+      "marginOnGrossPercent": 30.07,
+      "cashAfterFlowAndPrizeBeforeVatPesos": 29532.53,
+      "vatPayableAfterFlowCreditPesos": 9984.18,
+      "contributionWithoutFlowVatCreditPesos": 19154.38
+    },
+    {
+      "players": 14,
+      "grossPesos": 70000,
+      "netSalesPesos": 58823.53,
+      "vatDebitPesos": 11176.47,
+      "flowFeeNetPesos": 2233,
+      "flowFeeVatPesos": 424.27,
+      "prizesPesos": 33000,
+      "contributionPesos": 23590.53,
+      "marginOnGrossPercent": 33.7,
+      "cashAfterFlowAndPrizeBeforeVatPesos": 34342.73,
+      "vatPayableAfterFlowCreditPesos": 10752.2,
+      "contributionWithoutFlowVatCreditPesos": 23166.26
+    },
+    {
+      "players": 15,
+      "grossPesos": 75000,
+      "netSalesPesos": 63025.21,
+      "vatDebitPesos": 11974.79,
+      "flowFeeNetPesos": 2392.5,
+      "flowFeeVatPesos": 454.58,
+      "prizesPesos": 33000,
+      "contributionPesos": 27632.71,
+      "marginOnGrossPercent": 36.84,
+      "cashAfterFlowAndPrizeBeforeVatPesos": 39152.92,
+      "vatPayableAfterFlowCreditPesos": 11520.21,
+      "contributionWithoutFlowVatCreditPesos": 27178.13
+    }
+  ],
+  "adsAssumptions": {
+    "currency": "USD",
+    "days": 30,
+    "sessionsPerActiveDay": 2,
+    "displayOpportunitiesPerSession": 2,
+    "rewardedOpportunitiesPerSession": 1,
+    "rewardedOptIn": 0.25,
+    "eligible": 0.8,
+    "withoutAdBlock": 0.9,
+    "fill": 0.7,
+    "render": 0.95,
+    "grantCompletionAssumption": 0.8,
+    "ecpmUSD": {
+      "low": {
+        "display": 0.5,
+        "rewarded": 2
+      },
+      "base": {
+        "display": 2,
+        "rewarded": 5
+      },
+      "high": {
+        "display": 5,
+        "rewarded": 10
+      }
+    }
+  },
+  "adsRows": [
+    {
+      "averageDAU": 100,
+      "displayImpressions": 5745.6,
+      "rewardedImpressions": 718.2,
+      "rewardGrantsIllustrative": 574.56,
+      "revenues": [
+        {
+          "scenario": "low",
+          "displayUSD": 2.87,
+          "rewardedOnlyUSD": 1.44,
+          "mixedUSD": 4.31
+        },
+        {
+          "scenario": "base",
+          "displayUSD": 11.49,
+          "rewardedOnlyUSD": 3.59,
+          "mixedUSD": 15.08
+        },
+        {
+          "scenario": "high",
+          "displayUSD": 28.73,
+          "rewardedOnlyUSD": 7.18,
+          "mixedUSD": 35.91
+        }
+      ]
+    },
+    {
+      "averageDAU": 1000,
+      "displayImpressions": 57456,
+      "rewardedImpressions": 7182,
+      "rewardGrantsIllustrative": 5745.6,
+      "revenues": [
+        {
+          "scenario": "low",
+          "displayUSD": 28.73,
+          "rewardedOnlyUSD": 14.36,
+          "mixedUSD": 43.09
+        },
+        {
+          "scenario": "base",
+          "displayUSD": 114.91,
+          "rewardedOnlyUSD": 35.91,
+          "mixedUSD": 150.82
+        },
+        {
+          "scenario": "high",
+          "displayUSD": 287.28,
+          "rewardedOnlyUSD": 71.82,
+          "mixedUSD": 359.1
+        }
+      ]
+    },
+    {
+      "averageDAU": 10000,
+      "displayImpressions": 574560,
+      "rewardedImpressions": 71820,
+      "rewardGrantsIllustrative": 57456,
+      "revenues": [
+        {
+          "scenario": "low",
+          "displayUSD": 287.28,
+          "rewardedOnlyUSD": 143.64,
+          "mixedUSD": 430.92
+        },
+        {
+          "scenario": "base",
+          "displayUSD": 1149.12,
+          "rewardedOnlyUSD": 359.1,
+          "mixedUSD": 1508.22
+        },
+        {
+          "scenario": "high",
+          "displayUSD": 2872.8,
+          "rewardedOnlyUSD": 718.2,
+          "mixedUSD": 3591
+        }
+      ]
+    }
+  ],
+  "adsBreakEvenForUSD500IncrementalMonthlyCost": {
+    "rewardedOnlyAverageDAU": 13924,
+    "mixedAverageDAU": 3316
+  },
+  "monthlyTicketAssumptions": {
+    "completedEvents": 30,
+    "playersPerCompletedEvent": 14,
+    "newCustomerShareOfPaidParticipations": 0.25,
+    "supportCostPerParticipationPesos": 300,
+    "fixedCostsPesos": 500000,
+    "cancelledAdditionalEvents": 3,
+    "paidPlayersPerCancelledEvent": 8
+  },
+  "monthlyTicketSensitivity": [
+    {
+      "CACPerNewPayerPesos": 0,
+      "monthlyPaidParticipations": 420,
+      "newCustomersAssumed": 105,
+      "cancellationNetLossPesos": 8676,
+      "monthlyResultBeforeIncomeTaxPesos": 73039.9,
+      "completedEventsToBreakEvenWithFixedCancellationCount": 27
+    },
+    {
+      "CACPerNewPayerPesos": 1000,
+      "monthlyPaidParticipations": 420,
+      "newCustomersAssumed": 105,
+      "cancellationNetLossPesos": 8676,
+      "monthlyResultBeforeIncomeTaxPesos": -31960.1,
+      "completedEventsToBreakEvenWithFixedCancellationCount": 33
+    },
+    {
+      "CACPerNewPayerPesos": 3000,
+      "monthlyPaidParticipations": 420,
+      "newCustomersAssumed": 105,
+      "cancellationNetLossPesos": 8676,
+      "monthlyResultBeforeIncomeTaxPesos": -241960.1,
+      "completedEventsToBreakEvenWithFixedCancellationCount": 58
+    },
+    {
+      "CACPerNewPayerPesos": 5000,
+      "monthlyPaidParticipations": 420,
+      "newCustomersAssumed": 105,
+      "cancellationNetLossPesos": 8676,
+      "monthlyResultBeforeIncomeTaxPesos": -451960.1,
+      "completedEventsToBreakEvenWithFixedCancellationCount": 270
+    }
+  ],
+  "cancelledEventIllustration": {
+    "players": 8,
+    "principalRefundPesos": 40000,
+    "netCollectionAndRefundCostPesos": 2892,
+    "grossCollectionAndRefundCashCostPesos": 3441.48
+  },
+  "formulas": {
+    "ticket": "round(gross/1.19 at cent precision) - round(gross*0.0319 at cent precision) - prize",
+    "ads": "average DAU * days * sessions * opportunities * optInIfRewarded * eligible * withoutAdBlock * fill * render * assumed eCPM / 1000",
+    "monthlyTickets": "completedEvents*(ticketContribution - players*support - players*newShare*CAC) - fixedCosts - cancelledEvents*cancelledPlayers*(entry*feeRate+refundFeeNet)"
+  }
+}

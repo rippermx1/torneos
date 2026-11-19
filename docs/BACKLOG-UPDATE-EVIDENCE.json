@@ -1,0 +1,41 @@
+{
+  "date": "2026-10-01",
+  "checkedAtUtc": "2026-10-01T15:36:53.823Z",
+  "workspace": "C:/torneos",
+  "backlogBranch": "codex/product-backlog-ted-runner",
+  "previousBacklogCommit": "5e9cdc11318a8691bc3b1d406568834984fec7ce",
+  "sharedCheckout": { "branch": "codex/2048-clean-gameplay", "head": "3f71511045cef83e2501ca9f66f296fb582e5ac0", "guiChangesCommitted": false, "preservedWithoutCheckoutOrReset": true },
+  "documents": ["docs/BACKLOG.md", "docs/STATUS.md", "docs/CONTEXTO-PARA-CONTINUAR.md"],
+  "sourceEvidence": ["docs/2048-GUI.md", "docs/2048-GUI-EVIDENCE.json", "artifacts/unity-2048/editmode.xml", "artifacts/unity-2048/playmode.xml", "artifacts/unity-2048/gui-platform-tests.json", "artifacts/unity-2048/webgl.log", "artifacts/published-2048-unity-2048-005.json"],
+  "reviewedReports": {
+    "unityEditMode": { "passed": 14, "failed": 0, "startedUtc": "2026-10-01 15:04:02Z" },
+    "unityPlayMode": { "passed": 4, "failed": 0, "startedUtc": "2026-10-01 15:04:28Z" },
+    "webTests": { "passed": 315, "failed": 0, "files": 42 },
+    "webgl": "Existing log reports successful build and exit 0",
+    "browser": "Existing GUI evidence records explicit start, keyboard merge score 4, mobile viewport drag and host reset to score 0"
+  },
+  "checksExecutedByThisUpdate": {
+    "documentation": { "ticketIdsUnique": 40, "countsMatchEvidence": "PASS", "relativeLinks": "PASS", "revisedStates": "PASS" },
+    "previewHttp": { "base": "http://127.0.0.1:3080", "passed": 15, "hashesMimeGzipFraming": "PASS", "report": "artifacts/backlog-update/preview-http.json" },
+    "guiBuildFiles": { "build": "unity-2048-005", "sha256Matches": 6, "totalPublishedBytesIncludingManifest": 17561829, "manifestBytes": 190 },
+    "servedBuilds": [
+      { "port": 3080, "build": "unity-2048-005", "status": 200 },
+      { "port": 3081, "build": "unity-2048-002", "status": 200 },
+      { "port": 3081, "build": "unity-2048-005", "status": 404 }
+    ],
+    "inventoryReport": "artifacts/backlog-update/live-inventory.json"
+  },
+  "backlogChanges": [
+    { "id": "G2048-05", "previous": "En progreso", "current": "Terminado y probado", "scope": "GUI and animations implemented and tested in preview 3080; operation/integration extracted to G2048-11" },
+    { "id": "G2048-07", "previous": "Pendiente", "current": "En progreso", "scope": "Reduced motion and accessible HTML score implemented; focus, screen reader, contrast and first-time comprehension remain open" },
+    { "id": "G2048-11", "previous": "No ticket", "current": "Pendiente", "scope": "Version/consolidate GUI delivery and package/test 005 in the existing local application container without losing Ted Runner" }
+  ],
+  "counts": {
+    "web": { "doneAndTested": 6, "inProgress": 4, "pending": 6 },
+    "tedRunner": { "doneAndTested": 2, "inProgress": 4, "pending": 7 },
+    "2048": { "doneAndTested": 4, "inProgress": 3, "pending": 4 },
+    "total": { "tickets": 40, "doneAndTested": 12, "inProgress": 11, "pending": 17 }
+  },
+  "recommendedNext": { "general": "G2048-11", "web": "WEB-11", "tedRunner": "TR-04 then TR-10/TR-03; physical mobile review TR-05", "2048AfterIntegration": "G2048-04" },
+  "limits": ["No new Unity build/tests or gameplay browser run by this documentation update", "No app rebuild, dependency change, database or Flow mutation", "GUI technical completion does not imply Git integration, authenticated competitive validation for 005, human visual acceptance or physical-device testing", "No licensed game assets read as images or transmitted"]
+}

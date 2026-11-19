@@ -1,0 +1,675 @@
+# Fase 1 — Fundaciones de arquitectura, contenido y sistema de diseño — Plan de implementación
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** Dejar instalada la estructura `src/` (Feature-Sliced + Clean Architecture), el sistema de contenido inyectado, el sistema de diseño con tokens y temas por marca, las reglas automáticas contra textos fijos y números mágicos, y migrar la tarjeta de torneo como primer slice vertical sin cambiar lo que ve el usuario.
+
+**Architecture:** Migración incremental dentro de la misma app Next.js. Lo nuevo vive en `src/{shared,entities,features,widgets,views}`; `app/` solo compone. Las reglas de capas, los números mágicos y los textos fijos se controlan con ESLint y una prueba de auditoría. El código antiguo sigue funcionando y delega en lo nuevo cuando comparte reglas.
+
+**Tech Stack:** Next.js 16.3.8 (App Router), React 19.2.7, TypeScript estricto, Tailwind 4 + shadcn (base-nova) + class-variance-authority, Vitest 4.1.11, ESLint 9 (eslint-config-next, eslint-plugin-react 7.37.5).
+
+**Spec:** [2026-11-19-migracion-b2b-roadmap.md](2026-11-19-migracion-b2b-roadmap.md), secciones 1 y 3.
+
+## Global Constraints
+
+- Prerrequisito: Fase 0 terminada (una rama base consolidada). Trabajar en la rama `b2b/fase-1-fundaciones` creada desde esa base.
+- Antes de escribir código específico de Next, leer la guía relevante en `node_modules/next/dist/docs/` (regla de `AGENTS.md`).
+- Dependencias nuevas permitidas: solo `jsdom` y `@testing-library/react`, como devDependencies. Ninguna dependencia nueva de runtime.
+- Prohibido tocar `supabase/migrations/`, `lib/flow/`, `lib/wallet/`, `lib/payouts/`, `games/2048/`, `packages/unity-sdk/` y los despliegues.
+- Identificadores en inglés. Todo texto visible para el usuario, en español de Chile, solo en `content/es-CL/*.json`.
+- Comportamiento visible idéntico: la tarjeta de torneo migrada muestra los mismos textos, montos y fechas que hoy.
+- La suite existente (3.637 pruebas web) debe seguir en verde al final de cada tarea.
+- Commits con el estilo del repositorio (`feat(scope): …`, en inglés), agregando solo los archivos de la tarea: el árbol tiene trabajo ajeno sin confirmar.
+- Zona horaria de presentación: `America/Santiago`; moneda: CLP; los montos se guardan en centavos.
+
+## Review Focus
+
+- **Un nuevo estado de disponibilidad sin texto:** si el dominio agrega un `AvailabilityKind`, la UI no debe mostrar `undefined`. Prueba: la Tarea 7 recorre `AVAILABILITY_KINDS` y exige etiqueta y tono para cada uno.
+- **Color de marca malicioso:** un valor como `red;background:url(//x)` en el tema de una organización no debe llegar al CSS. Prueba: Tarea 4.
+- **Plantilla con un marcador sin valor:** `"Inscripciones desde: {date}"` sin `date` no debe mostrarse literal. Prueba: Tarea 3 (`interpolate` lanza) y Tarea 7 (todas las plantillas de la tarjeta se ejercitan).
+- **Hora de Chile con cambio de horario:** el servidor corre en UTC; las fechas deben verse en hora de Santiago en invierno y en verano. Prueba: Tarea 2.
+- **Páginas antiguas que usan la disponibilidad:** el detalle de torneo y el catálogo no deben cambiar de comportamiento al compartir la regla. Prueba: Tarea 6 mantiene `__tests__/tournament-availability.test.ts` en verde contra la versión que delega.
+
+---
+
+## Mapa de archivos
+
+```
+tsconfig.json                         alias por capa
+vitest.config.mts                     alias, pruebas .tsx, JSX automático
+eslint.config.mjs                     reglas de capas, no-magic-numbers, jsx-no-literals
+app/globals.css                       importa los tokens del sistema de diseño
+content/es-CL/common.json             textos comunes
+content/es-CL/challenge-card.json     textos de la tarjeta de torneo
+src/shared/kernel/result.ts           Result<T, E>, ok, err
+src/shared/kernel/clock.ts            Clock, systemClock
+src/shared/config/locale.ts           APP_LOCALE, APP_TIME_ZONE, APP_CURRENCY
+src/shared/config/units.ts            MS_PER_SECOND, SECONDS_PER_MINUTE, CENTS_PER_UNIT
+src/shared/lib/format.ts              formatMoney, formatDateTime, secondsToMinutes
+src/shared/content/interpolate.ts     interpolate, MissingContentValueError
+src/shared/content/merge.ts           mergeContent
+src/shared/content/registry.ts        contentRegistry, ContentRegistry, ContentNamespace
+src/shared/content/get-content.ts     getContent
+src/shared/content/index.ts           API pública
+src/shared/ui/tokens/tokens.css       tokens semánticos + @theme
+src/shared/ui/theme/brand-theme.ts    BrandTheme, themeToCssVariables
+src/shared/ui/primitives/*.tsx        Text, Stack, Card, Badge, ActionLink, Button
+src/shared/ui/patterns/key-value-grid.tsx
+src/shared/ui/index.ts                API pública del sistema de diseño
+src/entities/challenge/domain/challenge.ts
+src/entities/challenge/domain/availability.ts
+src/entities/challenge/domain/prize.ts
+src/entities/challenge/config/availability-priority.ts
+src/entities/challenge/infrastructure/challenge-mapper.ts
+src/entities/challenge/index.ts
+src/widgets/challenge-card/config/availability-tone.ts
+src/widgets/challenge-card/model/view-model.ts
+src/widgets/challenge-card/ui/challenge-card.tsx
+src/widgets/challenge-card/ui/availability-badge.tsx
+src/widgets/challenge-card/index.ts
+lib/tournament/availability.ts        (modificado) delega en entities/challenge
+components/ui/button.tsx              (modificado) re-exporta desde shared/ui
+app/page.tsx, app/(public)/tournaments/page.tsx, app/(public)/tournaments/[id]/page.tsx  (modificados)
+docs/ARQUITECTURA.md                  reglas para quien agregue código
+```
+
+---
+
+### Task 1: Estructura `src/` y reglas automáticas de capas
+
+**Files:**
+- Modify: `tsconfig.json` (bloque `paths`)
+- Modify: `vitest.config.mts`
+- Modify: `eslint.config.mjs`
+- Test: `src/shared/__tests__/architecture-rules.test.ts`
+
+**Interfaces:**
+- Produces: alias `@shared/*` → `./src/shared/*`, `@entities/*`, `@features/*`, `@widgets/*`, `@views/*` (mismo patrón) y `@content/*` → `./content/*`, en TypeScript y en Vitest. Las pruebas `**/__tests__/**/*.test.tsx` se ejecutan; los archivos `.tsx` declaran su entorno con `// @vitest-environment jsdom`.
+
+- [ ] **Step 1: Write the failing test**
+
+```ts
+import { ESLint } from 'eslint'
+import { describe, expect, it } from 'vitest'
+
+const eslint = new ESLint({ cwd: process.cwd() })
+async function rules(code: string, filePath: string) {
+  const [result] = await eslint.lintText(code, { filePath })
+  return result.messages.map((m) => m.ruleId)
+}
+
+describe('architecture rules', () => {
+  it('shared cannot import a business layer', async () => {
+    expect(await rules("import { a } from '@entities/challenge'\nexport const b = a\n", 'src/shared/lib/sample.ts')).toContain('no-restricted-imports')
+  })
+  it('a slice cannot import a slice of its own layer', async () => {
+    expect(await rules("import { a } from '@entities/organization'\nexport const b = a\n", 'src/entities/challenge/domain/sample.ts')).toContain('no-restricted-imports')
+  })
+  it('upper layers use only the public API of lower slices', async () => {
+    expect(await rules("import { a } from '@entities/challenge/domain/availability'\nexport const b = a\n", 'src/features/join/model/sample.ts')).toContain('no-restricted-imports')
+    expect(await rules("import { a } from '@entities/challenge'\nexport const b = a\n", 'src/features/join/model/sample.ts')).not.toContain('no-restricted-imports')
+  })
+  it('domain code stays framework-free', async () => {
+    for (const source of ["import { useState } from 'react'", "import { createClient } from '@supabase/supabase-js'", "import { repo } from '../infrastructure/repo'"]) {
+      expect(await rules(`${source}\nexport const x = 0\n`, 'src/entities/challenge/domain/sample.ts')).toContain('no-restricted-imports')
+    }
+  })
+  it('flags magic numbers outside config segments', async () => {
+    expect(await rules('export const limit = 240\n', 'src/features/play/model/sample.ts')).toContain('no-magic-numbers')
+    expect(await rules('export const LIMIT = 240\n', 'src/features/play/config/sample.ts')).not.toContain('no-magic-numbers')
+  })
+  it('flags literal text in JSX', async () => {
+    expect(await rules('export const A = () => <p>Hola</p>\n', 'src/widgets/x/ui/sample.tsx')).toContain('react/jsx-no-literals')
+  })
+})
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `npx vitest run src/shared/__tests__/architecture-rules.test.ts`
+Expected: FAIL; ninguna de las reglas aparece en los mensajes.
+
+- [ ] **Step 3: Add the aliases in `tsconfig.json` and `vitest.config.mts`, and include `**/__tests__/**/*.test.tsx` with `esbuild: { jsx: 'automatic' }` in Vitest.**
+
+- [ ] **Step 4: Add the layer blocks to `eslint.config.mjs`.**
+
+Generar los bloques con un arreglo, no a mano:
+
+```js
+const LAYERS = {
+  shared:   ['@entities/*', '@features/*', '@widgets/*', '@views/*'],
+  entities: ['@entities/*', '@entities/*/**', '@features/*', '@widgets/*', '@views/*'],
+  features: ['@features/*', '@features/*/**', '@widgets/*', '@views/*', '@entities/*/**'],
+  widgets:  ['@widgets/*', '@widgets/*/**', '@views/*', '@entities/*/**', '@features/*/**'],
+  views:    ['@views/*', '@views/*/**', '@entities/*/**', '@features/*/**', '@widgets/*/**'],
+}
+const DOMAIN_FORBIDDEN = ['react', 'react/*', 'next', 'next/*', '@supabase/*', '**/infrastructure/**', '**/ui/**', '@shared/ui', '@shared/ui/**']
+```
+
+Por cada capa, un bloque `files: ['src/<capa>/**']` con su lista, y otro `files: ['src/<capa>/**/domain/**']` con la lista de la capa más `DOMAIN_FORBIDDEN`. El segundo bloque repite la lista de la capa porque en flat config la regla se reemplaza, no se suma. Mensaje: `'Viola la regla de capas: ver docs/ARQUITECTURA.md'`. Dentro de un mismo slice se importa con rutas relativas; el alias de la propia capa queda prohibido a propósito.
+
+Además:
+- `no-magic-numbers`: `['error', { ignore: [-1, 0, 1], ignoreArrayIndexes: true, enforceConst: true }]`, en `src/**/*.{ts,tsx}`, ignorando `src/**/config/**` y `src/**/__tests__/**`.
+- `react/jsx-no-literals`: `['error', { noStrings: true, ignoreProps: true }]`, en `src/**/*.tsx`, ignorando `src/**/__tests__/**`.
+
+- [ ] **Step 5: Run test to verify it passes**
+
+Run: `npx vitest run src/shared/__tests__/architecture-rules.test.ts`
+Expected: PASS (6 pruebas)
+
+- [ ] **Step 6: Run the full suite and lint to check nothing else broke**
+
+Run: `npm test && npx eslint app components lib src`
+Expected: misma cantidad de pruebas en verde que antes + 6; lint sin errores nuevos.
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add tsconfig.json vitest.config.mts eslint.config.mjs src/shared/__tests__/architecture-rules.test.ts
+git commit -m "build(architecture): add src layers, aliases and boundary lint rules"
+```
+
+---
+
+### Task 2: Kernel, configuración con nombre y formato
+
+**Files:**
+- Create: `src/shared/kernel/result.ts`, `src/shared/kernel/clock.ts`
+- Create: `src/shared/config/locale.ts`, `src/shared/config/units.ts`
+- Create: `src/shared/lib/format.ts`
+- Modify: `lib/utils.ts` (`formatCLP` y `formatDateTimeCL` delegan)
+- Test: `src/shared/__tests__/kernel-format.test.ts`
+
+**Interfaces:**
+- Produces:
+  - `type Result<T, E> = { ok: true; value: T } | { ok: false; error: E }`, `ok<T>(value: T)`, `err<E>(error: E)`.
+  - `interface Clock { now(): number }`, `systemClock: Clock`.
+  - `APP_LOCALE = 'es-CL'`, `APP_TIME_ZONE = 'America/Santiago'`, `APP_CURRENCY = 'CLP'`.
+  - `MS_PER_SECOND = 1000`, `SECONDS_PER_MINUTE = 60`, `CENTS_PER_UNIT = 100`.
+  - `formatMoney(cents: number): string`, `formatDateTime(value: string | number): string`, `secondsToMinutes(seconds: number): number`.
+
+- [ ] **Step 1: Write the failing test**
+
+```ts
+import { describe, expect, it } from 'vitest'
+import { ok, err } from '@shared/kernel/result'
+import { formatMoney, formatDateTime, secondsToMinutes } from '@shared/lib/format'
+import { formatCLP } from '@/lib/utils'
+
+describe('kernel and format', () => {
+  it('builds results', () => {
+    expect(ok(3)).toEqual({ ok: true, value: 3 })
+    expect(err('X')).toEqual({ ok: false, error: 'X' })
+  })
+  it('formats CLP from cents like the legacy helper', () => {
+    expect(formatMoney(500000)).toBe('$5.000')
+    expect(formatMoney(0)).toBe('$0')
+    expect(formatCLP(3300000)).toBe(formatMoney(3300000))
+  })
+  it('shows Santiago time in summer and winter regardless of server zone', () => {
+    expect(formatDateTime('2026-09-30T20:00:00Z')).toContain('17:00')
+    expect(formatDateTime('2026-06-30T20:00:00Z')).toContain('16:00')
+  })
+  it('converts seconds to whole minutes', () => {
+    expect(secondsToMinutes(600)).toBe(10)
+  })
+})
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `npx vitest run src/shared/__tests__/kernel-format.test.ts`
+Expected: FAIL, "Cannot find module '@shared/kernel/result'".
+
+- [ ] **Step 3: Implement the files listed in Interfaces.** `formatMoney` usa `Intl.NumberFormat(APP_LOCALE, { maximumFractionDigits: 0 })` sobre `cents / CENTS_PER_UNIT` y antepone `$`, igual que hoy. `formatDateTime` reproduce las opciones de `formatDateTimeCL` con `APP_TIME_ZONE`. En `lib/utils.ts`, `formatCLP` y `formatDateTimeCL` pasan a llamar a estas funciones; el resto del archivo no cambia.
+
+- [ ] **Step 4: Run test to verify it passes, then the legacy suite**
+
+Run: `npx vitest run src/shared/__tests__/kernel-format.test.ts && npm test`
+Expected: PASS; sin regresiones en las pruebas que formatean montos.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add src/shared/kernel src/shared/config src/shared/lib/format.ts lib/utils.ts src/shared/__tests__/kernel-format.test.ts
+git commit -m "feat(shared): add result, clock, named config and formatters"
+```
+
+---
+
+### Task 3: Sistema de contenido inyectado
+
+**Files:**
+- Create: `content/es-CL/common.json` → `{ "appName": "TorneosPlay" }`
+- Create: `src/shared/content/interpolate.ts`, `merge.ts`, `registry.ts`, `get-content.ts`, `index.ts`
+- Test: `src/shared/__tests__/content.test.ts`
+
+**Interfaces:**
+- Produces:
+  - `class MissingContentValueError extends Error { readonly key: string }`
+  - `interpolate(template: string, values: Readonly<Record<string, string | number>>): string`: reemplaza `{clave}`; lanza `MissingContentValueError` si falta una clave; ignora valores sobrantes.
+  - `mergeContent<T>(base: T, overrides: unknown): T`: devuelve una copia; solo reemplaza hojas de texto que existen en `base`; ignora claves desconocidas y tipos distintos; no muta `base`.
+  - `contentRegistry` (objeto `namespace → JSON importado`), `type ContentRegistry = typeof contentRegistry`, `type ContentNamespace = keyof ContentRegistry`.
+  - `getContent<N extends ContentNamespace>(namespace: N, overrides?: unknown): ContentRegistry[N]`.
+  - Para agregar un espacio de nombres: crear `content/es-CL/<n>.json` y registrarlo en `registry.ts`. No hay otro paso.
+
+- [ ] **Step 1: Write the failing test**
+
+```ts
+import { describe, expect, it } from 'vitest'
+import { interpolate, MissingContentValueError, mergeContent, getContent } from '@shared/content'
+
+describe('content', () => {
+  it('interpolates named values, repeated and numeric', () => {
+    expect(interpolate('{a} y {a}: {n}', { a: 'x', n: 3 })).toBe('x y x: 3')
+  })
+  it('refuses to render a template with a missing value', () => {
+    expect(() => interpolate('Desde: {date}', {})).toThrow(MissingContentValueError)
+  })
+  it('merges only known text leaves without mutating the base', () => {
+    const base = { title: 'A', nested: { cta: 'B' } }
+    const merged = mergeContent(base, { title: 'Z', nested: { cta: 7, extra: 'no' }, unknown: 'no' })
+    expect(merged).toEqual({ title: 'Z', nested: { cta: 'B' } })
+    expect(base.title).toBe('A')
+  })
+  it('loads typed content and applies overrides', () => {
+    expect(getContent('common').appName).toBe('TorneosPlay')
+    expect(getContent('common', { appName: 'Marca' }).appName).toBe('Marca')
+  })
+})
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `npx vitest run src/shared/__tests__/content.test.ts`
+Expected: FAIL, módulo inexistente.
+
+- [ ] **Step 3: Implement the files listed in Interfaces.** `registry.ts` importa los JSON con import estático (`resolveJsonModule` ya está activo), para que TypeScript infiera la forma de cada espacio de nombres.
+
+- [ ] **Step 4: Run test to verify it passes**
+
+Run: `npx vitest run src/shared/__tests__/content.test.ts`
+Expected: PASS (4 pruebas)
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add content/es-CL/common.json src/shared/content src/shared/__tests__/content.test.ts
+git commit -m "feat(content): add typed content registry, interpolation and safe overrides"
+```
+
+---
+
+### Task 4: Tokens, tema por marca y auditoría de UI
+
+**Files:**
+- Create: `src/shared/ui/tokens/tokens.css`
+- Modify: `app/globals.css` (importa `tokens.css` después de los imports existentes)
+- Create: `src/shared/ui/theme/brand-theme.ts`
+- Test: `src/shared/__tests__/brand-theme.test.ts`, `src/shared/__tests__/ui-audit.test.ts`
+
+**Interfaces:**
+- Produces:
+  - Variables CSS: `--ds-color-surface`, `--ds-color-surface-muted`, `--ds-color-text`, `--ds-color-text-muted`, `--ds-color-border`, `--ds-color-brand`, `--ds-color-brand-contrast`, `--ds-color-{success,warning,danger,info}-{surface,text}`, `--ds-radius-{sm,md,lg}`, `--ds-space-{xs,sm,md,lg,xl}`. Los valores neutros referencian las variables shadcn existentes (`var(--background)`…). Los de estado usan oklch y copian el aspecto actual: verde para éxito, ámbar para alerta.
+  - Utilidades Tailwind generadas en `@theme inline`: `bg-ds-surface`, `text-ds-text-muted`, `bg-ds-success-surface`, `text-ds-success-text`, `border-ds-border`, `bg-ds-brand`, etc. (`--color-ds-<nombre>: var(--ds-color-<nombre>)`).
+  - `interface BrandTheme { brand: string; brandContrast: string }`
+  - `themeToCssVariables(theme: BrandTheme): Result<{ '--ds-color-brand': string; '--ds-color-brand-contrast': string }, 'INVALID_COLOR'>`: acepta solo `#rgb`, `#rrggbb` y `oklch(<l> <c> <h>)` con números.
+
+- [ ] **Step 1: Write the failing tests**
+
+```ts
+// brand-theme.test.ts
+import { describe, expect, it } from 'vitest'
+import { themeToCssVariables } from '@shared/ui/theme/brand-theme'
+
+describe('brand theme', () => {
+  it('maps valid colors to design tokens', () => {
+    expect(themeToCssVariables({ brand: '#0a7cff', brandContrast: 'oklch(0.98 0 0)' }))
+      .toEqual({ ok: true, value: { '--ds-color-brand': '#0a7cff', '--ds-color-brand-contrast': 'oklch(0.98 0 0)' } })
+  })
+  it.each(['red;background:url(//x)', 'var(--x)', '#12', 'oklch(1 0 0);x:y'])('rejects unsafe value %s', (brand) => {
+    expect(themeToCssVariables({ brand, brandContrast: '#fff' })).toEqual({ ok: false, error: 'INVALID_COLOR' })
+  })
+})
+```
+
+```ts
+// ui-audit.test.ts — recorre todos los .tsx de src/ fuera de __tests__
+const PALETTE = /\b(?:bg|text|border|ring|from|to)-(?:red|green|blue|yellow|amber|emerald|zinc|gray|slate|neutral|white|black)(?:-\d{2,3})?\b/
+const HEX = /#[0-9a-fA-F]{3,8}\b/
+const LITERAL_TEXT_PROP = /\b(?:label|title|placeholder|alt|aria-label)="[^"]*\p{L}/u
+it('src has no fixed palette colors, hex values or literal text props', () => {
+  const offenders = tsxFilesUnder('src').flatMap((file) => {
+    const source = readFileSync(file, 'utf8')
+    return [PALETTE, HEX, LITERAL_TEXT_PROP].filter((re) => re.test(source)).map((re) => `${file}: ${re}`)
+  })
+  expect(offenders).toEqual([])
+})
+it('the audit detects each forbidden pattern', () => {
+  expect(PALETTE.test('className="bg-green-100"')).toBe(true)
+  expect(HEX.test("color: '#ff0000'")).toBe(true)
+  expect(LITERAL_TEXT_PROP.test('<img alt="Logo" />')).toBe(true)
+})
+```
+`tsxFilesUnder(dir)` es una función local de la prueba con `readdirSync(dir, { recursive: true })`.
+
+- [ ] **Step 2: Run tests to verify they fail**
+
+Run: `npx vitest run src/shared/__tests__/brand-theme.test.ts src/shared/__tests__/ui-audit.test.ts`
+Expected: FAIL en `brand-theme` (módulo inexistente). `ui-audit` pasa ya, porque todavía no hay `.tsx` en `src/`: se deja como guardia.
+
+- [ ] **Step 3: Implement `tokens.css`, the import in `app/globals.css` and `brand-theme.ts`.** Los patrones de validación de color van en `src/shared/ui/config/color-patterns.ts`.
+
+- [ ] **Step 4: Run tests and build CSS**
+
+Run: `npx vitest run src/shared/__tests__ && npm run build -- --webpack`
+Expected: PASS; el build compila el CSS con las nuevas utilidades.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add src/shared/ui/tokens src/shared/ui/theme src/shared/ui/config app/globals.css src/shared/__tests__/brand-theme.test.ts src/shared/__tests__/ui-audit.test.ts
+git commit -m "feat(design-system): add semantic tokens, brand theme mapping and UI audit"
+```
+
+---
+
+### Task 5: Primitivas y patrones del sistema de diseño
+
+**Files:**
+- Modify: `package.json` (devDependencies `jsdom`, `@testing-library/react`)
+- Create: `src/shared/ui/primitives/text.tsx`, `stack.tsx`, `card.tsx`, `badge.tsx`, `action-link.tsx`
+- Move: `components/ui/button.tsx` → `src/shared/ui/primitives/button.tsx`; `components/ui/button.tsx` queda como `export { Button, buttonVariants } from '@shared/ui/primitives/button'`
+- Create: `src/shared/ui/patterns/key-value-grid.tsx`, `src/shared/ui/index.ts`
+- Test: `src/shared/ui/__tests__/primitives.test.tsx`
+
+**Interfaces:**
+- Produces (todas exportadas desde `@shared/ui`):
+  - `Text({ as?: 'p' | 'span' | 'h1' | 'h2' | 'h3'; variant?: 'display' | 'title' | 'body' | 'caption'; tone?: 'default' | 'muted' | 'brand'; className?: string; children: ReactNode })`
+  - `Stack({ direction?: 'row' | 'column'; gap?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'; align?: 'start' | 'center' | 'between'; className?: string; children: ReactNode })`
+  - `Card({ as?: 'article' | 'div'; interactive?: boolean; className?: string; children: ReactNode })`
+  - `type BadgeTone = 'neutral' | 'success' | 'warning' | 'danger' | 'info' | 'brand'`; `Badge({ tone: BadgeTone; children: ReactNode })`
+  - `ActionLink({ href: string; variant?: 'inline' | 'block'; className?: string; children: ReactNode })`, envuelve `next/link`.
+  - `KeyValueGrid({ items: ReadonlyArray<{ id: string; label: string; value: string }> })`, renderiza `<dl>`.
+  - Las variantes usan `cva` y solo utilidades `ds-*` de la Tarea 4.
+
+- [ ] **Step 1: Install dev dependencies**
+
+Run: `npm install -D jsdom @testing-library/react`
+Expected: `package.json` y `package-lock.json` actualizados, sin dependencias de runtime nuevas.
+
+- [ ] **Step 2: Write the failing test**
+
+```tsx
+// @vitest-environment jsdom
+import { render, screen } from '@testing-library/react'
+import { describe, expect, it } from 'vitest'
+import { Badge, Text, KeyValueGrid, ActionLink } from '@shared/ui'
+
+describe('design system primitives', () => {
+  it('maps badge tones to semantic tokens', () => {
+    render(<Badge tone="success">{'ok'}</Badge>)
+    expect(screen.getByText('ok').className).toContain('bg-ds-success-surface')
+  })
+  it('renders text with the requested element', () => {
+    render(<Text as="h2" variant="title">{'Título'}</Text>)
+    expect(screen.getByRole('heading', { level: 2 }).textContent).toBe('Título')
+  })
+  it('renders key/value pairs as a description list', () => {
+    render(<KeyValueGrid items={[{ id: 'fee', label: 'Inscripción', value: 'Gratis' }]} />)
+    expect(screen.getByText('Inscripción').tagName).toBe('DT')
+    expect(screen.getByText('Gratis').tagName).toBe('DD')
+  })
+  it('links to the given href', () => {
+    render(<ActionLink href="/t/1">{'Ver'}</ActionLink>)
+    expect(screen.getByRole('link').getAttribute('href')).toBe('/t/1')
+  })
+})
+```
+
+- [ ] **Step 3: Run test to verify it fails**
+
+Run: `npx vitest run src/shared/ui/__tests__/primitives.test.tsx`
+Expected: FAIL, módulo `@shared/ui` inexistente.
+
+- [ ] **Step 4: Implement the primitives, patterns, move `button.tsx` and add the re-export in `components/ui/button.tsx`.**
+
+- [ ] **Step 5: Run tests, audit and lint**
+
+Run: `npx vitest run src/shared && npx eslint src`
+Expected: PASS; la auditoría de la Tarea 4 ahora recorre `.tsx` reales y no encuentra infractores.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add package.json package-lock.json src/shared/ui components/ui/button.tsx
+git commit -m "feat(design-system): add primitives and key-value pattern"
+```
+
+---
+
+### Task 6: Entidad `challenge` (dominio de disponibilidad)
+
+**Files:**
+- Create: `src/entities/challenge/domain/challenge.ts`, `availability.ts`, `prize.ts`
+- Create: `src/entities/challenge/config/availability-priority.ts`
+- Create: `src/entities/challenge/infrastructure/challenge-mapper.ts`
+- Create: `src/entities/challenge/index.ts`
+- Modify: `lib/tournament/availability.ts` (delega; conserva firma y etiquetas antiguas)
+- Test: `src/entities/challenge/__tests__/availability.test.ts`; se mantiene `__tests__/tournament-availability.test.ts`
+
+**Interfaces:**
+- Consumes: `PublicTournament` de `@/lib/tournament/availability` (solo en `infrastructure/`).
+- Produces (desde `@entities/challenge`):
+  - `type ChallengeStatus = 'scheduled' | 'open' | 'live' | 'finalizing' | 'completed' | 'cancelled'`
+  - `SUPPORTED_GAME_TYPES = ['2048_score'] as const`
+  - `interface Challenge { id: string; name: string; gameType: string; status: ChallengeStatus; entryFeeCents: number; prizeCents: readonly number[]; registrationOpensAt: string; playWindowStart: string; playWindowEnd: string; minPlayers: number; maxPlayers: number; maxGameDurationSeconds: number; registeredCount: number | null }`
+  - `AVAILABILITY_KINDS = ['open', 'upcoming', 'full', 'live', 'finalizing', 'closed', 'completed', 'cancelled', 'unknown'] as const`; `type AvailabilityKind`
+  - `interface ChallengeAvailability { kind: AvailabilityKind; canRegister: boolean; slots: number | null; priority: number }`
+  - `getChallengeAvailability(challenge: Challenge, now: number): ChallengeAvailability`
+  - `sortChallenges(challenges: readonly Challenge[], now: number): Challenge[]`
+  - `normalizeRegistrationCount(value: unknown): number | null`
+  - `totalPrizeCents(challenge: Pick<Challenge, 'prizeCents'>): number`
+  - `toChallenge(row: PublicTournament): Challenge`
+  - `AVAILABILITY_PRIORITY: Record<AvailabilityKind, number>` con los valores actuales: open 0, upcoming 1, full 2, unknown 3, live 4, closed 5, finalizing 5, completed 6, cancelled 7.
+
+- [ ] **Step 1: Write the failing test.** Portar cada caso de `__tests__/tournament-availability.test.ts` usando `toChallenge(tournament)` y `getChallengeAvailability`, con los mismos instantes y valores. Agregar:
+
+```ts
+it('separates finalizing from closed so the UI can label it', () => {
+  expect(getChallengeAvailability({ ...challenge, status: 'finalizing' }, opens).kind).toBe('finalizing')
+})
+it('has a priority for every availability kind', () => {
+  for (const kind of AVAILABILITY_KINDS) expect(typeof AVAILABILITY_PRIORITY[kind]).toBe('number')
+})
+it('sums all prize positions', () => {
+  expect(totalPrizeCents({ prizeCents: [2475000, 825000, 0] })).toBe(3300000)
+})
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `npx vitest run src/entities/challenge`
+Expected: FAIL, módulo inexistente.
+
+- [ ] **Step 3: Implement the domain, config, mapper and public index.** La lógica es la de `getTournamentAvailability` sin etiquetas. El único cambio es que `finalizing` deja de compartir el tipo `closed`.
+
+- [ ] **Step 4: Make `lib/tournament/availability.ts` delegate.** `getTournamentAvailability(t, now)` llama a `getChallengeAvailability(toChallenge(t), now)` y agrega `label` desde un mapa local `LEGACY_LABELS`. Para `finalizing` devuelve `kind: 'closed'` y la etiqueta `'Finalizando resultados'`, igual que hoy. `sortPublicTournaments` y `normalizeRegistrationCount` delegan.
+
+- [ ] **Step 5: Run both suites**
+
+Run: `npx vitest run src/entities/challenge __tests__/tournament-availability.test.ts`
+Expected: PASS en ambas sin editar la prueba antigua.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add src/entities/challenge lib/tournament/availability.ts
+git commit -m "feat(challenge): extract availability domain and delegate legacy helper"
+```
+
+---
+
+### Task 7: Widget `challenge-card` con contenido inyectado
+
+**Files:**
+- Create: `content/es-CL/challenge-card.json` (contenido abajo) y registrarlo en `src/shared/content/registry.ts`
+- Create: `src/widgets/challenge-card/config/availability-tone.ts`
+- Create: `src/widgets/challenge-card/model/view-model.ts`
+- Create: `src/widgets/challenge-card/ui/challenge-card.tsx`, `ui/availability-badge.tsx`
+- Create: `src/widgets/challenge-card/index.ts`
+- Test: `src/widgets/challenge-card/__tests__/view-model.test.ts`, `__tests__/challenge-card.test.tsx`
+
+**Interfaces:**
+- Consumes: `Challenge`, `getChallengeAvailability`, `totalPrizeCents`, `AVAILABILITY_KINDS`, `AvailabilityKind` (Tarea 6); `interpolate`, `getContent`, `ContentRegistry` (Tarea 3); `formatMoney`, `formatDateTime`, `secondsToMinutes` (Tarea 2); `Badge`, `BadgeTone`, `Card`, `Text`, `Stack`, `KeyValueGrid`, `ActionLink` (Tarea 5).
+- Produces (desde `@widgets/challenge-card`):
+  - `type ChallengeCardContent = ContentRegistry['challenge-card']`
+  - `AVAILABILITY_TONE: Record<AvailabilityKind, BadgeTone>`: open → success, live → warning; los demás → neutral.
+  - `interface AvailabilityBadgeViewModel { tone: BadgeTone; label: string }`
+  - `interface ChallengeCardViewModel { href: string; gameLabel: string; title: string; availability: AvailabilityBadgeViewModel; facts: ReadonlyArray<{ id: string; label: string; value: string }>; schedule: readonly string[]; capacity: string; minimum: string; cta: string }`
+  - `toAvailabilityBadgeViewModel(challenge: Challenge, now: number, content: ChallengeCardContent): AvailabilityBadgeViewModel`
+  - `toChallengeCardViewModel(input: { challenge: Challenge; now: number; content: ChallengeCardContent; href: string }): ChallengeCardViewModel`
+  - `ChallengeCard({ viewModel }: { viewModel: ChallengeCardViewModel })`, `ChallengeAvailabilityBadge({ viewModel }: { viewModel: AvailabilityBadgeViewModel })`
+
+Contenido exacto (copia los textos actuales de `components/tournament/tournament-card.tsx`):
+
+```json
+{
+  "gameLabel": "2048",
+  "entryFee": { "label": "Inscripción · precio final", "free": "Gratis" },
+  "totalPrize": { "label": "Premio total fijo" },
+  "schedule": {
+    "registrationOpens": "Inscripciones desde: {date}",
+    "registrationCloses": "Inscripción hasta: {date}",
+    "playWindow": "Partidas: {start} — {end}",
+    "format": "Una partida · hasta {minutes} min"
+  },
+  "capacity": {
+    "unknown": "Cupos por confirmar",
+    "closed": "{registered} / {max} inscritos",
+    "open": "{slots} cupos libres · {registered} / {max} inscritos"
+  },
+  "minimum": "Mínimo para jugar: {min} participantes",
+  "availability": {
+    "open": "Inscripciones abiertas", "upcoming": "Próximamente", "full": "Cupos completos",
+    "live": "En curso · inscripción cerrada", "finalizing": "Finalizando resultados", "closed": "Partidas cerradas",
+    "completed": "Finalizado", "cancelled": "Cancelado", "unknown": "Disponibilidad por confirmar"
+  },
+  "cta": { "viewRanking": "Ver torneo y ranking →", "viewRules": "Ver reglas y premios →" }
+}
+```
+
+Reglas del modelo (las mismas de hoy):
+- `capacity`: `unknown` si `slots === null`; `closed` si el tipo es `live`, `finalizing`, `closed`, `completed` o `cancelled`; si no, `open`.
+- `cta`: `viewRanking` para `live`, `finalizing` y `closed`; `viewRules` para el resto.
+- `facts`: dos elementos, `entry-fee` y `total-prize`.
+
+- [ ] **Step 1: Write the failing tests**
+
+```ts
+// view-model.test.ts
+const content = getContent('challenge-card')
+const vm = (c: Partial<Challenge>, now = opens) => toChallengeCardViewModel({ challenge: { ...challenge, ...c }, now, content, href: '/tournaments/x' })
+
+it('shows free entry and total prize from content', () => {
+  expect(vm({ entryFeeCents: 0 }).facts).toEqual([
+    { id: 'entry-fee', label: 'Inscripción · precio final', value: 'Gratis' },
+    { id: 'total-prize', label: 'Premio total fijo', value: '$33.000' },
+  ])
+  expect(vm({}).facts[0].value).toBe('$5.000')
+})
+it('renders every capacity template', () => {
+  expect(vm({ registeredCount: null }).capacity).toBe('Cupos por confirmar')
+  expect(vm({ registeredCount: 12 }).capacity).toBe('3 cupos libres · 12 / 15 inscritos')
+  expect(vm({ registeredCount: 12 }, start).capacity).toBe('12 / 15 inscritos')
+})
+it('renders schedule, minimum and duration', () => {
+  expect(vm({}).schedule[3]).toBe('Una partida · hasta 10 min')
+  expect(vm({}).minimum).toBe('Mínimo para jugar: 12 participantes')
+})
+it('picks the call to action by availability', () => {
+  expect(vm({}, start).cta).toBe('Ver torneo y ranking →')
+  expect(vm({}).cta).toBe('Ver reglas y premios →')
+})
+it('has a label and a tone for every availability kind', () => {
+  for (const kind of AVAILABILITY_KINDS) {
+    expect(content.availability[kind]).toBeTruthy()
+    expect(AVAILABILITY_TONE[kind]).toBeTruthy()
+  }
+})
+```
+
+```tsx
+// challenge-card.test.tsx — @vitest-environment jsdom
+it('renders the view model without adding text of its own', () => {
+  const viewModel = toChallengeCardViewModel({ challenge, now: opens, content: getContent('challenge-card'), href: '/tournaments/x' })
+  render(<ChallengeCard viewModel={viewModel} />)
+  expect(screen.getByRole('link').getAttribute('href')).toBe('/tournaments/x')
+  expect(screen.getByText('Inscripciones abiertas')).toBeTruthy()
+  expect(screen.getByRole('heading').textContent).toBe(challenge.name)
+})
+```
+
+`challenge`, `opens` y `start` son los mismos datos de prueba de la Tarea 6, mapeados con `toChallenge`.
+
+- [ ] **Step 2: Run tests to verify they fail**
+
+Run: `npx vitest run src/widgets/challenge-card`
+Expected: FAIL, módulo inexistente.
+
+- [ ] **Step 3: Implement content registration, config, view model, UI and index.** La UI solo lee el modelo de vista; las clases salen de las primitivas.
+
+- [ ] **Step 4: Run tests, audit and lint**
+
+Run: `npx vitest run src && npx eslint src`
+Expected: PASS; cero infractores de `jsx-no-literals`, `no-magic-numbers` y de la auditoría.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add content/es-CL/challenge-card.json src/shared/content/registry.ts src/widgets/challenge-card
+git commit -m "feat(challenge-card): add content-driven card widget"
+```
+
+---
+
+### Task 8: Conectar el widget a las páginas y documentar
+
+**Files:**
+- Modify: `app/page.tsx` (línea ~88), `app/(public)/tournaments/page.tsx` (~27), `app/(public)/tournaments/[id]/page.tsx` (~152)
+- Create: `docs/ARQUITECTURA.md`
+- Modify: `AGENTS.md` (una línea: «Código nuevo: seguir docs/ARQUITECTURA.md»)
+
+**Interfaces:**
+- Consumes: `toChallenge` (Tarea 6); `getContent` (Tarea 3); `toChallengeCardViewModel`, `toAvailabilityBadgeViewModel`, `ChallengeCard`, `ChallengeAvailabilityBadge` (Tarea 7).
+
+- [ ] **Step 1: Replace the legacy card.** En las dos páginas de listado: `const content = getContent('challenge-card')` y, por torneo, `<ChallengeCard key={t.id} viewModel={toChallengeCardViewModel({ challenge: toChallenge(t), now, content, href: `/tournaments/${t.id}` })} />`. En el detalle, `AvailabilityBadge` pasa a `ChallengeAvailabilityBadge` con `toAvailabilityBadgeViewModel`. `components/tournament/tournament-card.tsx` queda sin referencias; se borra en la Fase 6.
+
+- [ ] **Step 2: Verify there are no references left**
+
+Run: `grep -rn "components/tournament/tournament-card" app components src`
+Expected: sin resultados.
+
+- [ ] **Step 3: Write `docs/ARQUITECTURA.md`** (máximo ~120 líneas): capas y regla de dependencias; carpetas de un slice; cómo crear un espacio de contenido; prohibiciones (textos fijos, colores de paleta, números mágicos, imports internos); dónde van las constantes; cómo componer un caso de uso con funciones fábrica.
+
+- [ ] **Step 4: Full verification**
+
+Run: `npm test && npx eslint app components lib src && npx tsc --noEmit && npm run build -- --webpack`
+Expected: todo en verde. Total de pruebas = las de antes + las nuevas de las Tareas 1–7.
+
+- [ ] **Step 5: Visual check in the browser.** Levantar `npm run dev` y comparar `/` y `/tournaments` con capturas tomadas antes de la tarea, en 390×844 y en escritorio. Expected: mismos textos, montos, fechas y estados. El estilo puede diferir solo en tonos equivalentes de los tokens.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add app/page.tsx "app/(public)/tournaments/page.tsx" "app/(public)/tournaments/[id]/page.tsx" docs/ARQUITECTURA.md AGENTS.md
+git commit -m "refactor(pages): render tournament cards through the challenge-card widget"
+```
+
+---
+
+## Fuera de alcance de esta fase
+
+- Casos de uso de backend, rutas de juego, códigos de error de API (Fase 2).
+- Organizaciones, tema por marca aplicado a páginas, sobrescritura de textos desde la base (Fase 3; esta fase deja listas `themeToCssVariables` y `mergeContent`).
+- Borrar código antiguo (Fase 6).

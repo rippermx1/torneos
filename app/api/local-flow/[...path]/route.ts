@@ -5,7 +5,7 @@ async function handle(req: Request, context: { params: Promise<{ path: string[] 
   if (!isLocalEnvironment()) return new Response(null, { status: 404 })
   const { path } = await context.params
   const endpoint = path.join('/')
-  const allowed = req.method === 'GET' ? ['payment/getStatus', 'refund/getStatus'] : ['payment/create', 'refund/create', 'refund/cancel']
+  const allowed = req.method === 'GET' ? ['payment/getStatus', 'payment/getStatusByCommerceId', 'refund/getStatus'] : ['payment/create', 'refund/create', 'refund/cancel']
   if (!allowed.includes(endpoint)) return new Response(null, { status: 405 })
   try {
     const body = req.method === 'GET' ? new URL(req.url).search.slice(1) : await req.text()

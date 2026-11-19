@@ -47,6 +47,8 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Operación diaria',
     items: [
+      { href: '/admin/privacy', label: 'Solicitudes de datos', description: 'Acceso, respuestas privadas y retención', icon: UserRoundCheck },
+      { href: '/admin/operations', label: 'Obligaciones y alertas', description: 'Montos, antigüedad y atención de incidentes', icon: ScrollText },
       {
         href: '/admin/tournaments',
         label: 'Torneos',
@@ -58,6 +60,12 @@ const NAV_GROUPS: NavGroup[] = [
         label: 'Jugadores e identidad',
         description: 'Cuentas, KYC y saldos',
         icon: UserRoundCheck,
+      },
+      {
+        href: '/admin/prize-reviews',
+        label: 'Revisión de premios',
+        description: 'Revisa ganadores y retenciones',
+        icon: Trophy,
       },
       {
         href: '/admin/payouts',
@@ -77,6 +85,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'Dinero y control',
     items: [
       { href: '/admin/accounting', label: 'Contabilidad y cierres', description: 'Gastos, cartola y aprobación mensual', icon: Landmark },
+      { href: '/admin/cash', label: 'Caja y conciliación', description: 'Reserva, cartolas y diferencias', icon: Landmark },
       {
         href: '/admin/payments',
         label: 'Cobros',

@@ -1,0 +1,2293 @@
+{
+  "schema": 1,
+  "verified_at": "2026-10-06T20:20:00.914Z",
+  "status": "IN_PROGRESS",
+  "production_decision": "NO_GO",
+  "deployment": {
+    "id": "dpl_5RRkNLW6Ysf1jr2W75F75DXJW2zZ",
+    "state": "READY",
+    "url": "torneos-8qzj4dfci-carlos-projects-a9dcfa0f.vercel.app",
+    "project_id": "prj_QHiZYuYkztFToMGmwhPsyOx9nVdG",
+    "target": "production",
+    "alias": [
+      "torneos-dev-carlos-projects-a9dcfa0f.vercel.app"
+    ],
+    "alias_assigned": true,
+    "revision": "823063cf1566533b4edeaccacefb8d7360193a9e"
+  },
+  "configuration": {
+    "staging_phase": "configuration",
+    "providers": "BLOCKED before transport",
+    "company_and_flow_source": "production Vercel encrypted variables",
+    "resend_source": "authorized local fallback; Vercel sensitive variables unreadable; no equality assertion",
+    "alerts": "omitted at owner request; financial acceptance pending",
+    "database": "isolated develop",
+    "origin": "https://rm12-torneos-dev.vercel.app",
+    "public_google": true
+  },
+  "local_checks": {
+    "tests": {
+      "status": "PASS",
+      "files": 81,
+      "cases": 3816
+    },
+    "typecheck": "PASS",
+    "eslint": "PASS",
+    "source_revision": "823063cf1566533b4edeaccacefb8d7360193a9e"
+  },
+  "source_upload": {
+    "status": "PASS",
+    "at": "2026-10-06T20:05:17.408Z",
+    "deployment_id": "dpl_5RRkNLW6Ysf1jr2W75F75DXJW2zZ",
+    "revision": "823063cf1566533b4edeaccacefb8d7360193a9e",
+    "project_id": "prj_QHiZYuYkztFToMGmwhPsyOx9nVdG",
+    "app_url": "https://rm12-torneos-dev.vercel.app",
+    "files": 287,
+    "source_package_sha256": "c16f8e778c643e2cbc619e636780808b79a101d286def96ff3b649c2f2d4c713",
+    "inventory": [
+      {
+        "path": ".vercelignore",
+        "sha256": "7c0fd7e51fc4086748080d25a10f2daf9a797bf38e736fd66d486fdf32c3cdfd",
+        "bytes": 44
+      },
+      {
+        "path": "app/(admin)/admin/audit/page.tsx",
+        "sha256": "75a0b42ed8354f47a597afaa299876a4e6332a6b98b0a5be1ecc8b6450110918",
+        "bytes": 6348
+      },
+      {
+        "path": "app/(admin)/admin/cash/page.tsx",
+        "sha256": "7abfb280fb52578e1c34fa666420dd14e109cb4c7f122b97447d7f6c5fdbc4cf",
+        "bytes": 9815
+      },
+      {
+        "path": "app/(admin)/admin/disputes/page.tsx",
+        "sha256": "cd93317f25f56b88aad1ee8d93871cfac6bfa579caad9899c066b9633b82050f",
+        "bytes": 3981
+      },
+      {
+        "path": "app/(admin)/admin/error.tsx",
+        "sha256": "c75be98e8a9a61de56ed18ac6626ea35bbb5355c2d7a892ce54e86196cffdec6",
+        "bytes": 1291
+      },
+      {
+        "path": "app/(admin)/admin/layout.tsx",
+        "sha256": "6071f32476ca133279b4249b15acf48e600a580fd817dec6cb26b4519a4d8ee9",
+        "bytes": 448
+      },
+      {
+        "path": "app/(admin)/admin/loading.tsx",
+        "sha256": "60ceb06c5fbd703bd0a9f05d08b31ca60cd6c9d09c32a533e124267ecf3475c8",
+        "bytes": 556
+      },
+      {
+        "path": "app/(admin)/admin/operations/page.tsx",
+        "sha256": "e87b47eb7b6ae78ce7b9c18bce5d167217e8608718517e5fb72940d4f0b2860b",
+        "bytes": 7122
+      },
+      {
+        "path": "app/(admin)/admin/page.tsx",
+        "sha256": "e1723e28e0c3e52fefe38da296d51dad3a6daf39cbe82a913fbe03a7d2d64220",
+        "bytes": 27649
+      },
+      {
+        "path": "app/(admin)/admin/payments/page.tsx",
+        "sha256": "22118ba95d1b7a3d7907778b94b6917eb3dc45ef0ab17af16327b1a0edef5aa6",
+        "bytes": 6052
+      },
+      {
+        "path": "app/(admin)/admin/payouts/page.tsx",
+        "sha256": "9fa8b180085c0890f1ea79f212062341c25fdf5385646eb65a547b3ed1c0bebd",
+        "bytes": 9615
+      },
+      {
+        "path": "app/(admin)/admin/prize-reviews/page.tsx",
+        "sha256": "233e3830223beb09286dbdb00dbec6f97cd662a25dbddd0b347f686590c85ce4",
+        "bytes": 4028
+      },
+      {
+        "path": "app/(admin)/admin/refunds/page.tsx",
+        "sha256": "0cd264e25f0960728a75e96248504f3cc5e441cc31a8ea6fe195dfdff8ba6bea",
+        "bytes": 8629
+      },
+      {
+        "path": "app/(admin)/admin/reports/page.tsx",
+        "sha256": "60014a6aa83b36bf2a1456604ed927e447a33fc1ed42ee6d1e67da6bb9994d98",
+        "bytes": 17874
+      },
+      {
+        "path": "app/(admin)/admin/tournaments/[id]/games/[gameId]/page.tsx",
+        "sha256": "2da548968dea3b5aaed3360d12d658347795a7f8e55164a70c56f01931ea738b",
+        "bytes": 5722
+      },
+      {
+        "path": "app/(admin)/admin/tournaments/[id]/games/page.tsx",
+        "sha256": "fd649d9116fbecbee565e7ca9d3a0c863d2ba7570911a6667c5f19f1967df803",
+        "bytes": 3521
+      },
+      {
+        "path": "app/(admin)/admin/tournaments/new/page.tsx",
+        "sha256": "64bf46a2b9e8326c8df72109b7b3b623494442c81f3e59ae7c46fc1d6f9f80a3",
+        "bytes": 6458
+      },
+      {
+        "path": "app/(admin)/admin/tournaments/page.tsx",
+        "sha256": "ede17a6e80c93150b23c7f54062f58787bc086bb01e21772155f5a28e3a88ab0",
+        "bytes": 12532
+      },
+      {
+        "path": "app/(admin)/admin/users/[id]/wallet/page.tsx",
+        "sha256": "ed00cf26791f3e61c2fb663f6446a002bbbfc6c1f724b05e11416c2956b3634b",
+        "bytes": 6541
+      },
+      {
+        "path": "app/(admin)/admin/users/ban-actions.tsx",
+        "sha256": "2ef7b94bec73a5395502fa1d7fcd706a0d248c29c52c257fead5f80644fbe080",
+        "bytes": 1619
+      },
+      {
+        "path": "app/(admin)/admin/users/kyc-actions.tsx",
+        "sha256": "0ccfc59b9d2bd3243b97c891e9d5153fb68a14ee1a23d0a7d602a905176d39b1",
+        "bytes": 2235
+      },
+      {
+        "path": "app/(admin)/admin/users/page.tsx",
+        "sha256": "a10041a98bbce5eba75cccc212864cc32781a61e80f6bc79a8234658adab6912",
+        "bytes": 13637
+      },
+      {
+        "path": "app/(auth)/admin/mfa/challenge/page.tsx",
+        "sha256": "27036fa12c920c25b47b8f9d895a5967f080aa6c22f42363d1e96c4999b1cc24",
+        "bytes": 718
+      },
+      {
+        "path": "app/(auth)/admin/mfa/setup/page.tsx",
+        "sha256": "daf7b492075a542a701540f632d4fcd89df08359eab59a2a2fd06ae919033359",
+        "bytes": 672
+      },
+      {
+        "path": "app/(auth)/layout.tsx",
+        "sha256": "4694e2bcb5f609629de5f35b787e99bb6beef74ad2e1cdf420df37c7026edb86",
+        "bytes": 341
+      },
+      {
+        "path": "app/(auth)/sign-in/forgot/page.tsx",
+        "sha256": "7e8c6e69b4ec864706c57f3a4e53595f3d0bf5fa9dac7cadc3fc2a811fd56418",
+        "bytes": 2930
+      },
+      {
+        "path": "app/(auth)/sign-in/page.tsx",
+        "sha256": "025fcf99d57ea4b2e4e09da886b700dddf83ed144178ddb0879dd0e16f6b2bc0",
+        "bytes": 5024
+      },
+      {
+        "path": "app/(auth)/sign-in/reset/page.tsx",
+        "sha256": "106671a6bfd12ef333da3bca4714a408594d37d350f726550b96ae981f126211",
+        "bytes": 3241
+      },
+      {
+        "path": "app/(auth)/sign-up/page.tsx",
+        "sha256": "798fe27e9bc70666ef086db6874bbac5d02f348fc0b8b3d1e5c6c9266b68d508",
+        "bytes": 7257
+      },
+      {
+        "path": "app/(auth)/verify-email/page.tsx",
+        "sha256": "e09b688e199b3d3ee42c31016900e8e53ada5c36136e1e4b9c105359ed314ad7",
+        "bytes": 2529
+      },
+      {
+        "path": "app/(public)/layout.tsx",
+        "sha256": "3756365c9961903103b6ea51a9248f87ee68074640470402ae58b2dbe76344f5",
+        "bytes": 599
+      },
+      {
+        "path": "app/(public)/play/alien-run/page.tsx",
+        "sha256": "f83dc7b584eaa6e99280d7f883514c0fc020148530d1a255030ec137b2538e49",
+        "bytes": 848
+      },
+      {
+        "path": "app/(public)/play/page.tsx",
+        "sha256": "071b7a1f51dd6fb5806fcc3925a0eca7ffffa98853f93ef340e0200d71b54af4",
+        "bytes": 1748
+      },
+      {
+        "path": "app/(public)/play/unity/page.tsx",
+        "sha256": "db404eb2f77ab5af90756ca8e178ea5facecc9bf6f4bf00a2ee1d76fb7357fb7",
+        "bytes": 462
+      },
+      {
+        "path": "app/(public)/play/web/page.tsx",
+        "sha256": "8efec625cb23d5dcda974453fb7476d7885ac31e57267885fd8c422ae6477d49",
+        "bytes": 547
+      },
+      {
+        "path": "app/(public)/tournaments/[id]/audit/page.tsx",
+        "sha256": "370d934ff0dd2822dd1628c71a9f3bbd0373666dbdb44824ae193da312427181",
+        "bytes": 6326
+      },
+      {
+        "path": "app/(public)/tournaments/[id]/leaderboard/page.tsx",
+        "sha256": "a980947ade67d3f0d3dee63c605d530ae013438d023c80f23f525e5540ca8726",
+        "bytes": 9710
+      },
+      {
+        "path": "app/(public)/tournaments/[id]/not-found.tsx",
+        "sha256": "40891face41ecd43f519029bf61a3cc5903a5deece8460771894eb84b5e3286f",
+        "bytes": 690
+      },
+      {
+        "path": "app/(public)/tournaments/[id]/page.tsx",
+        "sha256": "cead914fd695a9c20e3b495deb45606c8da4941ef3fb9489625eaba134ba0a19",
+        "bytes": 16974
+      },
+      {
+        "path": "app/(public)/tournaments/[id]/play/page.tsx",
+        "sha256": "5812ba624e6a7886a9ca6ab0a3203a2f6b6cf957b1f62bf8d367b453f01815e9",
+        "bytes": 1898
+      },
+      {
+        "path": "app/(public)/tournaments/[id]/play/unity/page.tsx",
+        "sha256": "c8c7df20579a2a8c977463500cf739fce7fa82fb5d33161cc7e304d49c61521f",
+        "bytes": 323
+      },
+      {
+        "path": "app/(public)/tournaments/[id]/return/page.tsx",
+        "sha256": "10026bcd4adf61d436d4eb8d25ed655e5c77350f5ca216d939378dc09ba0f73f",
+        "bytes": 4440
+      },
+      {
+        "path": "app/(public)/tournaments/loading.tsx",
+        "sha256": "b6643a707f05d9273916fe404cd0797e6f58e370c11fb30e521227c3119fad4f",
+        "bytes": 928
+      },
+      {
+        "path": "app/(public)/tournaments/page.tsx",
+        "sha256": "fa39b3cd373daccdd508dd292dd2a25e3340ec21f91a77a2b8f301cc88ea104b",
+        "bytes": 1544
+      },
+      {
+        "path": "app/(user)/layout.tsx",
+        "sha256": "0cc3f7dea2ce7d3cac642cab085a4fd6e5bdcc5bf7398469bf9a88a0ebc5e9fa",
+        "bytes": 1212
+      },
+      {
+        "path": "app/(user)/onboarding/actions.ts",
+        "sha256": "c91ab5deb2f11eb012f3f81b07af89eeb6ff900e5422f27f716c1f95f6e30532",
+        "bytes": 2553
+      },
+      {
+        "path": "app/(user)/onboarding/onboarding-form.tsx",
+        "sha256": "7cda4455b3aec30757e34a12676721a9c9789c42054c853422de7aa3b73f6606",
+        "bytes": 5957
+      },
+      {
+        "path": "app/(user)/onboarding/page.tsx",
+        "sha256": "f7657180b1ceb87ef8100d023e743f89c74e875d090cec83c9d76390c633534c",
+        "bytes": 2630
+      },
+      {
+        "path": "app/(user)/premios/cobrar/cobrar-form.tsx",
+        "sha256": "ab60255c0bae60880e3a6812fe78011a0d37983aea5eb41d23cb3161219840b4",
+        "bytes": 7107
+      },
+      {
+        "path": "app/(user)/premios/cobrar/page.tsx",
+        "sha256": "e2a2fb182b71e14148d1ed4e1c64908700c66daf6e45d7d70412f91a9919fc84",
+        "bytes": 3120
+      },
+      {
+        "path": "app/(user)/premios/loading.tsx",
+        "sha256": "1ffd5b842c439478258004b94ad71e8abd77279747094cb07ccd3765ac6357bc",
+        "bytes": 1373
+      },
+      {
+        "path": "app/(user)/premios/page.tsx",
+        "sha256": "c4a340357ba3256dc83bcbc438da5e56490439b6fa089261609bfe8911177739",
+        "bytes": 8492
+      },
+      {
+        "path": "app/(user)/profile/kyc/kyc-form.tsx",
+        "sha256": "32e4dd3f515ff88354719d978d641e3e7d95991aac5834e1f50269bae3033c2f",
+        "bytes": 12680
+      },
+      {
+        "path": "app/(user)/profile/kyc/page.tsx",
+        "sha256": "b1d1d64d0a963f4639277ae4f9b9e3afb0f2c85cd4dbdb1cf0c811597da634fb",
+        "bytes": 4673
+      },
+      {
+        "path": "app/(user)/profile/loading.tsx",
+        "sha256": "080e57426eb2182961703d7483a01076cd9f8f58e84687bf5ace70d7eec9d25a",
+        "bytes": 1200
+      },
+      {
+        "path": "app/(user)/profile/page.tsx",
+        "sha256": "07d95536b2e8b2ed4b6a9d21792840b336a5dbc2330c94236e7a958a2bbe6702",
+        "bytes": 4546
+      },
+      {
+        "path": "app/(user)/profile/profile-edit-form.tsx",
+        "sha256": "1f04401835867985ddde408712c7b9313868444e5163898ec76b859dfc7b77e8",
+        "bytes": 4499
+      },
+      {
+        "path": "app/(user)/support/dispute/page.tsx",
+        "sha256": "ee1981f582192418ceaf7d289bc73269dddee0299b0607b5891ab1d2973240ac",
+        "bytes": 4954
+      },
+      {
+        "path": "app/(user)/wallet/deposit/page.tsx",
+        "sha256": "55ee3e6321c596998cd704e4cd8823df9706b34f409ae4fbf5cb8b4e480abffc",
+        "bytes": 226
+      },
+      {
+        "path": "app/(user)/wallet/page.tsx",
+        "sha256": "7628933143e1aa8426de826d332908476b5e0ff934b4fceea7679bcba80a3360",
+        "bytes": 261
+      },
+      {
+        "path": "app/(user)/wallet/withdraw/page.tsx",
+        "sha256": "1978f717e8138a9d1847af6d006ea4b3a9775c78cbcb860790698a843e3c03d5",
+        "bytes": 126
+      },
+      {
+        "path": "app/api/admin/cash/proof/route.ts",
+        "sha256": "037ee53f416438e3a4c35b896c3ef4e7025e34e401f5b7736dabafed9b62e74a",
+        "bytes": 1048
+      },
+      {
+        "path": "app/api/admin/cash/route.ts",
+        "sha256": "fc4fc5b36da8cafbb38ec0d50b431ae47fbd568932c90951ec880e2f9f514f9a",
+        "bytes": 5020
+      },
+      {
+        "path": "app/api/admin/disputes/[id]/resolve/route.ts",
+        "sha256": "0d20ad334d2c62dba1bb526dec579004732fa6af45e2f70407d3bea05169bd1a",
+        "bytes": 1850
+      },
+      {
+        "path": "app/api/admin/financial-holds/route.ts",
+        "sha256": "ab5f763b73c1fa7bc5a549e9d4ab13b101e883ac11a7f843e2a5f320444f46d1",
+        "bytes": 1146
+      },
+      {
+        "path": "app/api/admin/ops-incidents/[id]/acknowledge/route.ts",
+        "sha256": "eec141aa348f47d6b633d979f68c18897edcb604bbc9bb979e202f8a28dd6bef",
+        "bytes": 1007
+      },
+      {
+        "path": "app/api/admin/ops-notifications/[id]/review/route.ts",
+        "sha256": "e189e6658c3b4b500748e75eed965ee00cc102faddbc0c79ad25fba8ecaefd87",
+        "bytes": 1066
+      },
+      {
+        "path": "app/api/admin/payments/[id]/reverify/route.ts",
+        "sha256": "c7ae24bfd5573cc4b6b2d17890a4f57acb7f690bce2f839082554948d9d154ad",
+        "bytes": 2130
+      },
+      {
+        "path": "app/api/admin/payouts/[id]/approve/route.ts",
+        "sha256": "ce0f5d3c297132132800edbf4979fda7d7cb2981f0a83eee32c66abfda408e2b",
+        "bytes": 3105
+      },
+      {
+        "path": "app/api/admin/payouts/[id]/begin/route.ts",
+        "sha256": "7b4cc5cad2be9a220578209217b14eed0d8070f6b9c3c40239f42786f365c0d3",
+        "bytes": 696
+      },
+      {
+        "path": "app/api/admin/payouts/[id]/claim/route.ts",
+        "sha256": "2c673066e57a860e3da82633db969ca00ede6afb46d2baec79f3ecfe7eddcd02",
+        "bytes": 660
+      },
+      {
+        "path": "app/api/admin/payouts/[id]/complete/route.ts",
+        "sha256": "be0fbe826a3b53811130948048f8d37f3c1df3f113810f5ce41df838a2ceb438",
+        "bytes": 3952
+      },
+      {
+        "path": "app/api/admin/payouts/[id]/proof/route.ts",
+        "sha256": "1567468925e3374ff8eebdf422d156db559706e10d80e599615d0c88294fc67f",
+        "bytes": 1521
+      },
+      {
+        "path": "app/api/admin/payouts/[id]/reconcile/route.ts",
+        "sha256": "8aeb7c54d22fd644dcee665e52c145417488c48129777aeaeddd67b3c95e4a6b",
+        "bytes": 2195
+      },
+      {
+        "path": "app/api/admin/payouts/[id]/reject/route.ts",
+        "sha256": "1fd6197223b29b6343b33b151e2c011563a7b67658babea3483b632c7b7d4d28",
+        "bytes": 2579
+      },
+      {
+        "path": "app/api/admin/prize-reviews/[id]/route.ts",
+        "sha256": "92df2a8e2a0a83f31cfeb0842512567bce861050c23b881e32d713079a0af4e9",
+        "bytes": 1701
+      },
+      {
+        "path": "app/api/admin/refunds/[id]/credit-note/route.ts",
+        "sha256": "1f63196b1f25d9969c3c68b752cfe1267e3bbb6b552ce7d3d0151d46acfe50c3",
+        "bytes": 2926
+      },
+      {
+        "path": "app/api/admin/refunds/[id]/retry/route.ts",
+        "sha256": "83098a8e264d027762a0922395582076ab62a8a2819e3b43895a1a5665027530",
+        "bytes": 1690
+      },
+      {
+        "path": "app/api/admin/reports/accounting.csv/route.ts",
+        "sha256": "662cafcd8f7ffd698ff871f01706daedf19360bae7733cf95b398f4715523fce",
+        "bytes": 725
+      },
+      {
+        "path": "app/api/admin/reports/finance.csv/route.ts",
+        "sha256": "2faae4926b5228dcb811bf11ab2a76ce2ed6b1891e23c3bd1a6860f4e4b3bf01",
+        "bytes": 1924
+      },
+      {
+        "path": "app/api/admin/reports/journal.csv/route.ts",
+        "sha256": "a9ad06884697253f088bcba1d0705a3f99e6aacf762928743e745ad1be753d03",
+        "bytes": 934
+      },
+      {
+        "path": "app/api/admin/reports/payouts.csv/route.ts",
+        "sha256": "473fc8659766c33a34506a306c0e3f3a43c3d5e27876e30a4e5cbfa3f0429aed",
+        "bytes": 3276
+      },
+      {
+        "path": "app/api/admin/tournaments/[id]/cancel/route.ts",
+        "sha256": "be0440b1e0921d56ea6213d18ddc398b57491fa7e2d46747e9e3e0ef8e8a50c6",
+        "bytes": 2308
+      },
+      {
+        "path": "app/api/admin/tournaments/[id]/finalize/route.ts",
+        "sha256": "8c0e9bb15ad6aa56bcc16c0ae85e27266b0de4bded6202d350cc34b72996bb83",
+        "bytes": 1332
+      },
+      {
+        "path": "app/api/admin/users/[id]/ban/route.ts",
+        "sha256": "a1800d1d585cbe97c3a39f9aee942bb4bc2c8d3826ec93cf9dc2ed88d127f794",
+        "bytes": 3088
+      },
+      {
+        "path": "app/api/admin/users/[id]/kyc/route.ts",
+        "sha256": "4883703613c2009d746129d1f9ba38c445bc85a8e6ef393cecf47e33dd62625e",
+        "bytes": 7401
+      },
+      {
+        "path": "app/api/auth/resend-confirmation/route.ts",
+        "sha256": "3047eaff00e164e0c2fac92e796b533537c599713eec2f66bd14499becb0e564",
+        "bytes": 1995
+      },
+      {
+        "path": "app/api/cron/flow-reconcile/route.ts",
+        "sha256": "541b47797639e0b101f7d8a2af592569a7f220dbba7d4461fb47dc6ab1474d44",
+        "bytes": 3956
+      },
+      {
+        "path": "app/api/cron/monitor-status/route.ts",
+        "sha256": "d7b559b93157cab44a56efa89284971cd595ecbadee61584a3749dad7fe7d480",
+        "bytes": 1731
+      },
+      {
+        "path": "app/api/cron/process-tournaments/route.ts",
+        "sha256": "e31a58416d77889ac5925f3dea44d96ec38e55d022d905392fd9220a5feb801a",
+        "bytes": 2475
+      },
+      {
+        "path": "app/api/cron/reconcile-refunds/route.ts",
+        "sha256": "f5aeae6ac114c4c135b2b65fe79c2dec26fbddb07f3907bfe8857a3d9ddcbf8d",
+        "bytes": 2678
+      },
+      {
+        "path": "app/api/cron/report-failure/route.ts",
+        "sha256": "750327244453d8ee33ad4d7831a8035778029b8e4b78820c70b69ba7edeb5ea5",
+        "bytes": 1276
+      },
+      {
+        "path": "app/api/cron/watchdog/route.ts",
+        "sha256": "d4127c32fa08987da3e34fdfb1a905473c11c10ff0af6237e89232730c0b6e8d",
+        "bytes": 1609
+      },
+      {
+        "path": "app/api/dev/test-emails/route.ts",
+        "sha256": "db6254c5c92da66f22cc65273a68fde598ad61f85320582fc9a4e2351a7d8c6a",
+        "bytes": 4799
+      },
+      {
+        "path": "app/api/game/practice/move/route.ts",
+        "sha256": "c6cf3a18ff42155d8ee0bb6a038d09aaa9e57852103a07b2cab28056f1763c18",
+        "bytes": 2213
+      },
+      {
+        "path": "app/api/game/practice/start/route.ts",
+        "sha256": "dc90bd48238e8ad67c603ecfc56b7684e3ae4738c1f4a223d074316ca53fd622",
+        "bytes": 1031
+      },
+      {
+        "path": "app/api/local-flow/[...path]/route.ts",
+        "sha256": "c14bdd4af417a0b790333fbcc35da6f25e2391c2935fdce311b72f2cefe3df42",
+        "bytes": 1088
+      },
+      {
+        "path": "app/api/payouts/[id]/receipt/route.ts",
+        "sha256": "e387e77b97f81f71c8127a54f43595ea210a7b388559dd2c4a0caaa3c81c499e",
+        "bytes": 2334
+      },
+      {
+        "path": "app/api/profile/accept-terms/route.ts",
+        "sha256": "a356695c0c9761591fbe0eb115b356911f37768bb58e30cd394f699953b0e777",
+        "bytes": 1157
+      },
+      {
+        "path": "app/api/profile/kyc/route.ts",
+        "sha256": "1f12fdf9aa70ddce918b425f4347b706074aa0bbbcda54e55d5741ed9a59440f",
+        "bytes": 8380
+      },
+      {
+        "path": "app/api/profile/update/route.ts",
+        "sha256": "f5e4b477299585d55edecf818cba659323e22c95f48e7e3a70b7ae3b6a6db569",
+        "bytes": 1687
+      },
+      {
+        "path": "app/api/support/dispute/route.ts",
+        "sha256": "f9539b6a0b0275b9a4dbf281f507f4f62f1a3c33ca4e68a22a30aff432005819",
+        "bytes": 2028
+      },
+      {
+        "path": "app/api/tournaments/[id]/checkout/flow/create/route.ts",
+        "sha256": "9a34e0992b495f0335b9ee9894208936ebe1e11ae6887ba7d7e900aa3aa6e542",
+        "bytes": 12814
+      },
+      {
+        "path": "app/api/tournaments/[id]/game/move/route.ts",
+        "sha256": "00a5e45a188ad57caea2f5e5b2478fe2b83a604dbbcb37fa65dde3b8ba62a8a0",
+        "bytes": 11557
+      },
+      {
+        "path": "app/api/tournaments/[id]/game/start/route.ts",
+        "sha256": "d7e59a1a452a8a627eb776c37172dde53c7ed4ed1ce872a4a3643429b6d0e149",
+        "bytes": 8796
+      },
+      {
+        "path": "app/api/tournaments/[id]/game/timeout/route.ts",
+        "sha256": "0174570e3fd23440ccee0daf0dd81e61b298fef3d9e00bc07c5330d09f1ca917",
+        "bytes": 3459
+      },
+      {
+        "path": "app/api/tournaments/[id]/register/route.ts",
+        "sha256": "4413edb03ceea69c57f1601578c580bd92544a6a3591cd0f036dba35c0e83391",
+        "bytes": 6074
+      },
+      {
+        "path": "app/api/wallet/deposit/create/route.ts",
+        "sha256": "e6d4091bba70ee7849e30c08fd1c3444ff5176f1ffca5162ae6faeeda0c84745",
+        "bytes": 283
+      },
+      {
+        "path": "app/api/wallet/deposit/flow/create/route.ts",
+        "sha256": "790e99de55abc2ab79468493f2ada927ca40cf969e2e04fa746a38e9a03ee73e",
+        "bytes": 1060
+      },
+      {
+        "path": "app/api/wallet/deposit/flow/return/route.ts",
+        "sha256": "0811830628d2ff95f941cfe5167b5369be052b76507eb35833d604224c5c131c",
+        "bytes": 1001
+      },
+      {
+        "path": "app/api/wallet/deposit/flow/status/route.ts",
+        "sha256": "77118178727bfd32c350a62c80b28c10e1de5577c8b0f8026fca577602fe79d5",
+        "bytes": 1950
+      },
+      {
+        "path": "app/api/wallet/withdraw/request/route.ts",
+        "sha256": "5e60241a99f16a17e5baa1b11c786698dda6ae27d9252fa21449f72691c8331a",
+        "bytes": 4308
+      },
+      {
+        "path": "app/api/webhooks/flow/refund/route.ts",
+        "sha256": "6cfa6b3eb2b575421724154e2dc1ee44ba3416a7fbfbb2bd86cab0f37867b717",
+        "bytes": 3791
+      },
+      {
+        "path": "app/api/webhooks/flow/route.ts",
+        "sha256": "72a62df7e2fc8e83e767dff478590d4dfb39a4f0a12a8c63821dd1666ef15d28",
+        "bytes": 3025
+      },
+      {
+        "path": "app/auth/callback/route.ts",
+        "sha256": "1e8f4902aaa3eeb712ecdba84bbd0cd3399bab246adb7e4e202f36a8dff9a074",
+        "bytes": 1365
+      },
+      {
+        "path": "app/auth/confirm/route.ts",
+        "sha256": "368a2f0c64ee63c8c6fac07f47bd3f207635ef8be46772f24ff13fe6ef42ad7a",
+        "bytes": 1417
+      },
+      {
+        "path": "app/dev/flow/payment/route.ts",
+        "sha256": "24c8975267fede4531fdd07e9fe821b200ee40a5f84268cb0ee961e39b5a682c",
+        "bytes": 2560
+      },
+      {
+        "path": "app/error.tsx",
+        "sha256": "172919ad4e047ae242730c308158d4a0d81e7c93d70039745bb657d31d8f0c27",
+        "bytes": 1279
+      },
+      {
+        "path": "app/favicon.ico",
+        "sha256": "2b8ad2d33455a8f736fc3a8ebf8f0bdea8848ad4c0db48a2833bd0f9cd775932",
+        "bytes": 25931
+      },
+      {
+        "path": "app/globals.css",
+        "sha256": "7f045c84d2c81cecf49fbe3e84f1a81cb77096117be9ab7e119e40a36983cc31",
+        "bytes": 6687
+      },
+      {
+        "path": "app/layout.tsx",
+        "sha256": "cf8fbab8da74a62791311fe205009e23ef3843de041d66e8303cf4c45fa43393",
+        "bytes": 1156
+      },
+      {
+        "path": "app/legal/aml/page.tsx",
+        "sha256": "273cb6e4c876193de34bbd12caa8e06c9b644014610f0c266a1fa2bfbfb7e63e",
+        "bytes": 5210
+      },
+      {
+        "path": "app/legal/layout.tsx",
+        "sha256": "39eaf623fa9bd804cb3ae74cbde383e69b4b27b027b1a47345b2c4ec4931a659",
+        "bytes": 580
+      },
+      {
+        "path": "app/legal/privacidad/page.tsx",
+        "sha256": "b6b7acf939dc57eb84cdf6e1494d5b1fce60348175d3c247140b58f24d13f1bf",
+        "bytes": 7270
+      },
+      {
+        "path": "app/legal/reembolso/page.tsx",
+        "sha256": "3f40d4e1d2c1f0b2b591fbd4d351e5b3571bc93b622e0d26286022d9d1ce680b",
+        "bytes": 7187
+      },
+      {
+        "path": "app/legal/terminos/page.tsx",
+        "sha256": "54adcd65d000ed1cdbb9ff00799ae77455dfa7ebf4486f7cbbd751145645a4e5",
+        "bytes": 12688
+      },
+      {
+        "path": "app/not-found.tsx",
+        "sha256": "1fdad5dca2495690f0a14486d94c8cad9319ec4bc7d61b904ac63d8af63a2cbe",
+        "bytes": 695
+      },
+      {
+        "path": "app/page.tsx",
+        "sha256": "a03745bf4e5091c9c7cdc812c9932d4e74ce71d92b8b42c8f07f643664c75ad4",
+        "bytes": 6511
+      },
+      {
+        "path": "components/admin/admin-sidebar.tsx",
+        "sha256": "93c0d8b2b27ea337da139a572670d2e9b3f3a1dc657ad61a97d5d3a412d7c214",
+        "bytes": 8418
+      },
+      {
+        "path": "components/admin/cash-form.tsx",
+        "sha256": "a5aec89c884b680d87dbc04b4b5936297edc375d8f0db5a5d0a80f9eed5a38fa",
+        "bytes": 2397
+      },
+      {
+        "path": "components/admin/dispute-resolve-form.tsx",
+        "sha256": "8130ade78654519e42c18d491a9024b1058e70637a8e6905fdf495a0e352a74b",
+        "bytes": 2249
+      },
+      {
+        "path": "components/admin/flow-reverify-button.tsx",
+        "sha256": "b6624b93abbb75e69a87ada7b6c95a8dc08f8898db1d2e08ed63afb5088b5490",
+        "bytes": 1310
+      },
+      {
+        "path": "components/admin/ops-acknowledgement.tsx",
+        "sha256": "ba95a4064a85086967a226110a6aac30ab939f6b15a41821321ffd553090e5a8",
+        "bytes": 1398
+      },
+      {
+        "path": "components/admin/ops-notification-review.tsx",
+        "sha256": "f9e985d7bc4fef85fa9c2b7c27cb16a5a3ccd3fd8e0dbadddea2c9b179f537df",
+        "bytes": 2105
+      },
+      {
+        "path": "components/admin/payout-actions.tsx",
+        "sha256": "cc8ab8f11c847c46c3247d1f7c79e15b30cb1e2989c83617cf44b245b831f640",
+        "bytes": 2645
+      },
+      {
+        "path": "components/admin/payout-completion-form.tsx",
+        "sha256": "0f624fb908a9a4a5228836d83400d366d69e1ae37c18d6c1a9687be45ce8824d",
+        "bytes": 5520
+      },
+      {
+        "path": "components/admin/prize-review-actions.tsx",
+        "sha256": "7e63710574884166e3825c92a0445b61742b11adc096eede83633198aa1016e8",
+        "bytes": 3128
+      },
+      {
+        "path": "components/admin/refund-credit-note-form.tsx",
+        "sha256": "158f743fdbf377e77222039c46b6cb740e6a2f4a5258723953bbb7bf298871aa",
+        "bytes": 2441
+      },
+      {
+        "path": "components/admin/refund-retry-button.tsx",
+        "sha256": "44c6d4f576fda265c5f081e6b54b9a2315960e208b24e1ace7804ea642ba928e",
+        "bytes": 1378
+      },
+      {
+        "path": "components/admin/tournament-preset-form.tsx",
+        "sha256": "52c3bd495ce262898f567e97b5f3964a09e06c90f057f86885fcf87bbbba87b8",
+        "bytes": 14897
+      },
+      {
+        "path": "components/auth/admin-mfa-challenge.tsx",
+        "sha256": "5b39f440d9c6c223cc353d1e2f8d2d678808d0b81810c8322c1e0eca6430fc47",
+        "bytes": 3953
+      },
+      {
+        "path": "components/auth/admin-mfa-setup.tsx",
+        "sha256": "6d8e0b2ce17b59b05a474ab82bc1c41be748688dc5613bc0976c3f47e6cec971",
+        "bytes": 9019
+      },
+      {
+        "path": "components/auth/google-button.tsx",
+        "sha256": "7352dbfb7f5dd0babb94595c32bb79fb69847ba1575988c14f501b734ee5773b",
+        "bytes": 2574
+      },
+      {
+        "path": "components/auth/resend-verification-button.tsx",
+        "sha256": "e80b3d83f2659e8fae34f71724a536cbd02c2b1b68ca568dc2877f0c85503d94",
+        "bytes": 1895
+      },
+      {
+        "path": "components/footer.tsx",
+        "sha256": "883bb3ad97f5f4aa82063fee9c8314419ccf6495f2cbf731a30a2a72c58fec1d",
+        "bytes": 3141
+      },
+      {
+        "path": "components/game/game-board-client.tsx",
+        "sha256": "58b46acd0066098cfb8150e06f71814d3c5728ea905f75dd733e826942b17713",
+        "bytes": 40683
+      },
+      {
+        "path": "components/game/game-board.tsx",
+        "sha256": "df2885fdb3cae30f11742ab5fe548d0911596f40f859299008c21b91d64892d8",
+        "bytes": 297
+      },
+      {
+        "path": "components/game/tile-colors.ts",
+        "sha256": "093b5fc09b3617aadfcaf4b00210d97b1c3fbf5fb76708460c4957f576a6444d",
+        "bytes": 3043
+      },
+      {
+        "path": "components/game/unity-2048.module.css",
+        "sha256": "4b8bba37f374a17d8abe76e5129f3c01e1bb11dbd283c1da7cc9fea7d180890a",
+        "bytes": 2665
+      },
+      {
+        "path": "components/game/unity-2048.tsx",
+        "sha256": "dcaeadf60e1900bf118099de79744f7bac595521b96ae896ad0d5f3fa07b464e",
+        "bytes": 9330
+      },
+      {
+        "path": "components/game/unity-alien-run.tsx",
+        "sha256": "19eaecee09b2cee3601180a73ef3bdd73f17dee0841e78f3922d5afbee97c2b4",
+        "bytes": 4644
+      },
+      {
+        "path": "components/navbar.tsx",
+        "sha256": "9ec5b92eb5237605dc356213d571d71f97fa376985dbdcf7308a62744ccc3bdd",
+        "bytes": 10229
+      },
+      {
+        "path": "components/terms-banner.tsx",
+        "sha256": "bf2df1a3da09271d300807a4434e229f0383a160c158db051ae41e3bf17cf954",
+        "bytes": 2921
+      },
+      {
+        "path": "components/tournament/catalog-feedback.tsx",
+        "sha256": "436e4c07414cfb179c3883ee84de939550dc4ca7c6c64890b8f0fe9a8c8e7c83",
+        "bytes": 1053
+      },
+      {
+        "path": "components/tournament/register-button.tsx",
+        "sha256": "d4f5b6682243bd2a1569c7ad53c7ad6cbf54d04b410c0715d67e4be75487de4f",
+        "bytes": 6490
+      },
+      {
+        "path": "components/tournament/tournament-actions.tsx",
+        "sha256": "c72e480e5667dd25ec5314938bd59cae536351ceb41395eb34510cc799cac701",
+        "bytes": 2937
+      },
+      {
+        "path": "components/tournament/tournament-card.tsx",
+        "sha256": "64cfa9c8b8bca33d925a2cc46255d52141b2f0941e64fd580582e40c5e022fbb",
+        "bytes": 3012
+      },
+      {
+        "path": "components/ui/button.tsx",
+        "sha256": "8303bd5356ab078bc5c531efbca5cc6f0a1fbc2090a5471c467726d6acd4a9d0",
+        "bytes": 3255
+      },
+      {
+        "path": "config/commercial-release.json",
+        "sha256": "6bfe5fef476ea5b4ade2d3a62c21de2785680f3639ba3dc726c3a336e814b01d",
+        "bytes": 1046
+      },
+      {
+        "path": "config/dependency-audit-policy.json",
+        "sha256": "ecb9316daf34522426b5ca1fd3d779b6321f6a5fd0004c42dbc65e308c71104a",
+        "bytes": 1106
+      },
+      {
+        "path": "config/staging-published-games.json",
+        "sha256": "c23f2008e5b4f3204482ec7719b19bdee195f3eeb6cd160b428996a6a369d9c3",
+        "bytes": 31
+      },
+      {
+        "path": "instrumentation.ts",
+        "sha256": "6153f84d4735ff30090711a0b64854aa271ed5e4311aa6e42f50d791e8a28c74",
+        "bytes": 618
+      },
+      {
+        "path": "lib/accounting/ledger.ts",
+        "sha256": "0627e7227e118014a596d89a3581b0fc5554ba8d0fd51adc42669c2e4a0189fa",
+        "bytes": 3832
+      },
+      {
+        "path": "lib/accounting/model-a-report.ts",
+        "sha256": "b00436dc63e8e73295d048eb07fd1f4ae1799a040a43b9793b1eb750ea56cf04",
+        "bytes": 36699
+      },
+      {
+        "path": "lib/admin/audit.ts",
+        "sha256": "eff215d0c20ba3c7000608685ff1a84a13aacd2b25cfdeb2ba6b7adb3f13e5ea",
+        "bytes": 1870
+      },
+      {
+        "path": "lib/admin/guidance.ts",
+        "sha256": "a7887d91a7d0634aaa75532d323cbe6aa8a81413e4d27f459dcc7526edd6047e",
+        "bytes": 2359
+      },
+      {
+        "path": "lib/admin/health.ts",
+        "sha256": "fff19d534fe5c2bc9a7ca4519b99f94861ce3ea46961bc5a3bba559ff277d7e5",
+        "bytes": 13826
+      },
+      {
+        "path": "lib/anticheat/detector.ts",
+        "sha256": "ea2212d327730bd491a238801ff765e3d535249213f868ed7669484df75dbcca",
+        "bytes": 5087
+      },
+      {
+        "path": "lib/anticheat/winner-review.ts",
+        "sha256": "1fa457f63b9f2e11e047f24676d9ad0bb0a1def15005727371a4d1a23a089af5",
+        "bytes": 3606
+      },
+      {
+        "path": "lib/auth/redirect.ts",
+        "sha256": "fb9712231b1b3dcea324760d555a69cdcab1b7903b1da50b85b86dfeaa1325c4",
+        "bytes": 1986
+      },
+      {
+        "path": "lib/business/rules.ts",
+        "sha256": "548c5af0fa0db17e2583e6dc52bd14a3c9778ed6ebd814ffb51972697314e95d",
+        "bytes": 1057
+      },
+      {
+        "path": "lib/cash/model.ts",
+        "sha256": "078e7b2f220ddd7748d4c6bfaa9aa8ff8495e6cf8970639f70e1d69d72f81138",
+        "bytes": 4660
+      },
+      {
+        "path": "lib/cash/proof-storage.ts",
+        "sha256": "46cac8563ac91eea02c3f5af236fc20d0f250008a07953dfd98c7a557f13afb6",
+        "bytes": 1252
+      },
+      {
+        "path": "lib/cash/server.ts",
+        "sha256": "da53184a706a58dfd72e112d47c532708a64d9e9e108b9d865972d148c5055a6",
+        "bytes": 1322
+      },
+      {
+        "path": "lib/config/effective.d.mts",
+        "sha256": "85157bbc4b278468bd7be62730c58e774de830f71b81c8466204adbee40594c6",
+        "bytes": 520
+      },
+      {
+        "path": "lib/config/effective.mjs",
+        "sha256": "952897abf72e8bfbbeb0d20fe4a83fb2bb43b74b25eabc374981d85bba7eb169",
+        "bytes": 1839
+      },
+      {
+        "path": "lib/config/provider-dispatch.d.mts",
+        "sha256": "e2e2c70d287371b6b915441ec4b30ccf4923de9f410f70a66f2de58abb3265a9",
+        "bytes": 175
+      },
+      {
+        "path": "lib/config/provider-dispatch.mjs",
+        "sha256": "e8542da62095ef41b7f4cccc6e651f2ddfd03c159b9d3608903521c1dd48aee3",
+        "bytes": 382
+      },
+      {
+        "path": "lib/config/validate.d.mts",
+        "sha256": "b7e51006e6e0cec6cf7484334c26c736f18701ffb1cb06d1d63957f391fdde0a",
+        "bytes": 607
+      },
+      {
+        "path": "lib/config/validate.mjs",
+        "sha256": "ba1e11cda3fd04b68389034ea580aad856f3bc2b327a659ac0f5721cadd6b904",
+        "bytes": 9515
+      },
+      {
+        "path": "lib/dev/__tests__/local-flow.test.ts",
+        "sha256": "ce8e96a75a47f43fdd9945fed1045c4dc60bfb3a1a292f7da9176bc03515b718",
+        "bytes": 4801
+      },
+      {
+        "path": "lib/dev/local-environment.ts",
+        "sha256": "b5e780561b8bb86d8ef9854052e288ab0be402a1b801d2d098dc3252ffc55281",
+        "bytes": 770
+      },
+      {
+        "path": "lib/dev/local-flow.ts",
+        "sha256": "9f824d4aa3727b706c09342b55636e2585b713618736a1ac0fd2b55208dc0577",
+        "bytes": 7034
+      },
+      {
+        "path": "lib/email/account-notifications.ts",
+        "sha256": "030f3f424d99802b70e6eeb8543241e939e1414c4afb8e11a4a67601062e2c5c",
+        "bytes": 650
+      },
+      {
+        "path": "lib/email/client.ts",
+        "sha256": "baf986f297e417535378c083b5d0529c4d0abd6df3ee8a9a433376dbb364a36f",
+        "bytes": 3110
+      },
+      {
+        "path": "lib/email/kyc-notifications.ts",
+        "sha256": "9af13ac1f710e80d677863de9898608efa0dee1afb25de90130a23cab8573659",
+        "bytes": 919
+      },
+      {
+        "path": "lib/email/operational.ts",
+        "sha256": "860652ef11871b1e5a2d9414350b7cf567350df2786f15dca2fa32db18492fca",
+        "bytes": 2746
+      },
+      {
+        "path": "lib/email/ops-notifications.ts",
+        "sha256": "de8ddc4d813958d803e8f12819635fd9b9226fb15ded7aee79f1a633bfef524b",
+        "bytes": 2738
+      },
+      {
+        "path": "lib/email/refund-notifications.ts",
+        "sha256": "9bd1a2d6690d117137bb8fb5c9a62daddd114bea129e5d7c4c69f005fb283767",
+        "bytes": 1072
+      },
+      {
+        "path": "lib/email/tournament-notifications.ts",
+        "sha256": "64481616155655475a5cbdb78970ccff7fe9c022df60c7312edbd4e34b1cadac",
+        "bytes": 1872
+      },
+      {
+        "path": "lib/email/withdrawal-notifications.ts",
+        "sha256": "8d8c4dc27466116213d06bce92dd4590edc72d6cb8fb3b4089928016ee1fb0fd",
+        "bytes": 1153
+      },
+      {
+        "path": "lib/env.ts",
+        "sha256": "bff1877649c95e42dce050627729dded050081316faae308661f866336ac2e51",
+        "bytes": 2979
+      },
+      {
+        "path": "lib/flow/client.ts",
+        "sha256": "9065089025c89377e299c2abd3ec40d61a49f0e61c9e856a3ffee9ec759d0687",
+        "bytes": 4346
+      },
+      {
+        "path": "lib/flow/fees.ts",
+        "sha256": "e9555b86305b2a9aeb8186926a4d14797d8e0c179e6945bbb8f7257653d16504",
+        "bytes": 3273
+      },
+      {
+        "path": "lib/flow/payments.ts",
+        "sha256": "a54dd84bea5873a03a800e802bd21086527107552855eff48621a7741c4b7cf2",
+        "bytes": 3396
+      },
+      {
+        "path": "lib/flow/refund-worker.ts",
+        "sha256": "54810bc9ed8121b19214729d0c4c669314959256473e89736931af0db07facaa",
+        "bytes": 5612
+      },
+      {
+        "path": "lib/flow/refunds.ts",
+        "sha256": "5c4b143f846083fb0dd1dd4e612c38521d3d718f2dc4f6b5b8a2ab4ca7aaea05",
+        "bytes": 2147
+      },
+      {
+        "path": "lib/flow/settlement.ts",
+        "sha256": "25ad081c5efbb9884691a5eeb9c8c515ebf4b14ce06e05e9759b6e8e37fcb6e3",
+        "bytes": 6523
+      },
+      {
+        "path": "lib/game/__tests__/alien-run-client.test.ts",
+        "sha256": "ebc97810deb08a7e33367c4e86f841a1fbba5604f1c37acfd28c6442d1bdab16",
+        "bytes": 1360
+      },
+      {
+        "path": "lib/game/__tests__/game-board-recovery.test.ts",
+        "sha256": "e244a43a84c1b81d38a56d466c365c07db5fee9a36bd41cc18f9099469f44406",
+        "bytes": 6903
+      },
+      {
+        "path": "lib/game/__tests__/unity-2048-clock.test.ts",
+        "sha256": "c128119686bf0f640488b23b094e9306707e169fd3f3f4c121a08baef279e6c0",
+        "bytes": 9790
+      },
+      {
+        "path": "lib/game/__tests__/unity-2048-contrast.test.ts",
+        "sha256": "c3f38a291a4fd1808319b21393179e5cbbdcaab73010690d88f81efd1b47c926",
+        "bytes": 1113
+      },
+      {
+        "path": "lib/game/__tests__/unity-2048-focus.test.ts",
+        "sha256": "f5b79eeda9a44eaf6aabd9aa118d1581430b3d74ead744314e2b01ff16543bce",
+        "bytes": 3434
+      },
+      {
+        "path": "lib/game/__tests__/unity-2048-host-clock.test.ts",
+        "sha256": "9079f62a72909fd315529bff4b59c63d5e3d60e5e1ce11b7560089d9eb7578a6",
+        "bytes": 2931
+      },
+      {
+        "path": "lib/game/__tests__/unity-2048-host-navigation.test.ts",
+        "sha256": "ae58cad65a7a09648148f776521665c7ba09d9e939364f99fb71bb67b5b479b2",
+        "bytes": 3631
+      },
+      {
+        "path": "lib/game/__tests__/unity-2048-host-recovery.test.ts",
+        "sha256": "173eaa1193574b55ce347f982865f54c9a73d7f0730d62e08a25fc83c6faba85",
+        "bytes": 2311
+      },
+      {
+        "path": "lib/game/__tests__/unity-2048-navigation.test.ts",
+        "sha256": "da94ad374a10e9e1dab0c3b46f8292470e0b07d0b9f6f5095be0840d9cbde912",
+        "bytes": 3635
+      },
+      {
+        "path": "lib/game/__tests__/unity-2048-recovery-action.test.ts",
+        "sha256": "ea6c3b0f465050dce5c285de665ff9812fd4054508131b36544a3f802c1620e5",
+        "bytes": 2804
+      },
+      {
+        "path": "lib/game/__tests__/unity-2048-recovery.test.ts",
+        "sha256": "703c1ef36747997632cccbe587a9032b43178eb51f58cbcd428f860c7799d323",
+        "bytes": 7362
+      },
+      {
+        "path": "lib/game/__tests__/unity-2048-result-ui.test.ts",
+        "sha256": "273f96ce53f3a6ec8c315f7ac45d4ea4c90efc2d45635cbda875ac560bbc21b9",
+        "bytes": 6192
+      },
+      {
+        "path": "lib/game/__tests__/unity-2048-session.test.ts",
+        "sha256": "c1838720c4d510c6ba6c0f64adfe4a67d5e95edf9bbf288927db66946f4dead4",
+        "bytes": 6048
+      },
+      {
+        "path": "lib/game/__tests__/unity-assets-headers.test.ts",
+        "sha256": "e032554e52bef0c0a45375083a756c30a661ab1ba20e28bab1847c8c76bfaae4",
+        "bytes": 1385
+      },
+      {
+        "path": "lib/game/alien-run-client.ts",
+        "sha256": "6935bfb8b68898dfe45e6b5a2941014f10139a3e6680593a48115b69a7f5b6e9",
+        "bytes": 1452
+      },
+      {
+        "path": "lib/game/engine.ts",
+        "sha256": "1c0eab0fd09c6af276db779fc2172c0419bd2f63eb690bf24513e0c5cdbfe10f",
+        "bytes": 5975
+      },
+      {
+        "path": "lib/game/game-json-request.ts",
+        "sha256": "3fc827dd20c72fa14434bc9448f3469fea51a130ba877290e8b0f1e7e9bf7264",
+        "bytes": 747
+      },
+      {
+        "path": "lib/game/game-snapshot.ts",
+        "sha256": "738b55675a052e7d6bb803d80929bea8c766dfd3a366994187d359f9bf7bb4c9",
+        "bytes": 2326
+      },
+      {
+        "path": "lib/game/local-practice.ts",
+        "sha256": "158adbaf96e141e33040eec7bb9ef7ab34f12cf6d6c74cc815185bbd90696134",
+        "bytes": 3741
+      },
+      {
+        "path": "lib/game/random-source.ts",
+        "sha256": "3ac8967d1310717f300282f05629b8d797d2d5a9c16005fdf9056074bc98951b",
+        "bytes": 81
+      },
+      {
+        "path": "lib/game/rng.ts",
+        "sha256": "f9659314e34a3ebda58e7750e0e394f66e35f4704ff333d17fd1b0cf228378a6",
+        "bytes": 2257
+      },
+      {
+        "path": "lib/game/runtime-builds.json",
+        "sha256": "65078d863f686237b92cd0aa544b56ed4b58e87eaf15e70575205938c6700fff",
+        "bytes": 63
+      },
+      {
+        "path": "lib/game/server-game-clock.ts",
+        "sha256": "b0daa9fad5ef87ca06a3aeaf54583590aed2e461347ec0a6e3c40f124dda3dac",
+        "bytes": 1149
+      },
+      {
+        "path": "lib/game/unity-2048-navigation.ts",
+        "sha256": "642119c3c7c1e0b473d0a4a00e5a1afa43b4b16740fe82df2270d14a79c09b90",
+        "bytes": 2365
+      },
+      {
+        "path": "lib/game/unity-2048-session.ts",
+        "sha256": "1b64bdc5d5943b1b63aa5a89995691264c2f70d529fa0c775aa90925d052506e",
+        "bytes": 12170
+      },
+      {
+        "path": "lib/identity/rut.d.mts",
+        "sha256": "9f154877dfe9d55b3de62cd4d3d540c2a099d169a606c879e031625cebb167c3",
+        "bytes": 143
+      },
+      {
+        "path": "lib/identity/rut.mjs",
+        "sha256": "cc9a68fa3413919b3547df241917bfe92b0c78a9a9f50dfd9d740aedfe7d24f8",
+        "bytes": 685
+      },
+      {
+        "path": "lib/identity/verification.ts",
+        "sha256": "c0964d2c5123aaf89fabe635d7810e8b7595149fdbbedc73a53ffbc640b622c3",
+        "bytes": 3942
+      },
+      {
+        "path": "lib/legal/terms.ts",
+        "sha256": "412b1ac609cece613b92a1be9a80ed53ba7d3e7e85d3cb71240d41beaa8302a9",
+        "bytes": 268
+      },
+      {
+        "path": "lib/ops/errors.ts",
+        "sha256": "349280200c4850014487dec408993b5fe81f6fe38831b3b253e464e544e0a859",
+        "bytes": 374
+      },
+      {
+        "path": "lib/ops/health.ts",
+        "sha256": "60504b76e208c08e42da87b336af9300f5d8a2bba118d737d953d30ef4de8e29",
+        "bytes": 3541
+      },
+      {
+        "path": "lib/ops/heartbeat.ts",
+        "sha256": "a5e9477d72d32f936057de5c00fa172f5df0de2a445d125a76709b601332e441",
+        "bytes": 540
+      },
+      {
+        "path": "lib/ops/monitor.ts",
+        "sha256": "67f652dc79d9a1901f23a2dcbcabaa7ec20585e9cd2c38b1e15cbbcdea844056",
+        "bytes": 6189
+      },
+      {
+        "path": "lib/payouts/evidence.ts",
+        "sha256": "be4c538dc15966c7298733f8977319f805de53169dbc4623861fb433bd02c431",
+        "bytes": 1059
+      },
+      {
+        "path": "lib/payouts/proof-storage.ts",
+        "sha256": "985fd3021022272cf7fe282ca50a671cb58cdbc6e9747f167aeeb22970763069",
+        "bytes": 1590
+      },
+      {
+        "path": "lib/payouts/receipt.ts",
+        "sha256": "970262dc596d75bb8043992f641f8c06d8c641eed6f5df5af1fe873550433f06",
+        "bytes": 3841
+      },
+      {
+        "path": "lib/payouts/review.ts",
+        "sha256": "7a71af81a1ae9fc6bb16b7550c9079be0387e23e8a39a76fe896425d5fbc7990",
+        "bytes": 2379
+      },
+      {
+        "path": "lib/security/__tests__/csp.test.ts",
+        "sha256": "183ac9076beb24f4cbc4545f7d22906520fa456b7e8efe3c521b0cb6da5699b9",
+        "bytes": 1333
+      },
+      {
+        "path": "lib/security/csp.ts",
+        "sha256": "b72eeea8aa2410c98c46906617ef22e9d05291216176db0ad97dedf87662b355",
+        "bytes": 1212
+      },
+      {
+        "path": "lib/security/rate-limit.ts",
+        "sha256": "7082f895c0e896277f8b5ba54d54ebfc3db0f68e6cf16b2e369a7d6954aceb9d",
+        "bytes": 3637
+      },
+      {
+        "path": "lib/supabase/admin-mfa-policy.ts",
+        "sha256": "44cc5b345514dd2133a4e6d47bc7091a217d989025320bf2d93194fe3db4114b",
+        "bytes": 526
+      },
+      {
+        "path": "lib/supabase/admin-mfa-qr.ts",
+        "sha256": "f16ea2afee3fcff9a5e1cd580f4e1c0ce33eeaa5ccb58d8ef089e92096efeae8",
+        "bytes": 270
+      },
+      {
+        "path": "lib/supabase/admin-mfa.ts",
+        "sha256": "4a466e7d85cd554ab04b5801bb9f99aae66332664b4cc2face80d52140dee5cd",
+        "bytes": 2377
+      },
+      {
+        "path": "lib/supabase/auth.ts",
+        "sha256": "5de6a58266714042386617eb36724c0f0bcc2f9fece16d55193afb4bf376b196",
+        "bytes": 6903
+      },
+      {
+        "path": "lib/supabase/client.ts",
+        "sha256": "1b133b000c1c3fa8a455ac2202c8579109783089653b97f4f01261a3adc6629d",
+        "bytes": 858
+      },
+      {
+        "path": "lib/supabase/profile.ts",
+        "sha256": "8726dd6648d7be2b931c0f1f503c13bf8c843f1124a535c0726832829beb782a",
+        "bytes": 1375
+      },
+      {
+        "path": "lib/supabase/server.ts",
+        "sha256": "05ea76d8ca2e3a9b8c5649ad02cea483520c331dbeb3c718e82d224d351c9ef3",
+        "bytes": 2071
+      },
+      {
+        "path": "lib/tax/regime.ts",
+        "sha256": "bc1625a8ce565744b2092d5fa84f267d4483f262ae18eeec9a6e5ac89f7f171d",
+        "bytes": 1090
+      },
+      {
+        "path": "lib/tournament/availability.ts",
+        "sha256": "57f01ff4b6fa9979d2a122a107a7a91bf5b42ee3fdb9c428b191b7d785fe8347",
+        "bytes": 3133
+      },
+      {
+        "path": "lib/tournament/close-expired-game.ts",
+        "sha256": "65848aa440a1cc8222565f1c6755fe78e6ab1069a3bfd426df5591f0f82873dc",
+        "bytes": 1978
+      },
+      {
+        "path": "lib/tournament/competitive-entry.ts",
+        "sha256": "cecb3b11cde6bfc538d4eba3eaa937e655f783bcda6a86b658e340ab49149052",
+        "bytes": 1417
+      },
+      {
+        "path": "lib/tournament/finance.ts",
+        "sha256": "26751adea2b155d59232c73590415d029d5b7d7ef95af2fad1410e6944891299",
+        "bytes": 12314
+      },
+      {
+        "path": "lib/tournament/game-deadline.ts",
+        "sha256": "f88a3acc2dfbf37df06e46594f2dbb697fb086884188ce23556abfaf201c37fd",
+        "bytes": 865
+      },
+      {
+        "path": "lib/tournament/game-request.ts",
+        "sha256": "590f5255b6b3d5fd2f287dc5bd322d6c7b516148d5a3ee01c094158d66e9dea0",
+        "bytes": 752
+      },
+      {
+        "path": "lib/tournament/game-snapshot-response.ts",
+        "sha256": "83bc8d40866f95e8141156a7cef8ba58ab5653dec5a0fccb45bf5eae54ae5dc6",
+        "bytes": 1538
+      },
+      {
+        "path": "lib/tournament/helpers.ts",
+        "sha256": "4163eda7eb06ec9879db193db6ce0db72b7e60baf455a73598e0a1d62e6985be",
+        "bytes": 2316
+      },
+      {
+        "path": "lib/tournament/lifecycle.ts",
+        "sha256": "bd905446eed6a86b39d020b0456b1f17c2a2f161db132b8ae0d743439f7d7a9a",
+        "bytes": 18164
+      },
+      {
+        "path": "lib/tournament/public-catalog.ts",
+        "sha256": "3ddea08d76a129eeba18b57a1f0bdecf7f206147da8b0186f0bbc06a3b20a01c",
+        "bytes": 2150
+      },
+      {
+        "path": "lib/tournament/rating.ts",
+        "sha256": "b272104a7e9117e050a862737a42354c34ae6f882f408738322a5b65c5a05a2a",
+        "bytes": 2155
+      },
+      {
+        "path": "lib/tournament/readiness.ts",
+        "sha256": "ad2e4a43ac1736ad05bd93220d0a6789f79bb490a616b58eeb97f2de5359c9a9",
+        "bytes": 3216
+      },
+      {
+        "path": "lib/tournament/refunds.ts",
+        "sha256": "7bb019abb628da4c5ff666825ddfa81719bf392c122ee79026e43da120325a62",
+        "bytes": 5744
+      },
+      {
+        "path": "lib/utils.ts",
+        "sha256": "e96dd96fbb226ef30d0fa08e7cbb9b79c4b1e5fbc73747fd179645ef14899101",
+        "bytes": 3310
+      },
+      {
+        "path": "lib/wallet/credit-expiry.ts",
+        "sha256": "30ea34ff9e3ceb7573a13a6984b1b3b9444213b6f9b408c085e0bc5530634d8e",
+        "bytes": 2208
+      },
+      {
+        "path": "lib/wallet/limits.ts",
+        "sha256": "9882f7f7ffca64cf89aa78ee6de8836e7974ecaab2c029066542dfc8e91bc766",
+        "bytes": 1079
+      },
+      {
+        "path": "lib/wallet/rakeback.ts",
+        "sha256": "75771576c99585150fbf22147daf79b7dad542b76fc3117a5e26485d147e45d0",
+        "bytes": 2723
+      },
+      {
+        "path": "lib/wallet/transactions.ts",
+        "sha256": "cbd8b2e92d8fec1d704b403b2fe9824404089ea9c7138d4a9a651da46ebc7595",
+        "bytes": 2441
+      },
+      {
+        "path": "next.config.ts",
+        "sha256": "ba58c75188274d5ad1d6c75092d3e942d868cb7a4067e97f0e612b2e7dfcdd4f",
+        "bytes": 2909
+      },
+      {
+        "path": "package-lock.json",
+        "sha256": "9d80cf105fb9da071af275f19805ae8f2899b8d3501b821eb067b33b9a885af4",
+        "bytes": 436292
+      },
+      {
+        "path": "package.json",
+        "sha256": "4af387c3f749ab00f57def2ee6c6152aeed4e42da58b2d76381a16d05ebf5474",
+        "bytes": 2967
+      },
+      {
+        "path": "postcss.config.mjs",
+        "sha256": "7b299d3d3b16699ddda397c0b2373b3af4f25f8fc9ccc9b3d9e64ef083bc1c21",
+        "bytes": 101
+      },
+      {
+        "path": "proxy.ts",
+        "sha256": "11380a359988a307034a37d42bff4caa22f97a2fc1df5535bc669c01ac292b75",
+        "bytes": 7221
+      },
+      {
+        "path": "public/file.svg",
+        "sha256": "2b67812c325c199a02536cdbeea0c593a72f707d323b72ee3e08dbab06753bd4",
+        "bytes": 391
+      },
+      {
+        "path": "public/games/2048/unity-2048-007/Build/unity-2048-007.data.gz",
+        "sha256": "1807e6fee033e397c5f836eaff77ee523d28eb25ca5eeca948221d76b74ee6a5",
+        "bytes": 7372283
+      },
+      {
+        "path": "public/games/2048/unity-2048-007/Build/unity-2048-007.framework.js.gz",
+        "sha256": "69ffb1280d63104d645b4266b6ff5f2d88f8bdc463e96b86e50200d334ec9b18",
+        "bytes": 82989
+      },
+      {
+        "path": "public/games/2048/unity-2048-007/Build/unity-2048-007.loader.js",
+        "sha256": "ded3daace7ac1498a2b13729325f9c598200024e86ec8202bc5fc94dcf9ecf37",
+        "bytes": 26983
+      },
+      {
+        "path": "public/games/2048/unity-2048-007/Build/unity-2048-007.wasm.gz",
+        "sha256": "0fcb1743c4a24f4d2ee97049f6573ae0c4e8bef315628ca1f79f61de5f710802",
+        "bytes": 10077657
+      },
+      {
+        "path": "public/games/2048/unity-2048-007/build-manifest.json",
+        "sha256": "50d80863ac03ea51bf270ebaadb8dbdf56eb29ef0e30fd17a1d07b54f9fc5632",
+        "bytes": 190
+      },
+      {
+        "path": "public/games/2048/unity-2048-007/index.html",
+        "sha256": "d150a9b7c776d9dd77edefd1a6365b3baeba0d811389055c48b4a55fc7f7956c",
+        "bytes": 2483
+      },
+      {
+        "path": "public/globe.svg",
+        "sha256": "b614b9bf183925957661ac851498fe1d8029fd43a62fbfed86f9e2624a57e7cf",
+        "bytes": 1035
+      },
+      {
+        "path": "public/local-flow.css",
+        "sha256": "9d18b8100f172690c7143f621b702825e59e2f2e50b084fbed0e67dfcf09be34",
+        "bytes": 1071
+      },
+      {
+        "path": "public/next.svg",
+        "sha256": "55995dfad6ecb4945a1e856ddca03c5e16aa5bf13fd21b4df6a74ae79357bcfc",
+        "bytes": 1375
+      },
+      {
+        "path": "public/vercel.svg",
+        "sha256": "f081337b2fee635b455b63275406a3e7f39d6a014e25ad90dab5a67e62a12ac4",
+        "bytes": 128
+      },
+      {
+        "path": "public/window.svg",
+        "sha256": "644768c4aaeb4767bce293344eeb0c125fb804a94d801440424072202d85e3a1",
+        "bytes": 385
+      },
+      {
+        "path": "scripts/prepare-release.mjs",
+        "sha256": "7f3caa8c0b0625c73c1a1d4aafe5859b67a0719537060e4c9a5899c287cb2e2e",
+        "bytes": 924
+      },
+      {
+        "path": "scripts/start-release.mjs",
+        "sha256": "66cc8ca24188a14875779f472025a44a311190d512df38e5a802da62cdbd21ee",
+        "bytes": 865
+      },
+      {
+        "path": "tsconfig.json",
+        "sha256": "fbff01604d6cb54694be707f26e7a0eb21a6ef796b888c6a1dab1839fa7c6ccc",
+        "bytes": 700
+      },
+      {
+        "path": "types/database.ts",
+        "sha256": "463c493c03eaaa0c93a6ecd1dd48fd2aa72a16ba4ed9a2fffcd1b6614de23175",
+        "bytes": 31016
+      },
+      {
+        "path": "types/game.ts",
+        "sha256": "a5a5e92256305b7db9236cb1b7c20d7c6234aba72795861863e058525e1d2286",
+        "bytes": 609
+      },
+      {
+        "path": "vercel.json",
+        "sha256": "c8dfc882e618b84e0d71263fab27f343a04e622687fba997a542bcea34e36ac6",
+        "bytes": 297
+      }
+    ],
+    "shared_alias_points_to_rm12": false,
+    "shared_alias_before": "dpl_3VxaPf5t4yAGb2TRX28GjgJpJXFH",
+    "shared_alias_now": "dpl_DXTdRYRTgfUaCrkh6Y4rtu3c1TFM",
+    "concurrent_shared_update": true,
+    "compiled_bytes": "NOT_RUN; source upload and cloud compilation/behavior verified; not equality to Windows standalone output"
+  },
+  "catalog": {
+    "status": "PASS",
+    "issues": [],
+    "migrations": {
+      "pending": [],
+      "present": [
+        "20261002202731_guard_2048_move_commit.sql",
+        "20261004184805_guard_2048_seed_visibility.sql",
+        "20261005131208_guard_commercial_entry.sql",
+        "20261005141433_durable_financial_operations.sql",
+        "20261005145934_prize_review_and_payout_holds.sql",
+        "20261005160247_operational_obligations_and_alerts.sql",
+        "20261005175927_cash_reconciliation_and_reserve.sql"
+      ],
+      "warning": "Version presence does not prove SQL hashes/grants or historical dependencies. Review drift on staging; do not db push all migrations."
+    },
+    "scope": "selected catalog invariants only; not SQL equivalence, JWT/RLS behavior, Storage object access or migration recovery"
+  },
+  "live_http": {
+    "at": "2026-10-06T20:06:08.520Z",
+    "origin": "https://rm12-torneos-dev.vercel.app",
+    "checks": [
+      {
+        "name": "page /",
+        "status": "PASS",
+        "http": 200
+      },
+      {
+        "name": "page /sign-in",
+        "status": "PASS",
+        "http": 200
+      },
+      {
+        "name": "page /play",
+        "status": "PASS",
+        "http": 200
+      },
+      {
+        "name": "page /play/alien-run",
+        "status": "PASS",
+        "http": 200
+      },
+      {
+        "name": "2048 iframe entry",
+        "status": "PASS",
+        "http": 200
+      },
+      {
+        "name": "2048 Build/unity-2048-007.loader.js",
+        "status": "PASS",
+        "http": 200,
+        "content_type": "application/javascript; charset=utf-8"
+      },
+      {
+        "name": "2048 Build/unity-2048-007.data.gz",
+        "status": "PASS",
+        "http": 200,
+        "content_type": "application/octet-stream"
+      },
+      {
+        "name": "2048 Build/unity-2048-007.framework.js.gz",
+        "status": "PASS",
+        "http": 200,
+        "content_type": "application/javascript"
+      },
+      {
+        "name": "2048 Build/unity-2048-007.wasm.gz",
+        "status": "PASS",
+        "http": 200,
+        "content_type": "application/wasm"
+      },
+      {
+        "name": "player session verified",
+        "status": "PASS"
+      },
+      {
+        "name": "player prizes page",
+        "status": "PASS",
+        "http": 200
+      },
+      {
+        "name": "authenticated practice start and move",
+        "status": "PASS",
+        "http": 200,
+        "scope": "free practice only"
+      },
+      {
+        "name": "player cash mutation rejected before handler",
+        "status": "PASS",
+        "http": 403
+      },
+      {
+        "name": "operator session verified",
+        "status": "PASS"
+      },
+      {
+        "name": "operator cash mutation rejected before handler",
+        "status": "PASS",
+        "http": 403
+      },
+      {
+        "name": "kyc-documents service control download",
+        "status": "PASS"
+      },
+      {
+        "name": "kyc-documents anon private object denied",
+        "status": "PASS"
+      },
+      {
+        "name": "kyc-documents player private object denied",
+        "status": "PASS"
+      },
+      {
+        "name": "kyc-documents operator-aal1 private object denied",
+        "status": "PASS"
+      },
+      {
+        "name": "kyc-documents own probe removed",
+        "status": "PASS"
+      },
+      {
+        "name": "payout-proofs service control download",
+        "status": "PASS"
+      },
+      {
+        "name": "payout-proofs anon private object denied",
+        "status": "PASS"
+      },
+      {
+        "name": "payout-proofs player private object denied",
+        "status": "PASS"
+      },
+      {
+        "name": "payout-proofs operator-aal1 private object denied",
+        "status": "PASS"
+      },
+      {
+        "name": "payout-proofs own probe removed",
+        "status": "PASS"
+      },
+      {
+        "name": "cash-proofs service control download",
+        "status": "PASS"
+      },
+      {
+        "name": "cash-proofs anon private object denied",
+        "status": "PASS"
+      },
+      {
+        "name": "cash-proofs player private object denied",
+        "status": "PASS"
+      },
+      {
+        "name": "cash-proofs operator-aal1 private object denied",
+        "status": "PASS"
+      },
+      {
+        "name": "cash-proofs own probe removed",
+        "status": "PASS"
+      },
+      {
+        "name": "cash remains paused",
+        "status": "PASS"
+      },
+      {
+        "name": "probe session cleanup",
+        "status": "PASS"
+      },
+      {
+        "name": "probe session cleanup",
+        "status": "PASS"
+      }
+    ],
+    "status": "PASS",
+    "production_decision": "NO_GO"
+  },
+  "synthetic_mfa": {
+    "at": "2026-10-06T20:05:05.644Z",
+    "status": "INCOMPLETE",
+    "checks": [
+      {
+        "name": "google provider sends to Google with dev Supabase callback",
+        "status": "PASS"
+      },
+      {
+        "name": "Supabase RM12 callback allowlist",
+        "status": "FAIL",
+        "reason": "Auth accepted redirect falls back to https://torneos-dev.vercel.app"
+      },
+      {
+        "name": "temporary operator AAL1 authenticated",
+        "status": "PASS"
+      },
+      {
+        "name": "kyc-documents operator AAL1 denied",
+        "status": "PASS"
+      },
+      {
+        "name": "payout-proofs operator AAL1 denied",
+        "status": "PASS"
+      },
+      {
+        "name": "cash-proofs operator AAL1 denied",
+        "status": "PASS"
+      },
+      {
+        "name": "incorrect TOTP rejected",
+        "status": "PASS"
+      },
+      {
+        "name": "real Supabase TOTP challenge produces AAL2",
+        "status": "PASS"
+      },
+      {
+        "name": "KYC operator AAL2 reads synthetic third-party proof",
+        "status": "PASS"
+      },
+      {
+        "name": "payout-proofs remains service-only at AAL2; application endpoint required",
+        "status": "PASS"
+      },
+      {
+        "name": "cash-proofs remains service-only at AAL2; application endpoint required",
+        "status": "PASS"
+      },
+      {
+        "name": "kyc-documents own proof removed",
+        "status": "PASS"
+      },
+      {
+        "name": "payout-proofs own proof removed",
+        "status": "PASS"
+      },
+      {
+        "name": "cash-proofs own proof removed",
+        "status": "PASS"
+      }
+    ],
+    "scope": "temporary synthetic operator; not human titular/backup acceptance",
+    "production_decision": "NO_GO",
+    "oauth": {
+      "google_authorize_status": 302,
+      "callback_project": "jnoyjewsqbooqaiighcs",
+      "controlled_cancellation_http": 302,
+      "return_origin": "https://torneos-dev.vercel.app",
+      "return_path": "/",
+      "rm12_callback_allowed": false,
+      "interactive_roundtrip": "NOT_RUN"
+    },
+    "application_probe": "PENDING",
+    "historical_oauth_observation": true
+  },
+  "oauth_current": {
+    "at": "2026-10-06T20:12:44.068Z",
+    "status": "PASS",
+    "checks": [
+      {
+        "name": "RM12 callback without query",
+        "status": "PASS",
+        "allowed": true,
+        "accepted_origin": "https://rm12-torneos-dev.vercel.app",
+        "accepted_path": "/auth/callback",
+        "accepted_next": null
+      },
+      {
+        "name": "RM12 callback",
+        "status": "PASS",
+        "allowed": true,
+        "accepted_origin": "https://rm12-torneos-dev.vercel.app",
+        "accepted_path": "/auth/callback",
+        "accepted_next": "/onboarding"
+      },
+      {
+        "name": "shared develop callback",
+        "status": "PASS",
+        "allowed": true,
+        "accepted_origin": "https://torneos-dev.vercel.app",
+        "accepted_path": "/auth/callback",
+        "accepted_next": null
+      },
+      {
+        "name": "external origin",
+        "status": "PASS",
+        "allowed": false,
+        "accepted_origin": "https://torneos-dev.vercel.app",
+        "accepted_path": "/",
+        "accepted_next": null
+      },
+      {
+        "name": "Google OAuth initiation with dev callback",
+        "status": "PASS",
+        "http": 302,
+        "project": "jnoyjewsqbooqaiighcs",
+        "pkce": true
+      }
+    ],
+    "interactive_roundtrip": "NOT_RUN",
+    "production_decision": "NO_GO"
+  },
+  "google_live_session": {
+    "at": "2026-10-06T20:17:41.452Z",
+    "auth": {
+      "audit_event_counts": [],
+      "google_latest_signin": "2026-10-06T20:15:53.036155+00:00",
+      "google_users_signed_in_this_turn": 1
+    },
+    "session": {
+      "latest_google_session": "2026-10-06T20:15:53.039005+00:00",
+      "google_profiles_present": 1,
+      "google_sessions_created_after_login": 1
+    },
+    "browser_session_seen_in_agent_tab": false,
+    "user_reported_login": true,
+    "scope": "Live Google identity, successful Auth sign-in, issued Supabase session and profile; owner confirms return to RM12 with session in personal browser; no personal cookies or tokens copied",
+    "user_confirmed_return_origin": "https://rm12-torneos-dev.vercel.app",
+    "user_confirmed_session_active": true
+  },
+  "application_aal2": {
+    "at": "2026-10-06T20:11:41.843Z",
+    "status": "PASS",
+    "checks": [
+      {
+        "name": "AAL2 dashboard /admin/cash",
+        "status": "PASS",
+        "http": 200
+      },
+      {
+        "name": "AAL2 dashboard /admin/operations",
+        "status": "PASS",
+        "http": 200
+      },
+      {
+        "name": "AAL2 dashboard /admin/payouts",
+        "status": "PASS",
+        "http": 200
+      },
+      {
+        "name": "AAL2 passes MFA guard; invalid cash input rejected without mutation",
+        "status": "PASS",
+        "http": 400
+      },
+      {
+        "name": "anonymous proof request redirected to sign-in before API",
+        "status": "PASS",
+        "http": 307
+      },
+      {
+        "name": "AAL2 missing proof returns 404 after guard",
+        "status": "PASS",
+        "http": 404
+      },
+      {
+        "name": "anonymous proof request redirected to sign-in before API",
+        "status": "PASS",
+        "http": 307
+      },
+      {
+        "name": "AAL2 missing proof returns 404 after guard",
+        "status": "PASS",
+        "http": 404
+      },
+      {
+        "name": "missing OAuth code stays on canonical origin",
+        "status": "PASS",
+        "http": 307
+      },
+      {
+        "name": "AAL2 cash endpoint returns private signed proof with exact fixture bytes",
+        "status": "PASS",
+        "http": 200
+      }
+    ],
+    "scope": "temporary synthetic AAL2 operator on live HTTPS deployment; human operators pending",
+    "production_decision": "NO_GO"
+  },
+  "operational_read": {
+    "at": "2026-10-06T20:13:31.374Z",
+    "production_decision": "NO_GO",
+    "checks": [
+      {
+        "name": "live read-only RPC cash_status",
+        "status": "PASS"
+      },
+      {
+        "name": "live read-only RPC operational_snapshot",
+        "status": "PASS"
+      },
+      {
+        "name": "monitor-status unauthorized",
+        "http": 401,
+        "status": "PASS",
+        "body": {
+          "error": "No autorizado"
+        }
+      },
+      {
+        "name": "monitor-status authorized",
+        "http": 503,
+        "status": "EXPECTED_UNHEALTHY",
+        "body": {
+          "ok": false,
+          "error": "Monitor sin éxito verificable reciente"
+        }
+      },
+      {
+        "name": "Flow provider callback without Vercel access /api/webhooks/flow",
+        "http": 302,
+        "redirect_origin": "https://vercel.com",
+        "status": "BLOCKED_BY_HOSTING"
+      },
+      {
+        "name": "Flow callback without token /api/webhooks/flow",
+        "http": 400,
+        "status": "PASS"
+      },
+      {
+        "name": "Flow provider callback without Vercel access /api/webhooks/flow/refund",
+        "http": 302,
+        "redirect_origin": "https://vercel.com",
+        "status": "BLOCKED_BY_HOSTING"
+      },
+      {
+        "name": "Flow callback without token /api/webhooks/flow/refund",
+        "http": 400,
+        "status": "PASS"
+      }
+    ],
+    "cash_status": {
+      "paused": true,
+      "observed_at": "2026-10-06T20:13:31.592973+00:00",
+      "wallet_cents": 0,
+      "refunds_cents": 0,
+      "exposure_cents": 0,
+      "bank_book_cents": 0,
+      "flow_book_cents": 0,
+      "shortfall_cents": null,
+      "blocking_reasons": [
+        "Cobros nuevos pausados por el propietario",
+        "Reserva adicional y límite de exposición sin definir",
+        "Conciliación bancaria/Flow aprobada ausente o vencida",
+        "Caja bancaria insuficiente para cubrir la reserva"
+      ],
+      "negative_wallets": 0,
+      "open_differences": 0,
+      "reconciliation_at": null,
+      "reconciliation_id": null,
+      "tax_reserve_cents": 0,
+      "admissions_allowed": false,
+      "integrity_failures": 0,
+      "max_exposure_cents": null,
+      "available_bank_cents": null,
+      "promised_prizes_cents": 0,
+      "required_reserve_cents": 0,
+      "uncredited_prizes_cents": 0,
+      "additional_reserve_cents": null,
+      "unsettled_payments_cents": 0,
+      "reserved_withdrawals_cents": 0
+    },
+    "operational_snapshot": {
+      "jobs": [
+        {
+          "detail": null,
+          "job_name": "flow-reconcile",
+          "last_run_at": "2026-10-05T21:10:00.758+00:00",
+          "last_status": "ok",
+          "last_started_at": null,
+          "last_success_at": "2026-10-05T21:10:00.758+00:00",
+          "consecutive_failures": 0,
+          "last_dispatch_failure_at": null,
+          "consecutive_dispatch_failures": 0
+        },
+        {
+          "detail": null,
+          "job_name": "process-tournaments",
+          "last_run_at": "2026-10-05T21:15:00.334+00:00",
+          "last_status": "ok",
+          "last_started_at": null,
+          "last_success_at": "2026-10-05T21:15:00.334+00:00",
+          "consecutive_failures": 0,
+          "last_dispatch_failure_at": null,
+          "consecutive_dispatch_failures": 0
+        },
+        {
+          "detail": null,
+          "job_name": "reconcile-refunds",
+          "last_run_at": "2026-10-05T21:10:01.387+00:00",
+          "last_status": "ok",
+          "last_started_at": null,
+          "last_success_at": "2026-10-05T21:10:01.387+00:00",
+          "consecutive_failures": 0,
+          "last_dispatch_failure_at": null,
+          "consecutive_dispatch_failures": 0
+        }
+      ],
+      "checks": [
+        {
+          "key": "duplicate-prize",
+          "href": "/admin/prize-reviews",
+          "count": 0,
+          "title": "Créditos de premios duplicados",
+          "amount_cents": 0
+        },
+        {
+          "key": "ledger-difference",
+          "href": "/admin/reports",
+          "count": 0,
+          "title": "Asientos contables incompletos o descuadrados",
+          "amount_cents": 0
+        },
+        {
+          "key": "orphan-debit",
+          "href": "/admin/payouts",
+          "count": 0,
+          "title": "Débitos de retiro sin solicitud",
+          "amount_cents": 0
+        },
+        {
+          "key": "orphan-reservation",
+          "href": "/admin/payouts",
+          "count": 0,
+          "title": "Retiros sin reserva íntegra",
+          "amount_cents": 0
+        },
+        {
+          "key": "unauthorized-payout",
+          "href": "/admin/payouts",
+          "count": 0,
+          "title": "Retiros sin separación de autorización",
+          "amount_cents": 0
+        }
+      ],
+      "queues": [
+        {
+          "key": "failed-refunds",
+          "href": "/admin/refunds",
+          "count": 0,
+          "title": "Devoluciones con incertidumbre o fallo",
+          "oldest_at": null,
+          "amount_cents": 0
+        },
+        {
+          "key": "pending-payments",
+          "href": "/admin/payments",
+          "count": 0,
+          "title": "Pagos en espera",
+          "oldest_at": null,
+          "amount_cents": 0
+        },
+        {
+          "key": "pending-refunds",
+          "href": "/admin/refunds",
+          "count": 0,
+          "title": "Devoluciones sin confirmar",
+          "oldest_at": null,
+          "amount_cents": 0
+        },
+        {
+          "key": "retained-prizes",
+          "href": "/admin/prize-reviews",
+          "count": 0,
+          "title": "Premios retenidos",
+          "oldest_at": null,
+          "amount_cents": 0
+        },
+        {
+          "key": "uncertain-withdrawals",
+          "href": "/admin/payouts",
+          "count": 0,
+          "title": "Transferencias por confirmar",
+          "oldest_at": null,
+          "amount_cents": 0
+        },
+        {
+          "key": "unknown-payments",
+          "href": "/admin/payments",
+          "count": 0,
+          "title": "Pagos desconocidos",
+          "oldest_at": null,
+          "amount_cents": 0
+        },
+        {
+          "key": "withdrawals",
+          "href": "/admin/payouts",
+          "count": 0,
+          "title": "Retiros por pagar",
+          "oldest_at": null,
+          "amount_cents": 0
+        }
+      ],
+      "observed_at": "2026-10-06T20:13:31.934014+00:00",
+      "bank_cash_verified": false
+    }
+  },
+  "scheduler": {
+    "jobs": [
+      {
+        "name": "torneos-process-tournaments",
+        "active": true,
+        "schedule": "*/5 * * * *",
+        "uses_vault": false,
+        "command_sha256": "b122da8d80008a11f1cc4058b52192363c0a45e784da5f15987fae7d5a0e322f"
+      },
+      {
+        "name": "torneos-flow-reconcile",
+        "active": true,
+        "schedule": "*/10 * * * *",
+        "uses_vault": false,
+        "command_sha256": "4ad9deacaa78d060e2aa45a597dcf48d3b69e022f847ac238a19ba42d3a971b5"
+      },
+      {
+        "name": "torneos-reconcile-refunds",
+        "active": true,
+        "schedule": "*/10 * * * *",
+        "uses_vault": false,
+        "command_sha256": "fc8aebc4522b175516ab4c0674fb984b8b944cf73bdacbc6fd32068c14c1b0cd"
+      },
+      {
+        "name": "torneos-watchdog",
+        "active": true,
+        "schedule": "17 * * * *",
+        "uses_vault": false,
+        "command_sha256": "de718bd457b70c728dcd0bef26feb567b339c16d994b05b614dcdd2060bd2766"
+      },
+      {
+        "name": "factory-3d-challenge-close",
+        "active": true,
+        "schedule": "* * * * *",
+        "uses_vault": false,
+        "command_sha256": "e04599345d5170f44ca10b9189cac6fc3287db872871e5201169b8a53a5b1cc1"
+      }
+    ],
+    "last_runs": [
+      {
+        "name": "torneos-process-tournaments",
+        "status": "succeeded",
+        "started": "2026-10-06T20:10:00.05475+00:00",
+        "finished": "2026-10-06T20:10:00.073761+00:00"
+      },
+      {
+        "name": "torneos-flow-reconcile",
+        "status": "succeeded",
+        "started": "2026-10-06T20:10:00.050551+00:00",
+        "finished": "2026-10-06T20:10:00.076472+00:00"
+      },
+      {
+        "name": "torneos-reconcile-refunds",
+        "status": "succeeded",
+        "started": "2026-10-06T20:10:00.045632+00:00",
+        "finished": "2026-10-06T20:10:00.077963+00:00"
+      },
+      {
+        "name": "torneos-watchdog",
+        "status": "succeeded",
+        "started": "2026-10-06T19:17:00.020601+00:00",
+        "finished": "2026-10-06T19:17:00.035252+00:00"
+      },
+      {
+        "name": "factory-3d-challenge-close",
+        "status": "succeeded",
+        "started": "2026-10-06T20:12:00.015073+00:00",
+        "finished": "2026-10-06T20:12:00.020119+00:00"
+      }
+    ],
+    "heartbeats": [
+      {
+        "job_name": "flow-reconcile",
+        "last_run_at": "2026-10-05T21:10:00.758+00:00",
+        "last_status": "ok",
+        "last_started_at": null,
+        "last_success_at": "2026-10-05T21:10:00.758+00:00",
+        "consecutive_failures": 0,
+        "last_dispatch_failure_at": null,
+        "consecutive_dispatch_failures": 0
+      },
+      {
+        "job_name": "reconcile-refunds",
+        "last_run_at": "2026-10-05T21:10:01.387+00:00",
+        "last_status": "ok",
+        "last_started_at": null,
+        "last_success_at": "2026-10-05T21:10:01.387+00:00",
+        "consecutive_failures": 0,
+        "last_dispatch_failure_at": null,
+        "consecutive_dispatch_failures": 0
+      },
+      {
+        "job_name": "process-tournaments",
+        "last_run_at": "2026-10-05T21:15:00.334+00:00",
+        "last_status": "ok",
+        "last_started_at": null,
+        "last_success_at": "2026-10-05T21:15:00.334+00:00",
+        "consecutive_failures": 0,
+        "last_dispatch_failure_at": null,
+        "consecutive_dispatch_failures": 0
+      }
+    ]
+  },
+  "cleanup": {
+    "at": "2026-10-06T20:14:54.726Z",
+    "status": "PASS",
+    "removed": "owned temporary Auth account, MFA factor, profile and roles; local session file removed",
+    "other_operators": "preserved",
+    "cash_fixture": "previously removed with exact id, actor and marker",
+    "private_objects": "previously removed and download rejection verified"
+  },
+  "final_state": {
+    "cash_paused": true,
+    "payment_attempts": 0,
+    "refund_attempts": 0,
+    "withdrawal_requests": 0,
+    "owned_test_auth_accounts": 0,
+    "owned_test_cash_rows": 0,
+    "owned_probe_objects": 0,
+    "verified_mfa_total": 1,
+    "scope": "live SQL aggregate after cleanup; pre-existing verified MFA preserved"
+  },
+  "remaining": [
+    "human operator and backup MFA acceptance",
+    "alerts and email provider/sender/receipt",
+    "scheduler HTTP execution and fresh watchdog",
+    "Flow callbacks reachable without Vercel human authentication",
+    "full data/Auth/Storage recovery",
+    "real reconciliation and reserve/exposure limits",
+    "authorized capped Flow payment/refund/prize/withdrawal cycle",
+    "commercial/legal/human/mobile release acceptance",
+    "human onboarding and account recovery acceptance"
+  ],
+  "artifacts": [
+    {
+      "path": "artifacts/staging/checkpoints/823063cf1566533b4edeaccacefb8d7360193a9e-dpl_5RRkNLW6Ysf1jr2W75F75DXJW2zZ-google-owner-confirmed/config-refresh.json",
+      "sha256": "e09c1ecbbf7ffe6acfae7b8a7377d1bcae5565fafe372f90892c35ecd7c68aa5",
+      "bytes": 3715
+    },
+    {
+      "path": "artifacts/staging/checkpoints/823063cf1566533b4edeaccacefb8d7360193a9e-dpl_5RRkNLW6Ysf1jr2W75F75DXJW2zZ-google-owner-confirmed/env-sync.json",
+      "sha256": "2411916f0a0e9091e57aaa6f65b2ff9e793ab5905506e87e70f011eae59e4328",
+      "bytes": 317
+    },
+    {
+      "path": "artifacts/staging/checkpoints/823063cf1566533b4edeaccacefb8d7360193a9e-dpl_5RRkNLW6Ysf1jr2W75F75DXJW2zZ-google-owner-confirmed/configuration-catalog.json",
+      "sha256": "cd9dd49b577a4f2a8ebf198e37f3abc6359bdb25d070257fdbd3d962968ecba2",
+      "bytes": 14897
+    },
+    {
+      "path": "artifacts/staging/checkpoints/823063cf1566533b4edeaccacefb8d7360193a9e-dpl_5RRkNLW6Ysf1jr2W75F75DXJW2zZ-google-owner-confirmed/configuration-catalog-assessment.json",
+      "sha256": "d8740d96178fcc9a393018a188bd9c276b7e207284f6ba55218ea1f0732e9472",
+      "bytes": 780
+    },
+    {
+      "path": "artifacts/staging/checkpoints/823063cf1566533b4edeaccacefb8d7360193a9e-dpl_5RRkNLW6Ysf1jr2W75F75DXJW2zZ-google-owner-confirmed/deployment-status.json",
+      "sha256": "12a969718e8044894dd387fa73cd369d18c326dd73b023b875b22be28a9ae48a",
+      "bytes": 367
+    },
+    {
+      "path": "artifacts/staging/checkpoints/823063cf1566533b4edeaccacefb8d7360193a9e-dpl_5RRkNLW6Ysf1jr2W75F75DXJW2zZ-google-owner-confirmed/upload-verification.json",
+      "sha256": "870d63175e196177cdded88cced648f3e9ec6e30aedf513a4bcc84502287e240",
+      "bytes": 48650
+    },
+    {
+      "path": "artifacts/staging/checkpoints/823063cf1566533b4edeaccacefb8d7360193a9e-dpl_5RRkNLW6Ysf1jr2W75F75DXJW2zZ-google-owner-confirmed/deployed-smoke.json",
+      "sha256": "de308ace73713aa95c3ee9f4c23fd3f298b0a0816869fa47e2a0a3e63b408e94",
+      "bytes": 3483
+    },
+    {
+      "path": "artifacts/staging/checkpoints/823063cf1566533b4edeaccacefb8d7360193a9e-dpl_5RRkNLW6Ysf1jr2W75F75DXJW2zZ-google-owner-confirmed/auth-gap-probe.json",
+      "sha256": "1e1f699ae6e0add94b0f6cc738c6b15f0d9523132b7df6577534b1073cb826b8",
+      "bytes": 1949
+    },
+    {
+      "path": "artifacts/staging/checkpoints/823063cf1566533b4edeaccacefb8d7360193a9e-dpl_5RRkNLW6Ysf1jr2W75F75DXJW2zZ-google-owner-confirmed/oauth-probe.json",
+      "sha256": "9b56432027954feae13c67ee09bacab71f62f85b76007231117ddb0667dacf8d",
+      "bytes": 1233
+    },
+    {
+      "path": "artifacts/staging/checkpoints/823063cf1566533b4edeaccacefb8d7360193a9e-dpl_5RRkNLW6Ysf1jr2W75F75DXJW2zZ-google-owner-confirmed/mfa-application.json",
+      "sha256": "f5f4e9c513c53b0b3f14ce37d3b359c4cd898a2b15c52a75be9d147f1741f5f6",
+      "bytes": 1405
+    },
+    {
+      "path": "artifacts/staging/checkpoints/823063cf1566533b4edeaccacefb8d7360193a9e-dpl_5RRkNLW6Ysf1jr2W75F75DXJW2zZ-google-owner-confirmed/ops-read-probe.json",
+      "sha256": "237c21272947a70af5a80bbb93a1868c6a9ebd5ad7a6e94cbe0867d51d4be70e",
+      "bytes": 5985
+    },
+    {
+      "path": "artifacts/staging/checkpoints/823063cf1566533b4edeaccacefb8d7360193a9e-dpl_5RRkNLW6Ysf1jr2W75F75DXJW2zZ-google-owner-confirmed/scheduler-observation.json",
+      "sha256": "d49353ec4da05858d21fd7f797440687cd5f8e6fa6919cd2b8899337110b1680",
+      "bytes": 3149
+    },
+    {
+      "path": "artifacts/staging/checkpoints/823063cf1566533b4edeaccacefb8d7360193a9e-dpl_5RRkNLW6Ysf1jr2W75F75DXJW2zZ-google-owner-confirmed/google-session-evidence.json",
+      "sha256": "e330fee0abdb324ead17906ae05d8d6c2bf71d70fc9b50a54278639d43ea59d3",
+      "bytes": 746
+    },
+    {
+      "path": "artifacts/staging/checkpoints/823063cf1566533b4edeaccacefb8d7360193a9e-dpl_5RRkNLW6Ysf1jr2W75F75DXJW2zZ-google-owner-confirmed/owned-fixture-cleanup.json",
+      "sha256": "ceea71c7f079f9e5a593e262ec57e846a2ba0b55271dff8ff40d644e449d64db",
+      "bytes": 344
+    },
+    {
+      "path": "artifacts/staging/checkpoints/823063cf1566533b4edeaccacefb8d7360193a9e-dpl_5RRkNLW6Ysf1jr2W75F75DXJW2zZ-google-owner-confirmed/build-cloud.log",
+      "sha256": "d89f6d50b9696b9f32063284338ddef4b74ed261adf0db2f6003697ae764f11a",
+      "bytes": 662
+    }
+  ]
+}

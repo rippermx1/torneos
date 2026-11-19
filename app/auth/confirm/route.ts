@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
   const tokenHash = searchParams.get('token_hash')
   const code = searchParams.get('code')
   const type = searchParams.get('type') as EmailOtpType | null
-  const next = getSafeAuthRedirectPath(searchParams.get('next'))
+  const next = type === 'recovery' ? '/sign-in/reset' : getSafeAuthRedirectPath(searchParams.get('next'))
 
   const origin = getAppUrl(request.url)!
   const redirectTo = new URL(next, origin)

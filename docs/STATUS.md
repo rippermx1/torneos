@@ -1,5 +1,13 @@
 # Estado — TorneosPlay
 
+## Base B2B consolidada (Fase 0 local) — 2026-11-19
+
+Rama `b2b/base`: limpieza sólo-2048, contabilidad y entorno cloud confirmados en
+commits; `codex/real-money-access` (RM-01 a RM-14) integrada. 3.949/3.949 pruebas
+Vitest, 32/32 herramientas Node, TypeScript, ESLint y build Webpack (modo local) PASS.
+Pendiente fuera del repositorio: despliegue en torneos-dev y cierre de A01 en la
+base de producción. Sigue la [Fase 1](superpowers/plans/2026-11-19-fase-1-fundaciones.md).
+
 ## Limpieza vigente — 2026-11-06
 
 El único juego mantenido es **2048**, con Unity y componentes web legado.
@@ -69,6 +77,8 @@ protección Vercel siguen abiertos; correos omitidos a petición del propietario
 Recuperación completa, conciliación/reserva y ciclo monetario pendientes.
 **RM-12 IN_PROGRESS; NO_GO.** [Informe](RM12-VALIDACION-DEVELOP.md) y
 [evidencia](RM12-VALIDACION-DEVELOP-EVIDENCE.json).
+
+## Preparación de dinero real: RM-12 — 2026-10-05
 
 ## RM-12: scheduler y callbacks en develop — 2026-10-07
 
@@ -223,6 +233,74 @@ sintéticos PASS. Sin aplicación de migración ni activación web operativa.
 recorrido administrativo autenticado. Bot con pausas variables y multicuenta sin
 identidad verificada siguen como límites explícitos.
 [Entrega](2048-INTEGRITY-IMPLEMENTATION.md) · [E21](2048-INTEGRITY-EVIDENCE.json).
+práctica WebGL real y denegación de objetos privados PASS. Dominio compartido
+asignado a otro despliegue; trabajo simultáneo preservado.
+MFA AAL2, correos operativos, recuperación completa y ciclo financiero pendientes.
+Definir monto/pagador antes de cobro. **RM-12 IN_PROGRESS; NO_GO vigente.**
+[Despliegue](RM12-DESPLIEGUE-DEV.md),
+[evidencia](RM12-DESPLIEGUE-DEV-EVIDENCE.json),
+[protocolo inicial](RM12-STAGING-Y-ENSAYO.md).
+
+## Preparación de dinero real: RM-11 — 2026-10-05
+
+Candidata `codex/real-money-access`, checkout aislado; configuración efectiva
+compartida build/runtime, launcher que rechaza configuración inválida antes de
+iniciar Next, toolchain fijado, manifiesto de fuentes/WebGL/SQL/artefacto y pipeline
+preparado. Auditoría: 8 HIGH dev con excepción limitada hasta 2026-11-05; producción 0.
+**Validación local; NO_GO vigente.** CI remoto/obligatoriedad, Docker Linux y staging
+real no ejecutados. Continúa RM-12, ensayo externo sobre la candidata identificada.
+[Entrega](RM11-CONFIGURACION-Y-RELEASE.md) y
+[evidencia](RM11-CONFIGURACION-Y-RELEASE-EVIDENCE.json).
+
+## Preparación de dinero real: RM-10 — 2026-10-05
+
+Candidata `codex/real-money-access`, checkout aislado; **implementación local**
+de cortes diarios banco/Flow, evidencia privada y doble revisión. Diferencias
+con responsable/plazo, comisiones reales conciliadas explícitamente y reserva
+consolidada sin duplicar premios, saldo y retiros. Nuevos cobros/publicaciones
+se bloquean por pausa, corte vencido, diferencias, límite o cobertura insuficiente.
+**Sin migración operativa, despliegue, movimientos bancarios ni dinero real.**
+**NO_GO vigente**; siguen ensayo externo/contador y RM-11, configuración efectiva.
+[Entrega](RM10-CONCILIACION-Y-RESERVA-CAJA.md) y
+[evidencia](RM10-CONCILIACION-Y-RESERVA-CAJA-EVIDENCE.json).
+
+## Preparación de dinero real: RM-09 — 2026-10-05
+
+Candidata `codex/real-money-access`, checkout aislado; **implementación local**
+de obligaciones por monto/edad, comprobaciones contables, incidentes persistentes,
+acuse con MFA, escalamiento al suplente y recuperación comprobada. Inicio,
+éxito del procesamiento y fallo del respaldo separados; avisos durables con
+aceptación del proveedor distinguida de entrega y recepción humana.
+Watchdog cada cinco minutos en configuración fuente y monitor externo preparado.
+**Sin migración operativa, despliegue, correos reales ni activación de workflows.**
+**NO_GO vigente**; sigue RM-10, conciliación y reserva de caja.
+[Entrega](RM09-OBLIGACIONES-Y-ALERTAS.md) y
+[evidencia](RM09-OBLIGACIONES-Y-ALERTAS-EVIDENCE.json).
+
+## Preparación de dinero real: RM-08 — 2026-10-05
+
+Candidata `codex/real-money-access`, checkout aislado; **implementación local**
+de revisión obligatoria de todos los premios reales, retenciones persistentes,
+validación vigente de ban/KYC/roles/disputas y pago manual con operador responsable
+más un segundo aprobador. Incertidumbre exige conciliación; comprobantes
+conservados y referencias únicas. Gasto/pasivo preservados durante la revisión.
+**3.628 pruebas web / 68 archivos, 83 checks PostgreSQL, tipos/lint y build
+Next Webpack PASS**. Sin aplicación operativa, despliegue o transferencias reales.
+**NO_GO vigente**; sigue RM-09, obligaciones por edad/monto y alertas atendidas.
+[Entrega](RM08-RETENCION-Y-REVISION-PREMIOS.md) y
+[evidencia](RM08-RETENCION-Y-REVISION-PREMIOS-EVIDENCE.json).
+
+## Preparación de dinero real: RM-05/06/07 — 2026-10-05
+
+Candidata `codex/real-money-access`, checkout aislado; **implementación local** de
+pagos recuperables por orden comercial, obligaciones de devolución dentro de la
+cancelación/settlement, reclamo único de envío y retiros con solicitud/débito
+atómicos e identificador estable. Incertidumbre visible y sin reenvío automático.
+**3.591 pruebas web / 65 archivos, 62 checks PostgreSQL, tipos/lint y build
+Next Webpack PASS**. Sin aplicación operativa, Flow externo o activación de dinero.
+**NO_GO vigente**; siguiente RM-08, retención/revisión de premios y pagos.
+[Entrega](RM05-RM07-DINERO-RECUPERABLE.md) y
+[evidencia](RM05-RM07-DINERO-RECUPERABLE-EVIDENCE.json).
 
 ## 2048: revisión adversarial y límites — 2026-10-04
 

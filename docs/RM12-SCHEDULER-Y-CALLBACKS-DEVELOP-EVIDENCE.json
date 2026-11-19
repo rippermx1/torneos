@@ -1,0 +1,532 @@
+{
+  "schema": 1,
+  "at": "2026-10-07T15:07:31.180881+00:00",
+  "status": "DEVELOPMENT_INCREMENT_VERIFIED",
+  "productionDecision": "NO_GO",
+  "application": {
+    "revision": "e5e1c78fdd1ee6e4182318d2c183ea1e5505b070",
+    "deployment": "dpl_9e2H3R5xVv49qaJVLgVo73wKPjWi",
+    "project": "prj_QHiZYuYkztFToMGmwhPsyOx9nVdG",
+    "state": "READY",
+    "phase": "configuration",
+    "supabase": "jnoyjewsqbooqaiighcs"
+  },
+  "localMonitorRevision": "190338e",
+  "aliases": [
+    {
+      "alias": "rm12-torneos-dev.vercel.app",
+      "project": "prj_QHiZYuYkztFToMGmwhPsyOx9nVdG",
+      "deployment": "dpl_9e2H3R5xVv49qaJVLgVo73wKPjWi",
+      "publicOverride": true
+    },
+    {
+      "alias": "torneos-dev.vercel.app",
+      "project": "prj_QHiZYuYkztFToMGmwhPsyOx9nVdG",
+      "deployment": "dpl_DXTdRYRTgfUaCrkh6Y4rtu3c1TFM",
+      "publicOverride": false
+    }
+  ],
+  "tests": {
+    "files": 83,
+    "passed": 3834,
+    "typecheck": "PASS",
+    "lint": "PASS",
+    "cloudBuild": "PASS",
+    "httpsSmoke": 33,
+    "opsHttp": 17
+  },
+  "migration": {
+    "source": "20261007144704_rm12_isolated_scheduler.sql",
+    "cloudVersion": "20261007145414",
+    "name": "rm12_isolated_scheduler",
+    "sqlSha256": "0aaaddc6aa37850dcacbc9fef39857291ab73c80385a31aa043fedf500b81dc4",
+    "sourceEqualsCloud": true
+  },
+  "sqlFailureCases": {
+    "cases": [
+      "invalid JSON HTTP200",
+      "watchdog HTTP503 processing true readiness false",
+      "forged redirect body",
+      "timeout",
+      "network error",
+      "NULL path denial"
+    ],
+    "result": "PASS",
+    "permissions": [
+      {
+        "role": "authenticated",
+        "invoke": false,
+        "capture": false,
+        "table_read": false
+      },
+      {
+        "role": "anon",
+        "invoke": false,
+        "capture": false,
+        "table_read": false
+      },
+      {
+        "role": "service_role",
+        "invoke": false,
+        "capture": false,
+        "table_read": false
+      }
+    ],
+    "fixture_remaining": 0,
+    "transaction_rollback": true
+  },
+  "preservation": {
+    "originalJobs": true,
+    "originalVault": true,
+    "sharedAlias": true,
+    "beforeCounts": {
+      "paused": true,
+      "refunds": 0,
+      "payments": 0,
+      "tournaments": 0,
+      "withdrawals": 0
+    },
+    "afterCounts": {
+      "paused": true,
+      "refunds": 0,
+      "payments": 0,
+      "tournaments": 0,
+      "withdrawals": 0
+    },
+    "ownedNegativeFixturesRemaining": 0
+  },
+  "scheduler": {
+    "clock": "2026-10-07T15:07:31.180881+00:00",
+    "dispatches": [
+      {
+        "job_name": "process-tournaments",
+        "request_id": 2817,
+        "http_status": 200,
+        "observed_at": "2026-10-07T14:58:00.03661+00:00",
+        "requested_at": "2026-10-07T14:57:46.031076+00:00",
+        "failure_class": null,
+        "processing_ok": true,
+        "operational_ok": true
+      },
+      {
+        "job_name": "flow-reconcile",
+        "request_id": 2818,
+        "http_status": 200,
+        "observed_at": "2026-10-07T14:58:00.036122+00:00",
+        "requested_at": "2026-10-07T14:57:46.031627+00:00",
+        "failure_class": null,
+        "processing_ok": true,
+        "operational_ok": true
+      },
+      {
+        "job_name": "reconcile-refunds",
+        "request_id": 2819,
+        "http_status": 200,
+        "observed_at": "2026-10-07T14:58:00.036404+00:00",
+        "requested_at": "2026-10-07T14:57:46.031913+00:00",
+        "failure_class": null,
+        "processing_ok": true,
+        "operational_ok": true
+      },
+      {
+        "job_name": "process-tournaments",
+        "request_id": 2820,
+        "http_status": 200,
+        "observed_at": "2026-10-07T15:00:52.169439+00:00",
+        "requested_at": "2026-10-07T15:00:00.144221+00:00",
+        "failure_class": null,
+        "processing_ok": true,
+        "operational_ok": true
+      },
+      {
+        "job_name": "reconcile-refunds",
+        "request_id": 2821,
+        "http_status": 200,
+        "observed_at": "2026-10-07T15:00:52.169619+00:00",
+        "requested_at": "2026-10-07T15:00:00.143559+00:00",
+        "failure_class": null,
+        "processing_ok": true,
+        "operational_ok": true
+      },
+      {
+        "job_name": "watchdog",
+        "request_id": 2825,
+        "http_status": 503,
+        "observed_at": "2026-10-07T15:00:52.169298+00:00",
+        "requested_at": "2026-10-07T15:00:00.154534+00:00",
+        "failure_class": "application",
+        "processing_ok": true,
+        "operational_ok": false
+      },
+      {
+        "job_name": "flow-reconcile",
+        "request_id": 2826,
+        "http_status": 200,
+        "observed_at": "2026-10-07T15:00:52.16903+00:00",
+        "requested_at": "2026-10-07T15:00:00.167493+00:00",
+        "failure_class": null,
+        "processing_ok": true,
+        "operational_ok": true
+      },
+      {
+        "job_name": "process-tournaments",
+        "request_id": 2827,
+        "http_status": 200,
+        "observed_at": "2026-10-07T15:06:00.09122+00:00",
+        "requested_at": "2026-10-07T15:05:00.111696+00:00",
+        "failure_class": null,
+        "processing_ok": true,
+        "operational_ok": true
+      },
+      {
+        "job_name": "watchdog",
+        "request_id": 2829,
+        "http_status": 503,
+        "observed_at": "2026-10-07T15:06:00.091489+00:00",
+        "requested_at": "2026-10-07T15:05:00.111712+00:00",
+        "failure_class": "application",
+        "processing_ok": true,
+        "operational_ok": false
+      }
+    ],
+    "heartbeats": [
+      {
+        "detail": null,
+        "job_name": "flow-reconcile",
+        "last_run_at": "2026-10-07T15:00:00.903401+00:00",
+        "last_status": "ok",
+        "last_started_at": "2026-10-07T15:00:00.652457+00:00",
+        "last_success_at": "2026-10-07T15:00:00.903401+00:00",
+        "consecutive_failures": 0,
+        "last_dispatch_failure_at": null,
+        "consecutive_dispatch_failures": 0
+      },
+      {
+        "detail": null,
+        "job_name": "reconcile-refunds",
+        "last_run_at": "2026-10-07T15:00:01.463913+00:00",
+        "last_status": "ok",
+        "last_started_at": "2026-10-07T15:00:00.724037+00:00",
+        "last_success_at": "2026-10-07T15:00:01.463913+00:00",
+        "consecutive_failures": 0,
+        "last_dispatch_failure_at": null,
+        "consecutive_dispatch_failures": 0
+      },
+      {
+        "detail": null,
+        "job_name": "process-tournaments",
+        "last_run_at": "2026-10-07T15:05:00.871738+00:00",
+        "last_status": "ok",
+        "last_started_at": "2026-10-07T15:05:00.677129+00:00",
+        "last_success_at": "2026-10-07T15:05:00.871738+00:00",
+        "consecutive_failures": 0,
+        "last_dispatch_failure_at": null,
+        "consecutive_dispatch_failures": 0
+      },
+      {
+        "detail": null,
+        "job_name": "watchdog",
+        "last_run_at": "2026-10-07T15:05:01.859492+00:00",
+        "last_status": "ok",
+        "last_started_at": "2026-10-07T15:05:01.537532+00:00",
+        "last_success_at": "2026-10-07T15:05:01.859492+00:00",
+        "consecutive_failures": 0,
+        "last_dispatch_failure_at": null,
+        "consecutive_dispatch_failures": 0
+      }
+    ],
+    "scheduled_runs": [
+      {
+        "status": "succeeded",
+        "jobname": "rm12-capture-http",
+        "end_time": "2026-10-07T15:07:00.028001+00:00",
+        "start_time": "2026-10-07T15:07:00.022234+00:00"
+      },
+      {
+        "status": "succeeded",
+        "jobname": "rm12-capture-http",
+        "end_time": "2026-10-07T15:06:00.093138+00:00",
+        "start_time": "2026-10-07T15:06:00.059182+00:00"
+      },
+      {
+        "status": "succeeded",
+        "jobname": "rm12-watchdog",
+        "end_time": "2026-10-07T15:05:00.117773+00:00",
+        "start_time": "2026-10-07T15:05:00.06671+00:00"
+      },
+      {
+        "status": "succeeded",
+        "jobname": "rm12-capture-http",
+        "end_time": "2026-10-07T15:05:00.070276+00:00",
+        "start_time": "2026-10-07T15:05:00.06226+00:00"
+      },
+      {
+        "status": "succeeded",
+        "jobname": "rm12-process-tournaments",
+        "end_time": "2026-10-07T15:05:00.1209+00:00",
+        "start_time": "2026-10-07T15:05:00.057943+00:00"
+      },
+      {
+        "status": "succeeded",
+        "jobname": "rm12-capture-http",
+        "end_time": "2026-10-07T15:04:00.080312+00:00",
+        "start_time": "2026-10-07T15:04:00.073717+00:00"
+      },
+      {
+        "status": "succeeded",
+        "jobname": "rm12-capture-http",
+        "end_time": "2026-10-07T15:03:00.038571+00:00",
+        "start_time": "2026-10-07T15:03:00.03493+00:00"
+      },
+      {
+        "status": "succeeded",
+        "jobname": "rm12-capture-http",
+        "end_time": "2026-10-07T15:02:00.349086+00:00",
+        "start_time": "2026-10-07T15:02:00.265164+00:00"
+      },
+      {
+        "status": "succeeded",
+        "jobname": "rm12-capture-http",
+        "end_time": "2026-10-07T15:01:00.031993+00:00",
+        "start_time": "2026-10-07T15:01:00.025096+00:00"
+      },
+      {
+        "status": "succeeded",
+        "jobname": "rm12-flow-reconcile",
+        "end_time": "2026-10-07T15:00:00.178751+00:00",
+        "start_time": "2026-10-07T15:00:00.144476+00:00"
+      },
+      {
+        "status": "succeeded",
+        "jobname": "rm12-watchdog",
+        "end_time": "2026-10-07T15:00:00.1659+00:00",
+        "start_time": "2026-10-07T15:00:00.136386+00:00"
+      },
+      {
+        "status": "succeeded",
+        "jobname": "rm12-capture-http",
+        "end_time": "2026-10-07T15:00:00.157865+00:00",
+        "start_time": "2026-10-07T15:00:00.128411+00:00"
+      },
+      {
+        "status": "succeeded",
+        "jobname": "rm12-process-tournaments",
+        "end_time": "2026-10-07T15:00:00.153618+00:00",
+        "start_time": "2026-10-07T15:00:00.107847+00:00"
+      },
+      {
+        "status": "succeeded",
+        "jobname": "rm12-reconcile-refunds",
+        "end_time": "2026-10-07T15:00:00.149838+00:00",
+        "start_time": "2026-10-07T15:00:00.10169+00:00"
+      },
+      {
+        "status": "succeeded",
+        "jobname": "rm12-capture-http",
+        "end_time": "2026-10-07T14:59:00.025989+00:00",
+        "start_time": "2026-10-07T14:59:00.021614+00:00"
+      },
+      {
+        "status": "succeeded",
+        "jobname": "rm12-capture-http",
+        "end_time": "2026-10-07T14:58:00.038257+00:00",
+        "start_time": "2026-10-07T14:58:00.03097+00:00"
+      }
+    ]
+  },
+  "limitations": {
+    "actualFlowToken": "NOT_RUN",
+    "providerDispatch": "BLOCKED",
+    "emails": "OMITTED_BY_OWNER",
+    "cloudIndependentMonitor": "NOT_RUN",
+    "moneyCycle": "NOT_AUTHORIZED_NOT_RUN",
+    "fullRestore": "NOT_RUN",
+    "physicalHumanAcceptance": "PENDING",
+    "operatorMfaAcceptance": "PENDING",
+    "remoteRequiredCI": "NOT_RUN",
+    "linuxImage": "NOT_RUN"
+  },
+  "http": {
+    "at": "2026-10-07T15:00:06.420Z",
+    "status": "PASS",
+    "checks": [
+      {
+        "name": "anonymous cron denied /api/cron/process-tournaments",
+        "http": 401,
+        "status": "PASS",
+        "hosting_redirect": false
+      },
+      {
+        "name": "wrong cron credential denied /api/cron/process-tournaments",
+        "http": 401,
+        "status": "PASS",
+        "hosting_redirect": false
+      },
+      {
+        "name": "anonymous cron denied /api/cron/flow-reconcile",
+        "http": 401,
+        "status": "PASS",
+        "hosting_redirect": false
+      },
+      {
+        "name": "wrong cron credential denied /api/cron/flow-reconcile",
+        "http": 401,
+        "status": "PASS",
+        "hosting_redirect": false
+      },
+      {
+        "name": "anonymous cron denied /api/cron/reconcile-refunds",
+        "http": 401,
+        "status": "PASS",
+        "hosting_redirect": false
+      },
+      {
+        "name": "wrong cron credential denied /api/cron/reconcile-refunds",
+        "http": 401,
+        "status": "PASS",
+        "hosting_redirect": false
+      },
+      {
+        "name": "anonymous cron denied /api/cron/watchdog",
+        "http": 401,
+        "status": "PASS",
+        "hosting_redirect": false
+      },
+      {
+        "name": "wrong cron credential denied /api/cron/watchdog",
+        "http": 401,
+        "status": "PASS",
+        "hosting_redirect": false
+      },
+      {
+        "name": "anonymous cron denied /api/cron/monitor-status",
+        "http": 401,
+        "status": "PASS",
+        "hosting_redirect": false
+      },
+      {
+        "name": "wrong cron credential denied /api/cron/monitor-status",
+        "http": 401,
+        "status": "PASS",
+        "hosting_redirect": false
+      },
+      {
+        "name": "external callback missing token /api/webhooks/flow",
+        "http": 400,
+        "status": "PASS",
+        "hosting_redirect": false
+      },
+      {
+        "name": "external callback oversized /api/webhooks/flow",
+        "http": 413,
+        "status": "PASS",
+        "hosting_redirect": false
+      },
+      {
+        "name": "external callback wrong method /api/webhooks/flow",
+        "http": 405,
+        "status": "PASS",
+        "hosting_redirect": false
+      },
+      {
+        "name": "external callback missing token /api/webhooks/flow/refund",
+        "http": 400,
+        "status": "PASS",
+        "hosting_redirect": false
+      },
+      {
+        "name": "external callback oversized /api/webhooks/flow/refund",
+        "http": 413,
+        "status": "PASS",
+        "hosting_redirect": false
+      },
+      {
+        "name": "external callback wrong method /api/webhooks/flow/refund",
+        "http": 405,
+        "status": "PASS",
+        "hosting_redirect": false
+      },
+      {
+        "name": "monitor records processing while financial acceptance remains blocked",
+        "http": 503,
+        "status": "PASS",
+        "hosting_redirect": false
+      }
+    ],
+    "monitor": {
+      "ok": false,
+      "schedulerHealthy": true,
+      "operationalReady": false,
+      "notificationsDeferred": true,
+      "lastSuccessAt": "2026-10-07T15:00:01.218311+00:00",
+      "jobs": [
+        {
+          "job": "process-tournaments",
+          "state": "healthy",
+          "lastSuccessAt": "2026-10-07T15:00:01.295694+00:00"
+        },
+        {
+          "job": "flow-reconcile",
+          "state": "healthy",
+          "lastSuccessAt": "2026-10-07T15:00:00.903401+00:00"
+        },
+        {
+          "job": "reconcile-refunds",
+          "state": "healthy",
+          "lastSuccessAt": "2026-10-07T15:00:01.463913+00:00"
+        },
+        {
+          "job": "watchdog",
+          "state": "healthy",
+          "lastSuccessAt": "2026-10-07T15:00:01.218311+00:00"
+        }
+      ],
+      "blockedNotifications": 0,
+      "agedNotifications": 0,
+      "activeIncidents": 0,
+      "error": "Operación o canal de avisos pendiente"
+    },
+    "liveFlowValidToken": "NOT_RUN",
+    "realMoneyAuthorization": false
+  },
+  "upload": {
+    "status": "PASS",
+    "at": "2026-10-07T15:00:14.741Z",
+    "deployment_id": "dpl_9e2H3R5xVv49qaJVLgVo73wKPjWi",
+    "revision": "e5e1c78fdd1ee6e4182318d2c183ea1e5505b070",
+    "project_id": "prj_QHiZYuYkztFToMGmwhPsyOx9nVdG",
+    "app_url": "https://rm12-torneos-dev.vercel.app",
+    "files": 287,
+    "source_package_sha256": "4c07547fc91e96bf1202093e3853c94f5944d5c9b01f44be6fdbe83efc5d7ba0",
+    "shared_alias_points_to_rm12": false,
+    "shared_alias_before": "dpl_DXTdRYRTgfUaCrkh6Y4rtu3c1TFM",
+    "shared_alias_now": "dpl_DXTdRYRTgfUaCrkh6Y4rtu3c1TFM",
+    "concurrent_shared_update": false,
+    "compiled_bytes": "NOT_RUN; source upload and cloud compilation/behavior verified; not equality to Windows standalone output"
+  },
+  "monitor": {
+    "observedAt": "2026-10-07T15:07:33.653Z",
+    "origin": "https://rm12-torneos-dev.vercel.app",
+    "http": 503,
+    "schedulerHealthy": true,
+    "operationalReady": false,
+    "notificationsDeferred": true,
+    "reason": "operational-acceptance-pending",
+    "providerCalls": 0,
+    "productionDecision": "NO_GO"
+  },
+  "monitorTask": {
+    "lastRunUtc": "2026-10-07T15:09:46.0000000Z",
+    "LastTaskResult": 267009,
+    "nextRunUtc": "2026-10-07T15:14:44.0000000Z"
+  },
+  "monitorCompleted": {
+    "nodePath": "C:\\Program Files\\nodejs\\node.exe",
+    "exitCode": 1,
+    "completedAt": "2026-10-07T15:04:47.2892936Z"
+  },
+  "sourceReview": {
+    "appRevision": "e5e1c78fdd1ee6e4182318d2c183ea1e5505b070",
+    "localMonitorRevision": "190338ee17dd24885b4899431b980917437caaff"
+  }
+}

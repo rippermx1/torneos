@@ -4,6 +4,7 @@ import type { KycSubmission, Profile } from '@/types/database'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { ProfileEditForm } from './profile-edit-form'
+import { AccountControls } from '@/components/account/account-controls'
 
 export default async function ProfilePage() {
   const supabase = await createClient()
@@ -65,6 +66,7 @@ export default async function ProfilePage() {
   return (
     <div className="space-y-6 max-w-lg">
       <h1 className="text-2xl font-bold">Mi perfil</h1>
+      <AccountControls />
 
       {/* KYC banner */}
       <div className={`border rounded-xl p-4 flex items-center justify-between gap-4 ${
@@ -108,8 +110,8 @@ export default async function ProfilePage() {
         <Link href="/premios" className="flex-1 text-center border rounded-xl py-2.5 text-sm hover:bg-muted transition-colors">
           Mis premios
         </Link>
-        <Link href="/support/dispute" className="flex-1 text-center border rounded-xl py-2.5 text-sm hover:bg-muted transition-colors">
-          Mis disputas
+        <Link href="/support" className="flex-1 text-center border rounded-xl py-2.5 text-sm hover:bg-muted transition-colors">
+          Mis casos y datos
         </Link>
       </div>
     </div>

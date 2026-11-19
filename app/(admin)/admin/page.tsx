@@ -28,7 +28,7 @@ export const revalidate = 0
 const LEVEL_COPY: Record<AdminHealthLevel, { title: string; detail: string; tone: string; dot: string }> = {
   healthy: {
     title: 'El sistema está funcionando',
-    detail: 'Pagos, torneos y procesos automáticos están operando sin alertas.',
+    detail: 'Las comprobaciones automáticas no detectaron alertas. Confirma también la caja bancaria antes de pagar.',
     tone: 'border-emerald-200 bg-emerald-50/70 dark:border-emerald-900 dark:bg-emerald-950/30',
     dot: 'bg-emerald-500',
   },
@@ -181,8 +181,9 @@ export default async function AdminIndexPage() {
             Centro de operaciones
           </div>
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Empieza por aquí</h1>
+          <Link className="mt-2 inline-block underline" href="/admin/operations">Abrir obligaciones y alertas</Link>
           <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-            Este resumen te dice qué necesita atención y te lleva a la acción correcta. No necesitas memorizar el producto ni revisar todas las secciones.
+            Abre Obligaciones y alertas para comprobar montos, antigüedad y atención de incidentes. Este resumen te dice qué necesita atención y te lleva a la acción correcta. No necesitas memorizar el producto ni revisar todas las secciones.
           </p>
         </div>
         <p className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -378,14 +379,14 @@ export default async function AdminIndexPage() {
                       <CircleDollarSign className="h-5 w-5" aria-hidden="true" />
                     </span>
                     <div>
-                      <p className="text-xs text-muted-foreground">Cobertura de premios confirmados</p>
+                      <p className="text-xs text-muted-foreground">Recaudación frente a premios comprometidos</p>
                       <p className={`mt-1 text-2xl font-bold ${dashboard.liability.coverage < 1 ? 'text-red-600' : 'text-emerald-700 dark:text-emerald-400'}`}>
-                        {dashboard.liability.committedCents > 0 ? `${coveragePercent}%` : 'Sin exposición'}
+                        {dashboard.liability.committedCents > 0 ? `${coveragePercent}%` : 'Sin premios en curso'}
                       </p>
                       <p className="mt-1 text-xs text-muted-foreground">
                         {dashboard.liability.committedCents > 0
-                          ? 'Debe mantenerse en 100% o más.'
-                          : 'No existen premios confirmados que cubrir.'}
+                          ? 'Relación registrada de torneos en curso; no es caja bancaria.'
+                          : 'Consulta obligaciones de torneos finalizados y retiros.'}
                       </p>
                     </div>
                   </div>
@@ -396,7 +397,7 @@ export default async function AdminIndexPage() {
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <FinancialMetric label="Dinero recaudado" value={formatCLP(dashboard.liability.collectedCents)} detail="Cobros asociados a torneos activos." />
-                  <FinancialMetric label="Premios confirmados" value={formatCLP(dashboard.liability.committedCents)} detail="Monto que ya debes pagar a jugadores." />
+                  <FinancialMetric label="Premios de torneos en curso" value={formatCLP(dashboard.liability.committedCents)} detail="Compromisos publicados de torneos activos." />
                   <FinancialMetric label="Premios de torneos próximos" value={formatCLP(dashboard.liability.contingentCents)} detail="Compromiso posible si esos torneos se activan." />
                   <FinancialMetric label="Ingreso neto de plataforma" value={formatCLP(dashboard.liability.platformFeeNetCents)} detail="Fee neto acumulado registrado por el sistema." />
                 </div>
@@ -410,7 +411,7 @@ export default async function AdminIndexPage() {
         <section className="space-y-3" aria-labelledby="automations">
           <div>
             <h2 id="automations" className="text-xl font-semibold">Procesos que corren solos</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Si todos aparecen funcionando, no necesitas hacer nada.</p>
+            <p className="mt-1 text-sm text-muted-foreground">El éxito del procesamiento se comprueba por separado de las obligaciones pendientes.</p>
           </div>
           <div className="divide-y rounded-2xl border bg-background">
             {dashboard.cronJobs.length > 0 ? dashboard.cronJobs.map((cron) => (
@@ -426,7 +427,7 @@ export default async function AdminIndexPage() {
                   <p className={`text-xs font-medium ${cron.state === 'healthy' ? 'text-emerald-700 dark:text-emerald-300' : 'text-red-600'}`}>
                     {cron.state === 'healthy' ? 'Funcionando' : 'Revisar'}
                   </p>
-                  <p className="mt-0.5 text-[11px] text-muted-foreground">{formatAge(cron.lastRunAt, dashboard.generatedAt)}</p>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">{formatAge(cron.lastSuccessAt, dashboard.generatedAt)}</p>
                 </div>
               </div>
             )) : (
@@ -486,8 +487,8 @@ export default async function AdminIndexPage() {
               definition: 'Es la boleta o nota de crédito que respalda una operación ante el SII. Solo necesitas intervenir cuando aparezca como fallida.',
             },
             {
-              term: 'Cobertura de premios',
-              definition: 'Compara el dinero recaudado con los premios ya comprometidos. Debe ser 100% o superior. Si no hay premios confirmados, el panel muestra “Sin exposición”.',
+              term: 'Relación de recaudación y premios',
+              definition: 'Compara los cobros registrados con los premios de torneos en curso. No representa caja bancaria ni premios pendientes de torneos finalizados; consulta también Obligaciones y alertas.',
             },
           ].map((item) => (
             <details key={item.term} className="group rounded-xl border px-4 py-3 open:bg-muted/30">

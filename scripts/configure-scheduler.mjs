@@ -28,7 +28,7 @@ const JOBS = [
   },
   {
     name: 'torneos-watchdog',
-    schedule: '17 * * * *',
+    schedule: '*/5 * * * *',
     path: '/api/cron/watchdog',
   },
 ]

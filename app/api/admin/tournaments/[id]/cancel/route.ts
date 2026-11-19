@@ -3,11 +3,15 @@ import { requireAdminMfaForApi } from '@/lib/supabase/admin-mfa'
 import { recordAdminAction } from '@/lib/admin/audit'
 import { issueFlowRefunds } from '@/lib/tournament/refunds'
 import { getAppUrl } from '@/lib/env'
+import { workerDeadline } from '@/lib/ops/worker-budget'
+
+export const maxDuration = 60
 
 export async function POST(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }
 ): Promise<Response> {
+  const deadline = workerDeadline()
   const auth = await requireAdminMfaForApi()
   if (!auth.ok) return auth.response
 
@@ -48,7 +52,7 @@ export async function POST(
   if (cancelData.entry_fee_cents > 0 && cancelData.refunds_to_issue > 0) {
     const requestOrigin = new URL(_req.url).origin
     const appUrl = getAppUrl(requestOrigin) ?? requestOrigin
-    const refundResults = await issueFlowRefunds(tournamentId, cancelData.entry_fee_cents, appUrl, tData.name)
+    const refundResults = await issueFlowRefunds(tournamentId, cancelData.entry_fee_cents, appUrl, tData.name, deadline)
     refundsInitiated = refundResults.filter((r) => !r.error).length
     refundsFailed    = refundResults.filter((r) => !!r.error).length
   }

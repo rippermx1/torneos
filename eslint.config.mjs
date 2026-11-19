@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "coverage/**",
+    "artifacts/**",
+    "public/games/**",
+    "**/Library/**",
+    "**/Builds/**",
     // Archivos generados al levantar Supabase CLI localmente.
     "supabase/.temp/**",
     "next-env.d.ts",

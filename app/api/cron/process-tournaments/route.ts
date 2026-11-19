@@ -1,5 +1,6 @@
 import { processTournamentTransitions } from '@/lib/tournament/lifecycle'
 import { recordHeartbeat } from '@/lib/ops/heartbeat'
+import { workerDeadline } from '@/lib/ops/worker-budget'
 
 // Endpoint llamado por un scheduler externo o por Vercel Cron.
 // También puede invocarse manualmente con el header Authorization correcto.
@@ -26,7 +27,8 @@ export async function GET(req: Request): Promise<Response> {
   const startedAt = Date.now()
 
   try {
-    const results = await processTournamentTransitions()
+    await recordHeartbeat('process-tournaments', 'started')
+    const results = await processTournamentTransitions(workerDeadline(startedAt))
 
     const acted = results.filter((r) => r.action !== 'skipped' && !r.error)
     const errors = results.filter((r) => r.error)
@@ -59,7 +61,7 @@ export async function GET(req: Request): Promise<Response> {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
     console.error('[cron] Error fatal en process-tournaments:', message)
-    await recordHeartbeat('process-tournaments', 'error', message)
+    await recordHeartbeat('process-tournaments', 'error', message).catch(error => console.error('[cron] Registro operativo falló', error))
     return Response.json({ ok: false, error: message }, { status: 500 })
   }
 }

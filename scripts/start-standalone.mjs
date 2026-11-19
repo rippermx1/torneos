@@ -3,13 +3,14 @@ import path from 'node:path'
 import { spawn } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import nextEnv from '@next/env'
+import { assertEnvironment } from '../lib/config/validate.mjs'
 
 const { loadEnvConfig } = nextEnv
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const rootDir = path.resolve(__dirname, '..')
-const standaloneServer = path.join(rootDir, '.next', 'standalone', 'server.js')
+const standaloneServer = path.join(rootDir, '.next', 'standalone', 'scripts', 'start-release.mjs')
 
 if (!fs.existsSync(standaloneServer)) {
   console.error('Standalone build not found. Run "npm run build" first.')
@@ -18,7 +19,9 @@ if (!fs.existsSync(standaloneServer)) {
 
 // `server.js` from Next changes cwd to `.next/standalone`, so load `.env*`
 // from the project root before spawning it.
-loadEnvConfig(rootDir)
+process.env.NODE_ENV = 'production'
+loadEnvConfig(rootDir, false, { info() {}, error() {} }, true)
+assertEnvironment(process.env)
 
 const child = spawn(process.execPath, [standaloneServer], {
   cwd: rootDir,

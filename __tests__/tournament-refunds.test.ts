@@ -1,131 +1,41 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
-
-// Regresión del bug crítico de lanzamiento: la cancelación de torneos no
-// reembolsaba porque issueFlowRefunds filtraba por status='credited' mientras
-// settle_tournament_registration escribe 'paid'. Estos tests fijan el contrato:
-//  1. Se reembolsan los pagos con status='paid'.
-//  2. Idempotencia: no se reemite reversa para un pago que ya tiene una.
-
-const h = vi.hoisted(() => ({
-  adminStub: null as unknown as ReturnType<typeof buildAdminStub>,
-  createFlowRefundMock: vi.fn(),
-  sendCancelledEmailMock: vi.fn(),
-}))
-
-vi.mock('@/lib/supabase/server', () => ({ createAdminClient: () => h.adminStub }))
-vi.mock('@/lib/flow/refunds', () => ({
-  createFlowRefund: (...args: unknown[]) => h.createFlowRefundMock(...args),
-  getFlowRefundStatus: vi.fn(),
-}))
-vi.mock('@/lib/email/refund-notifications', () => ({
-  sendTournamentCancelledEmail: (...args: unknown[]) => h.sendCancelledEmailMock(...args),
-}))
-vi.mock('@/lib/env', () => ({ getAppUrl: () => 'https://www.torneosplay.cl' }))
-
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+const h = vi.hoisted(() => ({ rpc: vi.fn(), from: vi.fn(), dispatch: vi.fn() }))
+vi.mock('@/lib/supabase/server', () => ({ createAdminClient: () => ({ rpc: h.rpc, from: h.from }) }))
+vi.mock('@/lib/flow/refund-worker', () => ({ dispatchRefund: h.dispatch, dispatchQueuedRefunds: vi.fn(), reconcileRefund: vi.fn() }))
 import { issueFlowRefunds } from '@/lib/tournament/refunds'
-
-interface AttemptRow {
-  id: string
-  user_id: string
-  commerce_order: string
-  flow_order: number | null
+function rows(data: unknown[], error: unknown = null) {
+  const query = { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), order: vi.fn().mockReturnThis(),
+    limit: vi.fn().mockResolvedValue({ data, error }) }
+  h.from.mockReturnValue(query)
+  return query
 }
-
-// Stub encadenable mínimo del cliente Supabase admin, suficiente para
-// issueFlowRefunds. Registra los filtros de status aplicados a
-// flow_payment_attempts para poder aseverar que consulta 'paid'.
-function buildAdminStub(opts: {
-  paidAttempts: AttemptRow[]
-  existingRefunds: { flow_payment_attempt_id: string }[]
-  users: Record<string, { email: string; user_metadata?: Record<string, unknown> }>
-}) {
-  const statusFilters: string[] = []
-
-  const from = (table: string) => {
-    const builder = {
-      _mode: 'select' as 'select' | 'insert',
-      select() { this._mode = 'select'; return this },
-      insert() { this._mode = 'insert'; return this },
-      eq(col: string, val: string) {
-        if (table === 'flow_payment_attempts' && col === 'status') statusFilters.push(val)
-        return this
-      },
-      then(resolve: (v: unknown) => unknown) {
-        let result: unknown = { data: null, error: null }
-        if (this._mode === 'insert') result = { error: null }
-        else if (table === 'flow_payment_attempts') result = { data: opts.paidAttempts }
-        else if (table === 'flow_refund_attempts') result = { data: opts.existingRefunds }
-        return Promise.resolve(result).then(resolve)
-      },
-    }
-    return builder
-  }
-
-  return {
-    statusFilters,
-    from,
-    auth: {
-      admin: {
-        getUserById: (id: string) =>
-          Promise.resolve({
-            data: { user: opts.users[id] ?? null },
-            error: opts.users[id] ? null : new Error('no user'),
-          }),
-      },
-    },
-  }
-}
-
-beforeEach(() => {
-  h.createFlowRefundMock.mockReset()
-  h.sendCancelledEmailMock.mockReset()
-  h.createFlowRefundMock.mockResolvedValue({ token: 'refund-token', flowRefundOrder: '999' })
-  h.sendCancelledEmailMock.mockResolvedValue(undefined)
-})
-
-describe('issueFlowRefunds', () => {
-  it('emite reembolsos para los pagos con status=paid (no credited)', async () => {
-    h.adminStub = buildAdminStub({
-      paidAttempts: [
-        { id: 'a1', user_id: 'u1', commerce_order: 'tour-1', flow_order: 111 },
-        { id: 'a2', user_id: 'u2', commerce_order: 'tour-2', flow_order: 222 },
-      ],
-      existingRefunds: [],
-      users: {
-        u1: { email: 'u1@example.cl', user_metadata: { username: 'uno' } },
-        u2: { email: 'u2@example.cl', user_metadata: { username: 'dos' } },
-      },
-    })
-
-    const results = await issueFlowRefunds('t1', 100000, 'https://www.torneosplay.cl', 'Torneo Uno')
-
-    // Fija la causa raíz: la consulta debe filtrar por 'paid', nunca 'credited'.
-    expect(h.adminStub.statusFilters).toContain('paid')
-    expect(h.adminStub.statusFilters).not.toContain('credited')
-
-    expect(h.createFlowRefundMock).toHaveBeenCalledTimes(2)
-    expect(results).toHaveLength(2)
-    expect(results.every((r) => !r.error)).toBe(true)
-    expect(results.map((r) => r.userId).sort()).toEqual(['u1', 'u2'])
+beforeEach(() => { vi.resetAllMocks(); h.rpc.mockResolvedValue({ data: 1, error: null }); h.dispatch.mockResolvedValue({ dispatched: true, token: 'provider' }) })
+describe('durable cancelled tournament refund dispatch', () => {
+  it('records/reuses obligations before sending and uses the stored payment amount', async () => {
+    const q = rows([{ id: 'r1', user_id: 'u1', receiver_email: 'payer@fixture.test', amount_cents: 500000, refund_commerce_order: 'ref-payment' }])
+    const result = await issueFlowRefunds('t1', 999999, 'https://fixture.test')
+    expect(h.rpc).toHaveBeenCalledWith('queue_tournament_refunds', { p_tournament_id: 't1' })
+    expect(q.eq).toHaveBeenCalledWith('status', 'queued')
+    expect(h.rpc.mock.invocationCallOrder[0]).toBeLessThan(h.dispatch.mock.invocationCallOrder[0])
+    expect(result[0].amountCents).toBe(500000)
+    expect(h.dispatch).toHaveBeenCalledWith('r1', 'https://fixture.test')
   })
-
-  it('es idempotente: no reembolsa un pago que ya tiene una reversa', async () => {
-    h.adminStub = buildAdminStub({
-      paidAttempts: [
-        { id: 'a1', user_id: 'u1', commerce_order: 'tour-1', flow_order: 111 },
-        { id: 'a2', user_id: 'u2', commerce_order: 'tour-2', flow_order: 222 },
-      ],
-      existingRefunds: [{ flow_payment_attempt_id: 'a1' }], // a1 ya reembolsado
-      users: {
-        u1: { email: 'u1@example.cl' },
-        u2: { email: 'u2@example.cl' },
-      },
-    })
-
-    const results = await issueFlowRefunds('t1', 100000, 'https://www.torneosplay.cl', 'Torneo Uno')
-
-    expect(h.createFlowRefundMock).toHaveBeenCalledTimes(1)
-    expect(results).toHaveLength(1)
-    expect(results[0]!.userId).toBe('u2')
+  it('cannot send after obligation persistence failure', async () => {
+    h.rpc.mockResolvedValue({ error: { message: 'DB unavailable' } })
+    await expect(issueFlowRefunds('t1', 500000, 'https://fixture.test')).rejects.toThrow('DB unavailable')
+    expect(h.dispatch).not.toHaveBeenCalled()
+  })
+  it('cannot send after failed queue query', async () => {
+    rows([], { message: 'read failed' })
+    await expect(issueFlowRefunds('t1', 500000, 'https://fixture.test')).rejects.toThrow('read failed')
+    expect(h.dispatch).not.toHaveBeenCalled()
+  })
+  it('does not report another workers claim as a new refund', async () => {
+    rows([{ id: 'r1', amount_cents: 500000 }]); h.dispatch.mockResolvedValue({ dispatched: false })
+    expect(await issueFlowRefunds('t1', 500000, 'https://fixture.test')).toEqual([])
+  })
+  it('exposes uncertainty instead of claiming refund success', async () => {
+    rows([{ id: 'r1', amount_cents: 500000 }]); h.dispatch.mockResolvedValue({ dispatched: false, error: 'response lost' })
+    expect((await issueFlowRefunds('t1', 500000, 'https://fixture.test'))[0].error).toBe('response lost')
   })
 })

@@ -87,6 +87,11 @@ export async function getFlowPaymentStatus(token: string): Promise<FlowPaymentSt
   return flowGet<FlowPaymentStatus>('/payment/getStatus', { token })
 }
 
+// Read-only recovery when payment/create succeeded but its response was lost.
+export async function getFlowPaymentStatusByCommerceOrder(commerceOrder: string): Promise<FlowPaymentStatus> {
+  return flowGet<FlowPaymentStatus>('/payment/getStatusByCommerceId', { commerceId: commerceOrder })
+}
+
 /**
  * Construye la URL de redirección al checkout Flow concatenando el
  * url + "?token=" + token tal como indica la spec.

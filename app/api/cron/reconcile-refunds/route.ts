@@ -1,19 +1,20 @@
 import {
   reconcileStaleRefunds,
-  autoRetryRejectedRefunds,
   reconcileCancelledTournamentRefunds,
 } from '@/lib/tournament/refunds'
+import { dispatchQueuedRefunds } from '@/lib/flow/refund-worker'
 import { expireStaleCredits } from '@/lib/wallet/credit-expiry'
 import { recordHeartbeat } from '@/lib/ops/heartbeat'
+import { workerDeadline } from '@/lib/ops/worker-budget'
 
 // Programado vía Supabase Cron cada 10 min, con respaldos en GitHub Actions y
 // Vercel. El endpoint es idempotente, así que las corridas pueden coincidir.
 // 1. Emite reversas faltantes de torneos cancelados (red de seguridad idempotente).
 // 2. Reconcilia pending cuyo webhook se perdió consultando Flow directamente.
-// 3. Reintenta automáticamente refunds rechazados (hasta 3 intentos por pago).
+// 3. Envía obligaciones queued; nunca reenvía una operación incierta o rechazada.
 // 4. Expira créditos de rakeback vencidos (>30 días, FIFO por usuario).
 
-export const maxDuration = 30
+export const maxDuration = 60
 
 export async function GET(req: Request): Promise<Response> {
   const authHeader = req.headers.get('authorization')
@@ -29,32 +30,36 @@ export async function GET(req: Request): Promise<Response> {
   }
 
   const startedAt = Date.now()
+  const deadlineMs = workerDeadline(startedAt)
 
   try {
+    await recordHeartbeat('reconcile-refunds', 'started')
     // El barrido de cancelados va primero: emite las reversas que falten para
-    // que reconcileStaleRefunds/autoRetry las recojan en las siguientes pasadas.
-    const cancelledSweep = await reconcileCancelledTournamentRefunds(3)
+    // que los trabajadores recuperen las obligaciones registradas.
+    const cancelledSweep = await reconcileCancelledTournamentRefunds(deadlineMs)
     const creditExpiry = await expireStaleCredits()
-    const [reconcile, autoRetry] = await Promise.all([
-      reconcileStaleRefunds(10),
-      autoRetryRejectedRefunds(3),
+    const [reconcile, dispatch] = await Promise.all([
+      reconcileStaleRefunds(10, deadlineMs),
+      dispatchQueuedRefunds(deadlineMs),
     ])
 
-    await recordHeartbeat('reconcile-refunds', 'ok')
+    const errors = cancelledSweep.refundsFailed + reconcile.errors + dispatch.errors
+    await recordHeartbeat('reconcile-refunds', errors ? 'error' : 'ok', errors ? `${errors} operaciones sin resolver` : undefined)
 
     return Response.json({
-      ok: true,
+      ok: errors === 0,
+      errors,
       processedAt: new Date().toISOString(),
       durationMs: Date.now() - startedAt,
       cancelledSweep,
       creditExpiry,
       reconcile,
-      autoRetry,
-    })
+      dispatch,
+    }, { status: errors ? 500 : 200 })
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
     console.error('[cron/reconcile-refunds] Error fatal:', message)
-    await recordHeartbeat('reconcile-refunds', 'error', message)
+    await recordHeartbeat('reconcile-refunds', 'error', message).catch(error => console.error('[cron] Registro operativo falló', error))
     return Response.json({ ok: false, error: message }, { status: 500 })
   }
 }

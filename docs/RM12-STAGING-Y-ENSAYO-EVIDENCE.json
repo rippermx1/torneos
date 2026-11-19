@@ -1,0 +1,293 @@
+{
+  "task": "RM-12",
+  "recorded_at": "2026-10-05T20:27:14.784Z",
+  "status": "IN_PROGRESS_PREFLIGHT_BLOCKED",
+  "production_decision": "NO_GO",
+  "candidate": {
+    "branch": "codex/real-money-access",
+    "verification_revision": "50fda9c51ff4e318dcb41694de17a03637c07d52",
+    "worktree": "C:/Users/valde/.codex/worktrees/real-money-access/torneos",
+    "dirty": false,
+    "toolchain": {
+      "node": "v24.14.1",
+      "npm": "11.11.0",
+      "declared": "npm@11.11.0",
+      "lock_sha256": "9d80cf105fb9da071af275f19805ae8f2899b8d3501b821eb067b33b9a885af4"
+    },
+    "source_fingerprint": "d41a57bcdb98987761b0798c26448fc2a6e6e4aff02c1fc1a5ae813e328001a9",
+    "release_fingerprint": "eb3cc75ef46296f70e358541edfd686e53c153012ed9f052ea752c15bad6aa61",
+    "public_destination": {
+      "projectRef": "jnoyjewsqbooqaiighcs",
+      "productionRef": "baeylvoipmazcthnwxmz",
+      "appUrl": "https://torneos-dev.vercel.app"
+    },
+    "source_files": 414,
+    "application_files": 2716,
+    "distribution": "LOCAL_ONLY; includes ignored Ted Runner local-license files, not authorized for public upload"
+  },
+  "local_validation": {
+    "web": {
+      "status": "PASS",
+      "tests": 3803,
+      "files": 80
+    },
+    "targeted": {
+      "status": "PASS",
+      "tests": 89,
+      "files": 3
+    },
+    "typecheck": {
+      "status": "PASS"
+    },
+    "lint_global": {
+      "status": "PASS"
+    },
+    "build": {
+      "status": "PASS",
+      "engine": "Next 16.3.8 webpack",
+      "configuration": "actual dev public values; private provider/server credentials not injected"
+    },
+    "startup_rejection": {
+      "status": "PASS_REJECTED",
+      "exit_code": 1,
+      "ready": false,
+      "scenario": "real frozen dev public configuration with missing private runtime credentials",
+      "provider_dispatch": "NOT_INVOKED",
+      "production_decision": "NO_GO"
+    },
+    "native_sql": {
+      "status": "NOT_RUN_THIS_INCREMENT",
+      "reason": "No SQL changed; previous 118 fixture checks recorded in RM11 evidence, not actual staging compatibility"
+    }
+  },
+  "live_observation": {
+    "project_ref": "jnoyjewsqbooqaiighcs",
+    "postgres": "17.11",
+    "catalog_observed_at": "2026-10-05T20:11:22.695919+00:00",
+    "migrations_recorded": 63,
+    "catalog": {
+      "status": "BLOCKED",
+      "issues": [
+        "Migraciones pendientes: 6",
+        "Tabla ausente o permisos incompatibles: registrations",
+        "Tabla ausente o permisos incompatibles: flow_payment_attempts",
+        "Tabla ausente o permisos incompatibles: flow_refund_attempts",
+        "Tabla ausente o permisos incompatibles: withdrawal_requests",
+        "Tabla ausente o permisos incompatibles: prize_reviews",
+        "Tabla ausente o permisos incompatibles: financial_holds",
+        "Tabla ausente o permisos incompatibles: financial_review_events",
+        "Tabla ausente o permisos incompatibles: ops_incidents",
+        "Tabla ausente o permisos incompatibles: ops_incident_events",
+        "Tabla ausente o permisos incompatibles: ops_notifications",
+        "Tabla ausente o permisos incompatibles: cash_policy",
+        "Tabla ausente o permisos incompatibles: cash_movements",
+        "Tabla ausente o permisos incompatibles: cash_reconciliations",
+        "Tabla ausente o permisos incompatibles: cash_differences",
+        "Tabla ausente o permisos incompatibles: cash_events",
+        "RPC ausente, firma o permisos incompatibles: authorize_competitive_entry",
+        "RPC ausente, firma o permisos incompatibles: settle_tournament_registration",
+        "RPC ausente, firma o permisos incompatibles: queue_tournament_refunds",
+        "RPC ausente, firma o permisos incompatibles: claim_flow_refund",
+        "RPC ausente, firma o permisos incompatibles: record_flow_refund_dispatch",
+        "RPC ausente, firma o permisos incompatibles: record_verified_refund",
+        "RPC ausente, firma o permisos incompatibles: request_withdrawal",
+        "RPC ausente, firma o permisos incompatibles: review_prize",
+        "RPC ausente, firma o permisos incompatibles: set_financial_hold",
+        "RPC ausente, firma o permisos incompatibles: begin_withdrawal_transfer",
+        "RPC ausente, firma o permisos incompatibles: reconcile_withdrawal",
+        "RPC ausente, firma o permisos incompatibles: operational_snapshot",
+        "RPC ausente, firma o permisos incompatibles: observe_operations",
+        "RPC ausente, firma o permisos incompatibles: claim_ops_notifications",
+        "RPC ausente, firma o permisos incompatibles: cash_status",
+        "RPC ausente, firma o permisos incompatibles: record_cash_movement",
+        "RPC ausente, firma o permisos incompatibles: capture_cash_reconciliation",
+        "RPC ausente, firma o permisos incompatibles: review_cash_reconciliation",
+        "Trigger ausente/deshabilitado: registrations.guard_commercial_registration",
+        "Trigger ausente/deshabilitado: games.guard_competitive_game_entry",
+        "Trigger ausente/deshabilitado: tournaments.queue_cancelled_tournament_refunds",
+        "Trigger ausente/deshabilitado: tournament_results.capture_prize_review",
+        "Trigger ausente/deshabilitado: withdrawal_requests.guard_withdrawal_identity",
+        "Trigger ausente/deshabilitado: flow_payment_attempts.guard_cash_checkout",
+        "Trigger ausente/deshabilitado: tournaments.guard_cash_publication",
+        "Bucket ausente/público: cash-proofs",
+        "Semilla 2048 accesible o permiso no verificado"
+      ],
+      "migrations": {
+        "pending": [
+          "20261004184805_guard_2048_seed_visibility.sql",
+          "20261005131208_guard_commercial_entry.sql",
+          "20261005141433_durable_financial_operations.sql",
+          "20261005145934_prize_review_and_payout_holds.sql",
+          "20261005160247_operational_obligations_and_alerts.sql",
+          "20261005175927_cash_reconciliation_and_reserve.sql"
+        ],
+        "present": [
+          "20261002202731_guard_2048_move_commit.sql"
+        ],
+        "warning": "Version presence does not prove SQL hashes/grants or historical dependencies. Review drift on staging; do not db push all migrations."
+      },
+      "scope": "selected catalog invariants only; not SQL equivalence, JWT/RLS behavior, Storage object access or migration recovery"
+    },
+    "auth": {
+      "schema": 1,
+      "status": "INCOMPLETE",
+      "verified_at": "2026-10-05T20:25:55.262Z",
+      "target": {
+        "projectRef": "jnoyjewsqbooqaiighcs",
+        "productionRef": "baeylvoipmazcthnwxmz",
+        "appUrl": "https://torneos-dev.vercel.app"
+      },
+      "probes": [
+        {
+          "label": "player",
+          "identity": "PASS",
+          "role": "PASS",
+          "mfa": "OBSERVED",
+          "private_table_reads": {
+            "financial_holds": "BLOCKED",
+            "financial_review_events": "BLOCKED",
+            "ops_incidents": "BLOCKED",
+            "ops_incident_events": "BLOCKED",
+            "ops_notifications": "BLOCKED",
+            "cron_heartbeats": "DENIED",
+            "cash_policy": "BLOCKED",
+            "cash_movements": "BLOCKED",
+            "cash_reconciliations": "BLOCKED",
+            "cash_differences": "BLOCKED",
+            "cash_events": "BLOCKED"
+          },
+          "seed_column": "UNEXPECTED_ACCESS",
+          "session_cleanup": "PASS",
+          "current_aal": "aal1",
+          "next_aal": "aal1",
+          "verified_factors": 0,
+          "transport": "PASS"
+        },
+        {
+          "label": "operator",
+          "identity": "PASS",
+          "role": "PASS",
+          "mfa": "CHALLENGE_NOT_RUN",
+          "private_table_reads": {
+            "financial_holds": "BLOCKED",
+            "financial_review_events": "BLOCKED",
+            "ops_incidents": "BLOCKED",
+            "ops_incident_events": "BLOCKED",
+            "ops_notifications": "BLOCKED",
+            "cron_heartbeats": "DENIED",
+            "cash_policy": "BLOCKED",
+            "cash_movements": "BLOCKED",
+            "cash_reconciliations": "BLOCKED",
+            "cash_differences": "BLOCKED",
+            "cash_events": "BLOCKED"
+          },
+          "seed_column": "UNEXPECTED_ACCESS",
+          "session_cleanup": "PASS",
+          "current_aal": "aal1",
+          "next_aal": "aal1",
+          "verified_factors": 0,
+          "transport": "PASS"
+        }
+      ],
+      "production_decision": "NO_GO",
+      "scope": "live Auth password sessions, server getUser, trusted role reads and zero-row GET Data API checks; no MFA challenge, object uploads, application-session/E2E or financial mutations"
+    },
+    "https": {
+      "verified_at": "2026-10-05T20:17:21.875Z",
+      "app_url": "https://torneos-dev.vercel.app",
+      "scope": "HTTPS GET reachability only; no callback delivery or artifact identity",
+      "checks": [
+        {
+          "path": "/",
+          "status": 200,
+          "redirect": false
+        },
+        {
+          "path": "/sign-in",
+          "status": 200,
+          "redirect": false
+        },
+        {
+          "path": "/api/webhooks/flow",
+          "status": 405,
+          "redirect": false
+        },
+        {
+          "path": "/api/webhooks/flow/refund",
+          "status": 405,
+          "redirect": false
+        }
+      ]
+    },
+    "vercel_deployment_identity": {
+      "status": "NOT_RUN",
+      "reason": "Connector UNAUTHORIZED requires reauthentication"
+    },
+    "private_storage_objects": {
+      "status": "NOT_RUN"
+    },
+    "migration_application": {
+      "status": "NOT_RUN",
+      "reason": "Shared dev; actual-schema compatibility/recovery rehearsal pending"
+    },
+    "financial_mutations": {
+      "status": "NOT_RUN",
+      "provider_account": "production-only per owner",
+      "budget_clp": null,
+      "payer": null
+    },
+    "human_mobile_operator_acceptance": {
+      "status": "NOT_RUN"
+    }
+  },
+  "manifest_binding": {
+    "status": "PASS",
+    "issues": [],
+    "scope": "manifest/source/target comparison only; published deployment identity and exact compiled bytes require release verification"
+  },
+  "evidence_scope": "Catalog/Auth/HTTPS observations only. No candidate deployment, SQL application, private object test, payment/refund/withdrawal, AAL2 challenge or human acceptance is claimed.",
+  "pending": [
+    "Actual-schema compatibility and recovery rehearsal before selected dev migrations",
+    "Revoke incompatible grants and seed visibility via committed migrations",
+    "Operator and backup MFA and named availability",
+    "Private objects access with real JWTs",
+    "Configured provider credentials, legal identity, notifications and reserve on dev",
+    "Exact published artifact identity and permitted WebGL assets",
+    "Approved trial act with total CLP cap, payer, recipient and named operators",
+    "Human/mobile/operator acceptance; recovery and E2E financial evidence"
+  ],
+  "raw_artifacts": {
+    "root": "C:/Users/valde/.codex/worktrees/real-money-access/torneos",
+    "ignored": true,
+    "files": [
+      {
+        "file": "artifacts/staging/checkpoints/50fda9c51ff4e318dcb41694de17a03637c07d52/dev-catalog.json",
+        "sha256": "dadd15ed06801e3484d9a231c5b4361942a9ecf71af4b13984e1d8ac9dc98119"
+      },
+      {
+        "file": "artifacts/staging/checkpoints/50fda9c51ff4e318dcb41694de17a03637c07d52/dev-preflight.json",
+        "sha256": "891a84e6eff19c55ea7b50c04cf346a51c77a4e06af145887ef324b73bdf389c"
+      },
+      {
+        "file": "artifacts/staging/checkpoints/50fda9c51ff4e318dcb41694de17a03637c07d52/dev-auth.json",
+        "sha256": "4f7f8b20f6eaab2b247148ad5820dbdd7934b51e734ca8b4fa5e4e88a1de4e5a"
+      },
+      {
+        "file": "artifacts/staging/checkpoints/50fda9c51ff4e318dcb41694de17a03637c07d52/dev-http.json",
+        "sha256": "139576fad1bba57d8debaf5ab25ae6daf5f86de320d7906e8be33cddd586f8cc"
+      },
+      {
+        "file": "artifacts/staging/checkpoints/50fda9c51ff4e318dcb41694de17a03637c07d52/dev-startup.json",
+        "sha256": "94f912e92f64144b1b7ca468f0c356365106dfa5288d23c0e323be4123db330c"
+      },
+      {
+        "file": "artifacts/staging/checkpoints/50fda9c51ff4e318dcb41694de17a03637c07d52/dev-manifest.json",
+        "sha256": "c4ad0053714e4ffa77852e31dd8245a848f0e2a21120f8301d683546cd76faa8"
+      },
+      {
+        "file": "artifacts/staging/checkpoints/50fda9c51ff4e318dcb41694de17a03637c07d52/build-dev.log",
+        "sha256": "db55a908cccb7a1d151fc20bbada463b89101f54315f457ad699abd9fed907f5"
+      }
+    ]
+  }
+}

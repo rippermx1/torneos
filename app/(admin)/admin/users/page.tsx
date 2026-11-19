@@ -84,8 +84,8 @@ export default async function AdminUsersPage() {
         userId,
         {
           ...submission,
-          document_front_signed_url: await createKycDocumentUrl(supabase, submission.document_front_path),
-          document_back_signed_url: await createKycDocumentUrl(supabase, submission.document_back_path),
+          document_front_signed_url: submission.document_front_path ? `/api/admin/kyc/${submission.id}/document?side=front` : null,
+          document_back_signed_url: submission.document_back_path ? `/api/admin/kyc/${submission.id}/document?side=back` : null,
         },
       ])
     )
@@ -203,18 +203,6 @@ export default async function AdminUsersPage() {
 type KycSubmissionWithUrls = KycSubmission & {
   document_front_signed_url: string | null
   document_back_signed_url: string | null
-}
-
-async function createKycDocumentUrl(
-  supabase: ReturnType<typeof createAdminClient>,
-  path: string | null
-): Promise<string | null> {
-  if (!path) return null
-  const { data } = await supabase.storage
-    .from('kyc-documents')
-    .createSignedUrl(path, 10 * 60)
-
-  return data?.signedUrl ?? null
 }
 
 function UserTable({

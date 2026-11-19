@@ -7,6 +7,7 @@ import { sendOpsAlertEmail } from '@/lib/email/ops-notifications'
 import { updateRating } from '@/lib/tournament/rating'
 import { reviewWinnerStats, computeIntervalStats } from '@/lib/anticheat/winner-review'
 import { requireIntegrityClearance } from '@/lib/anticheat/integrity'
+import { workerCanStart, workerDeadline } from '@/lib/ops/worker-budget'
 
 export interface TransitionResult {
   tournamentId: string
@@ -18,17 +19,21 @@ export interface TransitionResult {
 
 // Procesa los torneos que necesitan una transición de estado.
 // Llamado por el scheduler cada cinco minutos y por un respaldo independiente.
-export async function processTournamentTransitions(): Promise<TransitionResult[]> {
+export async function processTournamentTransitions(deadlineMs = workerDeadline()): Promise<TransitionResult[]> {
   const supabase = createAdminClient()
   const results: TransitionResult[] = []
   const nowMs = Date.now()
+  const now = new Date(nowMs).toISOString()
 
   // Obtener torneos que pueden necesitar transición
   const { data: tournaments, error } = await supabase
     .from('tournaments')
     .select('*')
     .in('status', ['scheduled', 'open', 'live', 'finalizing'])
+    .or(`and(status.eq.scheduled,registration_opens_at.lte.${now}),and(status.eq.open,play_window_start.lte.${now}),and(status.eq.live,play_window_end.lte.${now}),status.eq.finalizing`)
+    .order('last_transition_checked_at', { ascending: true, nullsFirst: true })
     .order('play_window_start', { ascending: true })
+    .order('id', { ascending: true })
     .limit(25)
 
   if (error) {
@@ -36,7 +41,13 @@ export async function processTournamentTransitions(): Promise<TransitionResult[]
   }
 
   for (const t of (tournaments ?? []) as Tournament[]) {
-    const result = await processSingleTournament(t, nowMs)
+    if (!workerCanStart(deadlineMs)) break
+    // Stamp before processing so a poisoned first batch cannot starve later work,
+    // including when this process is killed during the transition.
+    const stamp = await supabase.from('tournaments')
+      .update({ last_transition_checked_at: new Date().toISOString() }).eq('id', t.id)
+    if (stamp.error) throw new Error(`No se pudo guardar revisión del torneo: ${stamp.error.message}`)
+    const result = await processSingleTournament(t, nowMs, deadlineMs)
     results.push(result)
   }
 
@@ -45,7 +56,8 @@ export async function processTournamentTransitions(): Promise<TransitionResult[]
 
 async function processSingleTournament(
   tournament: Tournament,
-  nowMs: number
+  nowMs: number,
+  deadlineMs: number
 ): Promise<TransitionResult> {
   const supabase = createAdminClient()
   const base = { tournamentId: tournament.id, name: tournament.name }
@@ -103,7 +115,8 @@ async function processSingleTournament(
             tournament.id,
             cancelData.entry_fee_cents,
             getAppUrl() ?? 'https://torneosplay.cl',
-            tournament.name
+            tournament.name,
+            deadlineMs
           )
         }
 
@@ -361,6 +374,9 @@ async function notifyPrizeWinners(
   tournamentName: string,
 ): Promise<void> {
   try {
+    const { data: tournament } = await supabase.from('tournaments').select('is_test').eq('id', tournamentId).single()
+    // Existing hosted email promises availability. Real awards remain visible as pending in Mis premios.
+    if (!tournament?.is_test) return
     const { data: results } = await supabase
       .from('tournament_results')
       .select('user_id, rank, prize_awarded_cents, final_score')
@@ -396,10 +412,7 @@ async function notifyPrizeWinners(
 // anómalas ($50.000): los premios grandes merecen una revisión adicional.
 const BIG_PRIZE_REVIEW_CENTS = 5000000
 
-// Revisa a los ganadores premiados en busca de señales de automatización y
-// alerta al operador por email (no bloquea el pago del premio). Es la capa
-// "gris" del anti-cheat: el detector en vivo banea lo flagrante; esto expone
-// consistencias sobrehumanas para revisión manual en el admin.
+// Las señales orientan la revisión; todos los premios reales nacen retenidos en SQL.
 async function reviewPrizeWinners(
   supabase: ReturnType<typeof createAdminClient>,
   tournamentId: string,
@@ -458,7 +471,7 @@ async function reviewPrizeWinners(
         lines: [
           `El torneo "${tournamentName}" finalizó con ganadores que ameritan revisión:`,
           ...alertLines,
-          'Los premios ya fueron acreditados; el control efectivo es la aprobación manual del pago (cobro de premios).',
+          'Los premios reales permanecen retenidos hasta revisión manual en /admin/prize-reviews. La ausencia de señales no demuestra integridad.',
         ],
       })
     }

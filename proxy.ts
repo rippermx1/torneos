@@ -142,6 +142,13 @@ export async function proxy(req: NextRequest) {
 
   // ── Proteger rutas privadas ───────────────────────────────────
   if (!isPublicPath(req.nextUrl.pathname) && !user) {
+    if (req.nextUrl.pathname.startsWith('/api/')) {
+      const denied = NextResponse.json({ error: 'No autenticado' }, { status: 401 })
+      denied.headers.set('Cache-Control', 'private, no-store')
+      denied.headers.set('Content-Security-Policy', csp)
+      for (const cookie of res.cookies.getAll()) denied.cookies.set(cookie)
+      return withCors(denied, req)
+    }
     const url = new URL('/sign-in', getAppUrl(req.url))
     url.pathname = '/sign-in'
     url.search = ''

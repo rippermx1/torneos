@@ -3,10 +3,8 @@ import { createAdminClient } from '@/lib/supabase/server'
 import { requireAdminMfaForApi } from '@/lib/supabase/admin-mfa'
 import { recordAdminAction } from '@/lib/admin/audit'
 import { sendWithdrawalApprovedEmail } from '@/lib/email/withdrawal-notifications'
-import {
-  getVerifiedPayoutEvidenceExtension,
-  MAX_PAYOUT_PROOF_BYTES,
-} from '@/lib/payouts/evidence'
+import { storePayoutProof } from '@/lib/payouts/proof-storage'
+import { financialError } from '@/lib/payouts/review'
 
 export async function POST(
   req: Request,
@@ -23,56 +21,39 @@ export async function POST(
   const notes = String(formData.get('notes') ?? '').trim()
   const evidence = formData.get('evidence')
 
+  if (notes.length > 2000) return Response.json({ error: 'Notas demasiado extensas' }, { status: 400 })
+
   if (transferReference.length < 3 || transferReference.length > 120) {
     return Response.json({ error: 'Ingresa una referencia bancaria válida' }, { status: 400 })
-  }
-
-  if (!(evidence instanceof File) || evidence.size === 0) {
-    return Response.json({ error: 'Adjunta el comprobante de la transferencia' }, { status: 400 })
-  }
-
-  if (evidence.size > MAX_PAYOUT_PROOF_BYTES) {
-    return Response.json({ error: 'El comprobante no puede superar 6 MB' }, { status: 400 })
-  }
-
-  const bytes = new Uint8Array(await evidence.arrayBuffer())
-  const extension = getVerifiedPayoutEvidenceExtension(evidence.type, bytes)
-  if (!extension) {
-    return Response.json({ error: 'El archivo no es un PDF, JPG, PNG o WebP válido' }, { status: 400 })
   }
 
   const admin = createAdminClient()
   const { data: payout } = await admin
     .from('withdrawal_requests')
-    .select('user_id, amount_cents, bank_name, account_holder, account_rut, status')
+    .select('user_id, amount_cents, bank_name, account_holder, account_rut, status, claimed_by')
     .eq('id', requestId)
     .single()
 
   if (!payout) return Response.json({ error: 'Solicitud no encontrada' }, { status: 404 })
-  if (payout.status !== 'approved') {
-    return Response.json({ error: 'El pago debe estar autorizado antes de registrar la transferencia' }, { status: 409 })
+  if (!['transferring', 'paid'].includes(payout.status) || payout.claimed_by !== auth.access.userId) {
+    return Response.json({ error: 'Transferencia no iniciada por este operador. Consulta o concilia el pago; no lo repitas' }, { status: 409 })
   }
 
-  const storagePath = `${requestId}/${crypto.randomUUID()}.${extension}`
-  const { error: uploadError } = await admin.storage
-    .from('payout-proofs')
-    .upload(storagePath, bytes, { contentType: evidence.type, upsert: false })
+  const proof = await storePayoutProof(admin, requestId, evidence)
+  if (proof.response) return proof.response
+  const storagePath = proof.path!
 
-  if (uploadError) {
-    return Response.json({ error: `No se pudo guardar el comprobante: ${uploadError.message}` }, { status: 500 })
-  }
-
-  const { data: receiptNumber, error: completeError } = await admin.rpc('complete_withdrawal', {
+  const { data: receiptNumber, error: completeError } = await Promise.resolve(admin.rpc('complete_withdrawal', {
     p_request_id: requestId,
     p_admin_id: auth.access.userId,
     p_bank_transfer_reference: transferReference,
     p_proof_storage_path: storagePath,
     p_notes: notes || null,
-  })
+  })).catch(() => ({ data: null, error: { message: 'Respuesta perdida' } }))
 
   if (completeError) {
-    await admin.storage.from('payout-proofs').remove([storagePath]).catch(console.error)
-    return Response.json({ error: completeError.message }, { status: 400 })
+    // A lost response may follow a committed payment; retain immutable proof.
+    return financialError(completeError)
   }
 
   await recordAdminAction(admin, {
@@ -94,7 +75,7 @@ export async function POST(
     },
   })
 
-  after(async () => {
+  if (payout.status !== 'paid') after(async () => {
     try {
       const { data: authUser } = await admin.auth.admin.getUserById(payout.user_id)
       const email = authUser?.user?.email

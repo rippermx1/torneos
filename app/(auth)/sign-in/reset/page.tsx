@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 
 export default function ResetPasswordPage() {
   const router = useRouter()
@@ -15,8 +14,8 @@ export default function ResetPasswordPage() {
     e.preventDefault()
     setError('')
 
-    if (password.length < 8) {
-      setError('La contraseña debe tener al menos 8 caracteres.')
+    if (password.length < 12 || password.length > 128) {
+      setError('La contraseña debe tener entre 12 y 128 caracteres.')
       return
     }
     if (password !== confirm) {
@@ -25,17 +24,14 @@ export default function ResetPasswordPage() {
     }
 
     setLoading(true)
-    const supabase = createClient()
-    const { error: updateError } = await supabase.auth.updateUser({ password })
-
-    if (updateError) {
-      setError('No se pudo actualizar la contraseña. El enlace puede haber expirado.')
-      setLoading(false)
-      return
-    }
-
-    router.push('/')
-    router.refresh()
+    try {
+      const response = await fetch('/api/account/password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password }) })
+      const result = await response.json()
+      if (!response.ok) { setError(result.error ?? 'No se pudo actualizar la contraseña.'); return }
+      router.push('/sign-in?password=updated')
+      router.refresh()
+    } catch { setError('No se pudo confirmar el cambio. Intenta iniciar sesión antes de repetir.') }
+    finally { setLoading(false) }
   }
 
   return (
@@ -54,7 +50,7 @@ export default function ResetPasswordPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Mínimo 8 caracteres"
+              placeholder="Mínimo 12 caracteres"
               required
               autoComplete="new-password"
               className="w-full border rounded-xl px-3 py-2.5 text-sm bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground"

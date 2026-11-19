@@ -1,10 +1,15 @@
+import { requireAdminMfa } from '@/lib/supabase/admin-mfa'
 import { createAdminClient } from '@/lib/supabase/server'
 import { formatCLP, formatDateTimeCL } from '@/lib/utils'
 import type { WithdrawalRequest } from '@/types/database'
 import { PayoutActions } from '@/components/admin/payout-actions'
 import { PayoutCompletionForm } from '@/components/admin/payout-completion-form'
+import { OPEN_PAYOUT_STATUSES } from '@/lib/payouts/review'
 
 const STATUS_STYLE: Record<WithdrawalRequest['status'], string> = {
+  claimed: 'bg-amber-100 text-amber-700',
+  transferring: 'bg-blue-100 text-blue-700',
+  reconciling: 'bg-red-100 text-red-700',
   pending: 'bg-amber-100 text-amber-700',
   approved: 'bg-blue-100 text-blue-700',
   paid: 'bg-green-100 text-green-700',
@@ -12,21 +17,28 @@ const STATUS_STYLE: Record<WithdrawalRequest['status'], string> = {
 }
 const STATUS_LABEL: Record<WithdrawalRequest['status'], string> = {
   pending: 'Pendiente',
+  claimed: 'Reclamado',
+  transferring: 'Transferencia iniciada',
+  reconciling: 'Conciliación bancaria',
   approved: 'Autorizado',
   paid: 'Pagado',
   rejected: 'Rechazado',
 }
 
-export default async function AdminPayoutsPage() {
+export default async function AdminPayoutsPage({ searchParams }: { searchParams: Promise<{ page?: string }> }) {
+  const filters = await searchParams
+  const page = Math.max(1, Math.min(100000, Number.parseInt(filters.page ?? '1') || 1))
+  const access = await requireAdminMfa()
   const supabase = createAdminClient()
 
-  const { data } = await supabase
-    .from('withdrawal_requests')
-    .select('*')
-    .order('created_at', { ascending: false })
-    .limit(100)
-
-  const requests = (data ?? []) as WithdrawalRequest[]
+  const [open, history] = await Promise.all([
+    supabase.from('withdrawal_requests').select('*').in('status', [...OPEN_PAYOUT_STATUSES])
+      .order('created_at', { ascending: true }).order('id', { ascending: true }).range((page - 1) * 50, page * 50 - 1),
+    supabase.from('withdrawal_requests').select('*').in('status', ['paid', 'rejected'])
+      .order('created_at', { ascending: false }).limit(25),
+  ])
+  if (open.error || history.error) return <p role="alert">No se pudo cargar la cola de pagos. Consulta el estado antes de transferir.</p>
+  const requests = [...(open.data ?? []), ...(history.data ?? [])] as WithdrawalRequest[]
 
   // Obtener usernames
   const userIds = [...new Set(requests.map((r) => r.user_id))]
@@ -42,8 +54,8 @@ export default async function AdminPayoutsPage() {
     ])
   )
 
-  const pending = requests.filter((r) => r.status === 'pending')
-  const authorized = requests.filter((r) => r.status === 'approved')
+  const pending = requests.filter((r) => r.status === 'pending' || r.status === 'claimed')
+  const authorized = requests.filter((r) => ['approved', 'transferring', 'reconciling'].includes(r.status))
   const rest = requests.filter((r) => r.status === 'paid' || r.status === 'rejected')
 
   return (
@@ -51,7 +63,7 @@ export default async function AdminPayoutsPage() {
       <div>
         <h1 className="text-2xl font-bold">Pagos de premios</h1>
         <p className="text-sm text-muted-foreground mt-0.5">
-          {pending.length} por revisar · {authorized.length} autorizada{authorized.length !== 1 ? 's' : ''} por transferir. La autorización y la salida bancaria se registran por separado.
+          Página {page}: {pending.length} por revisar · {authorized.length} por transferir o conciliar. Un operador reclama y otro verifica importe y destino antes de autorizar.
         </p>
       </div>
 
@@ -88,7 +100,8 @@ export default async function AdminPayoutsPage() {
                   <p><span className="text-muted-foreground">RUT titular:</span> {r.account_rut}</p>
                 </div>
 
-                <PayoutActions requestId={r.id} />
+                <p className="text-xs">Estado: {STATUS_LABEL[r.status]} · Responsable: {r.claimed_by ?? 'Sin asignar'}</p>
+                <PayoutActions requestId={r.id} claimed={r.status === 'claimed'} canApprove={r.claimed_by !== access.userId} />
               </div>
             )
           })}
@@ -98,7 +111,7 @@ export default async function AdminPayoutsPage() {
       {authorized.length > 0 && (
         <section className="space-y-3">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            Autorizados · pendientes de transferencia
+            Transferencias autorizadas, iniciadas y en conciliación
           </h2>
           {authorized.map((r) => {
             const profile = profileMap[r.user_id] as { username: string } | undefined
@@ -116,7 +129,8 @@ export default async function AdminPayoutsPage() {
                   </div>
                   <p className="text-xl font-bold shrink-0">{formatCLP(r.amount_cents)}</p>
                 </div>
-                <PayoutCompletionForm requestId={r.id} />
+                <p className="text-xs">{STATUS_LABEL[r.status]} · Responsable: {r.claimed_by} · Segundo operador: {r.reviewed_by}</p>
+                <PayoutCompletionForm requestId={r.id} status={r.status} canTransfer={r.claimed_by === access.userId} canReconcile={r.claimed_by !== access.userId} />
               </div>
             )
           })}
@@ -162,6 +176,11 @@ export default async function AdminPayoutsPage() {
         </section>
       )}
 
+      <a href="/admin/prize-reviews" className="underline text-sm">Revisar premios y retenciones</a>
+      <nav className="flex gap-4 text-sm">
+        {page > 1 && <a className="underline" href={`/admin/payouts?page=${page - 1}`}>Anterior</a>}
+        {(open.data ?? []).length === 50 && <a className="underline" href={`/admin/payouts?page=${page + 1}`}>Siguiente</a>}
+      </nav>
       {requests.length === 0 && (
         <p className="text-muted-foreground text-sm">No hay solicitudes de retiro.</p>
       )}

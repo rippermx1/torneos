@@ -20,7 +20,14 @@ for (const [game, build] of Object.entries(builds)) {
   if (!['loader.js', '.data', '.framework.js', '.wasm'].every(suffix => assets.some(file => file.endsWith(suffix) || file.endsWith(`${suffix}.gz`)))) {
     throw new Error(`Incomplete WebGL entry: ${game}/${build}`)
   }
-  const files = ['index.html', ...new Set(assets), ...(fs.existsSync(path.join(directory, 'build-manifest.json')) ? ['build-manifest.json'] : [])].map(file => {
+  const walk = (relative = '') => fs.readdirSync(path.join(directory, relative), { withFileTypes: true }).flatMap(entry => {
+    const file = path.posix.join(relative, entry.name)
+    if (entry.isSymbolicLink()) throw new Error('Symbolic links forbidden in release game inventory')
+    return entry.isDirectory() ? walk(file) : [file]
+  })
+  const inventory = walk().sort()
+  for (const asset of assets) if (!inventory.includes(asset)) throw new Error('Missing referenced WebGL asset')
+  const files = inventory.map(file => {
     const target = path.resolve(directory, file)
     if (!target.startsWith(`${directory}${path.sep}`) || fs.lstatSync(target).isSymbolicLink()) {
       throw new Error(`Invalid published asset: ${file}`)

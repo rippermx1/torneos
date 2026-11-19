@@ -29,7 +29,14 @@
     "local:up": "node scripts/local-environment.mjs up",
     "local:setup": "node scripts/local-environment.mjs setup",
     "local:seed": "node scripts/local-environment.mjs seed",
-    "local:smoke": "node scripts/local-environment.mjs smoke"
+    "local:smoke": "node scripts/local-environment.mjs smoke",
+    "typecheck": "tsc --noEmit --incremental false",
+    "release:manifest": "node scripts/release-manifest.mjs",
+    "release:check": "node scripts/release-check.mjs",
+    "staging:catalog": "node scripts/staging-preflight.mjs --emit-sql artifacts/staging/catalog.sql",
+    "staging:preflight": "node scripts/staging-preflight.mjs",
+    "staging:auth": "node scripts/staging-auth-preflight.mjs",
+    "postbuild": "node scripts/prepare-release.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
@@ -58,5 +65,9 @@
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "4.1.11"
-  }
+  },
+  "engines": {
+    "node": "24.14.1"
+  },
+  "packageManager": "npm@11.11.0"
 }

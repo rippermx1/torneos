@@ -15,7 +15,7 @@ const navLinks = [
 const userLinks = [
   { href: '/premios', label: 'Mis premios' },
   { href: '/profile', label: 'Mi perfil' },
-  { href: '/support/dispute', label: 'Soporte' },
+  { href: '/support', label: 'Soporte' },
 ]
 const adminLinks = [
   { href: '/admin', label: 'Admin' },

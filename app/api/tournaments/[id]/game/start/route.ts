@@ -8,6 +8,7 @@ import { closeExpiredGame } from '@/lib/tournament/close-expired-game'
 import { GAME_SNAPSHOT_FIELDS, gameSnapshotResponse, type SnapshotGame } from '@/lib/tournament/game-snapshot-response'
 import { checkRateLimit, rateLimitResponse } from '@/lib/security/rate-limit'
 import { isJsonObject, isGameId } from '@/lib/tournament/game-request'
+import { requireCompetitiveEntry, competitiveEntryErrorResponse } from '@/lib/tournament/competitive-entry'
 import type { Game, Tournament } from '@/types/database'
 
 export async function POST(
@@ -95,6 +96,9 @@ export async function POST(
       tournamentState.max_game_duration_seconds, { resuming: true, nextRngStates: [] })
   }
 
+  const entryDenied = await requireCompetitiveEntry(supabase, userId, tournamentId)
+  if (entryDenied) return entryDenied
+
   const playability = checkPlayWindow(tournamentState)
   if (existingGame && existingGame.started_at && (isPastGameDeadline(existingGame.started_at,
     tournamentState.play_window_end, tournamentState.max_game_duration_seconds)
@@ -172,14 +176,17 @@ export async function POST(
     .select('id')
     .single()
 
-  if (insertErr?.code === 'PT403' || insertErr?.message === 'IDENTITY_ALREADY_PARTICIPATING'
-    || insertErr?.message === 'IDENTITY_STATE_UNCONFIRMED') {
+  // Only known guard identifiers are echoed; any other DB message stays private.
+  if (insertErr && ['IDENTITY_ALREADY_PARTICIPATING', 'IDENTITY_STATE_UNCONFIRMED', 'ACCOUNT_SUSPENDED']
+    .includes(insertErr.message)) {
     return Response.json({ error: insertErr.message === 'IDENTITY_ALREADY_PARTICIPATING'
       ? 'Esta identidad verificada ya tiene una participación en el torneo.'
       : 'No se pudo autorizar la participación de tu cuenta.', code: insertErr.message }, { status: 403 })
   }
   // Two tabs can both observe no game before either INSERT commits. The unique
   // constraint picks the winner; recover its owned row rather than retrying.
+  const commitDenied = competitiveEntryErrorResponse(insertErr)
+  if (commitDenied) return commitDenied
   if (insertErr?.code === '23505') {
     const persisted = await supabase.from('games').select(`${GAME_SNAPSHOT_FIELDS}, seed`)
       .eq('tournament_id', tournamentId).eq('user_id', userId).maybeSingle()

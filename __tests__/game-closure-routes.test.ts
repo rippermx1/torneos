@@ -17,6 +17,8 @@ const fixture = vi.hoisted(() => ({
   concurrentReadError: false,
   rpcError: null as { code: string; message: string } | null,
   rpcReadError: false,
+  entryAllowed: true,
+  entryError: null as { code: string; message: string } | null,
 }))
 vi.mock('@/lib/supabase/auth', () => ({ requireAnyRoleForApi: async () => fixture.authenticated
   ? { ok: true, access: { userId: fixture.userId } }
@@ -29,6 +31,7 @@ vi.mock('@/lib/security/rate-limit', () => ({ checkRateLimit: async (options: ty
 vi.mock('next/server', () => ({ after: vi.fn() }))
 vi.mock('@/lib/supabase/server', () => ({ createAdminClient: () => ({ rpc: vi.fn(async (name: string, args: Record<string, unknown>) => {
   fixture.rpcCalls.push({ name, args })
+  if (name === 'authorize_competitive_entry') return { data: fixture.entryAllowed, error: fixture.entryError }
   if (fixture.finalMoveRow) fixture.game = fixture.finalMoveRow
   if (fixture.rpcReadError) fixture.readError = true
   return { data: null, error: fixture.rpcError }
@@ -72,6 +75,7 @@ beforeEach(() => {
   fixture.finalMoveRow = null
   fixture.insertError = null; fixture.concurrentGame = null; fixture.concurrentReadError = false
   fixture.rpcError = null; fixture.rpcReadError = false
+  fixture.entryAllowed = true; fixture.entryError = null
   fixture.game = { id: 'closure-game', user_id: 'closure-user', status: 'active', final_score: 4,
     move_count: 2, current_board: [[2,2,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]], seed: 'test-seed',
     started_at: '2026-10-01T15:58:00Z', end_reason: null, ended_at: null }
@@ -181,6 +185,38 @@ function bodyRequest(body: unknown, ip = '192.0.2.1') {
   return new Request('http://local.test/game', { method: 'POST', headers: { 'x-forwarded-for': ip }, body: JSON.stringify(body) })
 }
 describe('adversarial competitive requests', () => {
+  it.each([start, move])('does not mutate an owned game when its registration/payment is unconfirmed', async route => {
+    for (const code of ['PT402', 'PT403']) {
+      fixture.queries = []; fixture.rpcCalls = []
+      fixture.entryError = { code, message: 'private diagnostic' }
+      const response = await route(request(), params())
+      expect(response.status).toBe(code === 'PT402' ? 402 : 403)
+      expect(fixture.queries.filter(q => q.write)).toEqual([])
+      expect(fixture.rpcCalls.map(call => call.name)).toEqual(['authorize_competitive_entry'])
+    }
+  })
+  it.each([start, move])('does not authorize when the required DB migration/response is unavailable', async route => {
+    fixture.entryAllowed = false
+    const response = await route(request(), params())
+    expect(response.status).toBe(503)
+    expect(fixture.queries.filter(q => q.write)).toEqual([])
+  })
+  it('preserves reading an owned terminal result even if financial authorization is no longer available', async () => {
+    fixture.game.status = 'completed'; fixture.entryAllowed = false
+    expect((await start(request(), params())).status).toBe(200)
+    expect(fixture.rpcCalls).toEqual([])
+  })
+  it.each([start, move])('returns an authorization denial if eligibility changes at DB commit', async route => {
+    fixture.game.started_at = '2026-10-01T15:59:45Z'
+    for (const code of ['PT402', 'PT403']) {
+      if (route === start) {
+        fixture.game.user_id = 'other-user'; fixture.insertError = { code, message: 'private DB diagnostic' }
+      } else fixture.rpcError = { code, message: 'private DB diagnostic' }
+      const response = await route(request(), params())
+      expect(response.status).toBe(code === 'PT402' ? 402 : 403)
+      expect(JSON.stringify(await response.json())).not.toContain('private')
+    }
+  })
   it.each(routes)('%s stops before reading game data when the quota is denied', async (_name, route) => {
     fixture.limitOk = false
     expect((await route(request(), params())).status).toBe(429)
@@ -209,10 +245,10 @@ describe('adversarial competitive requests', () => {
   it('uses current cancellation state even immediately after an accepted movement', async () => {
     fixture.game.started_at = '2026-10-01T15:59:45Z'
     expect((await move(request(), params())).status).toBe(200)
-    const committed = fixture.rpcCalls.length
+    const committed = fixture.rpcCalls.filter(call => call.name === 'record_game_move').length
     fixture.tournament.status = 'cancelled'
     expect((await move(request(), params())).status).toBe(400)
-    expect(fixture.rpcCalls).toHaveLength(committed)
+    expect(fixture.rpcCalls.filter(call => call.name === 'record_game_move')).toHaveLength(committed)
   })
   it.each(routes)('%s rejects malformed JSON values before querying game data', async (_name, route) => {
     for (const body of [null, [], 'text', 7, true]) {
@@ -257,14 +293,15 @@ describe('adversarial competitive requests', () => {
     const data = await response.json()
     expect(response.status).toBe(200); expect(data.score).toBe(8)
     expect(data.nextRngStates).toEqual([]); expect(data.seed).toBeUndefined()
-    expect(fixture.rpcCalls[0]?.args.p_final_score).toBe(8)
-    expect(fixture.rpcCalls[0]?.args.p_board_before).toEqual(fixture.game.current_board)
+    const commit = fixture.rpcCalls.find(call => call.name === 'record_game_move')
+    expect(commit?.args.p_final_score).toBe(8)
+    expect(commit?.args.p_board_before).toEqual(fixture.game.current_board)
   })
   it('rejects stale/replayed sequence without committing or consuming a spawn', async () => {
     fixture.game.started_at = '2026-10-01T15:59:45Z'
     expect((await move(bodyRequest({ gameId: 'closure-game', direction: 'left', moveNumber: 3,
       clientTimestamp: Date.now() }), params())).status).toBe(409)
-    expect(fixture.rpcCalls).toEqual([])
+    expect(fixture.rpcCalls.map(call => call.name)).toEqual(['authorize_competitive_entry'])
   })
   it('cannot create another session at the exact tournament end', async () => {
     fixture.game.user_id = 'other-user'; fixture.tournament.play_window_end = new Date().toISOString()

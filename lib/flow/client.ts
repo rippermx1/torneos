@@ -1,5 +1,6 @@
 import { createHmac } from 'crypto'
 import { getFlowApiBase, getFlowApiKey, getFlowApiSecret } from '@/lib/env'
+import { assertProviderDispatchAllowed } from '@/lib/config/provider-dispatch.mjs'
 
 // ───────────────────────────────────────────────────────────────
 // Cliente Flow.cl REST.
@@ -36,6 +37,7 @@ export function signParams(params: FlowParams, secretKey: string): string {
 }
 
 function getCredentials() {
+  assertProviderDispatchAllowed()
   const apiKey = getFlowApiKey()
   const secret = getFlowApiSecret()
   if (!apiKey || !secret) {
@@ -98,6 +100,7 @@ export async function flowPost<T>(
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: body.toString(),
+    signal: AbortSignal.timeout(8000),
   })
 
   if (!res.ok) throw await parseError(res)
@@ -122,7 +125,7 @@ export async function flowGet<T>(
   }
 
   const url = `${base}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}?${search.toString()}`
-  const res = await fetch(url, { method: 'GET' })
+  const res = await fetch(url, { method: 'GET', signal: AbortSignal.timeout(8000) })
 
   if (!res.ok) throw await parseError(res)
   return (await res.json()) as T

@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 
-export function FlowReverifyButton({ attemptId, token }: { attemptId: string; token: string }) {
+export function FlowReverifyButton({ attemptId, token }: { attemptId: string; token: string | null }) {
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()

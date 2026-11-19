@@ -76,7 +76,7 @@ export async function handleLocalFlow(endpoint: string, params: Record<string, s
   if (endpoint === 'payment/getStatus') return Response.json(await readLocalPayment(params.token))
   if (endpoint === 'refund/create') {
     localReturn(params.urlCallBack, true)
-    const files = await readdir(process.env.LOCAL_FLOW_DATA_DIR ?? '.local-flow')
+    const files = await readdir(/* turbopackIgnore: true */ process.env.LOCAL_FLOW_DATA_DIR ?? '.local-flow')
     let original: Payment | undefined
     for (const file of files.filter((name) => /^payment-[a-f0-9-]{36}\.json$/.test(name))) {
       const payment = await readLocalPayment(file.slice(8, -5))

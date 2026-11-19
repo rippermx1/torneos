@@ -32,6 +32,13 @@ describe('isolated persistent local payment provider', () => {
     expect(isLocalEnvironment({ ...process.env, SUPABASE_SERVER_URL: 'https://example.supabase.co' })).toBe(false)
     expect(isLocalEnvironment({ ...process.env, TORNEOS_LOCAL_MODE: '' })).toBe(false)
   })
+  it('accepts the exact local Docker backend while keeping public environments excluded', () => {
+    const local = { ...process.env, SUPABASE_SERVER_URL: 'http://supabase_kong_torneos:8000' }
+    expect(isLocalEnvironment(local)).toBe(true)
+    expect(isLocalEnvironment({ ...local, APP_URL: 'https://www.torneosplay.cl' })).toBe(false)
+    expect(isLocalEnvironment({ ...local, NEXT_PUBLIC_SUPABASE_URL: 'https://example.supabase.co' })).toBe(false)
+    expect(isLocalEnvironment({ ...local, SUPABASE_SERVER_URL: 'http://supabase_kong_torneos:54321' })).toBe(false)
+  })
   it('rejects changed parameters and malformed signatures', () => {
     const params = signed({ amount: '5000' })
     expect(verifyLocalFlowSignature(params)).toBe(true)

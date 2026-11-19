@@ -82,6 +82,9 @@ export function getFlowApiSecret() {
 
 export function getFlowApiBase() {
   const value = firstNonEmpty(process.env.FLOW_API_BASE)
+  if (process.env.TORNEOS_ENV === 'cloud-development' && value !== 'https://sandbox.flow.cl/api') {
+    throw new Error('El ambiente de desarrollo requiere Flow sandbox')
+  }
   return value ? normalizeUrl(value) : 'https://sandbox.flow.cl/api'
 }
 

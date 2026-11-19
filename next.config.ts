@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  distDir: process.env.NEXT_BUILD_DIR ?? '.next',
+  turbopack: { root: process.cwd() },
   // Genera una salida standalone para el Dockerfile de producción.
   // next build copia solo las dependencias necesarias en .next/standalone.
   output: "standalone",

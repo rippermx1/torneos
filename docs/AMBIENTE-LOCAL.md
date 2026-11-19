@@ -1,5 +1,14 @@
 # Ambiente local operativo
 
+Actualización 2026-10-02: web y runtime Snake comparten el contenedor de aplicación.
+Supabase y correo se alcanzan por la red Docker local, manteniendo las URLs del
+navegador. `local:up` aplica las migraciones de torneos gratuitos y conserva el
+simulador de pagos. Ver [Snake competitivo](SNAKE-TOURNAMENT-IMPLEMENTATION.md).
+`npm run local:snake:smoke` valida el recorrido autenticado con cuentas sintéticas.
+La imagen usa Snake `006`; `TORNEOS_SNAKE_RUNTIME_BUILD` permite adoptar una build
+de práctica posterior cuando su publicación esté completa. El registro del
+workspace y las builds históricas permanecen intactos.
+
 Validado el 2026-10-01 en `codex/operational-local-environment`, desde `8790a37`.
 El workspace activo es `C:/torneos`. No requiere Orbit ni usa su backend.
 
@@ -24,7 +33,7 @@ utiliza sus contenedores de infraestructura estándar.
 | --- | --- |
 | Web pública, cuenta y torneos | http://127.0.0.1:3081 |
 | 2048 Unity gratuito | http://127.0.0.1:3081/play |
-| Alien Run gratuito | http://127.0.0.1:3081/play/alien-run |
+| Ted Runner gratuito | http://127.0.0.1:3081/play/ted-runner |
 | Correo capturado | http://127.0.0.1:54324 |
 | Supabase Studio | http://127.0.0.1:54323 |
 | API de Supabase para navegador | http://127.0.0.1:54321 |
@@ -119,4 +128,6 @@ arte/licencias y `C:/play-games` siguen fuera de la imagen y del trabajo de esta
 La app publica sólo loopback. Los servicios del CLI Supabase usan sus bindings
 locales predeterminados de Docker, que aparecen como `0.0.0.0` en el inventario.
 No se han configurado OAuth externo, Flow sandbox público, despliegue, aceptación
-humana ni teléfono físico. Alien Run sigue siendo práctica sin premios.
+humana ni teléfono físico. Ted Runner sigue siendo práctica sin premios.
+El nombre público y la ruta se actualizaron posteriormente; su build histórica
+conserva el ID `alien-run/level-030`. Ver `BACKLOG.md` para la nueva build.

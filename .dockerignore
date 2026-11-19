@@ -20,7 +20,6 @@
 !public/**
 !scripts/
 !scripts/check-game-builds.mjs
-
 # Superseded build; never remove its local copy.
 public/games/2048/unity-2048-001/
 **/.env*

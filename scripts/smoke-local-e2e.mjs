@@ -370,7 +370,7 @@ async function registerPlayer(cookieJar, tournamentId) {
 async function startGame(cookieJar, tournamentId) {
   const { response, payload } = await callJson(
     `${baseUrl}/api/tournaments/${tournamentId}/game/start`,
-    { method: 'POST' },
+    { method: 'POST', body: JSON.stringify({}) },
     cookieJar
   )
 

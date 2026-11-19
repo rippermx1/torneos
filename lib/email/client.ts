@@ -30,7 +30,8 @@ export interface SendEmailParams {
 export async function sendEmail(params: SendEmailParams): Promise<void> {
   if (isLocalEnvironment()) {
     const url = new URL(process.env.LOCAL_EMAIL_API_URL ?? 'http://127.0.0.1:54324/api/v1/send')
-    if (url.protocol !== 'http:' || !['127.0.0.1', 'localhost', 'host.docker.internal'].includes(url.hostname) ||
+    const internalMailpit = url.hostname === 'supabase_inbucket_torneos' && url.port === '8025'
+    if (url.protocol !== 'http:' || (!['127.0.0.1', 'localhost', 'host.docker.internal'].includes(url.hostname) && !internalMailpit) ||
         url.pathname !== '/api/v1/send') throw new Error('Correo local mal configurado')
     const response = await fetch(url, {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(10_000),

@@ -23,7 +23,7 @@ function get(url) {
   })
 }
 const checks = []
-for (const route of ['/play', '/play/alien-run', '/tournaments']) {
+for (const route of ['/play', '/play/catalog', '/tournaments']) {
   const result = await get(new URL(route, base))
   if (result.status !== 200) throw new Error(`Application route ${route}: ${result.status}`)
   if (result.headers['x-frame-options'] !== 'DENY') throw new Error(`Application framing: ${route}`)

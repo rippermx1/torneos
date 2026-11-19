@@ -1,0 +1,61 @@
+/*
+ * Semantic design tokens. Components use only these (through the ds-*
+ * utilities below); an organization's brand overrides tokens, never classes.
+ * Neutral values follow the shadcn variables; status colors keep today's look.
+ */
+:root {
+  --ds-color-surface: var(--background);
+  --ds-color-surface-muted: var(--muted);
+  --ds-color-text: var(--foreground);
+  --ds-color-text-muted: var(--muted-foreground);
+  --ds-color-border: var(--border);
+  --ds-color-brand: var(--primary);
+  --ds-color-brand-contrast: var(--primary-foreground);
+
+  --ds-color-success-surface: oklch(0.962 0.044 156.743);
+  --ds-color-success-text: oklch(0.448 0.119 151.328);
+  --ds-color-warning-surface: oklch(0.962 0.059 95.617);
+  --ds-color-warning-text: oklch(0.473 0.137 46.201);
+  --ds-color-danger-surface: oklch(0.936 0.032 17.717);
+  --ds-color-danger-text: oklch(0.444 0.177 26.899);
+  --ds-color-info-surface: oklch(0.932 0.032 255.585);
+  --ds-color-info-text: oklch(0.424 0.199 265.638);
+
+  --ds-radius-sm: 0.5rem;
+  --ds-radius-md: 0.75rem;
+  --ds-radius-lg: 1rem;
+
+  --ds-space-xs: 0.25rem;
+  --ds-space-sm: 0.5rem;
+  --ds-space-md: 0.75rem;
+  --ds-space-lg: 1rem;
+  --ds-space-xl: 1.25rem;
+}
+
+@theme inline {
+  --color-ds-surface: var(--ds-color-surface);
+  --color-ds-surface-muted: var(--ds-color-surface-muted);
+  --color-ds-text: var(--ds-color-text);
+  --color-ds-text-muted: var(--ds-color-text-muted);
+  --color-ds-border: var(--ds-color-border);
+  --color-ds-brand: var(--ds-color-brand);
+  --color-ds-brand-contrast: var(--ds-color-brand-contrast);
+  --color-ds-success-surface: var(--ds-color-success-surface);
+  --color-ds-success-text: var(--ds-color-success-text);
+  --color-ds-warning-surface: var(--ds-color-warning-surface);
+  --color-ds-warning-text: var(--ds-color-warning-text);
+  --color-ds-danger-surface: var(--ds-color-danger-surface);
+  --color-ds-danger-text: var(--ds-color-danger-text);
+  --color-ds-info-surface: var(--ds-color-info-surface);
+  --color-ds-info-text: var(--ds-color-info-text);
+
+  --radius-ds-sm: var(--ds-radius-sm);
+  --radius-ds-md: var(--ds-radius-md);
+  --radius-ds-lg: var(--ds-radius-lg);
+
+  --spacing-ds-xs: var(--ds-space-xs);
+  --spacing-ds-sm: var(--ds-space-sm);
+  --spacing-ds-md: var(--ds-space-md);
+  --spacing-ds-lg: var(--ds-space-lg);
+  --spacing-ds-xl: var(--ds-space-xl);
+}

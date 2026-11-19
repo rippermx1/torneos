@@ -13,6 +13,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 La plataforma comercial se mantiene en este monolito Next/Supabase/Flow.
 El único juego mantenido es 2048: Unity en `games/2048/UnityProject` y cliente web legado.
 Lee README y `docs/STATUS.md` antes de editar; después sólo los contratos relevantes.
+Código nuevo: seguir docs/ARQUITECTURA.md.
 Conserva `.meta`, Packages, ProjectSettings, arte y trabajo ajeno de 2048.
 El proyecto Unity real es la fuente del juego; no reconstruyas copias desde semillas.
 

@@ -7,7 +7,10 @@ import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { checkPlayWindow } from '@/lib/tournament/helpers'
 import { getTournamentAvailability, normalizeRegistrationCount } from '@/lib/tournament/availability'
-import { AvailabilityBadge } from '@/components/tournament/tournament-card'
+import { toChallenge } from '@entities/challenge'
+import { getContent } from '@shared/content'
+import { systemClock } from '@shared/kernel/clock'
+import { ChallengeAvailabilityBadge, toAvailabilityBadgeViewModel } from '@widgets/challenge-card'
 import { CatalogFeedback } from '@/components/tournament/catalog-feedback'
 import { withAuthDestination } from '@/lib/auth/redirect'
 import { SKILL_TIER_LABELS } from '@/lib/tournament/rating'
@@ -130,7 +133,9 @@ export default async function TournamentDetailPage({
   }
 
   const currentPlayerCount = countError ? null : normalizeRegistrationCount(playerCount)
-  const availability = getTournamentAvailability({ ...t, registeredCount: currentPlayerCount })
+  const now = systemClock.now()
+  const availability = getTournamentAvailability({ ...t, registeredCount: currentPlayerCount }, now)
+  const availabilityBadge = toAvailabilityBadgeViewModel(toChallenge({ ...t, registeredCount: currentPlayerCount }), now, getContent('challenge-card'))
   const playWindow = checkPlayWindow(t)
   const canRegister = availability.canRegister
   const inPlayWindow = playWindow.ok && availability.kind === 'live'
@@ -149,7 +154,7 @@ export default async function TournamentDetailPage({
     <div className="max-w-2xl mx-auto px-4 py-10 space-y-8">
       <div className="space-y-2">
         <Link href="/tournaments" className="text-sm underline underline-offset-4">← Ver torneos</Link>
-        <div className="flex flex-wrap items-center gap-2"><span className="text-sm font-semibold">2048</span><AvailabilityBadge availability={availability} /></div>
+        <div className="flex flex-wrap items-center gap-2"><span className="text-sm font-semibold">2048</span><ChallengeAvailabilityBadge viewModel={availabilityBadge} /></div>
         <h1 className="text-3xl font-bold">{t.name}</h1>
         {t.skill_tier && (
           <span className="inline-block text-xs font-medium bg-muted text-foreground rounded-full px-2.5 py-1">

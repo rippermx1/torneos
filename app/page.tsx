@@ -3,7 +3,9 @@ import { createClient } from '@/lib/supabase/server'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { getPublicTournaments } from '@/lib/tournament/public-catalog'
-import { TournamentCard } from '@/components/tournament/tournament-card'
+import { toChallenge } from '@entities/challenge'
+import { getContent } from '@shared/content'
+import { ChallengeCard, toChallengeCardViewModel } from '@widgets/challenge-card'
 import { CatalogFeedback } from '@/components/tournament/catalog-feedback'
 
 export default async function HomePage() {
@@ -13,6 +15,7 @@ export default async function HomePage() {
 
   const catalog = await getPublicTournaments()
   const tournaments = catalog.tournaments.slice(0, 3)
+  const cardContent = getContent('challenge-card')
 
   return (
     <>
@@ -85,7 +88,7 @@ export default async function HomePage() {
               <CatalogFeedback error={catalog.error} retryHref="/" />
             ) : (
               <div className="grid gap-4 sm:grid-cols-2">
-                {tournaments.map((t) => <TournamentCard key={t.id} tournament={t} now={catalog.asOf} />)}
+                {tournaments.map((t) => <ChallengeCard key={t.id} viewModel={toChallengeCardViewModel({ challenge: toChallenge(t), now: catalog.asOf, content: cardContent, href: `/tournaments/${t.id}` })} />)}
               </div>
             )}
           </div>

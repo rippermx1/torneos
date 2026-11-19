@@ -1,7 +1,9 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { getPublicTournaments } from '@/lib/tournament/public-catalog'
-import { TournamentCard } from '@/components/tournament/tournament-card'
+import { toChallenge } from '@entities/challenge'
+import { getContent } from '@shared/content'
+import { ChallengeCard, toChallengeCardViewModel } from '@widgets/challenge-card'
 import { CatalogFeedback } from '@/components/tournament/catalog-feedback'
 
 export const metadata: Metadata = {
@@ -11,6 +13,7 @@ export const metadata: Metadata = {
 
 export default async function TournamentsPage() {
   const { tournaments, error, asOf } = await getPublicTournaments()
+  const cardContent = getContent('challenge-card')
   return (
     <div className="mx-auto max-w-5xl space-y-6 px-4 py-10">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -24,7 +27,7 @@ export default async function TournamentsPage() {
       <p className="text-xs text-muted-foreground">Horarios de Chile (Santiago). Los cupos se confirman al inscribirte.</p>
       {error || tournaments.length === 0 ? <CatalogFeedback error={error} /> : (
         <div className="grid gap-4 sm:grid-cols-2">
-          {tournaments.map((t) => <TournamentCard key={t.id} tournament={t} now={asOf} />)}
+          {tournaments.map((t) => <ChallengeCard key={t.id} viewModel={toChallengeCardViewModel({ challenge: toChallenge(t), now: asOf, content: cardContent, href: `/tournaments/${t.id}` })} />)}
         </div>
       )}
     </div>
